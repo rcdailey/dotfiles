@@ -1,0 +1,11 @@
+BoldAsFont=no
+RightClickAction=paste
+Columns=125
+Rows=40
+Font=Consolas
+CopyAsRTF=no
+CtrlShiftShortcuts=yes
+ScrollbackLines=10000
+ConfirmExit=no
+FontHeight=9
+ThemeFile=flat-ui

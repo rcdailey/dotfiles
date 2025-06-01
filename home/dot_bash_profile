@@ -1,0 +1,12 @@
+export CHERE_INVOKING=1
+#export LANG=$(locale -uU)
+
+[[ -f ~/.bashrc ]] && . ~/.bashrc
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Added by Toolbox App -- On Macbook Pro
+    export PATH="$PATH:/Users/robert/Library/Application Support/JetBrains/Toolbox/scripts"
+
+    # For `brew install java`
+    export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+fi

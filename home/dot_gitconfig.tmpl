@@ -1,0 +1,374 @@
+#####################################################################
+## BASIC SETTINGS
+#####################################################################
+
+[user]
+    name = Robert Dailey
+    email = {{ .email }}
+[init]
+    defaultBranch = master
+[core]
+    autocrlf = false
+    editor = code --wait --new-window
+    whitespace = tabwidth=4,tab-in-indent
+[push]
+    default = current
+    followTags = true
+[pager]
+    branch = false
+[pull]
+    rebase = true
+    twohead = ort
+[rebase]
+    autoSquash = true
+    autoStash = true
+    # updateRefs = true
+    instructionFormat = %an -- %s
+[diff]
+    tool = bc
+    submodule = log
+    indentHeuristic = true
+    renameLimit = 20000
+    noprefix = true
+    # relative = true
+[difftool]
+    prompt = false
+[merge]
+    tool = bc
+    # ff = false # This interferes with `git merge --squash`
+    suppressDest = true # Added in Git 2.29
+[mergetool]
+    keepBackup = false
+    prompt = false
+[mergetool "bc"]
+    trustexitcode = true
+[fetch]
+    prune = true
+    recursesubmodules = false
+[grep]
+    extendregexp = true
+    linenumber = true
+[rerere]
+    enabled = true
+    autoUpdate = true
+[status]
+    submodulesummary = false
+    short = true
+    branch = true
+    relativePaths = false
+[submodule]
+    fetchJobs = 8
+[tag]
+    sort = v:refname
+    #forceSignAnnotated = true
+[checkout]
+    defaultRemote = origin
+[advice]
+    fetchShowForcedUpdates = true
+    pushUpdateRejected = false
+    pushNonFFCurrent = true
+    pushNonFFMatching = true
+    pushAlreadyExists = true
+    pushFetchFirst = true
+    pushNeedsForce = true
+    pushUnqualifiedRefname = true
+    statusAheadBehind = true
+    statusHints = false
+    statusUoption = true
+    commitBeforeMerge = false
+    resetQuiet = false
+    resolveConflict = false
+    sequencerInUse = true
+    implicitIdentity = true
+    detachedHead = false
+    checkoutAmbiguousRemoteBranchName = true
+    amWorkDir = false
+    rmHints = true
+    addEmbeddedRepo = true
+    ignoredHook = true
+    waitingForEditor = false
+    nestedTag = true
+    submoduleAlternateErrorStrategyDie = true
+    addEmptyPathspec = false
+[interactive]
+    singleKey = true
+[winUpdater]
+    recentlySeenVersion = 2.23.0.windows.1
+[sendemail]
+    suppresscc = self
+[lfs]
+    locksverify = false
+[filter "lfs"]
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
+[hooks]
+    enforcecompatiblefilenames = true
+[blame]
+    coloring = highlightRecent # highlightRecent or repeatedLines
+[safe]
+    directory = *
+
+#####################################################################
+## COLOR SETTINGS (http://cheat.errtheblog.com/s/git)
+#####################################################################
+
+[color]
+    #diff = auto # The default colors are too dark, not enough contrast
+    #status = auto
+    branch = auto
+    interactive = auto
+    ui = true
+    pager = true
+[color "status"]
+    added = green
+    changed = yellow
+    untracked = red
+[color "diff"]
+    meta = yellow bold
+    frag = magenta bold
+    old = red bold
+    new = green bold
+[color "blame"]
+    highlightRecent = 237, 20 month ago, 238, 19 month ago, 239, 18 month ago, 240, 17 month ago, 241, 16 month ago, 242, 15 month ago, 243, 14 month ago, 244, 13 month ago, 245, 12 month ago, 246, 11 month ago, 247, 10 month ago, 248, 9 month ago, 249, 8 month ago, 250, 7 month ago, 251, 6 month ago, 252, 5 month ago, 253, 4 month ago, 254, 3 month ago, 231, 2 month ago, 230, 1 month ago, 229, 3 weeks ago, 228, 2 weeks ago, 227, 1 week ago, 226
+
+[pretty]
+    lo  = tformat:%C(auto)%h%C(reset)%C(auto)%d%C(reset) %s %C(italic blue)%ad%C(reset) %C(241)%aN%C(reset)
+    lc  =  format:%C(auto)%h%C(reset) %C(white)-%C(reset) %C(italic blue)%ad%C(reset) %C(italic cyan)(%ar)%C(reset)%C(auto)%d%C(reset)%n %C(white)⤷%C(reset) %s %C(241)- %aN <%aE>%C(reset)%n
+    lt  =  format:%C(auto)%h%C(reset) %C(white)-%C(reset) %C(italic blue)%ad%C(reset) %C(italic cyan)(%ar)%C(reset)%C(auto)%d%C(reset)%n %C(white)⤷%C(reset) %s %C(241)- %aN <%aE>%C(reset)%n%w(0,7,7)%+(trailers:only,unfold)
+    lf  =  format:%C(auto)%H%C(reset)%C(auto)%d%C(reset)   %C(italic 239)[P: %p] [T: %t]%C(reset)%n%C(white)Author:%C(reset)   %aN %C(241)<%aE>%C(reset)%n          %C(italic blue)%ad%C(reset) %C(italic cyan)(%ar)%C(reset)%n%C(white)Commit:%C(reset)   %cN %C(241)<%cE>%C(reset)   %C(italic 239)[GPG: %G?% GK]%C(reset)%n          %C(italic blue)%cd%C(reset) %C(italic cyan)(%cr)%C(reset)%w(0,4,4)%n%n%C(bold)%s%C(reset)%n%n%-b%n%n%-N%n
+    rlo = tformat:%C(auto)%h%C(reset) %C(bold yellow)(%C(magenta)%gd%C(bold yellow))%C(reset)%C(auto)%d%C(reset) %gs %C(italic blue)%ad%C(reset) %C(241)%aN%C(reset)
+    rlc =  format:%C(auto)%h%C(reset) %C(white)-%C(reset) %C(italic blue)%ad%C(reset) %C(italic cyan)(%ar)%C(reset)%C(auto)%d%C(reset)%n %C(white)⤷%C(reset) %s %C(241)- %aN <%aE>%C(reset)%n %C(white)⤷%C(reset) %C(bold yellow)(%C(magenta)%gd%C(bold yellow))%C(reset) %gs %C(241)- %gN <%gE>%C(reset)%n
+    rlt =  format:%C(auto)%h%C(reset) %C(white)-%C(reset) %C(italic blue)%ad%C(reset) %C(italic cyan)(%ar)%C(reset)%C(auto)%d%C(reset)%n %C(white)⤷%C(reset) %s %C(241)- %aN <%aE>%C(reset)%n %C(white)⤷%C(reset) %C(bold yellow)(%C(magenta)%gd%C(bold yellow))%C(reset) %gs %C(241)- %gN <%gE>%C(reset)%n%w(0,7,7)%+(trailers:only,unfold)
+    rlf =  format:%C(auto)%h%C(reset) %C(bold yellow)(%C(magenta)%gd%C(bold yellow))%C(reset)%C(auto)%d%C(reset)   %C(italic 239)[P: %p] [T: %t]%C(reset)%n%C(white)Author:%C(reset)   %aN %C(241)<%aE>%C(reset)%n          %C(italic blue)%ad%C(reset) %C(italic cyan)(%ar)%C(reset)%n%C(white)Commit:%C(reset)   %cN %C(241)<%cE>%C(reset)   %C(italic 239)[GPG: %G?% GK]%C(reset)%n          %C(italic blue)%cd%C(reset) %C(italic cyan)(%cr)%C(reset)%n%C(white)Reflog:%C(reset)   %gN %C(241)<%gE>%C(reset)%n          %C(italic)%gs%C(reset)%w(0,4,4)%n%n%C(bold)%s%C(reset)%n%n%-b%n%n%-N%n
+    brs =  format:%(committerdate:short) -- %(authorname) -- %(refname:short)
+#     long-log-base = format:'\
+# %C(bold blue)%H%C(reset) %C(bold yellow)%d%C(reset)%n\
+#   > %C(dim white)Author:      %an <%ae>%C(reset) [%C(dim white)%C(bold cyan)%ad%C(reset) %C(green)(%ar)%C(reset)]%n\
+#   > %C(dim white)Committer:   %cn <%ce>%C(reset) [%C(dim white)%C(bold cyan)%cd%C(reset) %C(green)(%cr)%C(reset)]%n\
+#   > %C(dim white)GPG:         %G? %GS %GK%C(reset)%n\
+# %n\
+# %C(white)%B%C(reset)'
+#     short-log-base = format:'%C(bold blue)%h%C(reset) | %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)%an%C(reset) - %C(white)%s%C(reset)'
+
+#####################################################################
+## ALIASES
+#####################################################################
+[alias]
+
+    #################################################
+    ## Simple / Short Aliases
+    #################################################
+    cl      = clone #--recurse-submodules
+    mb      = merge-base
+    vc      = verify-commit
+    vt      = verify-tag
+    fb      = filter-branch
+    lsf     = ls-files -s
+    lst     = ls-tree
+    r       = remote
+
+    #################################################
+    ## Small Script Helpers
+    #################################################
+    resolve = "!f() { : git checkout ; git checkout --$1 -- $2 && git add -u $2; }; f"
+    move-untracked = !git ls-files --others --exclude-standard -z | cpio -pmd0 $1
+    delete-tag = "!f() { : git tag ; git push --delete $1 ${@:2}; git tag -d ${@:2}; }; f"
+    delete-untracked = !git ls-files --others --exclude-standard | sed 's/.*/\"&\"/' | xargs rm -rfv
+    trim-spaces = !git diff --cached --name-only | fix-whitespace
+    nuke = "!f() { : git branch ; git-nuke.sh \"$@\" ; }; f"
+    rename-branch = "!f() { : git branch ; git branch $3 $1/$2 && git push $1 $3 :$2 && git branch -D $3; }; f"
+    reset-path = "!f() { : git checkout ; rm -rf \"$2\" && git checkout \"$1\" -- \"$2\" ; }; f"
+    open = "!f() { : git show ; git-open-file.sh \"$1\" \"$2\"; }; f"
+    export = "!f() { git ls-tree -r --name-only ${3:-HEAD} $1 | git checkout-index -f --prefix ${2%/}/ --stdin; }; f"
+
+    cob = "!f() { : git branch ; [ -z "$1" ] && { echo "ERROR: Branch name required"; exit 1; } || { git checkout -b "$@" origin; } }; f"
+    # Exists because of a parsing bug: https://stackoverflow.com/a/48673516/157971
+    #cob2 = "!f() { : git branch ; git checkout -b \"$@\" && git branch -u @{-1}@{upstream}; }; f"
+
+    #################################################
+    ## Index / Staging / Adding / Checkout
+    #################################################
+
+    # add
+    a = add
+    aa = add .
+    ap = add --patch
+    au = add --update
+    addw = "!f() { : git branch ; git diff -U0 -w --no-color \"$@\" | git apply -p0 --cached --ignore-whitespace --unidiff-zero -; }; f"
+
+    ui = update-index
+    co = checkout
+    cop = "!f() { git checkout \"$1\" && git pull; }; f"
+    cof = "!f() { git checkout \"$1\" && git merge --ff-only @{u}; }; f"
+    cot = checkout --track
+    coi = checkout-index
+    col = "!f() { git show $1:\"$2\" > \"$2\"; }; f"
+    chmod = update-index --chmod
+
+    #################################################
+    ## Stash
+    #################################################
+    s = stash
+    ss = stash push
+    sp = stash pop
+    sl = stash list --pretty=rlc
+    sa = stash apply
+    sd = stash drop
+
+    #################################################
+    ## Status / Working Copy / Remote
+    #################################################
+    st = status
+    stm = status --ignore-submodules
+    sta = status -uall
+    stv = for-each-ref --format '%(HEAD) %(refname:short) %(color:bold blue)%(upstream:track)%(color:reset)' refs/heads
+    fer = for-each-ref
+
+    #################################################
+    ## Branching
+    #################################################
+
+    # IMPLEMENTATION DETAIL, DO NOT USE
+    branch-sort = "!f() { : git branch ; git for-each-ref --sort=committerdate $1 --format='%(committerdate:short) -- %(authorname) -- %(refname:short)'; }; f"
+
+    br = branch
+    brl = branch -a --list
+    brs = "!git branch-sort refs/heads/"
+    brsr = "!f() { : git branch ; git branch-sort refs/remotes/${1:-origin}; }; f"
+
+    #################################################
+    ## Log Viewing / Searching
+    #################################################
+
+    # Logs
+    l  = log --pretty=lo --date=human --graph
+    lt = log --pretty=lt --date=human --graph
+    ls = log --pretty=lo --date=human --graph --simplify-by-decoration
+    lf = log --pretty=lf --date=human --graph
+    ld = log --pretty=lf --date=human --graph --cc --stat
+    lp = log --pretty=lf --date=human --graph --cc
+
+    # Logs, Linear (no graph)
+    ll  = log --pretty=lt --date=human
+    llp = log --pretty=lt --date=human --first-parent
+    llf = log --pretty=lf --date=human --first-parent
+
+    # Logs, Start from Upstream
+    lb  = log --pretty=lt --date=human --graph @{upstream}..
+    lbf = log --pretty=lf --date=human --graph @{upstream}..
+    lbd = log --pretty=lf --date=human --graph --cc --stat @{upstream}..
+    lbp = log --pretty=lf --date=human --graph --cc @{upstream}..
+
+    # Reflog
+    rl  = "!f() { : git branch ; git reflog --pretty=rlc $@ ; }; f"
+
+    g = grep -Ii --break --heading --line-number
+    lasts =  "!f() { : git log ; git --no-pager log --pretty=fuller --date=iso-local --no-decorate -1 \"$@\"; }; f"
+    last = "!f() { : git log ; git --no-pager log --pretty=fuller --date=iso-local --no-decorate --name-status -1 \"$@\"; }; f"
+    changelog = "!f() { : git log ; git log --no-merges --pretty=format:'* %s%n%w(0,2,2)%b' --reverse \"$@\" | perl -0777pe 's/((?:^|\\n)\\* .*?\\n(?!\\n))/$1\\n/g'; }; f"
+    changelog2 = "!f() { : git log ; git log --no-merges --pretty=format:'* %s%n%w(80,2,2)%b' --reverse \"$@\" | perl -0777pe 's/((?:^|\\n)\\* .*?\\n(?!\\n))/$1\\n/g'; }; f"
+
+    #################################################
+    ## Push / Pull / Fetch
+    #################################################
+
+    # Push
+    pu   = push
+    pun  = push --no-verify
+    puf  = push --force-with-lease
+    puff = push --force
+
+    # Pull
+    p  = pull
+    pi = pull --rebase=interactive
+
+    # Fetch
+    f  = fetch
+    fa = fetch --all
+    fo = fetch origin
+
+    # Reset
+    re = reset
+    res = reset --soft
+    reh = reset --hard
+    rep = reset --patch
+
+    # Script Helpers
+    #pushdel = "!f() { : git push ; git-push-delete.sh \"$1\" \"$2\" ; }; f"
+    #pullc = "!f() { : git pull ; git pull $1 \"$(git rev-parse --symbolic-full-name HEAD)\" ; }; f"
+    #pushc = "!f() { : git push ; git-push-current.sh \"$@\" ; }; f"
+
+    #################################################
+    ## Diffing / Patching / Blaming / Tools
+    #################################################
+    fp = format-patch
+    mt = mergetool
+    d = diff
+    dc = diff --cached
+    ds = "!f() { : git diff ; git diff-stat \"$@\" ; }; f"
+    db = "!f() { : git diff ; git diff $(git merge-base @{upstream} HEAD) \"$@\" ; }; f"
+    dbs = "!f() { : git diff ; git diff-stat $(git merge-base @{upstream} HEAD) \"$@\" ; }; f"
+    dtb = "!f() { : git diff ; git dt $(git merge-base @{upstream} HEAD) \"$@\" ; }; f"
+    dts = difftool
+    dtsc = difftool --cached
+    dt = difftool -d
+    dtc = difftool --cached -d
+    conflicts = diff --name-only --diff-filter=U
+    patch = log --pretty=email --patch-with-stat --reverse --full-index --binary
+    lsc = diff --name-status
+    lscb = "!f() { : git diff ; git lsc $(git merge-base @{upstream} HEAD) ; }; f"
+    ama = am --abort
+    amc = am --continue
+    ams = am --skip
+    bl = blame --date=short -w --no-merges -M --follow
+
+    #################################################
+    ## Commit / Merge / Rebase / Cherry Pick
+    #################################################
+    ci = commit
+    civ = commit -v
+    cia = commit --amend
+    cif = commit --fixup
+    cis = commit --squash
+    cip = commit --patch
+    amend = commit --amend --no-edit
+    aamend = commit -a --amend --no-edit
+    m = merge --no-ff --edit
+    ma = merge --abort
+    ms = merge --squash
+    mark = commit --allow-empty -m '--------------------------------------------'
+    #smcommit = "!f() { git commit -m \"$(printf \"Updated $1 Submodule\n\n\"; git diff \"$1\")\" --edit -- $1; }; f"
+    ff = merge --ff-only
+    rb = rebase
+    rbi = rebase --interactive
+    rbc = rebase --continue
+    rba = rebase --abort
+    rbs = rebase --skip
+    ch = cherry -v
+    cp = cherry-pick
+    cpa = cherry-pick --abort
+    cpc = cherry-pick --continue
+    ra = revert --abort
+    rc = revert --continue
+
+    #################################################
+    ## Submodule Helpers
+    #################################################
+    sm = submodule
+    smu = submodule update --init --recursive
+    smur = submodule update --init --recursive --remote
+    run = "!f() { git \"$@\" && git submodule foreach --recursive git \"$@\"; }; f"
+    runc = "!f() { \"$@\" && git submodule foreach --recursive \"$@\"; }; f"
+    rp = "!f() { : git log ; git rev-parse \"$@\" ; }; f"
+
+#####################################################################
+## CONDITIONAL OVERRIDES
+#####################################################################
+# These must be at the bottom of the file so they can override common values
+
+[include]
+    path = ~/.gitconfig.local
+
+#####################################################################

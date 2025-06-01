@@ -1,0 +1,4 @@
+[".bash_completion.d/complete_alias"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/cykerway/complete-alias/master/complete_alias"
+    refreshPeriod = "168h" # Refresh weekly

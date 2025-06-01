@@ -1,0 +1,29 @@
+# Load modular bash configuration
+for config_file in ~/.config/bash/*.sh; do
+    [[ -r "$config_file" ]] && source "$config_file"
+done
+
+# Load aliases
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+# Import machine-specific settings (`.local` files are excluded from git)
+if [ -f ~/.bashrc.local ]; then
+    . ~/.bashrc.local
+fi
+
+# VS Code integration fix for Windows
+if [ "$TERM_PROGRAM" == "vscode" ]; then
+    tmp="$HOME"
+    . "$(code --locate-shell-integration-path bash)"
+    export HOME="$tmp"
+fi
+
+# Kubernetes
+if command -v kubectl &> /dev/null; then
+    source <(kubectl completion bash)
+    alias k=kubectl
+    complete -o default -F __start_kubectl k
+    alias kz="kubectl kustomize"
+fi

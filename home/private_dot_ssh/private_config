@@ -1,0 +1,25 @@
+
+# Send keep-alive messages every 2 minutes to prevent connection timeouts
+# Helps maintain long-running SSH sessions and prevents firewall disconnections
+ServerAliveInterval 120
+
+# Hash hostnames and addresses in the known_hosts file for better security
+# HashKnownHosts yes
+
+# Automatically request a pseudo-terminal for interactive sessions
+# Ensures proper terminal handling for commands that need TTY access
+RequestTTY auto
+
+# Automatically add SSH keys to the agent when they're used
+# Eliminates the need to manually run ssh-add after each reboot
+AddKeysToAgent yes
+
+# Store SSH key passphrases in the system keychain (macOS/Windows)
+# Provides secure, persistent storage without repeatedly entering passphrases
+# IgnoreUnknown prevents errors on systems that don't support this feature
+IgnoreUnknown UseKeychain
+UseKeychain yes
+
+# Load additional SSH configurations from modular config files
+# Allows organizing host-specific settings into separate, manageable files
+Include config.d/*.ssh

@@ -1,0 +1,33 @@
+{{- $email := promptStringOnce . "email" "Email address" -}}
+
+{{- $env := promptChoiceOnce . "env" "Choose Environment"
+    (list "work" "personal" "other") "other" -}}
+
+{{- $ssh_azure_hosts := "" -}}
+{{- if eq $env "work" -}}
+{{- $ssh_azure_hosts := promptStringOnce . "ssh_azure_hosts"
+    "Additional self-hosted AzDO hostnames for SSH" "" -}}
+{{- end -}}
+
+color = "on"
+
+[data]
+    email = {{ $email | quote }}
+    env = {{ $env | quote }}
+    ssh_azure_hosts = {{ $ssh_azure_hosts | quote }}
+
+[edit]
+{{- if lookPath "code" }}
+    command = "code"
+    args = ["--wait", "--new-window"]
+{{- else if lookPath "nano" }}
+    command = "nano"
+{{- end }}
+
+[merge]
+    command = "bcomp"
+    args = [
+        {{ printf "%q" "{{ .Destination }}" }},
+        {{ printf "%q" "{{ .Target }}" }},
+        {{ printf "%q" "{{ .Source }}" }}
+    ]

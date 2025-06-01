@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+filename=$(basename "$1")
+tempfile=$(mktemp -t git-open.XXXX.$filename) || exit 1
+
+git show $1 > $tempfile
+notepad++ -multiInst -nosession -noPlugin $tempfile
+
+rm $tempfile

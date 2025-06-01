@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Checkout branch and recursively update submodules
+git checkout "$1" && git submodule update --init --recursive .

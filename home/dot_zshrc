@@ -1,0 +1,3 @@
+eval "$(oh-my-posh init zsh --config ~/oh-my-posh/json.omp.json)"
+
+source ~/.bash_aliases

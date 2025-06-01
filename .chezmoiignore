@@ -1,0 +1,3 @@
+# Machine-specific files that should not be tracked by chezmoi
+
+.gitconfig.local

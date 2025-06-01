@@ -1,0 +1,6 @@
+#!/bin/bash
+# From: https://gist.github.com/hartym/2584767
+IFS=$'\n'
+for i in `git stash list --format="%gd"`; do
+    git stash show -p $i | grep -H --label="$i" "$1"
+done

@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+#smcommit = "!f() { git commit -m \"$(printf \"Updated $1 Submodule\n\n\"; git diff \"$1\")\" --edit -- $1; }; f"
+
+submod="${1%/}"
+
+# Check if the specified submodule exists. If it doesn't, this will have a non-zero return code.
+# This will cause the script to exit. The "./" in front allows relative paths to the submodule
+# directories to be used from any directory
+last_sha1=$(git rev-parse ":./$submod" 2> /dev/null)
+if [[ $? != 0 ]]; then
+    echo "ERROR: The specified submodule does not exist"
+    exit 1
+fi
+
+# If the submodule has not physically changed (i.e. pointing to a different SHA1) then we don't
+# care.
+diff_result=$(git diff --submodule=short --ignore-submodules=dirty -- "$submod")
+if [[ -z "$diff_result" ]]; then
+    echo "ERROR: That submodule is already up to date"
+    exit 1
+fi
+
+cd "$1"
+
+getChangelogs() {
+    git --no-pager log --oneline --no-decorate --no-merges --format="* %an - %s" $1..$2
+}
+
+commits_forward=$(getChangelogs $last_sha1 HEAD)
+commits_backward=$(getChangelogs HEAD $last_sha1)
+
+cd - > /dev/null
+
+buildLogSection() {
+    # $1: The header message for the group of logs
+    # $2: The string of logs to add
+    if [[ ! -z "$2" ]]; then
+        echo -e "$1\n\n$2"
+    fi
+}
+
+introduced_section=$(buildLogSection "Introduced Commits:" "$commits_forward")
+rewound_section=$(buildLogSection "Rewound Commits:" "$commits_backward")
+
+if [ "$commits_forward" ]; then addspace=$'\n\n'; fi
+
+read -r -d '' commit_message << EOF
+Updated $submod Submodule
+
+${introduced_section}${addspace}${rewound_section}
+EOF
+
+git commit -m "$commit_message" --edit "$@" -- "$submod"

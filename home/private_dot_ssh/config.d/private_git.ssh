@@ -1,0 +1,5 @@
+Host github.com
+    IdentityFile ~/.ssh/keys/github
+
+Host ssh.dev.azure.com
+    IdentityFile ~/.ssh/keys/azure

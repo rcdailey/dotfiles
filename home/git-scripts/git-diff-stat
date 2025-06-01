@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+git diff --stat=$COLUMNS --stat-graph-width=$(($COLUMNS/5)) "$@"

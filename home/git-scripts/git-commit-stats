@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+import subprocess, re, sys
+from collections import defaultdict
+from tabulate import tabulate
+from unidecode import unidecode
+from operator import itemgetter
+
+max_rows = 0
+if len(sys.argv) > 1:
+    max_rows = int(sys.argv[1])
+
+stats = {(,), }
+
+#def LookupUser(author, email):
+#    for entry in stats:
+#        if email in entry[1]:
+#            return entry
+#        
+#        # If unable to match by 
+#        authors = {v.lower() for v in entry[0] if ' ' in v}
+#        if author in authors:
+#            print('found by author')
+#            return entry
+#    # authors, emails, commits
+#    return stats[-1]
+#    
+#def ConsolidateStats():
+#    consolidated_stats = []
+#    # Consolidate by "First Last" matches first
+#    for entry in stats:
+#        authors = {v.lower() for v in entry[0] if ' ' in v}
+#        was_consolidated = False
+#        for consolidated_entry in consolidated_stats:
+#            consolidated_authors = {v.lower() for v in consolidated_entry[0] if ' ' in v}
+#            delta = authors - consolidated_authors
+#            if len(delta):
+#                print('found by author: {}'.format(delta))
+#                consolidated_entry[0] |= 
+#                was_consolidated = True
+#                break;
+
+def RecordStats(commits, author, email):
+    stats.append([{author}, {email.lower()}, commits])
+
+output = subprocess.run(['git', 'shortlog', '-sne', '--no-merges'], capture_output=True, universal_newlines=True, encoding='utf-8')
+for line in output.stdout.splitlines():
+    match = re.match(r'^\s*(\d+)\s+(.+?)\s+<(.+@\w+\.\w+)>\s*$', line)
+    if match:
+        RecordStats(match[1], match[2], match[3])
+
+ConsolidateStats()
+exit(0)
+
+table = []
+for authors, emails, commits in stats:
+    combined_emails = ', '.join(emails)
+    table.append([commits, max(authors, key=len), combined_emails])
+
+table = sorted(table, key=itemgetter(0), reverse=True)
+
+if max_rows > 0:
+    table = table[:max_rows]
+
+print(tabulate(table, headers=['Commits', 'Author', 'Email(s)'], tablefmt='orgtbl'))
