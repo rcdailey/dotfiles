@@ -4,6 +4,7 @@ alias paste="cat /dev/clipboard"
 alias cls="clear && clear"
 alias keygen-ed25519="ssh-keygen -t ed25519 -a 100 -P ''"
 alias c="docker compose"
+alias cm="chezmoi"
 #alias posts='find content/posts -type f | sort | more'
 
 # Disable this since -P doesn't work on MacOS
