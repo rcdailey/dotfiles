@@ -4,6 +4,13 @@
 
 chezmoi manages dotfiles across multiple machines using templates and scripts.
 
+## Essential Knowledge
+
+- `.chezmoiignore` files are already treated as templates, so they do not need `.tmpl` extensions.
+- Chezmoi requires all chezmoi-specific files except `.chezmoiroot` to be in the `home/` dir.
+- All paths in `.chezmoiignore` must represent the paths in the actual system home directory (e.g.
+  `.ssh/config`), not the path in the chezmoi repo (e.g. `private_dot_ssh/private_config`).
+
 ## File Naming
 
 ### Prefixes

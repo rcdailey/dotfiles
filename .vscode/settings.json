@@ -1,5 +1,6 @@
 {
   "files.associations": {
-    "dot_gitconfig": "properties"
+    "dot_gitconfig": "properties",
+    ".chezmoiignore": "ignore"
   }
 }

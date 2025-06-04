@@ -1,3 +1,7 @@
 # Machine-specific files that should not be tracked by chezmoi
-
 .gitconfig.local
+
+# Exclude files when env is not set to personal
+{{ if ne .env "personal" }}
+.ssh/config.d/personal.ssh
+{{ end }}
