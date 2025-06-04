@@ -11,6 +11,20 @@ alias cm="chezmoi"
 # alias grep="grep -P"
 
 #-------------------------------------------------------------
+# Note on Platform-specific Aliases
+#-------------------------------------------------------------
+# Some aliases (like `ls`) are defined in platform-specific files:
+# - ~/.config/bash/platforms/darwin.sh (macOS)
+# - ~/.config/bash/platforms/linux.sh (Linux)
+# - ~/.config/bash/platforms/windows.sh (Windows)
+
+#-------------------------------------------------------------
+# Kubernetes aliases
+#-------------------------------------------------------------
+alias k="kubectl"
+alias kz="kubectl kustomize"
+
+#-------------------------------------------------------------
 # change directory
 #-------------------------------------------------------------
 alias 1..='cd ..'
