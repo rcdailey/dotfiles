@@ -1,0 +1,13 @@
+#!/usr/bin/env pwsh
+$ErrorActionPreference = "Stop"
+
+# Exit early if already installed
+if (Get-Command delta -ErrorAction SilentlyContinue) { exit 0 }
+
+{{ if eq .chezmoi.os "windows" }}
+if (-not (Get-Command choco -ErrorAction SilentlyContinue)) { exit 1 }
+Start-Process -FilePath "choco" -ArgumentList "install", "delta", "-y" -Verb RunAs -Wait
+{{ else }}
+if (-not (Get-Command brew -ErrorAction SilentlyContinue)) { exit 1 }
+brew install git-delta
+{{ end }}

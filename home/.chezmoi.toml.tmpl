@@ -11,6 +11,16 @@
 
 color = "on"
 
+[diff]
+    pager = "delta"
+
+[interpreters.sh]
+    command = "bash"
+
+[interpreters.ps1]
+    command = "pwsh"
+    args = ["-ExecutionPolicy", "Bypass", "-File"]
+
 [data]
     email = {{ $email | quote }}
     env = {{ $env | quote }}

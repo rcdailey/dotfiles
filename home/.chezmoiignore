@@ -5,3 +5,8 @@
 {{ if ne .env "personal" }}
 .ssh/config.d/personal.ssh
 {{ end }}
+
+# Only install powershell on non-windows platforms
+{{ if eq .chezmoi.os "windows" }}
+.chezmoiscripts/01-install-pwsh.sh
+{{ end }}

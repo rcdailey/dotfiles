@@ -1,6 +1,9 @@
 {
   "files.associations": {
-    "dot_gitconfig": "properties",
-    ".chezmoiignore": "ignore"
+    "*gitconfig.tmpl": "properties",
+    ".chezmoiignore": "ignore",
+    "*.sh.tmpl": "shellscript",
+    "*.toml.tmpl": "toml",
+    "*.ps1.tmpl": "powershell",
   }
 }

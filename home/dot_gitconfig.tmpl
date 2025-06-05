@@ -11,6 +11,7 @@
     autocrlf = false
     editor = code --wait --new-window
     whitespace = tabwidth=4,tab-in-indent
+    pager = delta
 [push]
     default = current
     followTags = true
@@ -37,6 +38,7 @@
     tool = bc
     # ff = false # This interferes with `git merge --squash`
     suppressDest = true # Added in Git 2.29
+    conflictStyle = zdiff3
 [mergetool]
     keepBackup = false
     prompt = false
@@ -92,6 +94,7 @@
     addEmptyPathspec = false
 [interactive]
     singleKey = true
+    diffFilter = delta --color-only
 [winUpdater]
     recentlySeenVersion = 2.23.0.windows.1
 [sendemail]
@@ -372,3 +375,32 @@
     path = ~/.gitconfig.local
 
 #####################################################################
+
+#####################################################################
+## DELTA PAGER CONFIGURATION
+#####################################################################
+
+[delta]
+    navigate = true
+    dark = true
+    line-numbers = true
+    syntax-theme = Monokai Extended
+    paging = always
+
+    # Show file headers with icons
+    # file-style = bold yellow ul
+    # file-decoration-style = none
+
+    # Highlight moved code blocks
+    # detect-moved = true
+
+    # Better whitespace handling
+    # whitespace-error-style = 22 reverse
+
+    # Use features for organization
+    # features = line-numbers decorations
+
+# [delta "decorations"]
+#     commit-decoration-style = bold yellow box ul
+#     file-style = bold yellow ul
+#     file-decoration-style = none
