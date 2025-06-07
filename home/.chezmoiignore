@@ -6,7 +6,12 @@
 .ssh/config.d/personal.ssh
 {{ end }}
 
-# Only install powershell on non-windows platforms
+# Exclude when we're on Windows
 {{ if eq .chezmoi.os "windows" }}
 .chezmoiscripts/01-install-pwsh.sh
+{{ end }}
+
+# Exclude these files if we're not on MacOS
+{{ if ne .chezmoi.os "darwin" }}
+.config/iterm2
 {{ end }}

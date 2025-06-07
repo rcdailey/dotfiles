@@ -7,3 +7,9 @@
     type = "file"
     url = "https://github.com/dracula/mintty/raw/refs/heads/master/dracula.minttyrc"
     refreshPeriod = "168h" # Refresh weekly
+
+# Dracula theme for iTerm2 (macOS only)
+[".config/iterm2/themes/Dracula.itermcolors"]
+    type = "file"
+    url = "https://github.com/dracula/iterm/raw/master/Dracula.itermcolors"
+    refreshPeriod = "168h" # Refresh weekly
