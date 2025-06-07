@@ -1,4 +1,9 @@
-# Copilot Instructions for chezmoi
+# Copilot Instructions
+
+## 🚨 IMPORTANT: Always ask permission before making any file changes
+
+When a user reports an issue or asks about a problem, analyze and discuss potential solutions first.
+Only make changes after the user explicitly requests or approves them.
 
 ## 🚨 Always refer to <https://www.chezmoi.io> for authoritative information
 
