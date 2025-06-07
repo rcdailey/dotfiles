@@ -2,3 +2,8 @@
     type = "file"
     url = "https://raw.githubusercontent.com/cykerway/complete-alias/master/complete_alias"
     refreshPeriod = "168h" # Refresh weekly
+
+[".config/mintty/themes/dracula"]
+    type = "file"
+    url = "https://github.com/dracula/mintty/raw/refs/heads/master/dracula.minttyrc"
+    refreshPeriod = "168h" # Refresh weekly

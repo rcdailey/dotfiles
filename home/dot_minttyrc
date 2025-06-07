@@ -8,4 +8,4 @@ CtrlShiftShortcuts=yes
 ScrollbackLines=10000
 ConfirmExit=no
 FontHeight=9
-ThemeFile=flat-ui
+ThemeFile=.config/mintty/themes/dracula
