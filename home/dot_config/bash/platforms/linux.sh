@@ -11,4 +11,4 @@ if [ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
 fi
 
 # ls function for aliases - this is used by the aliases in dot_bash_aliases
-myls() { ls -hF --color "$@"; }
+myls() { command ls -hF --color "$@"; }
