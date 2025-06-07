@@ -7,4 +7,4 @@ export PATH="$HOME/AppData/Local/UniGetUI/Chocolatey/bin:$PATH"
 export NODE_SKIP_PLATFORM_CHECK=1
 
 # ls function for aliases (using standard ls with color support)
-myls() { command ls -hF --color "$@"; }
+myls() { \ls -hF --color "$@"; }
