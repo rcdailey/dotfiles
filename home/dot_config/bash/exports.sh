@@ -18,6 +18,10 @@ export COLUMNS
 export DOCKER_UID="$(id -u)"
 export DOCKER_GID="$(id -g)"
 
+# Terminal color support - enable 256-color and true color support across all platforms
+export TERM=xterm-256color
+export COLORTERM=truecolor
+
 # Disable husky pre-commit hooks (slows down git)
 export HUSKY_SKIP_HOOKS=1 # For legacy purposes
 export HUSKY=0 # This replaces HUSKY_SKIP_HOOKS
