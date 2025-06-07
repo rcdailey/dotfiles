@@ -119,3 +119,9 @@ chezmoi add --encrypt ~/.ssh/key
 - Start simple, add complexity gradually
 - Test on multiple machines
 - Keep secrets encrypted or in password managers
+
+## Git Configuration Notes
+
+- Git's `[color "decorate"]` settings only apply to automatic decorations with `--decorate`, not to
+  custom pretty formats using `%d`. Custom pretty formats require manual color coding or
+  post-processing to achieve different colors for local vs remote branches.
