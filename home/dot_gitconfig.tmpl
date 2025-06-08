@@ -290,11 +290,6 @@
     reh = reset --hard
     rep = reset --patch
 
-    # Script Helpers
-    #pushdel = "!f() { : git push ; git-push-delete.sh \"$1\" \"$2\" ; }; f"
-    #pullc = "!f() { : git pull ; git pull $1 \"$(git rev-parse --symbolic-full-name HEAD)\" ; }; f"
-    #pushc = "!f() { : git push ; git-push-current.sh \"$@\" ; }; f"
-
     #################################################
     ## Diffing / Patching / Blaming / Tools
     #################################################
@@ -334,7 +329,6 @@
     ma = merge --abort
     ms = merge --squash
     mark = commit --allow-empty -m '--------------------------------------------'
-    #smcommit = "!f() { git commit -m \"$(printf \"Updated $1 Submodule\n\n\"; git diff \"$1\")\" --edit -- $1; }; f"
     ff = merge --ff-only
     rb = rebase
     rbi = rebase --interactive
