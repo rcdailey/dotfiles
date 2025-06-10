@@ -8,3 +8,12 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
+
+# Kubernetes completion
+if command -v kubectl &> /dev/null; then
+    # Source kubectl completion
+    source <(kubectl completion bash)
+
+    # Set up completion for the 'k' alias
+    complete -F __start_kubectl k
+fi
