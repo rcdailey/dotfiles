@@ -1,0 +1,13 @@
+# Helmfile configuration
+
+# Suppress diff output during apply operations to avoid overwhelming output
+# This applies to individual releases - set suppressDiff: true for each release,
+# or use --suppress-diff flag on command line
+helmDefaults:
+  # Suppress diff output for all releases by default
+  diffArgs:
+  - --suppress-diff
+
+# NOTE: For auto-installing plugins without prompts during helmfile init,
+# use the command: helmfile init --force
+# This cannot be configured in the helmfile configuration file.
