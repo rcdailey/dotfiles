@@ -52,3 +52,9 @@ alias lt='myls -ltr'         # sort by date, most recent last
 alias lm='myls -al |more'    # pipe through 'more'
 alias lr='myls -lR'          # recursive ls
 alias tree='tree -Csu'     # nice alternative to 'recursive ls'
+
+#-------------------------------------------------------------
+# chezmoi git shortcuts
+#-------------------------------------------------------------
+alias cmci='chezmoi git -- caa'
+alias cmst='chezmoi git -- st'

@@ -188,7 +188,7 @@
 
     # add
     a = add
-    aa = add .
+    aa = add -A
     ap = add --patch
     au = add --update
     addw = "!f() { : git branch ; git diff -U0 -w --no-color \"$@\" | git apply -p0 --cached --ignore-whitespace --unidiff-zero -; }; f"
@@ -323,6 +323,7 @@
     cif = commit --fixup
     cis = commit --squash
     cip = commit --patch
+    caa = "!f() { : git commit ; git add -A && git commit \"$@\"; }; f"
     amend = commit --amend --no-edit
     aamend = commit -a --amend --no-edit
     m = merge --no-ff --edit

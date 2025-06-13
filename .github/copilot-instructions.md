@@ -44,6 +44,42 @@ chezmoi manages dotfiles across multiple machines using templates and scripts.
 - `.chezmoiignore`: Ignore patterns
 - `.chezmoiexternal.toml`: External files/repos
 
+## Scripts
+
+Scripts go in `home/.chezmoiscripts/` and are executed in alphabetical order according to the chezmoi documentation. This is why numbering is used in script filenames (e.g., `run_01_install_packages.sh`, `run_02_configure_tools.sh`).
+
+### Script Types
+
+- `run_`: Execute every time on `chezmoi apply`
+- `run_onchange_`: Execute only when script content changes
+- `run_once_`: Execute once per unique content version (tracked by SHA256 hash)
+- `run_before_`: Execute before file operations
+- `run_after_`: Execute after file operations
+
+### Script Execution Order
+
+- Scripts are sorted alphabetically before execution
+- Each script type (`run_`, `run_onchange_`, `run_once_`, etc.) is sorted independently
+- Use numeric prefixes to control execution order within each script type based on dependencies
+- Consider what needs to run first (package installation, tool setup, configuration)
+- Name scripts descriptively while maintaining proper ordering
+
+### Examples
+
+```text
+home/.chezmoiscripts/
+├── run_01_early_setup.sh
+├── run_02_late_setup.sh
+├── run_after_01_cleanup.sh
+├── run_after_02_final_tasks.sh
+├── run_before_01_prepare.sh
+├── run_before_02_validate.sh
+├── run_onchange_01_install_homebrew.sh
+├── run_onchange_02_install_packages.sh
+├── run_once_01_configure_git.sh
+└── run_once_02_setup_ssh.sh
+```
+
 ## Essential Commands
 
 ```bash
