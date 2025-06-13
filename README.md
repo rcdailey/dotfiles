@@ -9,6 +9,7 @@ Personal dotfiles cheat sheet for quick setup and daily use.
 **macOS/Linux - Homebrew:**
 
 ```bash
+sudo apt update && sudo apt install -y build-essential procps curl file git
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
