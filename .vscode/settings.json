@@ -5,5 +5,6 @@
     "*.sh.tmpl": "shellscript",
     "*.toml.tmpl": "toml",
     "*.ps1.tmpl": "powershell",
+    "*_config": "ssh_config"
   }
 }

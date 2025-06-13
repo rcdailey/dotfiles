@@ -27,3 +27,7 @@ Host ha
 Host nezuko 192.168.1.58
     User root
     IdentityFile ~/.ssh/keys/nezuko
+
+Host marin 192.168.1.59
+    User robert
+    IdentityFile ~/.ssh/keys/marin
