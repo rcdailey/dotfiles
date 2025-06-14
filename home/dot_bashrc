@@ -14,8 +14,8 @@ if [ -f ~/.bashrc.local ]; then
 fi
 
 # VS Code integration fix for Windows
-if [ "$TERM_PROGRAM" == "vscode" ]; then
-    tmp="$HOME"
-    . "$(code --locate-shell-integration-path bash)"
-    export HOME="$tmp"
-fi
+# if [ "$TERM_PROGRAM" == "vscode" ]; then
+#     tmp="$HOME"
+#     . "$(code --locate-shell-integration-path bash)"
+#     export HOME="$tmp"
+# fi
