@@ -39,20 +39,9 @@ main() {
     # Check if kubectl is installed
     if ! command -v kubectl >/dev/null 2>&1; then
         log_error "kubectl is not installed. Please install kubectl first."
-        echo "  On macOS: brew install kubectl"
-        echo "  Or visit: https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/"
+        echo "  Visit: https://kubernetes.io/docs/tasks/tools/"
         exit 1
     fi
-
-    # Validate we can reach the host
-    log_info "Testing connectivity to $CLUSTER_HOST..."
-    if ! ping -c 1 "$CLUSTER_HOST" >/dev/null 2>&1; then
-        log_error "Cannot reach $CLUSTER_HOST"
-        echo "  Make sure the hostname resolves and the server is running"
-        echo "  Try: ping $CLUSTER_HOST"
-        exit 1
-    fi
-    log_success "Host $CLUSTER_HOST is reachable"
 
     # Create kubectl directory
     log_info "Creating kubectl config directory..."
@@ -68,20 +57,12 @@ main() {
     log_info "Copying K3s configuration from $CLUSTER_HOST..."
     if ! scp "$CLUSTER_HOST:/etc/rancher/k3s/k3s.yaml" "$KUBECTL_CONFIG"; then
         log_error "Failed to copy config from $CLUSTER_HOST"
-        echo "  Make sure you have SSH access to $CLUSTER_HOST"
-        echo "  Make sure K3s is running on $CLUSTER_HOST"
         exit 1
     fi
 
     # Fix the server endpoint
     log_info "Updating server endpoint from localhost to $CLUSTER_HOST..."
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS sed
-        sed -i '' "s/127.0.0.1/$CLUSTER_HOST/" "$KUBECTL_CONFIG"
-    else
-        # Linux sed
-        sed -i "s/127.0.0.1/$CLUSTER_HOST/" "$KUBECTL_CONFIG"
-    fi
+    sed "s/127.0.0.1/$CLUSTER_HOST/" "$KUBECTL_CONFIG" > "$KUBECTL_CONFIG.tmp" && mv "$KUBECTL_CONFIG.tmp" "$KUBECTL_CONFIG"
 
     # Set proper permissions
     log_info "Setting secure permissions on config file..."
@@ -96,13 +77,8 @@ main() {
         log_success "🎉 kubectl setup complete!"
         echo "  Config file: $KUBECTL_CONFIG"
         echo "  Cluster: $CLUSTER_HOST:6443"
-        echo "  You can now use kubectl commands"
     else
         log_error "kubectl connection test failed"
-        echo "  Check that:"
-        echo "  - K3s is running on $CLUSTER_HOST"
-        echo "  - Port 6443 is accessible"
-        echo "  - Your SSH user has access to /etc/rancher/k3s/k3s.yaml"
         exit 1
     fi
 }

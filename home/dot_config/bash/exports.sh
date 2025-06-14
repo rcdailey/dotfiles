@@ -3,7 +3,7 @@
 # Editor and paging
 export EDITOR="code"
 export LESS="-RSic~ -x2"
-export PAGER="less"
+export DELTA_PAGER="less"
 export PSQL_PAGER="pspg"
 export LESSHISTSIZE=0
 export LESSCHARSET=UTF-8
