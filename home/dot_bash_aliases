@@ -24,6 +24,11 @@ alias cm="chezmoi"
 alias k="kubectl"
 alias kz="kubectl kustomize"
 
+# Set up kubectl completion for aliases (after aliases are defined)
+if command -v kubectl &> /dev/null; then
+    complete -o default -F __start_kubectl k
+fi
+
 #-------------------------------------------------------------
 # change directory
 #-------------------------------------------------------------
