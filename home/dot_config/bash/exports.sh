@@ -8,6 +8,12 @@ export PSQL_PAGER="pspg"
 export LESSHISTSIZE=0
 export LESSCHARSET=UTF-8
 
+# XDG Base Directory Specification - consistent across all platforms
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_STATE_HOME="$HOME/.local/state"
+
 # History control
 export HISTCONTROL=ignoreboth
 export HISTSIZE=1000
