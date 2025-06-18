@@ -8,6 +8,15 @@ export PSQL_PAGER="pspg"
 export LESSHISTSIZE=0
 export LESSCHARSET=UTF-8
 
+# Unset GIT_PAGER if running inside VS Code integrated terminal
+# This addresses a bug where GIT_PAGER is set to `cat` by the Copilot extension.
+if [ "$TERM_PROGRAM" = "vscode" ]; then
+  unset GIT_PAGER
+fi
+
+# Enable globstar for ** pattern matching (recursively match directories)
+shopt -s globstar
+
 # XDG Base Directory Specification - consistent across all platforms
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
