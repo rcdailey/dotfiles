@@ -14,6 +14,8 @@ if [ "$TERM_PROGRAM" = "vscode" ]; then
   unset GIT_PAGER
 fi
 
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
+
 # Enable globstar for ** pattern matching (recursively match directories)
 shopt -s globstar
 

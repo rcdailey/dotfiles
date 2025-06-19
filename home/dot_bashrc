@@ -12,10 +12,3 @@ fi
 if [ -f ~/.bashrc.local ]; then
     . ~/.bashrc.local
 fi
-
-# VS Code integration fix for Windows
-# if [ "$TERM_PROGRAM" == "vscode" ]; then
-#     tmp="$HOME"
-#     . "$(code --locate-shell-integration-path bash)"
-#     export HOME="$tmp"
-# fi
