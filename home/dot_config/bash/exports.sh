@@ -17,7 +17,10 @@ fi
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
 
 # Enable globstar for ** pattern matching (recursively match directories)
-shopt -s globstar
+# Only enable if bash version 4.0 or higher (globstar was added in bash 4.0)
+if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+    shopt -s globstar
+fi
 
 # XDG Base Directory Specification - consistent across all platforms
 export XDG_CONFIG_HOME="$HOME/.config"

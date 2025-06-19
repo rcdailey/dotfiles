@@ -1,5 +1,8 @@
 # macOS-specific configurations
 
+# Disable macOS zsh migration warning
+export BASH_SILENCE_DEPRECATION_WARNING=1
+
 # Enable color support
 export CLICOLOR=1
 export LSCOLORS=ExFxBxDxCxegedabagacad
