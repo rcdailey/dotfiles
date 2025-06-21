@@ -48,8 +48,7 @@ alias 8..='cd ../../../../../../../..'
 # Note: myls function is defined in platform-specific files
 
 alias ls='myls'
-alias ll='myls -l --group-directories-first'
-alias la='myls -Al --group-directories-first'
+alias ll='myls -Al --group-directories-first'
 alias lx='myls -lXB'         # sort by extension
 alias lk='myls -lSr'         # sort by size, biggest last
 alias lc='myls -ltcr'        # sort by and show change time, most recent last
