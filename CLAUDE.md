@@ -161,6 +161,56 @@ chezmoi add --encrypt ~/.ssh/key
 - Test on multiple machines
 - Keep secrets encrypted or in password managers
 
+## Repository Structure & Patterns
+
+### Key Directories
+- `home/` - All chezmoi-managed files (required by chezmoi)
+- `home/.chezmoitemplates/` - Custom templates (e.g., `powershell-profile.ps1`)
+- `home/.chezmoiscripts/` - Install/setup scripts with platform detection
+- `home/git-scripts/` - Custom git utility commands (all executable)
+- `home/private_dot_ssh/` - SSH configuration with private permissions
+- `home/dot_config/` - Application configurations organized by tool
+- `home/dot_local/bin/` - Custom executable scripts
+
+### Existing Configuration Files
+- `home/dot_bash_aliases` - Bash aliases including `cm="chezmoi"`
+- `home/dot_gitconfig.tmpl` - Git configuration with template variables
+- `home/.chezmoi.toml.tmpl` - Main chezmoi config with interactive prompts
+- `home/.chezmoiexternal.toml` - External file/repo management
+- `home/.chezmoiignore` - Global ignore patterns
+
+### Platform-Specific Patterns
+- **Bash**: Uses `home/dot_config/bash/platform.sh.tmpl` to include platform-specific files
+  - `platforms/darwin.sh` - macOS-specific (Homebrew, LSCOLORS)
+  - `platforms/linux.sh` - Linux-specific configurations  
+  - `platforms/windows.sh` - Windows/WSL-specific configurations
+- **PowerShell**: Dual profile locations for compatibility
+  - `Documents/PowerShell/Microsoft.PowerShell_profile.ps1.tmpl`
+  - `dot_config/powershell/Microsoft.PowerShell_profile.ps1.tmpl`
+- **Scripts**: Cross-platform install scripts (`.sh` and `.ps1` versions)
+
+### Alias Patterns
+- **Bash**: `alias name="command"` (in `dot_bash_aliases`)
+- **PowerShell**: `function Name { command @args }; New-Alias alias Name -Force`
+
+### Template Data Available
+Based on `.chezmoi.toml.tmpl`, templates have access to:
+- `.email` - User email address (prompted during init)
+- `.env` - Environment: "work", "personal", or "other"  
+- `.ssh_azure_hosts` - Additional Azure DevOps hostnames (work env only)
+- Standard chezmoi variables (`.chezmoi.os`, `.chezmoi.hostname`, etc.)
+
+### Security Patterns
+- `private_` prefix for owner-only permissions (SSH configs)
+- Modular SSH config in `config.d/` directory
+- Interactive prompts for sensitive data rather than hardcoding
+
+### Git Utility Scripts
+The `git-scripts/` directory contains numerous custom git commands:
+- Branch management (`git-ff-branch`, `git-push-current`)
+- Repository analysis (`git-find-large-files.sh`, `git-commit-stats`)
+- Cleanup utilities (`git-nuke.sh`, `git-merged`)
+
 ## Git Configuration Notes
 
 - Git's `[color "decorate"]` settings only apply to automatic decorations with `--decorate`, not to
