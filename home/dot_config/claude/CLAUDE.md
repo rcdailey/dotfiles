@@ -60,10 +60,26 @@
 and best practices with the custom overrides specified below. These rules are non-negotiable and
 must be applied to ALL markdown files, documentation, README files, and any other markdown content.
 
+### Common Markdownlint Violations to Prevent
+
+**MANDATORY PREVENTION**: Claude Code must actively prevent these common violations found in
+real-world usage:
+
+- **MD013 (Line Length)**: MUST wrap lines at 100 characters, not 80. Hard-wrap any line
+  exceeding 100 characters while preserving formatting and indentation
+- **MD022 (Headings)**: MUST add blank line before AND after every heading
+- **MD032 (Lists)**: MUST surround all lists with blank lines (before first item, after last item)
+- **MD031 (Fenced Blocks)**: MUST surround all fenced code blocks with blank lines
+- **MD009 (Trailing Spaces)**: NEVER use trailing spaces for line breaks, always use `<br/>`
+- **MD047 (File Ending)**: MUST end every file with exactly one newline character
+
+**Critical Implementation**: These violations are detected in real projects and must be prevented
+proactively during content creation, not fixed afterward.
+
 ### Base Markdownlint Compliance
 
 Claude Code must follow **ALL** markdownlint rules as defined in the official [markdownlint
-documentation][markdownlint-rules]. This includes but is not limited to:
+documentation][markdownlint-rules]. Key areas include:
 
 - Proper heading structure and formatting
 - Consistent list formatting and indentation
@@ -71,9 +87,6 @@ documentation][markdownlint-rules]. This includes but is not limited to:
 - Appropriate use of code blocks and inline code
 - Proper whitespace and line break handling
 - Document structure best practices
-
-The goal is comprehensive compliance with the entire markdownlint ruleset, not just a subset of
-rules.
 
 [markdownlint-rules]: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
 
@@ -83,109 +96,49 @@ The following custom rules **override** the default markdownlint behavior:
 
 #### Line Length (MD013 Override)
 
-- **Maximum line length**: 100 characters
-- **Hard-wrapping requirement**: MUST hard-wrap any line that exceeds 100 characters
-- **Use maximum space**: Fill lines to near the 100-character limit before wrapping
-- **Mandatory wrapping**: When a line reaches or exceeds 100 characters, immediately wrap to the
-  next line maintaining proper alignment and indentation
-- **Formatting preservation**: When wrapping, preserve bullet point alignment, list indentation,
-  and other structural formatting
-- **Exceptions**: URLs and markdown tables are exempt from this rule
+- **Maximum line length**: 100 characters (not default 80)
+- **Hard-wrapping requirement**: MUST hard-wrap any line exceeding 100 characters
+- **Formatting preservation**: Maintain bullet point alignment, list indentation, and structural
+  formatting when wrapping
+- **Exceptions**: URLs and markdown tables are exempt
 
 #### Hard Line Breaks (MD009 Override)
 
 - **No trailing spaces**: Never use trailing spaces for hard line breaks
 - **Always use `<br/>`**: Use HTML break tags for explicit line breaks
-- **Rationale**: Trailing spaces are invisible and cause formatting issues
 
 #### Duplicate Headings (MD024 Override)
 
-- **Allow duplicate headings**: Headings in the same document may have identical text
-- **Rationale**: Document structure may require repeated section names
+- **Allow duplicate headings**: Headings in same document may have identical text
 
 #### Reference Links (Custom Requirement)
 
-- **Prioritize reference links**: Use `[text][ref]` format over inline links
-- **Inline link limit**: Avoid inline links when the URL is long or complex
-- **Reference placement**:
-  - Single use: Place reference at bottom of current heading section
-  - Multiple use: Place reference at bottom of entire document
+- **Prioritize reference links**: Use `[text][ref]` format for long/complex URLs
+- **Reference placement**: Single use at section bottom, multiple use at document bottom
 - **Reference naming**: Use meaningful, descriptive reference names
 
-Example of preferred reference link format:
+#### Line Wrapping Implementation
 
-```markdown
-## Installation
+**Lists**: Maintain indentation alignment when wrapping
+**Paragraphs**: Continue at line start without additional indentation
+**Code blocks and URLs**: Never wrap, exempt from line length limits
 
-Follow the [installation guide][install-guide] to get started.
+### Markdown Creation Protocol
 
-### Advanced Setup
+**MANDATORY**: Claude Code must proactively ensure markdownlint compliance during content
+creation, not afterward.
 
-For complex configurations, see the [advanced guide][install-guide].
-
-[install-guide]: https://example.com/very/long/installation/guide/url
-```
-
-#### Line Wrapping Best Practices
-
-When wrapping long lines, maintain proper formatting:
-
-**Lists:**
-
-```markdown
-- This is a very long list item that exceeds the 100-character limit and
-  needs to be wrapped with proper indentation
-  - Nested items should maintain their indentation level when wrapped across
-    multiple lines
-```
-
-**Paragraphs:**
-
-```markdown
-This is a long paragraph that needs to be wrapped. The continuation should
-start at the beginning of the line without additional indentation unless
-required by the context.
-```
-
-**Code blocks and URLs remain unchanged:**
-
-```bash
-very-long-command --with-many-parameters --that-exceed-the-line-limit --but-should-not-be-wrapped
-```
-
-Visit [this very long
-URL](https://example.com/very/long/url/that/exceeds/character/limits/but/should/not/be/wrapped)
-
-### Enforcement Policy
-
-- **All markdown files** created or modified must pass markdownlint validation with the above custom
-  overrides
-- **Comprehensive compliance** with the entire markdownlint ruleset
-- **No exceptions** beyond those explicitly listed in the custom overrides
-- **Consistent application** across all markdown content
-
-#### Markdown Creation Protocol
-
-**MANDATORY**: Before completing any markdown content creation or modification, Claude must
-preemptively ensure compliance with all markdownlint rules and custom overrides.
-
-**Universal Application**: Apply these rules to ALL markdown content, including:
-
-- Any file containing markdown (regardless of extension)
-- Markdown-formatted responses and replies from Claude
+**Universal Application**: Apply to ALL markdown content including:
+- Files with any extension containing markdown
+- Claude responses and replies
 - Documentation within code files
-- Any other markdown content in any context
+- Any markdown content in any context
 
-**Pre-Completion Requirements**:
-
+**Pre-Completion Checklist**:
 - Line length ≤ 100 characters with proper hard-wrapping
-- Reference links used for complex URLs instead of inline links
-- No trailing spaces for line breaks (use `<br/>` instead)
-- Blank line after every heading before content
+- Blank lines around headings, lists, and fenced code blocks
+- No trailing spaces (use `<br/>` for line breaks)
 - Language specification for all fenced code blocks
-- Full markdownlint rule compliance
-- Custom overrides properly applied
-
-**Awareness Expectation**: Claude must be inherently aware of markdown formatting requirements
-and write compliant content from the start, rather than requiring post-creation validation
-tooling.
+- Reference links for complex URLs
+- Single trailing newline
+- Full markdownlint compliance with custom overrides
