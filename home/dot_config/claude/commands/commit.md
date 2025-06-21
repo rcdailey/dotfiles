@@ -17,6 +17,7 @@ Create a single git commit for ONLY the staged changes. Follow these rules:
 3. **Draft a commit message** following the guidelines below
 4. **Commit only staged changes** using `git commit -m`
 5. **Verify the commit** was successful
+6. **Display the commit message** so you can see what was committed
 
 ## Commit Message Best Practices
 
