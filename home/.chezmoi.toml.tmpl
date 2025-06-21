@@ -29,7 +29,7 @@ color = "on"
 [edit]
 {{- if lookPath "code" }}
     command = "code"
-    args = ["--wait", "--new-window"]
+    args = ["--new-window"]
 {{- else if lookPath "nano" }}
     command = "nano"
 {{- end }}
