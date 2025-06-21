@@ -1,4 +1,4 @@
-# Copilot Instructions
+# Claude Instructions
 
 ## 🚨 IMPORTANT: Always ask permission before making any file changes
 
