@@ -9,6 +9,9 @@ $Env:XDG_STATE_HOME = "{{ .chezmoi.homeDir }}/.local/state"
 function DockerCompose { docker compose @args }
 New-Alias c DockerCompose -Force
 
+function ChezmoiAlias { chezmoi @args }
+New-Alias cm ChezmoiAlias -Force
+
 function SkopeoRun { docker run --rm quay.io/skopeo/stable @args }
 New-Alias skopeo SkopeoRun -Force
 
