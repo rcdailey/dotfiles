@@ -163,3 +163,29 @@ URL](https://example.com/very/long/url/that/exceeds/character/limits/but/should/
 - **Comprehensive compliance** with the entire markdownlint ruleset
 - **No exceptions** beyond those explicitly listed in the custom overrides
 - **Consistent application** across all markdown content
+
+#### Markdown Creation Protocol
+
+**MANDATORY**: Before completing any markdown content creation or modification, Claude must
+preemptively ensure compliance with all markdownlint rules and custom overrides.
+
+**Universal Application**: Apply these rules to ALL markdown content, including:
+
+- Any file containing markdown (regardless of extension)
+- Markdown-formatted responses and replies from Claude
+- Documentation within code files
+- Any other markdown content in any context
+
+**Pre-Completion Requirements**:
+
+- Line length ≤ 100 characters with proper hard-wrapping
+- Reference links used for complex URLs instead of inline links
+- No trailing spaces for line breaks (use `<br/>` instead)
+- Blank line after every heading before content
+- Language specification for all fenced code blocks
+- Full markdownlint rule compliance
+- Custom overrides properly applied
+
+**Awareness Expectation**: Claude must be inherently aware of markdown formatting requirements
+and write compliant content from the start, rather than requiring post-creation validation
+tooling.
