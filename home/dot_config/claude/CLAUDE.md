@@ -142,3 +142,8 @@ creation, not afterward.
 - Reference links for complex URLs
 - Single trailing newline
 - Full markdownlint compliance with custom overrides
+
+## Memory Bank System
+
+@memory-bank/system.md
+@memory-bank/template.md
