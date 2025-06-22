@@ -76,6 +76,8 @@ Claude automatically updates the loaded session when:
 
 ### Update Components
 
+**Note**: Always read the session file before updating it.
+
 **Current-State Sections** (replaced with new information):
 
 - **Next Steps**: Current actionable items
