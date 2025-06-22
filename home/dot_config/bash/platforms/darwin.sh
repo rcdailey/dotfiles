@@ -20,3 +20,6 @@ fi
 
 # ls function for aliases
 myls() { gls -hF --color "$@"; }
+
+# This is to support the migration to k8s in the nezuko repository
+export DOCKER_DATA_PATH="/Volumes/docker"
