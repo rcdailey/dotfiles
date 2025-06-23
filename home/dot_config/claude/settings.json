@@ -1,4 +1,5 @@
 {
+  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "WebFetch(domain:docs.anthropic.com)",
@@ -8,8 +9,17 @@
       "Bash(node:*)",
       "Bash(python:*)",
       "Bash(ls:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(dotnet:*)",
+      "Bash(echo:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(brew search:*)",
+      "Bash(brew info:*)",
+      "Bash(aws logs:*)",
+      "Bash(time:*)",
+      "Bash(xmlstarlet:*)"
     ]
   },
-  "includeCoAuthoredBy": false
+  "model": "sonnet"
 }
