@@ -38,58 +38,31 @@ directory is created lazily when the first session is created in a repository.
 **REQUIRED**: Use the Glob tool for session discovery to ensure optimal performance.
 
 **Primary approach**:
-
 1. Use `Glob` with pattern `.memory-bank/*.md` to list all session files
 2. Apply fuzzy matching logic directly on the returned filenames
 3. Process results in memory using string matching operations
 
-**Fallback approach** (if `.memory-bank/` directory doesn't exist):
+**Fallback approach**: Use `LS` tool to check if `.memory-bank/` directory exists
 
-1. Use `LS` tool to check if `.memory-bank/` directory exists
-2. If directory doesn't exist, inform user no sessions are available
-
-**PROHIBITED**: Never use the Task tool for session discovery. The Task tool spawns a full agent and
-searches the entire codebase, which is inefficient for simple file pattern matching in a specific
-directory.
-
-**Performance rationale**: Direct file operations (Glob/LS) complete in milliseconds, while Task
-tool operations can take seconds and use significant computational resources.
+**PROHIBITED**: Never use the Task tool for session discovery - it's inefficient for simple file
+pattern matching and uses significant computational resources.
 
 ## Fuzzy Matching Algorithm
 
-When users provide session names that don't exactly match existing files, Claude uses fuzzy matching
-to find the intended session.
+When users provide session names that don't exactly match existing files, Claude uses fuzzy matching:
 
 ### Matching Priority
 
 1. **Exact substring match** (case-insensitive): `feature` matches `feature-implementation.md`
-2. **Word boundary match**: `system` prioritizes `system-refactor.md` over `my-system-notes.md`
+2. **Word boundary match**: `system` prioritizes `system-refactor.md` over `my-system-notes.md` 
 3. **Filename stem match**: `implementation` matches any `*-implementation.md` files
 
-### Fuzzy Match Outcomes
+### Outcomes
 
-**Single match found**:
-
-- Auto-load session with confirmation message
-- Example: "Loading 'feature-implementation' session..."
-
-**Multiple matches found**:
-
-- Present filtered numbered selection list
-- User chooses one session to load
-- Maintains single-session loading requirement
-
-**No matches found**:
-
-- Fail with guidance to available sessions
-- Example: "No sessions match 'nonexistent'. Available sessions: [list all]"
-- Prevents context-less session creation
-
-**Too many matches found** (>5 results):
-
-- Request more specific input
-- Example: "Too many matches for 'a' (found 12). Be more specific or use 'Load memory bank' to see
-  all sessions."
+- **Single match**: Auto-load with confirmation
+- **Multiple matches**: Present numbered selection list
+- **No matches**: Fail with guidance to available sessions
+- **Too many matches** (>5): Request more specific input
 
 ## Loading Workflows
 
@@ -98,31 +71,25 @@ to find the intended session.
 **User command**: "Load memory bank feature" or "Load memory bank implementation"
 
 **Claude actions**:
-
 1. Use session discovery approach from Implementation Guidance section
-2. Attempt exact filename match first
-3. If no exact match, apply fuzzy matching algorithm (see Fuzzy Matching Algorithm section)
-4. For single match: Read the entire session file into context
-5. Summarize current state: "Here's what we did last, here's what's next"
-6. Wait for user confirmation to proceed or deviate from planned next steps
+2. Apply fuzzy matching algorithm if no exact match
+3. Read the entire session file into context
+4. Summarize current state and wait for user confirmation
 
 ### Load Without Specific Session
 
 **User command**: "Load memory bank"
 
 **Claude actions**:
-
-1. Use session discovery approach from Implementation Guidance section
-2. List all available session files in numbered format
-3. Ask user to select by name or number
-4. Proceed with loading workflow once selection is made
+1. List all available session files in numbered format
+2. Ask user to select by name or number
+3. Proceed with loading workflow once selection is made
 
 ### Multiple Session Prohibition
 
 **Strictly forbidden**: Loading multiple sessions simultaneously
 
-**If user requests multiple sessions**: Claude must refuse under all circumstances, explaining the
-single-session focus principle
+**If user requests multiple sessions**: Claude must refuse, explaining single-session focus principle
 
 ## MANDATORY Update Protocol
 
@@ -203,25 +170,8 @@ before proceeding with any other work.
 3. Replace individual entries with consolidated summary
 4. Maintain chronological order
 
-**Example Consolidation**:
-
-Before:
-
-```markdown
-### 2024-01-08 - Started feature implementation
-### 2024-01-09 - Added database schema
-### 2024-01-10 - Implemented API endpoints
-### 2024-01-11 - Completed unit tests
-```
-
-After (one week later):
-
-```markdown
-### 2024-01-08 to 2024-01-11 - Feature Implementation Week
-Completed full feature implementation. Key decisions: Used database schema
-migration, implemented REST API endpoints. All unit tests passing,
-feature ready for integration testing.
-```
+**Example**: Daily entries become "2024-01-08 to 2024-01-11 - Feature Implementation Week" 
+with key decisions and outcomes preserved.
 
 ## Phase Management
 
@@ -242,39 +192,19 @@ Claude automatically updates the Phase field when detecting:
 
 ## Rabbit Trail Detection
 
-### Conservative Detection Approach
+### Detection Signals
 
-Start with minimal interference, evolve based on real usage patterns.
+**Flag These Deviations**:
+- User requests completely unrelated objectives
+- Abandoning current task for new work
+- Extended discussions not blocking progress
 
-### Initial Detection Signals
-
-**Clear Deviations** (flag these):
-
-- User explicitly requests working on completely unrelated objectives
-- Abandoning current task entirely for new work
-- Extended discussions on topics not blocking current progress
-
-**Allow Flexibility** (don't flag these):
-
+**Allow These**:
 - Addressing dependent issues or blockers
-- Reasonable scope adjustments within session boundaries
-- Brief tangents that inform the current work
+- Reasonable scope adjustments
+- Brief tangents that inform current work
 
-### Evolutionary Improvement
-
-**Pattern Documentation**: When rabbit trails are detected, Claude can suggest: "Should I document
-this pattern in the memory bank system-docs for future reference?"
-
-**Example Documentation Format**:
-
-```markdown
-### Rabbit Trail Pattern: [Brief Description]
-**Detected**: [Date]
-**Context**: [What we were working on]
-**Deviation**: [What the tangent was]
-**Resolution**: [How it was handled]
-**Learning**: [Why this pattern should be detected/allowed]
-```
+**Approach**: Start with minimal interference, evolve based on usage patterns.
 
 ## Session Creation
 
@@ -344,15 +274,15 @@ first. This ensures no progress is lost and future sessions can continue seamles
 
 ### Common Issues
 
-**Session won't load**: Try fuzzy matching with partial name, or use "Load memory bank" to see all
-available sessions **Multiple sessions loaded**: Restart Claude session, load single session **File
-too large**: Let consolidation rules handle size, or manually archive old content **Context lost**:
-Use repository synchronization as last resort **Fuzzy match too broad**: Use more specific terms
-(e.g., "feature" instead of "f") **No fuzzy matches**: Session may not exist; check available
-sessions or create new session during active work
+- **Session won't load**: Try fuzzy matching with partial name, or use "Load memory bank" to see all available sessions
+- **Multiple sessions loaded**: Restart Claude session, load single session  
+- **File too large**: Let consolidation rules handle size, or manually archive old content
+- **Context lost**: Use repository synchronization as last resort
+- **Fuzzy match too broad**: Use more specific terms (e.g., "feature" instead of "f")
+- **No fuzzy matches**: Session may not exist; check available sessions or create new session during active work
 
 ### File Maintenance
 
-**Backup important sessions**: Copy critical files before major changes **Archive completed
-sessions**: Move finished projects to archive directory **Monitor file sizes**: Trust consolidation
-rules, but verify effectiveness over time
+- **Backup important sessions**: Copy critical files before major changes
+- **Archive completed sessions**: Move finished projects to archive directory  
+- **Monitor file sizes**: Trust consolidation rules, but verify effectiveness over time
