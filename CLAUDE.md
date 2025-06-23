@@ -9,6 +9,21 @@ Only make changes after the user explicitly requests or approves them.
 
 chezmoi manages dotfiles across multiple machines using templates and scripts.
 
+## 🚨 Memory Bank System Modification Directive
+
+**CRITICAL**: When explicitly asked to modify the memory bank system behavior itself, Claude Code
+must ignore all loaded memory bank system knowledge and directives.
+
+**Use Case**: This directive applies ONLY when making changes to memory bank system documentation,
+behavior, or implementation - NOT when using the memory bank system.
+
+**Context Override**: The memory bank system documentation is automatically loaded into every Claude
+Code session, which creates ambiguity when asked to modify the system itself. This directive
+resolves that ambiguity.
+
+**File Requirements**: Always edit `home/dot_config/claude/memory-bank/*.md` files directly, never
+the deployed files in `~/.config/claude/`.
+
 ## Essential Knowledge
 
 - `.chezmoiignore` files are already treated as templates, so they do not need `.tmpl` extensions.
@@ -164,6 +179,7 @@ chezmoi add --encrypt ~/.ssh/key
 ## Repository Structure & Patterns
 
 ### Key Directories
+
 - `home/` - All chezmoi-managed files (required by chezmoi)
 - `home/.chezmoitemplates/` - Custom templates (e.g., `powershell-profile.ps1`)
 - `home/.chezmoiscripts/` - Install/setup scripts with platform detection
@@ -173,6 +189,7 @@ chezmoi add --encrypt ~/.ssh/key
 - `home/dot_local/bin/` - Custom executable scripts
 
 ### Existing Configuration Files
+
 - `home/dot_bash_aliases` - Bash aliases including `cm="chezmoi"`
 - `home/dot_gitconfig.tmpl` - Git configuration with template variables
 - `home/.chezmoi.toml.tmpl` - Main chezmoi config with interactive prompts
@@ -180,9 +197,10 @@ chezmoi add --encrypt ~/.ssh/key
 - `home/.chezmoiignore` - Global ignore patterns
 
 ### Platform-Specific Patterns
+
 - **Bash**: Uses `home/dot_config/bash/platform.sh.tmpl` to include platform-specific files
   - `platforms/darwin.sh` - macOS-specific (Homebrew, LSCOLORS)
-  - `platforms/linux.sh` - Linux-specific configurations  
+  - `platforms/linux.sh` - Linux-specific configurations
   - `platforms/windows.sh` - Windows/WSL-specific configurations
 - **PowerShell**: Dual profile locations for compatibility
   - `Documents/PowerShell/Microsoft.PowerShell_profile.ps1.tmpl`
@@ -190,23 +208,29 @@ chezmoi add --encrypt ~/.ssh/key
 - **Scripts**: Cross-platform install scripts (`.sh` and `.ps1` versions)
 
 ### Alias Patterns
+
 - **Bash**: `alias name="command"` (in `dot_bash_aliases`)
 - **PowerShell**: `function Name { command @args }; New-Alias alias Name -Force`
 
 ### Template Data Available
+
 Based on `.chezmoi.toml.tmpl`, templates have access to:
+
 - `.email` - User email address (prompted during init)
-- `.env` - Environment: "work", "personal", or "other"  
+- `.env` - Environment: "work", "personal", or "other"
 - `.ssh_azure_hosts` - Additional Azure DevOps hostnames (work env only)
 - Standard chezmoi variables (`.chezmoi.os`, `.chezmoi.hostname`, etc.)
 
 ### Security Patterns
+
 - `private_` prefix for owner-only permissions (SSH configs)
 - Modular SSH config in `config.d/` directory
 - Interactive prompts for sensitive data rather than hardcoding
 
 ### Git Utility Scripts
+
 The `git-scripts/` directory contains numerous custom git commands:
+
 - Branch management (`git-ff-branch`, `git-push-current`)
 - Repository analysis (`git-find-large-files.sh`, `git-commit-stats`)
 - Cleanup utilities (`git-nuke.sh`, `git-merged`)
