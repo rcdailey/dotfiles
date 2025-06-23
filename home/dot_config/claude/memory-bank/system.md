@@ -124,22 +124,38 @@ to find the intended session.
 **If user requests multiple sessions**: Claude must refuse under all circumstances, explaining the
 single-session focus principle
 
-## Automatic Update System
+## MANDATORY Update Protocol
 
-### Update Triggers
+### CRITICAL TRIGGERS (Claude MUST update immediately)
 
-Claude automatically updates the loaded session when:
+Claude MUST update the loaded session when ANY of these occur:
 
 - **Major milestones completed**: Finishing significant phases or key objectives
+- **Phase transitions**: Moving between Planning/Implementation/Testing/Complete
 - **Important decisions made**: Architectural choices, approach changes, problem-solving decisions
 - **Blockers encountered/resolved**: Issues that stop progress and their solutions
 - **Substantial progress made**: Before conversation concludes with meaningful work
 - **Learning discoveries**: Important insights, patterns, or lessons learned
 - **Failed attempts**: When they help avoid repeating ineffective approaches
+- **Session ending**: Before any session concludes, regardless of reason
+- **User requests**: When user explicitly asks to "save to memory bank" or "update memory bank"
+
+### REQUIRED UPDATE STEPS (ALL must be completed)
+
+**MANDATORY PROTOCOL**: Claude MUST complete ALL steps below, no exceptions.
+
+1. **Read entire session file** before making any changes
+2. **Add Progress & Context Log entry** with current date and milestone description
+3. **Update ALL Current-State sections**:
+   - Status/Progress line
+   - Phase field  
+   - Current Focus
+   - Next Steps
+4. **Update Task Checklist**: Mark completed items as [x], add new discovered tasks
+5. **VERIFICATION**: Re-read updated sections to confirm completeness
+6. **Confirmation**: State "✅ Memory bank update complete" before proceeding
 
 ### Update Components
-
-**Note**: Always read the session file before updating it.
 
 **Current-State Sections** (replaced with new information):
 
@@ -152,6 +168,22 @@ Claude automatically updates the loaded session when:
 
 - **Progress & Context Log**: Chronological record of what happened and why
 - **Task Checklist**: Check completed items, add new discovered tasks
+
+### Update Verification Checklist
+
+**MANDATORY**: After ANY memory bank update, Claude MUST verify ALL items below:
+
+- [ ] New Progress & Context Log entry added with current date and clear milestone description
+- [ ] All completed tasks marked as [x] in checklists
+- [ ] Status/Progress field reflects current reality (not outdated information)
+- [ ] Phase field updated if transitioning between stages
+- [ ] Current Focus describes actual current state (not previous focus)
+- [ ] Next Steps lists specific actionable items for next session
+
+**REQUIRED CONFIRMATION**: Claude must explicitly state "✅ Memory bank verification complete" 
+before proceeding with any other work.
+
+**If verification fails**: Claude MUST return to update steps and fix all incomplete items.
 
 ## File Consolidation Rules
 
@@ -280,10 +312,26 @@ If memory bank state doesn't match repository reality:
 
 ### For Claude
 
-- **Stay current**: Update memory bank throughout work sessions
+- **Stay current**: Update memory bank throughout work sessions using MANDATORY Update Protocol
 - **Be concise**: Consolidate information to manage file size
 - **Preserve context**: Don't lose important decisions during consolidation
 - **Monitor focus**: Watch for scope creep and remind user when detected
+
+### Session Ending Protocol
+
+**MANDATORY**: Before any session concludes, Claude MUST complete the following steps:
+
+1. **Immediate memory bank update** with all completed work documented
+2. **Document current status** and achievements in Progress & Context Log
+3. **Set Next Steps** for future sessions with specific actionable items
+4. **Complete verification checklist** to ensure nothing was missed
+5. **Confirm session readiness** to end with "✅ Memory bank updated for session end"
+
+**No exceptions**: Even if user says "we're done" or "stop working," memory bank MUST be updated 
+first. This ensures no progress is lost and future sessions can continue seamlessly.
+
+**User dismissal handling**: If user insists on ending without updates, Claude must respond: 
+"I need to update the memory bank first to preserve our progress. This will take 30 seconds."
 
 ### For Users
 
