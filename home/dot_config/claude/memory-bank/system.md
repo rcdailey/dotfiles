@@ -2,9 +2,9 @@
 
 ## Overview
 
-The Memory Bank system enables Claude Code to maintain context across sessions for
-long-running sessions. Each session is tracked in a separate markdown file that
-serves as a persistent log of progress, decisions, and current state.
+The Memory Bank system enables Claude Code to maintain context across sessions for long-running
+sessions. Each session is tracked in a separate markdown file that serves as a persistent log of
+progress, decisions, and current state.
 
 ## Core Principles
 
@@ -28,11 +28,37 @@ serves as a persistent log of progress, decisions, and current state.
 
 ## Discovery
 
-Claude looks for session files in `${REPO_ROOT}/.memory-bank/` directory only. The `.memory-bank/` directory is created lazily when the first session is created in a repository.
+Claude looks for session files in `${REPO_ROOT}/.memory-bank/` directory only. The `.memory-bank/`
+directory is created lazily when the first session is created in a repository.
+
+## Implementation Guidance
+
+### Session Discovery
+
+**REQUIRED**: Use the Glob tool for session discovery to ensure optimal performance.
+
+**Primary approach**:
+
+1. Use `Glob` with pattern `.memory-bank/*.md` to list all session files
+2. Apply fuzzy matching logic directly on the returned filenames
+3. Process results in memory using string matching operations
+
+**Fallback approach** (if `.memory-bank/` directory doesn't exist):
+
+1. Use `LS` tool to check if `.memory-bank/` directory exists
+2. If directory doesn't exist, inform user no sessions are available
+
+**PROHIBITED**: Never use the Task tool for session discovery. The Task tool spawns a full agent and
+searches the entire codebase, which is inefficient for simple file pattern matching in a specific
+directory.
+
+**Performance rationale**: Direct file operations (Glob/LS) complete in milliseconds, while Task
+tool operations can take seconds and use significant computational resources.
 
 ## Fuzzy Matching Algorithm
 
-When users provide session names that don't exactly match existing files, Claude uses fuzzy matching to find the intended session.
+When users provide session names that don't exactly match existing files, Claude uses fuzzy matching
+to find the intended session.
 
 ### Matching Priority
 
@@ -43,22 +69,27 @@ When users provide session names that don't exactly match existing files, Claude
 ### Fuzzy Match Outcomes
 
 **Single match found**:
+
 - Auto-load session with confirmation message
 - Example: "Loading 'feature-implementation' session..."
 
 **Multiple matches found**:
+
 - Present filtered numbered selection list
 - User chooses one session to load
 - Maintains single-session loading requirement
 
 **No matches found**:
+
 - Fail with guidance to available sessions
 - Example: "No sessions match 'nonexistent'. Available sessions: [list all]"
 - Prevents context-less session creation
 
 **Too many matches found** (>5 results):
+
 - Request more specific input
-- Example: "Too many matches for 'a' (found 12). Be more specific or use 'Load memory bank' to see all sessions."
+- Example: "Too many matches for 'a' (found 12). Be more specific or use 'Load memory bank' to see
+  all sessions."
 
 ## Loading Workflows
 
@@ -68,11 +99,12 @@ When users provide session names that don't exactly match existing files, Claude
 
 **Claude actions**:
 
-1. Attempt exact filename match first
-2. If no exact match, apply fuzzy matching algorithm (see Fuzzy Matching Algorithm section)
-3. For single match: Read the entire session file into context
-4. Summarize current state: "Here's what we did last, here's what's next"
-5. Wait for user confirmation to proceed or deviate from planned next steps
+1. Use session discovery approach from Implementation Guidance section
+2. Attempt exact filename match first
+3. If no exact match, apply fuzzy matching algorithm (see Fuzzy Matching Algorithm section)
+4. For single match: Read the entire session file into context
+5. Summarize current state: "Here's what we did last, here's what's next"
+6. Wait for user confirmation to proceed or deviate from planned next steps
 
 ### Load Without Specific Session
 
@@ -80,16 +112,17 @@ When users provide session names that don't exactly match existing files, Claude
 
 **Claude actions**:
 
-1. List all available session files in numbered format
-2. Ask user to select by name or number
-3. Proceed with loading workflow once selection is made
+1. Use session discovery approach from Implementation Guidance section
+2. List all available session files in numbered format
+3. Ask user to select by name or number
+4. Proceed with loading workflow once selection is made
 
 ### Multiple Session Prohibition
 
 **Strictly forbidden**: Loading multiple sessions simultaneously
 
-**If user requests multiple sessions**: Claude must refuse under all circumstances,
-explaining the single-session focus principle
+**If user requests multiple sessions**: Claude must refuse under all circumstances, explaining the
+single-session focus principle
 
 ## Automatic Update System
 
@@ -98,8 +131,7 @@ explaining the single-session focus principle
 Claude automatically updates the loaded session when:
 
 - **Major milestones completed**: Finishing significant phases or key objectives
-- **Important decisions made**: Architectural choices, approach changes, problem-solving
-  decisions
+- **Important decisions made**: Architectural choices, approach changes, problem-solving decisions
 - **Blockers encountered/resolved**: Issues that stop progress and their solutions
 - **Substantial progress made**: Before conversation concludes with meaningful work
 - **Learning discoveries**: Important insights, patterns, or lessons learned
@@ -198,8 +230,8 @@ Start with minimal interference, evolve based on real usage patterns.
 
 ### Evolutionary Improvement
 
-**Pattern Documentation**: When rabbit trails are detected, Claude can suggest:
-"Should I document this pattern in the memory bank system-docs for future reference?"
+**Pattern Documentation**: When rabbit trails are detected, Claude can suggest: "Should I document
+this pattern in the memory bank system-docs for future reference?"
 
 **Example Documentation Format**:
 
@@ -216,8 +248,8 @@ Start with minimal interference, evolve based on real usage patterns.
 
 ### User-Triggered Only
 
-Claude never proactively suggests creating new sessions. Users must explicitly
-request session creation.
+Claude never proactively suggests creating new sessions. Users must explicitly request session
+creation.
 
 ### Creation Process
 
@@ -264,15 +296,15 @@ If memory bank state doesn't match repository reality:
 
 ### Common Issues
 
-**Session won't load**: Try fuzzy matching with partial name, or use "Load memory bank" to see all available sessions
-**Multiple sessions loaded**: Restart Claude session, load single session
-**File too large**: Let consolidation rules handle size, or manually archive old content
-**Context lost**: Use repository synchronization as last resort
-**Fuzzy match too broad**: Use more specific terms (e.g., "feature" instead of "f")
-**No fuzzy matches**: Session may not exist; check available sessions or create new session during active work
+**Session won't load**: Try fuzzy matching with partial name, or use "Load memory bank" to see all
+available sessions **Multiple sessions loaded**: Restart Claude session, load single session **File
+too large**: Let consolidation rules handle size, or manually archive old content **Context lost**:
+Use repository synchronization as last resort **Fuzzy match too broad**: Use more specific terms
+(e.g., "feature" instead of "f") **No fuzzy matches**: Session may not exist; check available
+sessions or create new session during active work
 
 ### File Maintenance
 
-**Backup important sessions**: Copy critical files before major changes
-**Archive completed sessions**: Move finished projects to archive directory
-**Monitor file sizes**: Trust consolidation rules, but verify effectiveness over time
+**Backup important sessions**: Copy critical files before major changes **Archive completed
+sessions**: Move finished projects to archive directory **Monitor file sizes**: Trust consolidation
+rules, but verify effectiveness over time
