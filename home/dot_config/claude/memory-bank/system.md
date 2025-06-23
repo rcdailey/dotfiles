@@ -30,18 +30,49 @@ serves as a persistent log of progress, decisions, and current state.
 
 Claude looks for session files in `${REPO_ROOT}/.memory-bank/` directory only. The `.memory-bank/` directory is created lazily when the first session is created in a repository.
 
+## Fuzzy Matching Algorithm
+
+When users provide session names that don't exactly match existing files, Claude uses fuzzy matching to find the intended session.
+
+### Matching Priority
+
+1. **Exact substring match** (case-insensitive): `feature` matches `feature-implementation.md`
+2. **Word boundary match**: `system` prioritizes `system-refactor.md` over `my-system-notes.md`
+3. **Filename stem match**: `implementation` matches any `*-implementation.md` files
+
+### Fuzzy Match Outcomes
+
+**Single match found**:
+- Auto-load session with confirmation message
+- Example: "Loading 'feature-implementation' session..."
+
+**Multiple matches found**:
+- Present filtered numbered selection list
+- User chooses one session to load
+- Maintains single-session loading requirement
+
+**No matches found**:
+- Fail with guidance to available sessions
+- Example: "No sessions match 'nonexistent'. Available sessions: [list all]"
+- Prevents context-less session creation
+
+**Too many matches found** (>5 results):
+- Request more specific input
+- Example: "Too many matches for 'a' (found 12). Be more specific or use 'Load memory bank' to see all sessions."
+
 ## Loading Workflows
 
 ### Load Specific Session
 
-**User command**: "Load memory bank feature-implementation" or "Load memory bank
-feature-implementation.md"
+**User command**: "Load memory bank feature" or "Load memory bank implementation"
 
 **Claude actions**:
 
-1. Read the entire session file into context
-2. Summarize current state: "Here's what we did last, here's what's next"
-3. Wait for user confirmation to proceed or deviate from planned next steps
+1. Attempt exact filename match first
+2. If no exact match, apply fuzzy matching algorithm (see Fuzzy Matching Algorithm section)
+3. For single match: Read the entire session file into context
+4. Summarize current state: "Here's what we did last, here's what's next"
+5. Wait for user confirmation to proceed or deviate from planned next steps
 
 ### Load Without Specific Session
 
@@ -233,10 +264,12 @@ If memory bank state doesn't match repository reality:
 
 ### Common Issues
 
-**Session won't load**: Check file exists and uses correct naming convention
+**Session won't load**: Try fuzzy matching with partial name, or use "Load memory bank" to see all available sessions
 **Multiple sessions loaded**: Restart Claude session, load single session
 **File too large**: Let consolidation rules handle size, or manually archive old content
 **Context lost**: Use repository synchronization as last resort
+**Fuzzy match too broad**: Use more specific terms (e.g., "feature" instead of "f")
+**No fuzzy matches**: Session may not exist; check available sessions or create new session during active work
 
 ### File Maintenance
 
