@@ -1,12 +1,60 @@
 #!/bin/bash
 
-# Direct package upgrade script that modifies Directory.Packages.props
-# This version extracts latest versions and directly updates the XML file
+# upgrade-nuget-packages: NuGet Package Update Script for Directory.Packages.props
+#
+# OVERVIEW:
+# This script automatically checks for and updates outdated NuGet packages in Directory.Packages.props
+# files used with .NET's Central Package Management feature. It queries the NuGet API to find the
+# latest versions and directly modifies the XML file.
+#
+# KEY DESIGN DECISIONS:
+# - Uses PARALLEL PROCESSING (xargs -P 10) for fast API queries - DO NOT REMOVE
+# - Excludes version ranges by regex pattern matching only numeric versions (see line ~47)  
+# - Requires xmlstarlet, ripgrep (rg), and jq tools with auto-install via brew
+# - Modifies XML directly with sed rather than using complex XML manipulation
+#
+# CRITICAL COMPONENTS:
+# 1. Version Range Exclusion: Regex pattern filters out [7,8), (1.0,2.0] etc. by matching only
+#    numeric version patterns like 1.2.3.4 - this is simpler than handling all range syntaxes
+# 2. Parallel Execution: Uses exported bash function with xargs -P 10 for 10 concurrent API calls
+# 3. API Error Handling: Checks for "null" responses and empty strings from NuGet API
+# 4. XML Updates: Handles both PackageVersion and GlobalPackageReference elements
+#
+# MAINTENANCE NOTES:
+# - If performance degrades, check that parallel processing (-P 10) is still enabled
+# - Version regex must match AWS SDK 4-component versions (e.g., 3.7.302.15)
+# - Script assumes Directory.Packages.props exists in current working directory
 
 set -e  # Exit on error
 
 # Handle CTRL+C gracefully
 trap 'echo -e "\n\nScript interrupted by user."; exit 130' INT
+
+# Parse command line arguments
+DRY_RUN=false
+for arg in "$@"; do
+    case $arg in
+        -n|--dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [OPTIONS]"
+            echo "Options:"
+            echo "  -n, --dry-run    Show what would be updated without making changes"
+            echo "  -h, --help       Show this help message"
+            echo ""
+            echo "This script finds and updates outdated NuGet packages in Directory.Packages.props files."
+            echo "It searches upward from the current directory to find the nearest props file."
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg"
+            echo "Use --help for usage information."
+            exit 1
+            ;;
+    esac
+done
 
 # Function to install missing tools via brew
 install_tool() {
@@ -33,18 +81,95 @@ install_tool() {
 install_tool "rg" "ripgrep"
 install_tool "xmlstarlet" "xmlstarlet"
 
+# Function to find Directory.Packages.props by traversing up the directory tree
+find_packages_props() {
+    local current_dir="$(pwd)"
+    
+    while [ "$current_dir" != "/" ]; do
+        if [ -f "$current_dir/Directory.Packages.props" ]; then
+            echo "$current_dir/Directory.Packages.props"
+            return 0
+        fi
+        current_dir="$(dirname "$current_dir")"
+    done
+    
+    # Check root directory as well
+    if [ -f "/Directory.Packages.props" ]; then
+        echo "/Directory.Packages.props"
+        return 0
+    fi
+    
+    return 1
+}
+
+# Function to prompt user for single keystroke confirmation
+prompt_user_confirmation() {
+    local props_file="$1"
+    
+    echo "Found Directory.Packages.props at: $props_file"
+    echo -n "Continue with this file? (y/n): "
+    
+    local response
+    # Check if we can read from terminal, otherwise default to 'y' for non-interactive use
+    if [ -t 0 ]; then
+        read -n 1 -r response
+        echo  # Add newline after single character input
+        
+        case "$response" in
+            [Yy])
+                return 0
+                ;;
+            [Nn])
+                echo "Operation cancelled by user."
+                return 1
+                ;;
+            *)
+                echo "Invalid response. Please press 'y' for yes or 'n' for no."
+                prompt_user_confirmation "$props_file"
+                ;;
+        esac
+    else
+        # Non-interactive mode - default to yes
+        echo "y (non-interactive mode)"
+        return 0
+    fi
+}
+
+# Discover Directory.Packages.props file
+echo "Searching for Directory.Packages.props..."
+if ! PACKAGES_PROPS_FILE=$(find_packages_props); then
+    echo "ERROR: No Directory.Packages.props file found in current directory or any parent directories."
+    echo "This script requires a Directory.Packages.props file for .NET Central Package Management."
+    echo "Please run this script from within a .NET project that uses centralized package management."
+    exit 1
+fi
+
+# Get user confirmation before proceeding
+if ! prompt_user_confirmation "$PACKAGES_PROPS_FILE"; then
+    exit 130
+fi
+
 echo "Discovering outdated packages using NuGet API..."
 
 # Extract all packages from Directory.Packages.props, only including those with fixed versions
 # Use xmlstarlet to properly handle multi-line XML elements
-all_packages=$(cat Directory.Packages.props | \
+# 
+# Version Range Exclusion Strategy:
+# The regex pattern below matches 3-4 component version numbers ONLY (e.g., 1.2.3, 1.2.3.4, 1.0.0-beta)
+# This indirectly excludes version ranges like [7,8), (1.0,2.0], etc. since they don't start with digits
+# This approach is much simpler than trying to handle all possible version range corner cases
+all_packages=$(cat "$PACKAGES_PROPS_FILE" | \
     xmlstarlet sel -T -t -m "//PackageVersion | //GlobalPackageReference" -v "@Include" -o "|" -v "@Version" -n | \
-    rg '\|[0-9]+\.[0-9]+(\.[0-9]+)?(-[a-zA-Z0-9\.-]+)?$')
+    rg '\|[0-9]+(\.[0-9]+){1,}(-[a-zA-Z0-9\.-]+)?$')
 
 if [ -z "$all_packages" ]; then
-    echo "No packages found in Directory.Packages.props!"
+    echo "No packages found in $PACKAGES_PROPS_FILE!"
     exit 1
 fi
+
+
+# Get outdated packages in parallel
+echo "Checking $(echo "$all_packages" | wc -l) packages for updates..."
 
 # Function to check latest version from NuGet API
 check_package_version() {
@@ -65,8 +190,6 @@ check_package_version() {
 # Export function for parallel execution
 export -f check_package_version
 
-# Get outdated packages in parallel
-echo "Checking $(echo "$all_packages" | wc -l) packages for updates..."
 outdated_data=$(echo "$all_packages" | xargs -I {} -P 10 bash -c 'check_package_version $(echo "{}" | cut -d"|" -f1) $(echo "{}" | cut -d"|" -f2)' | sort -u)
 
 if [ -z "$outdated_data" ]; then
@@ -74,9 +197,16 @@ if [ -z "$outdated_data" ]; then
     exit 0
 fi
 
-# Check if Directory.Packages.props exists
-if [ ! -f "Directory.Packages.props" ]; then
-    echo "ERROR: Directory.Packages.props not found!"
+# Show dry-run message if enabled
+if [ "$DRY_RUN" = true ]; then
+    echo ""
+    echo "🔍 DRY RUN MODE - No files will be modified"
+    echo ""
+fi
+
+# Verify the discovered file still exists (sanity check)
+if [ ! -f "$PACKAGES_PROPS_FILE" ]; then
+    echo "ERROR: $PACKAGES_PROPS_FILE not found!"
     exit 1
 fi
 
@@ -91,39 +221,46 @@ echo "0" > /tmp/upgrade_failed.tmp
 
 echo "$outdated_data" | while IFS='|' read -r package_name latest_version; do
     if [ ! -z "$package_name" ] && [ ! -z "$latest_version" ]; then
-        echo -n "Updating $package_name to $latest_version... "
-        
-        # Update PackageVersion elements
-        if rg -q "PackageVersion Include=\"$package_name\"" Directory.Packages.props; then
-            # Use sed to update the version attribute
-            if sed -i.tmp "s/<PackageVersion Include=\"$package_name\" Version=\"[^\"]*\"/<PackageVersion Include=\"$package_name\" Version=\"$latest_version\"/g" Directory.Packages.props; then
-                echo "✓"
-                updated=$(cat /tmp/upgrade_updated.tmp)
-                echo $((updated + 1)) > /tmp/upgrade_updated.tmp
-            else
-                echo "✗"
-                failed=$(cat /tmp/upgrade_failed.tmp)
-                echo $((failed + 1)) > /tmp/upgrade_failed.tmp
-            fi
-        # Also check for GlobalPackageReference elements
-        elif rg -q "GlobalPackageReference Include=\"$package_name\"" Directory.Packages.props; then
-            if sed -i.tmp "s/<GlobalPackageReference Include=\"$package_name\" Version=\"[^\"]*\"/<GlobalPackageReference Include=\"$package_name\" Version=\"$latest_version\"/g" Directory.Packages.props; then
-                echo "✓ (global)"
-                updated=$(cat /tmp/upgrade_updated.tmp)
-                echo $((updated + 1)) > /tmp/upgrade_updated.tmp
-            else
-                echo "✗"
-                failed=$(cat /tmp/upgrade_failed.tmp)
-                echo $((failed + 1)) > /tmp/upgrade_failed.tmp
-            fi
+        if [ "$DRY_RUN" = true ]; then
+            echo "Would update $package_name to $latest_version"
+            # Still track the counts for summary
+            updated=$(cat /tmp/upgrade_updated.tmp)
+            echo $((updated + 1)) > /tmp/upgrade_updated.tmp
         else
-            echo "⚠️  (not found in Directory.Packages.props)"
+            echo -n "Updating $package_name to $latest_version... "
+            
+            # Update PackageVersion elements
+            if rg -q "PackageVersion Include=\"$package_name\"" "$PACKAGES_PROPS_FILE"; then
+                # Use sed to update the version attribute
+                if sed -i.tmp "s/<PackageVersion Include=\"$package_name\" Version=\"[^\"]*\"/<PackageVersion Include=\"$package_name\" Version=\"$latest_version\"/g" "$PACKAGES_PROPS_FILE"; then
+                    echo "✓"
+                    updated=$(cat /tmp/upgrade_updated.tmp)
+                    echo $((updated + 1)) > /tmp/upgrade_updated.tmp
+                else
+                    echo "✗"
+                    failed=$(cat /tmp/upgrade_failed.tmp)
+                    echo $((failed + 1)) > /tmp/upgrade_failed.tmp
+                fi
+            # Also check for GlobalPackageReference elements
+            elif rg -q "GlobalPackageReference Include=\"$package_name\"" "$PACKAGES_PROPS_FILE"; then
+                if sed -i.tmp "s/<GlobalPackageReference Include=\"$package_name\" Version=\"[^\"]*\"/<GlobalPackageReference Include=\"$package_name\" Version=\"$latest_version\"/g" "$PACKAGES_PROPS_FILE"; then
+                    echo "✓ (global)"
+                    updated=$(cat /tmp/upgrade_updated.tmp)
+                    echo $((updated + 1)) > /tmp/upgrade_updated.tmp
+                else
+                    echo "✗"
+                    failed=$(cat /tmp/upgrade_failed.tmp)
+                    echo $((failed + 1)) > /tmp/upgrade_failed.tmp
+                fi
+            else
+                echo "⚠️  (not found in $PACKAGES_PROPS_FILE)"
+            fi
         fi
     fi
 done
 
 # Clean up sed backup files
-rm -f Directory.Packages.props.bak.tmp Directory.Packages.props.tmp
+rm -f "${PACKAGES_PROPS_FILE}.bak.tmp" "${PACKAGES_PROPS_FILE}.tmp"
 
 # Read final counts
 updated=$(cat /tmp/upgrade_updated.tmp)
@@ -131,9 +268,16 @@ failed=$(cat /tmp/upgrade_failed.tmp)
 rm -f /tmp/upgrade_updated.tmp /tmp/upgrade_failed.tmp
 
 echo ""
-echo "Package upgrade complete: $updated succeeded, $failed failed"
-echo ""
-echo "Changes made to Directory.Packages.props"
-echo "Run 'dotnet build' to verify everything still compiles."
-echo ""
-echo "To revert changes: git checkout Directory.Packages.props"
+if [ "$DRY_RUN" = true ]; then
+    echo "🔍 Dry run complete: $updated packages would be updated, $failed failed"
+    echo ""
+    echo "No changes were made to $PACKAGES_PROPS_FILE"
+    echo "Re-run without --dry-run to apply these updates."
+else
+    echo "Package upgrade complete: $updated succeeded, $failed failed"
+    echo ""
+    echo "Changes made to $PACKAGES_PROPS_FILE"
+    echo "Run 'dotnet build' to verify everything still compiles."
+    echo ""
+    echo "To revert changes: git checkout \"$(basename "$PACKAGES_PROPS_FILE")\""
+fi
