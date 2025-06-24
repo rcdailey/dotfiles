@@ -59,6 +59,17 @@ alias lr='myls -lR'          # recursive ls
 alias tree='tree -Csu'     # nice alternative to 'recursive ls'
 
 #-------------------------------------------------------------
+# Claude Code
+#-------------------------------------------------------------
+claude() {
+    if [[ -x "$HOME/.claude/local/claude" ]]; then
+        "$HOME/.claude/local/claude" "$@"
+    else
+        command claude "$@"
+    fi
+}
+
+#-------------------------------------------------------------
 # chezmoi git shortcuts
 #-------------------------------------------------------------
 alias cmci='chezmoi git -- caa'
