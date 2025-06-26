@@ -18,6 +18,12 @@
 
 ## MANDATORY Behavioral Protocol
 
+### Best Practices for Tooling & Coding
+
+- ALWAYS use the latest versions of tools, programming languages, libraries, and frameworks
+- MUST always use the latest methodologies and best practices
+- MUST employ proper design methdolologies, such as SOLID and DRY
+
 ### CRITICAL: Investigation Requirements
 
 **Claude MUST:**
