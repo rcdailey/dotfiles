@@ -7,11 +7,11 @@
 
 ## Objective
 
-[Concise description of what we're trying to achieve and why it's important]
+[What we're achieving and why]
 
 ## Current Focus
 
-[Single actionable item we're working on right now]
+[Current actionable item]
 
 ## Task Checklist
 
@@ -21,17 +21,17 @@
 
 ## Next Steps
 
-[Specific actionable items for next session - constantly updated]
+[Actionable items for next session]
 
 ## Resources
 
-[Key files, commands, references currently relevant - constantly updated]
+[Relevant files, commands, references]
 
 ## Progress & Context Log
 
-[Always at bottom - grows chronologically, gets consolidated based on time rules]
+[Chronological entries, auto-consolidated by time]
 
 ### [Date] - Session Created
 
-Created session to [brief description]. Initial focus on [starting point].
-Key objectives: [list main goals].
+Created session to [brief description]. Initial focus: [starting point].
+Objectives: [main goals].

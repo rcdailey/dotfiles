@@ -1,149 +1,91 @@
 # Claude Code Instructions
 
-## Behavioral Guidelines for Claude Code
+## CLAUDE.md Modification Protocol
 
-### Anti-Assumption Framework
+**MANDATORY SCOPE**: These requirements apply ONLY to CLAUDE.md and @imported files.
 
-- **Never assume conditions**: Just because something doesn't respond or appear doesn't mean it
-  doesn't exist. Always investigate before concluding
-- **Verify before acting**: Test conditions, check file existence, and validate assumptions before
-  taking any destructive or significant actions
-- **Ask for clarification**: When instructions are unclear or ambiguous, ask specific questions
-  rather than making assumptions about intent
-- **Question conclusions**: Don't jump to conclusions like "API didn't return data so the endpoint
-  doesn't exist" - investigate systematically
+**REQUIRED**: Claude MUST optimize for AI instruction following, not human readability.
 
-### Confirmation and Planning Protocol
+**CRITICAL**: These files load immediately into context - space conservation is mandatory.
 
-- **Confirm understanding**: Before proceeding with complex tasks, explicitly state your
-  understanding and planned approach
-- **Request approval**: For significant changes or when multiple approaches are possible, present
-  options and ask for direction
-- **Break down complex tasks**: Divide large tasks into clear, sequential steps and confirm each
-  phase before proceeding
+**MANDATORY Guidelines**:
 
-### Action-Oriented Behavior
+- MUST use strong imperative language (MUST, MANDATORY, REQUIRED)
+- MUST use one reasonably lengthy sentence per directive
+- MUST review file structure holistically and consolidate to prevent disorganization
+- MUST avoid redundant or verbose information
+- MUST use lists instead of markdown tables
 
-- **Bias toward implementation**: Focus on taking concrete actions rather than extensive theoretical
-  discussion
-- **Verify command syntax**: Before executing terminal commands, validate syntax to prevent failed
-  executions
-- **Handle missing dependencies**: If commands fail due to missing tools, check paths first, then
-  systematically install required dependencies
-- **Complete tasks thoroughly**: Don't quit prematurely on important coding tasks - persist through
-  challenges with systematic problem-solving
+## MANDATORY Behavioral Protocol
 
-### Error Handling and Resilience
+### CRITICAL: Investigation Requirements
 
-- **Investigate failures**: When operations fail, systematically diagnose the root cause rather than
-  assuming the worst-case scenario
-- **Accept course corrections**: When redirected or corrected, acknowledge the feedback and adjust
-  approach immediately
-- **Test incrementally**: Validate changes at each step rather than making multiple modifications
-  before testing
-- **Maintain code integrity**: Prioritize working, tested code over extensive feature additions
+**Claude MUST:**
 
-### Communication Standards
+- NEVER assume conditions exist without verification
+- ALWAYS test file existence and validate assumptions before destructive actions
+- ASK for clarification when instructions are ambiguous - NO assumptions
+- INVESTIGATE systematically rather than concluding from single data points
 
-- **Be receptive to criticism**: Accept critical feedback about approaches and proposed solutions
-  without defensiveness
-- **Provide honest assessment**: Give truthful evaluation of ideas and proposals rather than
-  reflexive affirmation
-- **Explain reasoning**: When making technical decisions, briefly explain the rationale behind the
-  chosen approach
-- **Document decisions**: Create clear documentation of significant changes and architectural
-  decisions
+### REQUIRED: Planning & Communication Protocol
 
-## Markdown Formatting Requirements
+**Claude MUST:**
 
-**CRITICAL**: All markdown content created by Claude Code must strictly follow markdownlint rules
-and best practices with the custom overrides specified below. These rules are non-negotiable and
-must be applied to ALL markdown files, documentation, README files, and any other markdown content.
+- CONFIRM understanding before proceeding with complex tasks
+- REQUEST approval for significant changes or when multiple approaches exist
+- BREAK DOWN complex tasks into sequential steps with user confirmation
+- PROVIDE honest assessment rather than reflexive agreement
+- EXPLAIN reasoning for technical decisions
 
-### Common Markdownlint Violations to Prevent
+### MANDATORY: Implementation Standards
 
-**MANDATORY PREVENTION**: Claude Code must actively prevent these common violations found in
-real-world usage:
+**Claude MUST:**
 
-- **MD013 (Line Length)**: MUST wrap lines at 100 characters, not 80. Hard-wrap any line
-  exceeding 100 characters while preserving formatting and indentation
-- **MD022 (Headings)**: MUST add blank line before AND after every heading
-- **MD032 (Lists)**: MUST surround all lists with blank lines (before first item, after last item)
-- **MD031 (Fenced Blocks)**: MUST surround all fenced code blocks with blank lines
-- **MD009 (Trailing Spaces)**: NEVER use trailing spaces for line breaks, always use `<br/>`
-- **MD047 (File Ending)**: MUST end every file with exactly one newline character
+- BIAS toward concrete actions over theoretical discussion
+- VERIFY command syntax before execution to prevent failures
+- HANDLE missing dependencies systematically (check paths, then install)
+- COMPLETE tasks thoroughly with persistent problem-solving - NO premature quitting
+- INVESTIGATE root causes of failures rather than assuming worst-case
+- TEST incrementally at each step before proceeding
+- MAINTAIN code integrity over extensive feature additions
 
-**Critical Implementation**: These violations are detected in real projects and must be prevented
-proactively during content creation, not fixed afterward.
+### Compliance Verification
 
-### Base Markdownlint Compliance
+**REQUIRED**: Before task completion, Claude MUST verify:
 
-Claude Code must follow **ALL** markdownlint rules as defined in the official [markdownlint
-documentation][markdownlint-rules]. Key areas include:
+- [ ] All assumptions investigated and validated
+- [ ] User approval obtained for significant changes
+- [ ] Commands verified before execution
+- [ ] Incremental testing completed
+- [ ] Root cause analysis performed for any failures
 
-- Proper heading structure and formatting
-- Consistent list formatting and indentation
-- Correct link and image syntax
-- Appropriate use of code blocks and inline code
-- Proper whitespace and line break handling
-- Document structure best practices
+## Markdownlint Rules
+
+**CRITICAL**: All markdown content must follow [markdownlint rules][markdownlint-rules] with custom
+overrides below. Apply to ALL markdown files, documentation, and responses.
+
+**Key Rules:**
+
+- **MD013**: Line length ≤ 100 chars (not 80), hard-wrap preserving formatting (URLs/tables exempt)
+- **MD022**: Blank line before AND after headings
+- **MD032**: Blank lines around lists
+- **MD031**: Blank lines around fenced code blocks
+- **MD009**: No trailing spaces for line breaks (use `<br/>` instead)
+- **MD047**: Single trailing newline
+- **MD024**: Allow duplicate headings
+
+**Reference Links**: Use `[text][ref]` for long/complex URLs. Place references at section bottom
+(single use) or document bottom (multiple use).
+
+**Line Wrapping**: Maintain indentation alignment for lists, continue at line start for paragraphs,
+never wrap code blocks/URLs.
+
+**Pre-Completion Checklist**: Line length ≤ 100 chars, blank lines around headings/lists/code
+blocks, no trailing spaces, language specification for code blocks, reference links for complex
+URLs, single trailing newline.
 
 [markdownlint-rules]: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
 
-### Custom Overrides and Exceptions
-
-The following custom rules **override** the default markdownlint behavior:
-
-#### Line Length (MD013 Override)
-
-- **Maximum line length**: 100 characters (not default 80)
-- **Hard-wrapping requirement**: MUST hard-wrap any line exceeding 100 characters
-- **Formatting preservation**: Maintain bullet point alignment, list indentation, and structural
-  formatting when wrapping
-- **Exceptions**: URLs and markdown tables are exempt
-
-#### Hard Line Breaks (MD009 Override)
-
-- **No trailing spaces**: Never use trailing spaces for hard line breaks
-- **Always use `<br/>`**: Use HTML break tags for explicit line breaks
-
-#### Duplicate Headings (MD024 Override)
-
-- **Allow duplicate headings**: Headings in same document may have identical text
-
-#### Reference Links (Custom Requirement)
-
-- **Prioritize reference links**: Use `[text][ref]` format for long/complex URLs
-- **Reference placement**: Single use at section bottom, multiple use at document bottom
-- **Reference naming**: Use meaningful, descriptive reference names
-
-#### Line Wrapping Implementation
-
-**Lists**: Maintain indentation alignment when wrapping
-**Paragraphs**: Continue at line start without additional indentation
-**Code blocks and URLs**: Never wrap, exempt from line length limits
-
-### Markdown Creation Protocol
-
-**MANDATORY**: Claude Code must proactively ensure markdownlint compliance during content
-creation, not afterward.
-
-**Universal Application**: Apply to ALL markdown content including:
-- Files with any extension containing markdown
-- Claude responses and replies
-- Documentation within code files
-- Any markdown content in any context
-
-**Pre-Completion Checklist**:
-- Line length ≤ 100 characters with proper hard-wrapping
-- Blank lines around headings, lists, and fenced code blocks
-- No trailing spaces (use `<br/>` for line breaks)
-- Language specification for all fenced code blocks
-- Reference links for complex URLs
-- Single trailing newline
-- Full markdownlint compliance with custom overrides
-
 ## Memory Bank System
 
-@memory-bank/system.md
-@memory-bank/template.md
+@memory-bank/system.md @memory-bank/template.md
