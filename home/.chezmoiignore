@@ -26,3 +26,8 @@ Documents/**
 {{ else }}
 .config/powershell/**
 {{ end }}
+
+# Exclude AppData directory on non-Windows platforms
+{{ if ne .chezmoi.os "windows" }}
+AppData/**
+{{ end }}
