@@ -1,23 +1,23 @@
 ---
-allowed-tools: Bash(git status), Bash(git diff --cached), Bash(git commit -m)
+allowed-tools: Bash(git diff --cached), Bash(git commit -m), Bash(git add -A)
 description: Create a git commit for staged changes only
 ---
 
 ## Context
 
-- Current git status: !`git status`
 - Staged changes: !`git diff --cached`
 
 ## Your task
 
-Create a single git commit for ONLY the staged changes. Follow these rules:
+Create a single git commit. Follow these rules:
 
-1. **Never use `git add`** - only commit what has been explicitly staged
-2. **Analyze the staged changes** to understand what is being committed
-3. **Draft a commit message** following the guidelines below
-4. **Commit only staged changes** using `git commit -m`
-5. **Verify the commit** was successful
-6. **Display the commit message** so you can see what was committed
+1. **Check for --all flag**: If `$ARGUMENTS` contains "--all", stage all changes with `git add -A` first
+2. **Default behavior**: Only commit what has been explicitly staged (never use `git add` unless --all flag is present)
+3. **Analyze the staged changes** to understand what is being committed
+4. **Draft a commit message** following the guidelines below
+5. **Commit staged changes** using `git commit -m`
+6. **Verify the commit** was successful
+7. **Display the commit message** so you can see what was committed
 
 ## Commit Message Best Practices
 
