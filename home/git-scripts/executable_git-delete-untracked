@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# git-delete-untracked: Interactive script to clean untracked files and directories
+# Usage: git delete-untracked [path]
+
+set -e
+
+# Get optional path argument
+TARGET_PATH="${1:-.}"
+
+echo "Previewing untracked files and directories that would be deleted:"
+echo "Scope: $TARGET_PATH"
+echo
+
+# Show what would be deleted
+if ! git clean -nd "$TARGET_PATH"; then
+    echo "Error: No untracked files found or git clean failed"
+    exit 1
+fi
+
+echo
+echo -n "Delete these files and directories? (y/n): "
+
+# Read single character without requiring ENTER
+read -n 1 -r response
+echo  # Add newline after response
+
+case "$response" in
+    [yY])
+        echo "Deleting untracked files and directories..."
+        git clean -fd "$TARGET_PATH"
+        echo "Done."
+        ;;
+    [nN])
+        echo "Cancelled. No files were deleted."
+        ;;
+    *)
+        echo "Invalid response. No files were deleted."
+        exit 1
+        ;;
+esac

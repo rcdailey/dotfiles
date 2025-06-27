@@ -170,7 +170,6 @@
     resolve = "!f() { : git checkout ; git checkout --$1 -- $2 && git add -u $2; }; f"
     move-untracked = !git ls-files --others --exclude-standard -z | cpio -pmd0 $1
     delete-tag = "!f() { : git tag ; git push --delete $1 ${@:2}; git tag -d ${@:2}; }; f"
-    delete-untracked = !git ls-files --others --exclude-standard | sed 's/.*/\"&\"/' | xargs rm -rfv
     trim-spaces = !git diff --cached --name-only | fix-whitespace
     nuke = "!f() { : git branch ; git-nuke.sh \"$@\" ; }; f"
     rename-branch = "!f() { : git branch ; git branch $3 $1/$2 && git push $1 $3 :$2 && git branch -D $3; }; f"
