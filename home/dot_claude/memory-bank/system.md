@@ -111,11 +111,12 @@ When users provide session names that don't exactly match existing files, Claude
 **MANDATORY**: Claude MUST complete ALL steps, no exceptions.
 
 1. Read entire session file before changes
-2. Add Progress & Context Log entry with date and milestone
-3. Update ALL Current-State sections: Status/Progress, Phase, Current Focus, Next Steps
-4. Update Task Checklist: Mark completed [x], add new tasks
-5. **VERIFICATION**: Re-read to confirm completeness
-6. State "✅ Memory bank update complete"
+2. Check for consolidation triggers before adding new entries
+3. Add Progress & Context Log entry with date and milestone using neutral, factual tone
+4. Update ALL Current-State sections: Status/Progress, Phase, Current Focus, Next Steps
+5. Update Task Checklist: Mark completed [x], add new tasks
+6. **VERIFICATION**: Re-read to confirm completeness
+7. State "Memory bank update complete"
 
 ### Update Components
 
@@ -133,7 +134,7 @@ When users provide session names that don't exactly match existing files, Claude
 - [ ] Current Focus describes actual state
 - [ ] Next Steps lists actionable items
 
-**REQUIRED**: "✅ Memory bank verification complete"
+**REQUIRED**: "Memory bank verification complete"
 **If fails**: MUST return to update steps
 
 ## File Consolidation Rules
@@ -142,14 +143,15 @@ When users provide session names that don't exactly match existing files, Claude
 
 **Trigger**: Every time Claude adds new Progress & Context Log entries
 
-**Time-Based Rollup Rules**:
+**Entry-Based Consolidation Rules**:
 
-- **Entries older than 1 week**: Consolidate to weekly summary entries
-- **Entries older than 1 month**: Consolidate to monthly summary entries
+- **Same-day entries**: When >3 entries exist for same date, consolidate to single daily summary
+- **Recent entries**: When >10 entries exist within 7 days, consolidate by day
+- **Older entries**: Apply weekly/monthly consolidation for entries >1 week old
 
-**Process**: Identify entries in time ranges, create summary preserving key decisions, replace individual entries, maintain chronological order.
+**Process**: Preserve all technical details and decisions during consolidation, remove redundancy and improve organization while maintaining chronological order.
 
-**Example**: "2024-01-08 to 2024-01-11 - Feature Implementation Week" with key outcomes.
+**Example**: "2024-01-08 - Lambda Configuration" with key technical changes and decisions.
 
 ## Phase Management
 
@@ -227,6 +229,22 @@ If memory bank state doesn't match repository reality:
 - **Preserve context**: Don't lose important decisions during consolidation
 - **Monitor focus**: Watch for scope creep and remind user when detected
 
+### Progress Capture Protocol
+
+**MANDATORY Requirements**:
+
+- MUST use neutral, factual tone without celebratory language or achievement framing
+- MUST preserve all technical details, decisions, and rationale during updates
+- MUST avoid formatting combinations (bold + caps) except for established acronyms
+- MUST focus on changes made, blockers encountered, and decisions reached
+- PROHIBITED: Emoji usage, success celebrations, redundant congratulations
+
+**Information Organization**:
+
+- Technical details belong in appropriate current-state sections
+- Progress Log captures chronological milestones and decisions
+- Avoid duplicating same information across multiple sections
+
 ### Session Ending Protocol
 
 **MANDATORY before concluding:**
@@ -235,7 +253,7 @@ If memory bank state doesn't match repository reality:
 2. Document status in Progress Log
 3. Set Next Steps
 4. Complete verification
-5. Confirm "✅ Memory bank updated for session end"
+5. Confirm "Memory bank updated for session end"
 
 **NO EXCEPTIONS**: MUST update even if user dismisses.
 **Response**: "I need to update the memory bank first. 30 seconds."
