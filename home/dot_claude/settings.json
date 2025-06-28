@@ -4,7 +4,9 @@
     "allow": [
       "WebFetch(domain:docs.anthropic.com)",
       "WebFetch(domain:github.com)",
-      "Bash(git:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git reflog:*)",
       "Bash(npm:*)",
       "Bash(node:*)",
       "Bash(python:*)",
