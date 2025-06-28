@@ -1,18 +1,18 @@
 # Memory Bank System Documentation
 
-## Overview
+## System Overview
 
-The Memory Bank system enables Claude Code to maintain context across sessions for long-running
-sessions. Each session is tracked in a separate markdown file that serves as a persistent log of
-progress, decisions, and current state.
+The Memory Bank system enables Claude Code to maintain context across sessions for long-running sessions through separate markdown files that serve as persistent logs of progress, decisions, and current state.
 
-## Core Principles
+## Core Operating Principles
 
-- **Single Session Focus**: Only one session can be loaded at a time
-- **User-Controlled Loading**: Claude never automatically loads sessions
-- **Forward Progress**: Always append new information, never modify historical entries
-- **Automatic Maintenance**: Claude manages file consolidation and updates
-- **Learning Context**: Preserve decision rationale and lessons learned
+Claude MUST:
+
+- NEVER load multiple sessions simultaneously - only one session can be loaded at a time
+- NEVER automatically load sessions - user must explicitly request loading
+- ALWAYS append new information and never modify historical entries for forward progress
+- AUTOMATICALLY manage file consolidation and updates for maintenance
+- PRESERVE decision rationale and lessons learned for context continuity
 
 ## File Structure
 
@@ -26,30 +26,18 @@ progress, decisions, and current state.
 
 - **Session files**: Use kebab-case (`feature-implementation.md`, `system-refactor.md`)
 
-## Discovery
+## File Discovery Protocol
 
-**REQUIRED**: `${REPO_ROOT}` = absolute path to git repository root. Claude MUST use absolute path
-to repo root, NEVER relative paths for memory-bank directory.
+Claude MUST use absolute path to git repository root (`${REPO_ROOT}`) and NEVER use relative paths for memory-bank directory, looking for session files in `${REPO_ROOT}/.memory-bank/` directory only with lazy directory creation when first session is created.
 
-Claude looks for session files in `${REPO_ROOT}/.memory-bank/` directory only. The `.memory-bank/`
-directory is created lazily when the first session is created in a repository.
+### Session Discovery Requirements
 
-## Implementation Guidance
+Claude MUST:
 
-### Session Discovery
-
-**REQUIRED**: Use the Glob tool for session discovery to ensure optimal performance.
-
-**Primary approach**:
-
-1. Use `Glob` with pattern `${REPO_ROOT}/.memory-bank/*.md` to list all session files
-2. Apply fuzzy matching logic directly on the returned filenames
-3. Process results in memory using string matching operations
-
-**Fallback approach**: Use `LS` tool to check if `${REPO_ROOT}/.memory-bank/` directory exists
-
-**PROHIBITED**: Never use the Task tool for session discovery - it's inefficient for simple file
-pattern matching and uses significant computational resources.
+- USE the Glob tool for session discovery to ensure optimal performance
+- FOLLOW primary approach: Use `Glob` with pattern `${REPO_ROOT}/.memory-bank/*.md`, apply fuzzy matching logic directly on returned filenames, process results in memory using string matching operations
+- USE fallback approach: Use `LS` tool to check if `${REPO_ROOT}/.memory-bank/` directory exists
+- NEVER use the Task tool for session discovery as it's inefficient for simple file pattern matching and uses significant computational resources
 
 ## Fuzzy Matching Algorithm
 
@@ -91,41 +79,41 @@ When users provide session names that don't exactly match existing files, Claude
 2. Ask user to select by name or number
 3. Proceed with loading workflow once selection is made
 
-### Multiple Session Prohibition
+### Session Loading Restrictions
 
-**Strictly forbidden**: Loading multiple sessions simultaneously
-
-**If user requests multiple sessions**: Claude must refuse, explaining single-session focus principle
+Claude MUST refuse multiple session loading requests and explain single-session focus principle when users request multiple sessions simultaneously.
 
 ## Update Protocol
 
-### CRITICAL TRIGGERS (Claude MUST update immediately)
+### Update Triggers
+
+Claude MUST update immediately when:
 
 - Major milestones completed, phase transitions, important decisions
 - Blockers encountered/resolved, substantial progress made
 - Learning discoveries, failed attempts (when instructive)
 - Session ending, user requests memory bank update
 
-### REQUIRED STEPS (ALL must be completed)
+### Update Process
 
-**MANDATORY**: Claude MUST complete ALL steps, no exceptions.
+Claude MUST complete ALL steps with no exceptions:
 
 1. Read entire session file before changes
 2. Check for consolidation triggers before adding new entries
 3. Add Progress & Context Log entry with date and milestone using neutral, factual tone
 4. Update ALL Current-State sections: Status/Progress, Phase, Current Focus, Next Steps
 5. Update Task Checklist: Mark completed [x], add new tasks
-6. **VERIFICATION**: Re-read to confirm completeness
+6. Re-read to confirm completeness
 7. State "Memory bank update complete"
 
 ### Update Components
 
-**Current-State** (replaced): Next Steps, Resources, Current Focus, Phase
-**Chronological** (append): Progress & Context Log, Task Checklist updates
+- **Current-State** (replaced): Next Steps, Resources, Current Focus, Phase
+- **Chronological** (append): Progress & Context Log, Task Checklist updates
 
-### MANDATORY Verification
+### Update Verification
 
-**MUST verify ALL items:**
+Claude MUST verify ALL items:
 
 - [ ] Progress Log entry added with date and milestone
 - [ ] All completed tasks marked [x]
@@ -134,24 +122,17 @@ When users provide session names that don't exactly match existing files, Claude
 - [ ] Current Focus describes actual state
 - [ ] Next Steps lists actionable items
 
-**REQUIRED**: "Memory bank verification complete"
-**If fails**: MUST return to update steps
+Claude MUST state "Memory bank verification complete" and return to update steps if verification fails.
 
-## File Consolidation Rules
+## File Consolidation Protocol
 
-### Automatic Consolidation
-
-**Trigger**: Every time Claude adds new Progress & Context Log entries
-
-**Entry-Based Consolidation Rules**:
+Claude MUST consolidate every time new Progress & Context Log entries are added, following these rules:
 
 - **Same-day entries**: When >3 entries exist for same date, consolidate to single daily summary
 - **Recent entries**: When >10 entries exist within 7 days, consolidate by day
 - **Older entries**: Apply weekly/monthly consolidation for entries >1 week old
 
-**Process**: Preserve all technical details and decisions during consolidation, remove redundancy and improve organization while maintaining chronological order.
-
-**Example**: "2024-01-08 - Lambda Configuration" with key technical changes and decisions.
+Claude MUST preserve all technical details and decisions during consolidation, remove redundancy and improve organization while maintaining chronological order (example: "2024-01-08 - Lambda Configuration" with key technical changes and decisions).
 
 ## Phase Management
 
@@ -188,14 +169,9 @@ Claude automatically updates the Phase field when detecting:
 
 **Approach**: Start with minimal interference, evolve based on usage patterns.
 
-## Session Creation
+## Session Creation Protocol
 
-### User-Triggered Only
-
-Claude never proactively suggests creating new sessions. Users must explicitly request session
-creation.
-
-### Creation Process
+Claude NEVER proactively suggests creating new sessions and MUST wait for explicit user requests, then follow this process:
 
 1. User requests new session creation
 2. Claude creates `${REPO_ROOT}/.memory-bank/` directory if it doesn't exist
@@ -229,25 +205,20 @@ If memory bank state doesn't match repository reality:
 - **Preserve context**: Don't lose important decisions during consolidation
 - **Monitor focus**: Watch for scope creep and remind user when detected
 
-### Progress Capture Protocol
+### Progress Capture Requirements
 
-**MANDATORY Requirements**:
+Claude MUST:
 
-- MUST use neutral, factual tone without celebratory language or achievement framing
-- MUST preserve all technical details, decisions, and rationale during updates
-- MUST avoid formatting combinations (bold + caps) except for established acronyms
-- MUST focus on changes made, blockers encountered, and decisions reached
-- PROHIBITED: Emoji usage, success celebrations, redundant congratulations
+- USE neutral, factual tone without celebratory language or achievement framing
+- PRESERVE all technical details, decisions, and rationale during updates
+- AVOID formatting combinations (bold + caps) except for established acronyms
+- FOCUS on changes made, blockers encountered, and decisions reached
+- NEVER use emoji, success celebrations, or redundant congratulations
+- ORGANIZE technical details in appropriate current-state sections with Progress Log capturing chronological milestones and decisions while avoiding information duplication
 
-**Information Organization**:
+### Session Ending Requirements
 
-- Technical details belong in appropriate current-state sections
-- Progress Log captures chronological milestones and decisions
-- Avoid duplicating same information across multiple sections
-
-### Session Ending Protocol
-
-**MANDATORY before concluding:**
+Claude MUST complete before concluding with NO EXCEPTIONS even if user dismisses:
 
 1. Immediate memory bank update
 2. Document status in Progress Log
@@ -255,8 +226,7 @@ If memory bank state doesn't match repository reality:
 4. Complete verification
 5. Confirm "Memory bank updated for session end"
 
-**NO EXCEPTIONS**: MUST update even if user dismisses.
-**Response**: "I need to update the memory bank first. 30 seconds."
+Claude MUST respond "I need to update the memory bank first. 30 seconds." if user dismisses update requirement.
 
 ### For Users
 
