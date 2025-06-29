@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -e
+
+echo "=== GitHub MCP Server Setup ==="
+
+# Install gh via brew if it doesn't exist
+if ! command -v gh &> /dev/null; then
+    echo "Installing GitHub CLI..."
+    brew install gh
+fi
+
+# Set browser for cross-platform compatibility  
+export BROWSER="cmd.exe /c start"
+echo "BROWSER set to: $BROWSER"
+
+# Check if already authenticated
+if gh auth status &> /dev/null; then
+    echo "Already authenticated with GitHub"
+else
+    echo "Authenticating with GitHub..."
+    echo "If browser doesn't open automatically, you'll see a device code and URL to visit manually."
+    gh auth login --git-protocol ssh --skip-ssh-key --web
+fi
+
+# Get the token
+echo "Obtaining GitHub token..."
+TOKEN=$(gh auth token)
+
+if [[ -z "$TOKEN" ]]; then
+    echo "Failed to obtain GitHub token"
+    exit 1
+fi
+
+echo "Token obtained successfully"
+
+# Configure Claude MCP server
+echo "Configuring GitHub MCP server..."
+claude mcp add github "https://api.githubcopilot.com/mcp/" \
+    -s user \
+    -t http \
+    -H "Authorization: Bearer $TOKEN"
+
+echo "✅ GitHub MCP server configured successfully!"
+echo "The server is configured at user scope and will persist across projects."
