@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(git diff --cached), Bash(git commit -m), Bash(git add -A), Bash(git status), Bash(git log)
+allowed-tools: Bash(git diff:*), Bash(git commit:*), Bash(git add:*), Bash(git status:*), Bash(git log:*)
 description: Create a git commit for staged changes only
 ---
 
