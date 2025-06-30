@@ -25,12 +25,13 @@ When modifying CLAUDE.md or @imported files, Claude MUST:
 
 ### Language Standards
 
-Claude MUST:
+When modifying CLAUDE.md files, Claude MUST:
 
 - USE imperative verbs (MUST/NEVER/ALWAYS) for behavioral directives
 - AVOID mixing priority markers with directive content
 - WRITE directives as complete behavioral requirements rather than partial instructions
 - ENSURE each directive is independently actionable without requiring interpretation
+- NEVER use emojis in text output unless explicitly requested by the user
 
 ### Markdown Compliance Verification
 
