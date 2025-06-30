@@ -10,8 +10,18 @@ if ! command -v gh &> /dev/null; then
     brew install gh
 fi
 
-# Set browser for cross-platform compatibility  
-export BROWSER="cmd.exe /c start"
+# Set browser for cross-platform compatibility
+case "$(uname -s)" in
+    Darwin*)
+        export BROWSER="open"
+        ;;
+    Linux*)
+        export BROWSER="xdg-open"
+        ;;
+    CYGWIN*|MINGW*|MSYS*)
+        export BROWSER="cmd.exe /c start"
+        ;;
+esac
 echo "BROWSER set to: $BROWSER"
 
 # Check if already authenticated
