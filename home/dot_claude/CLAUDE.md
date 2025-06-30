@@ -119,4 +119,7 @@ trailing newline.
 
 ## Memory Bank System
 
+**NOTE**: Files referenced below are user-level configuration automatically imported - NEVER search
+for or modify these within project repositories.
+
 @memory-bank/system.md @memory-bank/template.md
