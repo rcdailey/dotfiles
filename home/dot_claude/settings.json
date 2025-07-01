@@ -18,7 +18,8 @@
       "Bash(brew info:*)",
       "Bash(time:*)",
       "Bash(xmlstarlet:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(awk:*)"
     ]
   },
   "model": "sonnet"
