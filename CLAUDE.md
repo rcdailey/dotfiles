@@ -152,9 +152,10 @@ email = "user@example.com"
 Use in templates:
 
 ```go
-email = {{ .email }}
-{{ if .work }}
-work_email = {{ .work.email }}
+{{ if eq .env "work" }}
+# Work environment configuration
+{{ else }}
+# Personal environment configuration
 {{ end }}
 ```
 
@@ -216,7 +217,6 @@ chezmoi add --encrypt ~/.ssh/key
 
 Based on `.chezmoi.toml.tmpl`, templates have access to:
 
-- `.email` - User email address (prompted during init)
 - `.env` - Environment: "work", "personal", or "other"
 - `.ssh_azure_hosts` - Additional Azure DevOps hostnames (work env only)
 - Standard chezmoi variables (`.chezmoi.os`, `.chezmoi.hostname`, etc.)

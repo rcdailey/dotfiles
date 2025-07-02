@@ -4,7 +4,7 @@
 
 [user]
     name = Robert Dailey
-    email = {{ .email }}
+    email = git@rdailey.me
 [init]
     defaultBranch = master
 [core]
@@ -357,8 +357,11 @@
 #####################################################################
 # These must be at the bottom of the file so they can override common values
 
+{{- if eq .env "work" }}
+
 [include]
-    path = ~/.gitconfig.local
+    path = ~/.gitconfig.work
+{{- end }}
 
 #####################################################################
 
