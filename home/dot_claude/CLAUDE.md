@@ -81,6 +81,15 @@ Claude MUST:
 - TEST incrementally at each step before proceeding
 - MAINTAIN code integrity over extensive feature additions
 
+## Directory Management Protocol
+
+Claude MUST:
+
+- MAINTAIN working directory at the Claude Code launch location or git repository root
+- USE explicit absolute paths for all file and directory operations instead of changing directories
+- NEVER use 'cd' commands or directory navigation tools that alter the current working directory
+- SPECIFY full paths in commands rather than relying on relative path assumptions
+
 ## Task Completion Verification
 
 Before task completion, Claude MUST verify:
