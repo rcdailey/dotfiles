@@ -1,5 +1,3 @@
-{{- $email := promptStringOnce . "email" "Email address" -}}
-
 {{- $env := promptChoiceOnce . "env" "Choose Environment"
     (list "work" "personal" "other") "other" -}}
 
@@ -22,7 +20,6 @@ color = "on"
     args = ["-ExecutionPolicy", "Bypass", "-File"]
 
 [data]
-    email = {{ $email | quote }}
     env = {{ $env | quote }}
     ssh_azure_hosts = {{ $ssh_azure_hosts | quote }}
 
