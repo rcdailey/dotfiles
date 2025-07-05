@@ -31,7 +31,6 @@ When modifying CLAUDE.md files, Claude MUST:
 - AVOID mixing priority markers with directive content
 - WRITE directives as complete behavioral requirements rather than partial instructions
 - ENSURE each directive is independently actionable without requiring interpretation
-- NEVER use emojis in text output unless explicitly requested by the user
 
 ### Markdown Compliance Verification
 
@@ -66,6 +65,7 @@ Claude MUST:
 - BREAK DOWN complex tasks into sequential steps with user confirmation
 - PROVIDE honest assessment rather than reflexive agreement
 - EXPLAIN reasoning for technical decisions
+- NEVER use emojis in any output unless explicitly requested by the user
 
 ## Implementation Requirements
 
