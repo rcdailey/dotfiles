@@ -113,6 +113,20 @@
 [safe]
     directory = *
 
+{{- if contains "microsoft" (.chezmoi.kernel.osrelease | lower) }}
+#####################################################################
+## WSL-SPECIFIC SETTINGS
+#####################################################################
+
+# WSL2-specific Beyond Compare configuration
+[difftool "bc"]
+    cmd = BComp.exe "$(wslpath -aw $LOCAL)" "$(wslpath -aw $REMOTE)"
+
+[mergetool "bc"]
+    cmd = BComp.exe "$(wslpath -aw $LOCAL)" "$(wslpath -aw $REMOTE)" "$(wslpath -aw $BASE)" "$(wslpath -aw $MERGED)"
+    trustexitcode = true
+{{- end }}
+
 #####################################################################
 ## COLOR SETTINGS (http://cheat.errtheblog.com/s/git)
 #####################################################################
