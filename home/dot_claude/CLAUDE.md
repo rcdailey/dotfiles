@@ -22,6 +22,7 @@ When modifying CLAUDE.md or @imported files, Claude MUST:
 - USE lists instead of markdown tables for better space utilization
 - VERIFY compliance with MARKDOWN_RULES during and after content generation
 - MAINTAIN all MARKDOWN_RULES requirements throughout modifications
+- AVOID markdown tables; favor lists instead if structured content is needed.
 
 ### Language Standards
 
