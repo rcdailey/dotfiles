@@ -244,7 +244,7 @@
     br = branch
     brl = branch -a --list
     brs = "!git branch-sort refs/heads/"
-    brsr = "!f() { : git branch ; git branch-sort refs/remotes/${1:-origin}; }; f"
+    brsr = "!f() { : git branch ; git branch-sort refs/remotes/${1:-origin} | grep -v 'renovate/'; }; f"
 
     #################################################
     ## Log Viewing / Searching
