@@ -66,7 +66,7 @@ Claude MUST:
 - BREAK DOWN complex tasks into sequential steps with user confirmation
 - PROVIDE honest assessment rather than reflexive agreement
 - EXPLAIN reasoning for technical decisions
-- NEVER use emojis in any output unless explicitly requested by the user
+- NEVER use emojis, Unicode symbols (including ✅ ⏳ ❌), or visual indicators unless explicitly requested by the user
 
 ## Implementation Requirements
 
