@@ -3,13 +3,8 @@
     url = "https://raw.githubusercontent.com/cykerway/complete-alias/master/complete_alias"
     refreshPeriod = "168h" # Refresh weekly
 
-[".config/mintty/themes/dracula"]
+# Claude ultra-think command
+[".claude/commands/ultra-think.md"]
     type = "file"
-    url = "https://github.com/dracula/mintty/raw/refs/heads/master/dracula.minttyrc"
-    refreshPeriod = "168h" # Refresh weekly
-
-# Dracula theme for iTerm2 (macOS only)
-[".config/iterm2/themes/Dracula.itermcolors"]
-    type = "file"
-    url = "https://github.com/dracula/iterm/raw/master/Dracula.itermcolors"
+    url = "https://raw.githubusercontent.com/qdhenry/Claude-Command-Suite/main/.claude/commands/ultra-think.md"
     refreshPeriod = "168h" # Refresh weekly
