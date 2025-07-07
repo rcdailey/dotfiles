@@ -6,6 +6,7 @@
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
   },
   "permissions": {
+    "deny": [],
     "allow": [
       "Bash(awk:*)",
       "Bash(brew info:*)",
@@ -54,7 +55,6 @@
       "Bash(yamllint:*)",
       "Bash(zip:*)",
       "WebFetch"
-    ],
-    "deny": ["Bash(find:*-type*)"]
+    ]
   }
 }
