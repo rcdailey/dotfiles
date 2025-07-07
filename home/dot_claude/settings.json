@@ -38,6 +38,7 @@
       "Bash(python3 -m black:*)",
       "Bash(python3 *.py:*)",
       "Bash(rg:*)",
+      "Bash(rm)",
       "Bash(sed:*)",
       "Bash(sort:*)",
       "Bash(sqlite3:*)",
