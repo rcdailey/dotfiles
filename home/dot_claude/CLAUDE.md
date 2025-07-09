@@ -134,3 +134,7 @@ trailing newline.
 for or modify these within project repositories.
 
 @memory-bank/system.md @memory-bank/template.md
+
+## Formatting Guidelines
+
+- Do not liberally use bold formatting when creating bullet point lists
