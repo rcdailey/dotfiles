@@ -96,43 +96,156 @@ Claude MUST update immediately when:
 
 ### Update Process
 
-Claude MUST complete ALL steps with no exceptions:
+**CRITICAL**: This is a mandatory 8-step sequential process. Each step MUST be completed before proceeding to the next. NO selective execution or step skipping allowed.
 
-1. Read entire session file before changes
-2. Check for consolidation triggers before adding new entries
-3. Add Progress & Context Log entry with date and milestone using neutral, factual tone
-4. Update ALL Current-State sections: Status/Progress, Phase, Current Focus, Next Steps
-5. Update Task Checklist: Mark completed [x], add new tasks
-6. Re-read to confirm completeness
-7. State "Memory bank update complete"
+#### Step 1: Pre-Update File Read
+- Read entire session file before making any changes
+- Understand current state and existing entries
+- **Cannot proceed to Step 2 without completing this step**
+
+#### Step 2: Mandatory Consolidation
+- Apply Consolidation Decision Tree (see below)
+- If triggers apply, consolidate entries BEFORE adding new content
+- **Cannot proceed to Step 3 without completing consolidation check**
+
+#### Step 3: Progress Log Entry
+- Add Progress & Context Log entry with date and milestone
+- Use neutral, factual tone
+- **Cannot proceed to Step 4 without adding this entry**
+
+#### Step 4: Current-State Updates
+- Update ALL Current-State sections (Status/Progress, Phase, Current Focus, Next Steps)
+- **Cannot proceed to Step 5 without updating ALL sections**
+
+#### Step 5: Task Checklist Updates
+- Mark completed tasks [x]
+- Add new tasks discovered during work
+- **Cannot proceed to Step 6 without task updates**
+
+#### Step 6: Completeness Verification
+- Re-read entire file to confirm all changes are present
+- **Cannot proceed to Step 7 without re-reading file**
+
+#### Step 7: Mandatory Verification
+- Complete verification checklist (see Update Verification section)
+- **Cannot proceed to Step 8 without passing verification**
+
+#### Step 8: Update Completion
+- State "Memory bank update complete" ONLY after verification passes
+- **Process is not complete until this statement is made**
+
+**SEQUENCING ENFORCEMENT**: If any step is incomplete, Claude MUST return to that step and complete it before proceeding. The process is LINEAR and MANDATORY.
 
 ### Update Components
 
 - **Current-State** (replaced): Next Steps, Resources, Current Focus, Phase
 - **Chronological** (append): Progress & Context Log, Task Checklist updates
 
+## Rule Compliance Warning
+
+**CRITICAL BEHAVIORAL PATTERN ALERT**: The following patterns indicate selective rule compliance and are FORBIDDEN:
+
+### Prohibited Behaviors
+
+- **Consolidation Avoidance**: Ignoring consolidation step because it seems "optional"
+- **Partial Updates**: Updating only Current Focus/Next Steps while ignoring Status/Progress/Phase
+- **Verification Skipping**: Treating verification as optional rather than mandatory
+- **Process Shortcuts**: Jumping to step 8 without completing steps 1-7
+- **Selective Execution**: Choosing which rules to follow based on convenience
+
+### Compliance Enforcement
+
+**If these patterns are detected, Claude MUST**:
+
+1. **Immediately halt** current activity
+2. **Return to Step 1** of Update Process
+3. **Complete the full 8-step process** with no exceptions
+4. **State "Correcting rule compliance failure"** before restarting
+
+### Root Cause Analysis
+
+**Why selective compliance occurs**:
+- Treating consolidation as "maintenance" rather than mandatory step
+- Viewing verification as "optional confirmation" rather than required gate
+- Prioritizing speed over process integrity
+- Assuming partial updates are "good enough"
+
+**The solution**: Every step is mandatory, every time, with no exceptions. Process integrity is non-negotiable.
+
 ### Update Verification
 
-Claude MUST verify ALL items:
+**MANDATORY VERIFICATION**: Claude MUST explicitly verify ALL items before declaring update complete.
 
-- [ ] Progress Log entry added with date and milestone
-- [ ] All completed tasks marked [x]
-- [ ] Status/Progress reflects current reality
-- [ ] Phase updated if transitioning
-- [ ] Current Focus describes actual state
-- [ ] Next Steps lists actionable items
+**VERIFICATION CHECKLIST** (must check each item):
 
-Claude MUST state "Memory bank verification complete" and return to update steps if verification fails.
+- [ ] **Consolidation performed** (if triggers applied)
+- [ ] **Progress Log entry added** with date and milestone
+- [ ] **All completed tasks marked [x]** in Task Checklist
+- [ ] **Status/Progress updated** to reflect current reality
+- [ ] **Phase updated** if transitioning between phases
+- [ ] **Current Focus updated** to describe actual current state
+- [ ] **Next Steps updated** with actionable items
+- [ ] **Resources section updated** if new tools/files/references added
+
+**VERIFICATION ENFORCEMENT**:
+
+- Claude MUST state "Memory bank verification complete" ONLY after ALL items pass
+- If ANY verification item fails, Claude MUST return to step 4 and complete missing updates
+- The update process is NOT complete until verification passes
+- Claude MUST NOT proceed with other tasks until verification is complete
+
+**VERIFICATION FAILURE PROTOCOL**:
+
+- State "Verification failed - returning to update steps"
+- Identify which items failed verification
+- Complete the missing updates
+- Re-run verification checklist
+- Only proceed after stating "Memory bank verification complete"
 
 ## File Consolidation Protocol
 
-Claude MUST consolidate every time new Progress & Context Log entries are added, following these rules:
+**MANDATORY**: Consolidation MUST occur every time new Progress & Context Log entries are added, before adding the new entry.
 
-- **Same-day entries**: When >3 entries exist for same date, consolidate to single daily summary
-- **Recent entries**: When >10 entries exist within 7 days, consolidate by day
-- **Older entries**: Apply weekly/monthly consolidation for entries >1 week old
+### Consolidation Decision Tree
 
-Claude MUST preserve all technical details and decisions during consolidation, remove redundancy and improve organization while maintaining chronological order (example: "2024-01-08 - Lambda Configuration" with key technical changes and decisions).
+**Step 1**: Count existing entries in Progress & Context Log
+
+**Step 2**: Apply consolidation rules in priority order:
+
+1. **Same-day entries** (>3 entries for same date):
+   - **Trigger**: 4+ entries with same date
+   - **Action**: Consolidate to single daily summary
+   - **Example**: "2025-07-10 - CUPS Configuration" (combined 4 entries about printer setup)
+
+2. **Recent entries** (>10 entries within 7 days):
+   - **Trigger**: 11+ entries within past 7 days
+   - **Action**: Consolidate by day, keeping technical details
+   - **Example**: "2025-07-03 - Database Migration" (combined 3 entries from same day)
+
+3. **Older entries** (>1 week old with >5 entries per week):
+   - **Trigger**: More than 5 entries in any week older than 7 days
+   - **Action**: Weekly consolidation with monthly rollup for >4 weeks old
+   - **Example**: "2025-06-24 to 2025-06-30 - Authentication Refactor" (weekly summary)
+
+**Step 3**: If any trigger applies, consolidate BEFORE adding new entry
+
+**Step 4**: Preserve ALL technical details, decisions, and rationale during consolidation
+
+### Consolidation Examples
+
+**Before consolidation**:
+```
+2025-07-10 - Started CUPS removal
+2025-07-10 - Identified printer configurations
+2025-07-10 - Removed LaunchDaemons
+2025-07-10 - Updated chezmoi ignore patterns
+```
+
+**After consolidation**:
+```
+2025-07-10 - CUPS Removal Complete
+Removed CUPS printer system: identified configs in LaunchDaemons, removed daemon files, updated chezmoi ignore patterns to exclude printer-related files. Decision: Full removal preferred over selective cleanup.
+```
 
 ## Phase Management
 
