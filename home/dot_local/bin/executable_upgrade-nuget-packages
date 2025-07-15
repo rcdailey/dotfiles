@@ -162,6 +162,10 @@ all_packages=$(cat "$PACKAGES_PROPS_FILE" | \
     xmlstarlet sel -T -t -m "//PackageVersion | //GlobalPackageReference" -v "@Include" -o "|" -v "@Version" -n | \
     rg '\|[0-9]+(\.[0-9]+){1,}(-[a-zA-Z0-9\.-]+)?$')
 
+# Pre-build lookup maps for faster package detection
+package_versions=$(xmlstarlet sel -t -m "//PackageVersion" -v "@Include" -n "$PACKAGES_PROPS_FILE" 2>/dev/null)
+global_packages=$(xmlstarlet sel -t -m "//GlobalPackageReference" -v "@Include" -n "$PACKAGES_PROPS_FILE" 2>/dev/null)
+
 if [ -z "$all_packages" ]; then
     echo "No packages found in $PACKAGES_PROPS_FILE!"
     exit 1
@@ -210,54 +214,218 @@ if [ ! -f "$PACKAGES_PROPS_FILE" ]; then
     exit 1
 fi
 
-# Count packages
-package_count=$(echo "$outdated_data" | wc -l)
-echo "Found $package_count outdated packages to upgrade"
-echo ""
-
-# Update each package version in Directory.Packages.props
+# Collect current versions for table display
 echo "0" > /tmp/upgrade_updated.tmp
 echo "0" > /tmp/upgrade_failed.tmp
 
+# Build the upgrade table data
 echo "$outdated_data" | while IFS='|' read -r package_name latest_version; do
     if [ ! -z "$package_name" ] && [ ! -z "$latest_version" ]; then
+        # Get current version from the original package data
+        current_version=$(echo "$all_packages" | grep "^$package_name|" | cut -d'|' -f2)
+        
+        # Determine package type for display
+        package_type="Package"
+        if echo "$global_packages" | grep -q "^$package_name$"; then
+            package_type="Global"
+        fi
+        
+        # Add to table data (format: package_name|current_version|latest_version|type)
+        echo "$package_name|$current_version|$latest_version|$package_type" >> /tmp/upgrade_table.tmp
+    fi
+done
+
+# Display the upgrade table
+if [ -f "/tmp/upgrade_table.tmp" ] && [ -s "/tmp/upgrade_table.tmp" ]; then
+    package_count=$(wc -l < /tmp/upgrade_table.tmp)
+    echo "Found $package_count outdated packages to upgrade"
+    echo ""
+    echo "Packages to upgrade:"
+    echo ""
+    
+    # Calculate dynamic column widths
+    max_pkg_len=12  # Minimum for "Package Name" header
+    max_curr_len=7  # Minimum for "Current" header
+    max_new_len=6   # Minimum for "Latest" header
+    
+    # Find the maximum length for each column
+    while IFS='|' read -r pkg_name curr_ver new_ver pkg_type; do
+        pkg_len=${#pkg_name}
+        curr_len=${#curr_ver}
+        new_len=${#new_ver}
+        
+        [ $pkg_len -gt $max_pkg_len ] && max_pkg_len=$pkg_len
+        [ $curr_len -gt $max_curr_len ] && max_curr_len=$curr_len
+        [ $new_len -gt $max_new_len ] && max_new_len=$new_len
+    done < /tmp/upgrade_table.tmp
+    
+    # Get terminal width, default to 120 if not available
+    term_width=$(tput cols 2>/dev/null || echo 120)
+    
+    # Reserve space for type column (8 chars) and spacing (6 spaces: 3 separators × 2 spaces each)
+    # Also account for color codes in the latest version column (approximately 10 extra chars)
+    available_width=$((term_width - 8 - 6 - 10))
+    
+    # If total needed width exceeds available, truncate package name column
+    total_needed=$((max_pkg_len + max_curr_len + max_new_len))
+    if [ $total_needed -gt $available_width ]; then
+        max_pkg_len=$((available_width - max_curr_len - max_new_len))
+        # Ensure minimum readable width
+        [ $max_pkg_len -lt 20 ] && max_pkg_len=20
+    fi
+    
+    # Color definitions for dark backgrounds
+    GREEN='\033[0;32m'      # Green for patch updates (safe)
+    YELLOW='\033[1;33m'     # Bright yellow for minor updates (caution)
+    RED='\033[1;31m'        # Bright red for major updates (breaking)
+    CYAN='\033[0;36m'       # Cyan for prerelease/special cases
+    RESET='\033[0m'         # Reset color
+    
+    # Function to determine semantic version change type
+    get_version_change_type() {
+        local current="$1"
+        local latest="$2"
+        
+        # Extract major.minor.patch from versions (handle 4-part AWS versions)
+        local curr_major=$(echo "$current" | cut -d'.' -f1)
+        local curr_minor=$(echo "$current" | cut -d'.' -f2)
+        local curr_patch=$(echo "$current" | cut -d'.' -f3)
+        
+        local new_major=$(echo "$latest" | cut -d'.' -f1)
+        local new_minor=$(echo "$latest" | cut -d'.' -f2)
+        local new_patch=$(echo "$latest" | cut -d'.' -f3)
+        
+        # Handle cases where version parts might be missing or contain non-numeric data
+        curr_major=${curr_major:-0}; curr_minor=${curr_minor:-0}; curr_patch=${curr_patch:-0}
+        new_major=${new_major:-0}; new_minor=${new_minor:-0}; new_patch=${new_patch:-0}
+        
+        # Remove any non-numeric suffixes for comparison
+        curr_major=$(echo "$curr_major" | sed 's/[^0-9].*//')
+        curr_minor=$(echo "$curr_minor" | sed 's/[^0-9].*//')
+        curr_patch=$(echo "$curr_patch" | sed 's/[^0-9].*//')
+        new_major=$(echo "$new_major" | sed 's/[^0-9].*//')
+        new_minor=$(echo "$new_minor" | sed 's/[^0-9].*//')
+        new_patch=$(echo "$new_patch" | sed 's/[^0-9].*//')
+        
+        # Default to 0 if empty after cleaning
+        curr_major=${curr_major:-0}; curr_minor=${curr_minor:-0}; curr_patch=${curr_patch:-0}
+        new_major=${new_major:-0}; new_minor=${new_minor:-0}; new_patch=${new_patch:-0}
+        
+        if [ "$new_major" -gt "$curr_major" ]; then
+            echo "major"
+        elif [ "$new_major" -eq "$curr_major" ] && [ "$new_minor" -gt "$curr_minor" ]; then
+            echo "minor"
+        elif [ "$new_major" -eq "$curr_major" ] && [ "$new_minor" -eq "$curr_minor" ] && [ "$new_patch" -gt "$curr_patch" ]; then
+            echo "patch"
+        else
+            echo "other"
+        fi
+    }
+    
+    # Function to get colored version number based on version change
+    get_colored_version() {
+        local version="$1"
+        local change_type="$2"
+        case "$change_type" in
+            "major") printf "${RED}%s${RESET}" "$version" ;;
+            "minor") printf "${YELLOW}%s${RESET}" "$version" ;;
+            "patch") printf "${GREEN}%s${RESET}" "$version" ;;
+            *) printf "${CYAN}%s${RESET}" "$version" ;;
+        esac
+    }
+    
+    # Function to truncate text if needed
+    truncate_text() {
+        local text="$1"
+        local max_len="$2"
+        if [ ${#text} -gt $max_len ]; then
+            echo "${text:0:$((max_len-3))}..."
+        else
+            echo "$text"
+        fi
+    }
+    
+    # Print header
+    printf "%-${max_pkg_len}s  %-${max_curr_len}s  %-${max_new_len}s  %-8s\n" "Package Name" "Current" "Latest" "Type"
+    printf "%-${max_pkg_len}s  %-${max_curr_len}s  %-${max_new_len}s  %-8s\n" \
+        "$(printf '=%.0s' $(seq 1 $max_pkg_len))" \
+        "$(printf '=%.0s' $(seq 1 $max_curr_len))" \
+        "$(printf '=%.0s' $(seq 1 $max_new_len))" \
+        "========"
+    
+    # Print data rows with colored version numbers
+    while IFS='|' read -r pkg_name curr_ver new_ver pkg_type; do
+        truncated_pkg=$(truncate_text "$pkg_name" "$max_pkg_len")
+        
+        # Determine version change type and get colored version
+        change_type=$(get_version_change_type "$curr_ver" "$new_ver")
+        colored_new_ver=$(get_colored_version "$new_ver" "$change_type")
+        
+        # Print row with colored target version
+        # Use manual spacing to handle colored text properly
+        pkg_spaces=$(printf "%*s" $((max_pkg_len - ${#truncated_pkg})) "")
+        curr_spaces=$(printf "%*s" $((max_curr_len - ${#curr_ver})) "")
+        new_spaces=$(printf "%*s" $((max_new_len - ${#new_ver})) "")
+        
+        printf "%s%s  %s%s  %s%s  %-8s\n" \
+            "$truncated_pkg" "$pkg_spaces" "$curr_ver" "$curr_spaces" "$colored_new_ver" "$new_spaces" "$pkg_type"
+    done < /tmp/upgrade_table.tmp
+    
+    # Print color legend
+    echo ""
+    echo "Legend:"
+    printf "  ${GREEN}Green${RESET} version numbers: Patch updates (safe)\n"
+    printf "  ${YELLOW}Yellow${RESET} version numbers: Minor updates (review recommended)\n"
+    printf "  ${RED}Red${RESET} version numbers: Major updates (breaking changes likely)\n"
+    printf "  ${CYAN}Cyan${RESET} version numbers: Other version changes\n"
+    echo ""
+fi
+
+# Now perform the actual updates
+if [ -f "/tmp/upgrade_table.tmp" ] && [ -s "/tmp/upgrade_table.tmp" ]; then
+    if [ "$DRY_RUN" = false ]; then
+        echo "Applying updates..."
+        echo ""
+    fi
+    
+    while IFS='|' read -r package_name current_version latest_version package_type; do
         if [ "$DRY_RUN" = true ]; then
-            echo "Would update $package_name to $latest_version"
-            # Still track the counts for summary
+            # Just count for summary
             updated=$(cat /tmp/upgrade_updated.tmp)
             echo $((updated + 1)) > /tmp/upgrade_updated.tmp
         else
-            echo -n "Updating $package_name to $latest_version... "
-            
             # Update PackageVersion elements
-            if rg -q "PackageVersion Include=\"$package_name\"" "$PACKAGES_PROPS_FILE"; then
+            if echo "$package_versions" | grep -q "^$package_name$"; then
                 # Use sed to update the version attribute
                 if sed -i.tmp "s/<PackageVersion Include=\"$package_name\" Version=\"[^\"]*\"/<PackageVersion Include=\"$package_name\" Version=\"$latest_version\"/g" "$PACKAGES_PROPS_FILE"; then
-                    echo "✓"
                     updated=$(cat /tmp/upgrade_updated.tmp)
                     echo $((updated + 1)) > /tmp/upgrade_updated.tmp
                 else
-                    echo "✗"
+                    echo "Failed to update $package_name"
                     failed=$(cat /tmp/upgrade_failed.tmp)
                     echo $((failed + 1)) > /tmp/upgrade_failed.tmp
                 fi
             # Also check for GlobalPackageReference elements
-            elif rg -q "GlobalPackageReference Include=\"$package_name\"" "$PACKAGES_PROPS_FILE"; then
+            elif echo "$global_packages" | grep -q "^$package_name$"; then
                 if sed -i.tmp "s/<GlobalPackageReference Include=\"$package_name\" Version=\"[^\"]*\"/<GlobalPackageReference Include=\"$package_name\" Version=\"$latest_version\"/g" "$PACKAGES_PROPS_FILE"; then
-                    echo "✓ (global)"
                     updated=$(cat /tmp/upgrade_updated.tmp)
                     echo $((updated + 1)) > /tmp/upgrade_updated.tmp
                 else
-                    echo "✗"
+                    echo "Failed to update $package_name (global)"
                     failed=$(cat /tmp/upgrade_failed.tmp)
                     echo $((failed + 1)) > /tmp/upgrade_failed.tmp
                 fi
             else
-                echo "⚠️  (not found in $PACKAGES_PROPS_FILE)"
+                echo "Package $package_name not found in $PACKAGES_PROPS_FILE"
+                failed=$(cat /tmp/upgrade_failed.tmp)
+                echo $((failed + 1)) > /tmp/upgrade_failed.tmp
             fi
         fi
-    fi
-done
+    done < /tmp/upgrade_table.tmp
+fi
+
+# Clean up table temp file
+rm -f /tmp/upgrade_table.tmp
 
 # Clean up sed backup files
 rm -f "${PACKAGES_PROPS_FILE}.bak.tmp" "${PACKAGES_PROPS_FILE}.tmp"
