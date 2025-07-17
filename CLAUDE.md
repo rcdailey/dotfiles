@@ -27,6 +27,7 @@ specific to this repository and are not managed by chezmoi.
 ### Key Configuration Areas
 
 **Shell Configuration (Modular Bash Setup):**
+
 - `home/dot_bashrc` - Main bash configuration that sources modular files
 - `home/dot_config/bash/` - Modular bash configuration directory:
   - `completion.sh` - Bash completion settings
@@ -40,6 +41,7 @@ specific to this repository and are not managed by chezmoi.
   - `platforms/` - Platform-specific overrides (darwin.sh, linux.sh, windows.sh)
 
 **Git Configuration:**
+
 - `home/dot_gitconfig.tmpl` - Comprehensive git configuration with:
   - Extensive alias system for common operations
   - Delta pager configuration for better diffs
@@ -47,17 +49,21 @@ specific to this repository and are not managed by chezmoi.
   - Custom pretty-print formats for log viewing
 
 **Custom Scripts:**
+
 - `home/git-scripts/` - Collection of git utility scripts:
   - `git-*` commands become available as git subcommands
   - Includes branch management, cleanup, and analysis tools
 
 **Tool Configurations:**
+
 - `home/dot_config/k9s/` - Kubernetes dashboard configuration
 - `home/dot_config/helmfile/` - Helm configuration
 - `home/dot_config/karabiner/` - macOS key remapping (if applicable)
 
 ### Templating System
+
 Files ending in `.tmpl` are chezmoi templates that can:
+
 - Include conditional content based on OS, environment variables, etc.
 - Use `{{ if eq .chezmoi.os "linux" }}` for OS-specific sections
 - Use `{{ if eq .env "work" }}` for environment-specific configurations
@@ -73,11 +79,13 @@ Files ending in `.tmpl` are chezmoi templates that can:
 ## Development Workflow
 
 When making changes:
+
 1. Edit files in the chezmoi source directory (`chezmoi edit <file>`)
 2. Preview changes with `chezmoi diff`
 3. Apply changes with `chezmoi apply`
 4. Commit changes to the repository using `chezmoi git` commands
 
 For new files:
+
 1. Add them with `chezmoi add <file>`
 2. Use appropriate prefixes (`dot_`, `private_`, `executable_`) for the target behavior
