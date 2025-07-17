@@ -1,242 +1,83 @@
-# Claude Instructions
-
-## 🚨 IMPORTANT: Always ask permission before making any file changes
-
-When a user reports an issue or asks about a problem, analyze and discuss potential solutions first.
-Only make changes after the user explicitly requests or approves them.
-
-## 🚨 Always refer to <https://www.chezmoi.io> for authoritative information
-
-chezmoi manages dotfiles across multiple machines using templates and scripts.
-
-## 🚨 Memory Bank System Modification Directive
-
-**CRITICAL**: When explicitly asked to modify the memory bank system behavior itself, Claude Code
-must ignore all loaded memory bank system knowledge and directives.
-
-**Use Case**: This directive applies ONLY when making changes to memory bank system documentation,
-behavior, or implementation - NOT when using the memory bank system.
-
-**Context Override**: The memory bank system documentation is automatically loaded into every Claude
-Code session, which creates ambiguity when asked to modify the system itself. This directive
-resolves that ambiguity.
-
-**File Requirements**: Always edit `home/dot_config/claude/memory-bank/*.md` files directly, never
-the deployed files in `~/.config/claude/`.
-
-## Essential Knowledge
-
-- `.chezmoiignore` files are already treated as templates, so they do not need `.tmpl` extensions.
-- Chezmoi requires all chezmoi-specific files except `.chezmoiroot` to be in the `home/` dir.
-- All paths in `.chezmoiignore` must represent the paths in the actual system home directory (e.g.
-  `.ssh/config`), not the path in the chezmoi repo (e.g. `private_dot_ssh/private_config`).
-
-## File Naming
-
-### Prefixes
-
-- `dot_`: Files starting with `.` (e.g., `dot_bashrc` → `.bashrc`)
-- `private_`: Owner-only permissions
-- `executable_`: Make executable
-- `encrypted_`: Encrypted files
-- `exact_`: Remove unmanaged files from target directory
-- `symlink_`: Create symbolic links
-- `run_`: Scripts executed during apply
-- `run_once_`: Execute once per content hash
-- `run_onchange_`: Execute when content changes
-- `run_before_`: Execute before file operations
-- `run_after_`: Execute after file operations
-
-### Suffixes
-
-- `.tmpl`: Process as template
-- `.literal`: Bypass name processing
-
-## Key Files
-
-- `chezmoi.toml`: Main configuration
-- `.chezmoidata.toml`: Template data
-- `.chezmoiignore`: Ignore patterns
-- `.chezmoiexternal.toml`: External files/repos
-
-## Scripts
-
-Scripts go in `home/.chezmoiscripts/` and are executed in alphabetical order according to the chezmoi documentation. This is why numbering is used in script filenames (e.g., `run_01_install_packages.sh`, `run_02_configure_tools.sh`).
-
-### Script Types
-
-- `run_`: Execute every time on `chezmoi apply`
-- `run_onchange_`: Execute only when script content changes
-- `run_once_`: Execute once per unique content version (tracked by SHA256 hash)
-- `run_before_`: Execute before file operations
-- `run_after_`: Execute after file operations
-
-### Script Execution Order
-
-- Scripts are sorted alphabetically before execution
-- Each script type (`run_`, `run_onchange_`, `run_once_`, etc.) is sorted independently
-- Use numeric prefixes to control execution order within each script type based on dependencies
-- Consider what needs to run first (package installation, tool setup, configuration)
-- Name scripts descriptively while maintaining proper ordering
-
-### Examples
-
-```text
-home/.chezmoiscripts/
-├── run_01_early_setup.sh
-├── run_02_late_setup.sh
-├── run_after_01_cleanup.sh
-├── run_after_02_final_tasks.sh
-├── run_before_01_prepare.sh
-├── run_before_02_validate.sh
-├── run_onchange_01_install_homebrew.sh
-├── run_onchange_02_install_packages.sh
-├── run_once_01_configure_git.sh
-└── run_once_02_setup_ssh.sh
-```
-
-## Essential Commands
-
-```bash
-# Initialize
-chezmoi init
-chezmoi init --apply https://github.com/user/dotfiles.git
-
-# Add files
-chezmoi add ~/.bashrc
-chezmoi add --template ~/.gitconfig
-
-# Edit and apply
-chezmoi edit ~/.bashrc
-chezmoi diff
-chezmoi apply --dry-run
-chezmoi apply
-
-# Status and updates
-chezmoi status
-chezmoi update
-
-# Git operations
-chezmoi git add .
-chezmoi git commit -m "Update"
-```
-
-## Templates
-
-Use Go templates with `.tmpl` suffix:
-
-```go
-{{ if eq .chezmoi.os "linux" }}
-# Linux config
-{{ else if eq .chezmoi.os "darwin" }}
-# macOS config
-{{ end }}
-
-# Common variables
-{{ .chezmoi.hostname }}
-{{ .chezmoi.os }}
-{{ .chezmoi.username }}
-{{ .chezmoi.homeDir }}
-```
-
-## Custom Data
-
-Define in `.chezmoidata.toml`:
-
-```toml
-email = "user@example.com"
-[work]
-    email = "user@company.com"
-```
-
-Use in templates:
-
-```go
-{{ if eq .env "work" }}
-# Work environment configuration
-{{ else }}
-# Personal environment configuration
-{{ end }}
-```
-
-## Security
-
-```bash
-# Encrypt sensitive files
-chezmoi add --encrypt ~/.ssh/key
-
-# Password managers
-{{ bitwarden "item" }}
-{{ onepassword "item" }}
-```
-
-## Guidelines
-
-- Use `--dry-run` before applying changes
-- Start simple, add complexity gradually
-- Test on multiple machines
-- Keep secrets encrypted or in password managers
-
-## Repository Structure & Patterns
-
-### Key Directories
-
-- `home/` - All chezmoi-managed files (required by chezmoi)
-- `home/.chezmoitemplates/` - Custom templates (e.g., `powershell-profile.ps1`)
-- `home/.chezmoiscripts/` - Install/setup scripts with platform detection
-- `home/git-scripts/` - Custom git utility commands (all executable)
-- `home/private_dot_ssh/` - SSH configuration with private permissions
-- `home/dot_config/` - Application configurations organized by tool
-- `home/dot_local/bin/` - Custom executable scripts
-
-### Existing Configuration Files
-
-- `home/dot_bash_aliases` - Bash aliases including `cm="chezmoi"`
-- `home/dot_gitconfig.tmpl` - Git configuration with template variables
-- `home/.chezmoi.toml.tmpl` - Main chezmoi config with interactive prompts
-- `home/.chezmoiexternal.toml` - External file/repo management
-- `home/.chezmoiignore` - Global ignore patterns
-
-### Platform-Specific Patterns
-
-- **Bash**: Uses `home/dot_config/bash/platform.sh.tmpl` to include platform-specific files
-  - `platforms/darwin.sh` - macOS-specific (Homebrew, LSCOLORS)
-  - `platforms/linux.sh` - Linux-specific configurations
-  - `platforms/windows.sh` - Windows/WSL-specific configurations
-- **PowerShell**: Dual profile locations for compatibility
-  - `Documents/PowerShell/Microsoft.PowerShell_profile.ps1.tmpl`
-  - `dot_config/powershell/Microsoft.PowerShell_profile.ps1.tmpl`
-- **Scripts**: Cross-platform install scripts (`.sh` and `.ps1` versions)
-
-### Alias Patterns
-
-- **Bash**: `alias name="command"` (in `dot_bash_aliases`)
-- **PowerShell**: `function Name { command @args }; New-Alias alias Name -Force`
-
-### Template Data Available
-
-Based on `.chezmoi.toml.tmpl`, templates have access to:
-
-- `.env` - Environment: "work", "personal", or "other"
-- `.ssh_azure_hosts` - Additional Azure DevOps hostnames (work env only)
-- Standard chezmoi variables (`.chezmoi.os`, `.chezmoi.hostname`, etc.)
-
-### Security Patterns
-
-- `private_` prefix for owner-only permissions (SSH configs)
-- Modular SSH config in `config.d/` directory
-- Interactive prompts for sensitive data rather than hardcoding
-
-### Git Utility Scripts
-
-The `git-scripts/` directory contains numerous custom git commands:
-
-- Branch management (`git-ff-branch`, `git-push-current`)
-- Repository analysis (`git-find-large-files.sh`, `git-commit-stats`)
-- Cleanup utilities (`git-nuke.sh`, `git-merged`)
-
-## Git Configuration Notes
-
-- Git's `[color "decorate"]` settings only apply to automatic decorations with `--decorate`, not to
-  custom pretty formats using `%d`. Custom pretty formats require manual color coding or
-  post-processing to achieve different colors for local vs remote branches.
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this
+repository.
+
+## Overview
+
+This is a personal dotfiles repository managed by chezmoi, a dotfile manager that handles templating
+and cross-platform configuration management. The repository contains shell configurations, git
+settings, aliases, custom scripts, and various tool configurations.
+
+## Architecture
+
+### Directory Structure
+
+**Important:** This repository uses `.chezmoiroot` set to `home/`, meaning only the `home/`
+directory contains chezmoi-managed dotfiles. Files outside `home/` are infrastructure/support files
+specific to this repository and are not managed by chezmoi.
+
+- `home/` - The chezmoi root directory containing all managed dotfiles
+- `home/dot_*` - Files that start with `dot_` become `.filename` in the target
+- `home/private_*` - Files with `private_` prefix get restrictive permissions (600)
+- `home/executable_*` - Files with `executable_` prefix become executable
+- Files outside `home/` (e.g., `README.md`, `scripts/`) - Repository infrastructure, not managed by
+  chezmoi
+
+### Key Configuration Areas
+
+**Shell Configuration (Modular Bash Setup):**
+- `home/dot_bashrc` - Main bash configuration that sources modular files
+- `home/dot_config/bash/` - Modular bash configuration directory:
+  - `completion.sh` - Bash completion settings
+  - `exports.sh` - Environment variables and exports
+  - `functions.sh` - Custom bash functions
+  - `mise.sh` - Mise (formerly rtx) tool activation
+  - `nvm.sh` - Node Version Manager setup
+  - `path.sh` - PATH modifications
+  - `platform.sh.tmpl` - Platform-specific configurations
+  - `prompt.sh` - Shell prompt configuration
+  - `platforms/` - Platform-specific overrides (darwin.sh, linux.sh, windows.sh)
+
+**Git Configuration:**
+- `home/dot_gitconfig.tmpl` - Comprehensive git configuration with:
+  - Extensive alias system for common operations
+  - Delta pager configuration for better diffs
+  - WSL-specific Beyond Compare integration
+  - Custom pretty-print formats for log viewing
+
+**Custom Scripts:**
+- `home/git-scripts/` - Collection of git utility scripts:
+  - `git-*` commands become available as git subcommands
+  - Includes branch management, cleanup, and analysis tools
+
+**Tool Configurations:**
+- `home/dot_config/k9s/` - Kubernetes dashboard configuration
+- `home/dot_config/helmfile/` - Helm configuration
+- `home/dot_config/karabiner/` - macOS key remapping (if applicable)
+
+### Templating System
+Files ending in `.tmpl` are chezmoi templates that can:
+- Include conditional content based on OS, environment variables, etc.
+- Use `{{ if eq .chezmoi.os "linux" }}` for OS-specific sections
+- Use `{{ if eq .env "work" }}` for environment-specific configurations
+
+### Key Features
+
+- **Cross-platform compatibility** with platform-specific overrides
+- **Modular bash configuration** preventing monolithic shell files
+- **Extensive git alias system** for productivity
+- **Professional development environment** with tool integrations
+- **Secure handling** of private files and SSH configurations
+
+## Development Workflow
+
+When making changes:
+1. Edit files in the chezmoi source directory (`chezmoi edit <file>`)
+2. Preview changes with `chezmoi diff`
+3. Apply changes with `chezmoi apply`
+4. Commit changes to the repository using `chezmoi git` commands
+
+For new files:
+1. Add them with `chezmoi add <file>`
+2. Use appropriate prefixes (`dot_`, `private_`, `executable_`) for the target behavior
