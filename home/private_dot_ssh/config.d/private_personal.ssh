@@ -12,7 +12,7 @@ Host nami 192.168.1.50
     IdentityFile ~/.ssh/keys/nami
 
 Host mare 192.168.1.52
-    User pi
+    User robert
     IdentityFile ~/.ssh/keys/mare
 
 Host lucy 192.168.1.53
