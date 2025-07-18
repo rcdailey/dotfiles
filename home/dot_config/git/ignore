@@ -1,0 +1,6 @@
+# Unfuck claude code
+# See: https://github.com/anthropics/claude-code/issues/2336
+!.*
+
+# Ignore claude local settings
+.claude/settings.local.json
