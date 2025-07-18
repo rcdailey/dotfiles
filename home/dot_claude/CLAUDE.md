@@ -40,6 +40,7 @@ Claude MUST:
 - MAINTAIN code integrity over extensive feature additions
 - Use guard clauses and early returns instead of nested conditionals - invert conditions and exit
   early when requirements aren't met.
+- use `rg` (ripgrep) instead of `grep` or `find` for better performance.
 
 ### Directory Management Protocol
 

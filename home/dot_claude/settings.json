@@ -57,5 +57,18 @@
       "Bash(zip:*)",
       "WebFetch"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hook-scripts/grep-to-ripgrep.py"
+          }
+        ]
+      }
+    ]
   }
 }
