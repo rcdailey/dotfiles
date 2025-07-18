@@ -20,7 +20,7 @@ for tag in $(git tag -l); do
 
     sha1="$(git rev-parse "$tag:$submodule")"
     tag="${tag_prefix:+${tag_prefix}/}${tag}"
-    pushd "$submodule" > /dev/null
+    pushd "$submodule" > /dev/null || return
 
     # Check if the tag already exists and points to this SHA1
     existing_tag="$(git rev-parse $tag 2> /dev/null)"
@@ -28,5 +28,5 @@ for tag in $(git tag -l); do
         echo ">> Creating submodule tag for: $tag"
         git tag -f "$tag" "$sha1"
     fi
-    popd > /dev/null
+    popd > /dev/null || return
 done

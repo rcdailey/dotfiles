@@ -7,7 +7,7 @@
 +Enter::Send("{\}{Enter}")
 #HotIf
 
-; Visual Studio Code - SHIFT+ENTER sends backslash + Enter  
+; Visual Studio Code - SHIFT+ENTER sends backslash + Enter
 #HotIf WinActive("ahk_exe Code.exe")
 +Enter::Send("{\}{Enter}")
 #HotIf

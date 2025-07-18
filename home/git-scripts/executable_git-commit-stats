@@ -15,15 +15,15 @@ stats = {(,), }
 #    for entry in stats:
 #        if email in entry[1]:
 #            return entry
-#        
-#        # If unable to match by 
+#
+#        # If unable to match by
 #        authors = {v.lower() for v in entry[0] if ' ' in v}
 #        if author in authors:
 #            print('found by author')
 #            return entry
 #    # authors, emails, commits
 #    return stats[-1]
-#    
+#
 #def ConsolidateStats():
 #    consolidated_stats = []
 #    # Consolidate by "First Last" matches first
@@ -35,7 +35,7 @@ stats = {(,), }
 #            delta = authors - consolidated_authors
 #            if len(delta):
 #                print('found by author: {}'.format(delta))
-#                consolidated_entry[0] |= 
+#                consolidated_entry[0] |=
 #                was_consolidated = True
 #                break;
 

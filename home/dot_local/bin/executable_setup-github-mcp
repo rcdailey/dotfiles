@@ -36,9 +36,9 @@ fi
 if [[ "$REMOVE_MODE" == true ]]; then
     echo "=== GitHub MCP Server Removal ==="
     echo "Removing GitHub MCP server from $SCOPE_MESSAGE..."
-    
+
     claude mcp remove github -s "$SCOPE"
-    
+
     echo "✅ GitHub MCP server removed successfully from $SCOPE_MESSAGE!"
     exit 0
 fi

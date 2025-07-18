@@ -38,6 +38,8 @@ Claude MUST:
 - INVESTIGATE root causes of failures rather than assuming worst-case
 - TEST incrementally at each step before proceeding
 - MAINTAIN code integrity over extensive feature additions
+- Use guard clauses and early returns instead of nested conditionals - invert conditions and exit
+  early when requirements aren't met.
 
 ### Directory Management Protocol
 

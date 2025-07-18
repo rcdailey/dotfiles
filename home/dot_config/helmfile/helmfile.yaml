@@ -1,3 +1,4 @@
+---
 # Helmfile configuration
 
 # Suppress diff output during apply operations to avoid overwhelming output
