@@ -41,7 +41,8 @@ conventional commits)
 **Body**: Answer journalist questions - what changed specifically, why was it needed, what effect
 does it have? Use bullet points, wrap at 72 chars
 
-**Content**: Be direct, eliminate filler words, don't assume reader knows context
+**Content**: Be direct, eliminate filler words, don't assume reader knows context. Avoid
+subjective assessments or value judgments - stick to objective technical facts
 
 **Multi-line syntax**: Use single -m with embedded newlines: `git commit -m "subject\n\nbody line
 1\nbody line 2"`

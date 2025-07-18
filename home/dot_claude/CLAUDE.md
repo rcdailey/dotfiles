@@ -40,7 +40,9 @@ Claude MUST:
 - MAINTAIN code integrity over extensive feature additions
 - Use guard clauses and early returns instead of nested conditionals - invert conditions and exit
   early when requirements aren't met.
-- use `rg` (ripgrep) instead of `grep` or `find` for better performance.
+- ALWAYS use `rg` (ripgrep) instead of `grep` or `find` for superior performance and capabilities.
+- ALWAYS use GitHub MCP tools (mcp__github__*) as the primary method for GitHub operations and
+  information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are unavailable.
 
 ### Directory Management Protocol
 

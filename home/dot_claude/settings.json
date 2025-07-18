@@ -68,6 +68,15 @@
             "command": "~/.claude/hook-scripts/grep-to-ripgrep.py"
           }
         ]
+      },
+      {
+        "matcher": "WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hook-scripts/webfetch-github-redirect.sh"
+          }
+        ]
       }
     ]
   }
