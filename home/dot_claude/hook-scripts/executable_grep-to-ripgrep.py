@@ -37,8 +37,8 @@ command = tool_input.get("command", "")
 if tool_name != "Bash" or not command:
     sys.exit(0)
 
-# Skip validation for git commands to avoid false positives in commit messages
-if command.strip().startswith("git "):
+# Skip validation for git and ssh commands to avoid false positives
+if command.strip().startswith(("git ", "ssh ")):
     sys.exit(0)
 
 # Validate the command
