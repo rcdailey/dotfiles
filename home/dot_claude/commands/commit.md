@@ -27,6 +27,7 @@ body line 1 body line 2"`
    conventional commits, if no, use standard imperative
 5. **Generate commit message**: Follow rules below, incorporate `--why` context if provided
 6. **Commit**: Use simple git commit command
+7. **Handle hook failures**: If pre-commit hooks modify files, stage the changes and retry commit
 
 ## Message Rules
 
@@ -55,3 +56,20 @@ subjective assessments or value judgments - stick to objective technical facts
   prefixes
 - No Claude attribution or metadata
 - Focus on technical change description
+
+## Pre-commit Hook Handling
+
+**Scope**: Only handle automatic hook fixes - do NOT manually fix code issues
+
+If commit fails due to pre-commit hooks:
+
+1. **First failure with auto-fixes**: Stage hook-modified files and retry commit once
+2. **Second failure**: Stop and report to user - do not attempt manual fixes
+3. **No auto-fixes**: Stop immediately - user must resolve hook errors manually
+
+**Never**:
+
+- Manually fix linting/formatting issues
+- Modify code to satisfy hooks
+- Override or bypass hook requirements
+- Make multiple retry attempts beyond one auto-fix retry
