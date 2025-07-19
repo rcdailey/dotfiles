@@ -48,6 +48,14 @@
     refreshPeriod = "18h"
 
 ###########################################
+## TEAM COMMANDS
+###########################################
+["ccs/session-learning-capture.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/team/session-learning-capture.md"
+    refreshPeriod = "18h"
+
+###########################################
 ## TEST COMMANDS
 ###########################################
 ["ccs/write-tests.md"]
