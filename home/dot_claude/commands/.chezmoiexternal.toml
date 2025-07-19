@@ -1,0 +1,48 @@
+# Claude Command Suite
+# From: https://github.com/qdhenry/Claude-Command-Suite
+
+###########################################
+## DEV COMMANDS
+###########################################
+["ccs/ultra-think.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/ultra-think.md"
+    refreshPeriod = "18h"
+
+["ccs/fix-issue.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/fix-issue.md"
+    refreshPeriod = "18h"
+
+["ccs/refactor-code.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/refactor-code.md"
+    refreshPeriod = "18h"
+
+["ccs/code-review.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/code-review.md"
+    refreshPeriod = "18h"
+
+["ccs/prime.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/prime.md"
+    refreshPeriod = "18h"
+
+["ccs/explain-code.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/explain-code.md"
+    refreshPeriod = "18h"
+
+["ccs/debug-error.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/debug-error.md"
+    refreshPeriod = "18h"
+
+###########################################
+## TEST COMMANDS
+###########################################
+["ccs/write-tests.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/test/write-tests.md"
+    refreshPeriod = "18h"

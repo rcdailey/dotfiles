@@ -2,10 +2,3 @@
     type = "file"
     url = "https://raw.githubusercontent.com/cykerway/complete-alias/master/complete_alias"
     refreshPeriod = "168h" # Refresh weekly
-
-# Claude ultra-think command
-# From: https://github.com/qdhenry/Claude-Command-Suite
-[".claude/commands/ultra-think.md"]
-    type = "file"
-    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/ultra-think.md"
-    refreshPeriod = "18h"
