@@ -1,0 +1,14 @@
+---
+views:
+  # Optimized containers view - prioritize essential info and resource usage
+  v1/pods:
+    sortColumn: NAMESPACE:desc
+    columns:
+    - NAME
+    - STATUS
+    - READY
+    - NAMESPACE
+    - "%CPU/L|R"
+    - "%MEM/L|R"
+    - AGE
+    - RESTARTS|R

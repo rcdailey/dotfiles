@@ -1,4 +1,5 @@
 # Machine-specific files that should not be tracked by chezmoi
+.gitkeep
 .gitconfig.local
 
 # Exclude files when env is not set to personal
