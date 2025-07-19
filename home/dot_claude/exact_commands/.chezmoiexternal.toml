@@ -40,6 +40,14 @@
     refreshPeriod = "18h"
 
 ###########################################
+## SETUP COMMANDS
+###########################################
+["ccs/setup-linting.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/setup/setup-linting.md"
+    refreshPeriod = "18h"
+
+###########################################
 ## TEST COMMANDS
 ###########################################
 ["ccs/write-tests.md"]
