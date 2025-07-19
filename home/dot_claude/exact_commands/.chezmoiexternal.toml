@@ -2,6 +2,14 @@
 # From: https://github.com/qdhenry/Claude-Command-Suite
 
 ###########################################
+## PROJECT COMMANDS
+###########################################
+["ccs/create-feature.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/project/create-feature.md"
+    refreshPeriod = "18h"
+
+###########################################
 ## DEV COMMANDS
 ###########################################
 ["ccs/ultra-think.md"]
