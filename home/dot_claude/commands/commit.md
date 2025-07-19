@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(git diff:*), Bash(git commit:*), Bash(git add:*), Bash(git status:*), Bash(git log:*)
+allowed-tools: Bash(git diff:*), Bash(git commit:*), Bash(git add:*), Bash(git status:*), Bash(git log:*), Bash(git update-index:*)
 description: Create a git commit for staged changes only
 ---
 
@@ -42,8 +42,8 @@ conventional commits)
 **Body**: Answer journalist questions - what changed specifically, why was it needed, what effect
 does it have? Use bullet points, wrap at 72 chars
 
-**Content**: Be direct, eliminate filler words, don't assume reader knows context. Avoid
-subjective assessments or value judgments - stick to objective technical facts
+**Content**: Be direct, eliminate filler words, don't assume reader knows context. Avoid subjective
+assessments or value judgments - stick to objective technical facts
 
 **Multi-line syntax**: Use single -m with embedded newlines: `git commit -m "subject\n\nbody line
 1\nbody line 2"`
@@ -63,7 +63,8 @@ subjective assessments or value judgments - stick to objective technical facts
 
 If commit fails due to pre-commit hooks:
 
-1. **First failure with auto-fixes**: Stage hook-modified files and retry commit once
+1. **First failure with auto-fixes**: Use `git update-index --again` to re-add only modified files
+   and retry commit once
 2. **Second failure**: Stop and report to user - do not attempt manual fixes
 3. **No auto-fixes**: Stop immediately - user must resolve hook errors manually
 
