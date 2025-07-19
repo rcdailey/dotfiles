@@ -2,5 +2,8 @@
 # See: https://github.com/anthropics/claude-code/issues/2336
 !.*
 
+# Ignore main git directory
+.git/
+
 # Ignore claude local settings
 .claude/settings.local.json
