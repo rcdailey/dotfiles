@@ -28,5 +28,6 @@
 ## Tool Usage Requirements
 
 - ALWAYS use `rg` (ripgrep) instead of `grep` or `find` for superior performance and capabilities.
-- ALWAYS use GitHub MCP tools (mcp__github__*) as the primary method for GitHub operations and
-  information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are unavailable.
+- ALWAYS use GitHub MCP tools as the primary method for GitHub operations (e.g. don't use WebFetch
+  for github.com) and information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are
+  unavailable.
