@@ -46,6 +46,11 @@ export COLORTERM=truecolor
 export HUSKY_SKIP_HOOKS=1 # For legacy purposes
 export HUSKY=0 # This replaces HUSKY_SKIP_HOOKS
 
+# Homebrew - disable new casks/formula messages and analytics
+export HOMEBREW_NO_INSTALL_FROM_API=1
+export HOMEBREW_NO_INSTALL_UPGRADE_CLEANUP=1
+export HOMEBREW_NO_ANALYTICS=1
+
 # In some cases TMPDIR is not defined, such as VS Code integrated terminal on Windows
 if [[ -z "$TMPDIR" ]]; then
     export TMPDIR=/tmp
