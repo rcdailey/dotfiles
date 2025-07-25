@@ -18,16 +18,24 @@
   language is needed, use `txt` as the language.
 - Keep line length ≤ 100 characters where practical.
 - Include blank lines around headings and code blocks.
+- Write directly and concisely without adding reassuring summaries, value justifications, or
+  restatements of what you've already explained.
 
 ## Development Mandates
 
-- ALWAYS use the latest versions of tools, programming languages, libraries, and frameworks.
+- ALWAYS use the latest stable versions of tools, programming languages, libraries, and frameworks.
 - EMPLOY proper design methodologies such as SOLID and DRY principles.
 - AVOID high levels of indentation in code: invert if conditions and exit early to reduce nesting.
 
+## Code Quality Requirements
+
+- ALWAYS write self-documenting code and avoid verbose code comments to improve code base
+  maintainability. Comments are code, too, and they have a cost.
+- ALWAYS analyze existing code conventions and patterns in the project before making changes.
+
 ## Tool Usage Requirements
 
-- The user ALWAYS uses and wants Bash, never ZSH.
+- USE Bash for all shell operations and script execution - the user never wants ZSH.
 - ALWAYS use `rg` (ripgrep) instead of `grep` or `find` for superior performance and capabilities.
 - ALWAYS use GitHub MCP tools as the primary method for GitHub operations (e.g. don't use WebFetch
   for github.com) and information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are
