@@ -63,6 +63,11 @@
     url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/team/session-learning-capture.md"
     refreshPeriod = "18h"
 
+["ccs/memory-spring-cleaning.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/team/memory-spring-cleaning.md"
+    refreshPeriod = "18h"
+
 ###########################################
 ## TEST COMMANDS
 ###########################################
