@@ -68,6 +68,11 @@
     url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/team/memory-spring-cleaning.md"
     refreshPeriod = "18h"
 
+["ccs/architecture-review.md"]
+    type = "file"
+    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/team/architecture-review.md"
+    refreshPeriod = "18h"
+
 ###########################################
 ## TEST COMMANDS
 ###########################################
