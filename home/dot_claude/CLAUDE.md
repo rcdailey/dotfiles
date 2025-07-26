@@ -23,6 +23,7 @@
 
 ## Development Mandates
 
+- APPLY the KISS principle (Keep It Simple, Stupid) - prioritize simplicity over complexity.
 - ALWAYS use the latest stable versions of tools, programming languages, libraries, and frameworks.
 - EMPLOY proper design methodologies such as SOLID and DRY principles.
 - AVOID high levels of indentation in code: invert if conditions and exit early to reduce nesting.
@@ -40,3 +41,8 @@
 - ALWAYS use GitHub MCP tools as the primary method for GitHub operations (e.g. don't use WebFetch
   for github.com) and information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are
   unavailable.
+
+## Configuration Principles
+
+- PREFER default values by omission over explicit configuration - minimal configuration improves
+  maintainability and clarity of intent.
