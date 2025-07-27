@@ -47,13 +47,11 @@ export HUSKY_SKIP_HOOKS=1 # For legacy purposes
 export HUSKY=0 # This replaces HUSKY_SKIP_HOOKS
 
 # Homebrew - disable new casks/formula messages and analytics
-export HOMEBREW_NO_INSTALL_FROM_API=1
-export HOMEBREW_NO_INSTALL_UPGRADE_CLEANUP=1
 export HOMEBREW_NO_ANALYTICS=1
-export HOMEBREW_BOOTSNAP=1               # Enable Ruby bootsnap for faster startup
-export HOMEBREW_NO_ENV_HINTS=1           # Disable environment setup hints
-export HOMEBREW_NO_UPDATE_REPORT_FORMULAE=1  # Suppress formulae update reports
-export HOMEBREW_NO_UPDATE_REPORT_CASKS=1     # Suppress casks update reports
+export HOMEBREW_BOOTSNAP=1
+export HOMEBREW_NO_ENV_HINTS=1
+export HOMEBREW_NO_UPDATE_REPORT_FORMULAE=1
+export HOMEBREW_NO_UPDATE_REPORT_CASKS=1
 
 # In some cases TMPDIR is not defined, such as VS Code integrated terminal on Windows
 if [[ -z "$TMPDIR" ]]; then
