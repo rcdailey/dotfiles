@@ -1,0 +1,266 @@
+#!/usr/bin/env python3
+"""Claude Code MCP Server Management Script"""
+
+import sys
+import subprocess
+import typer
+from rich.console import Console
+from rich.table import Table
+import sh
+from typing import Dict, List
+from dataclasses import dataclass
+
+
+# Auto-install dependencies
+def ensure_deps():
+    deps = ["typer", "rich", "sh"]
+    missing = []
+    for dep in deps:
+        try:
+            __import__(dep)
+        except ImportError:
+            missing.append(dep)
+
+    if missing:
+        print(f"Installing: {' '.join(missing)}")
+        subprocess.check_call(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "--user",
+                "--break-system-packages",
+                *missing,
+            ]
+        )
+
+
+ensure_deps()
+
+# =============================================================================
+# MCP SERVERS TO MANAGE
+# =============================================================================
+# Add/remove servers here. All servers are configured at user scope (--user)
+
+MCP_SERVERS = [
+    # GitHub MCP - uses existing setup script
+    {"name": "github", "script": "setup-github-mcp"},
+    # MarkItDown MCP - installs via uvx
+    {"name": "markitdown", "uvx": "markitdown-mcp"},
+    # Add more servers here:
+    # {'name': 'filesystem', 'uvx': 'mcp-filesystem'},
+    # {'name': 'anthropic', 'script': 'setup-anthropic-mcp', 'args': '--debug'},
+]
+
+# =============================================================================
+
+console = Console()
+app = typer.Typer(help="Manage Claude Code MCP Servers", no_args_is_help=False)
+
+
+@app.callback(invoke_without_command=True)
+def main_callback(
+    ctx: typer.Context,
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be done"),
+    verbose: bool = typer.Option(False, "--verbose", help="Verbose output"),
+):
+    """Manage Claude Code MCP Servers. Runs sync by default."""
+    if ctx.invoked_subcommand is None:
+        # No subcommand was invoked, run sync
+        sync(dry_run=dry_run, verbose=verbose)
+
+
+@dataclass
+class Server:
+    name: str
+    setup_script: str = None
+    extra_args: str = ""
+    uvx_package: str = None
+
+
+# Convert simple config to Server objects
+DESIRED_SERVERS = {}
+for config in MCP_SERVERS:
+    DESIRED_SERVERS[config["name"]] = Server(
+        name=config["name"],
+        setup_script=config.get("script"),
+        extra_args=config.get("args", ""),
+        uvx_package=config.get("uvx"),
+    )
+
+
+def get_current_servers() -> Dict[str, dict]:
+    """Get currently configured MCP servers."""
+    try:
+        result = sh.claude.mcp.list(_tty_out=False)
+        servers = {}
+
+        for line in str(result).strip().split("\n"):
+            if ":" in line and not line.startswith("Checking"):
+                name = line.split(":")[0].strip()
+                if name:
+                    try:
+                        details = sh.claude.mcp.get(name, _tty_out=False)
+                        servers[name] = {"details": str(details)}
+                    except Exception:
+                        console.print(
+                            f"[yellow]Warning: Could not get details for {name}[/yellow]"
+                        )
+
+        return servers
+    except Exception:
+        return {}
+
+
+def analyze_state(current: Dict[str, dict]) -> tuple[List[str], List[str]]:
+    """Analyze current vs desired state."""
+    to_add = []
+    up_to_date = []
+
+    for name in DESIRED_SERVERS:
+        if name in current:
+            up_to_date.append(name)
+        else:
+            to_add.append(name)
+
+    return to_add, up_to_date
+
+
+def setup_server(name: str, dry_run: bool = False):
+    """Set up a server using its configured script or pip package."""
+    server = DESIRED_SERVERS[name]
+
+    if dry_run:
+        if server.setup_script:
+            args = ["--user"] + (server.extra_args.split() if server.extra_args else [])
+            console.print(
+                f"[blue](DRY RUN) Would setup {name} using {server.setup_script} {' '.join(args)}[/blue]"
+            )
+        elif server.uvx_package:
+            console.print(
+                f"[blue](DRY RUN) Would add {name} MCP server using uvx {server.uvx_package}[/blue]"
+            )
+        return
+
+    console.print(f"[blue]Setting up {name}...[/blue]")
+
+    try:
+        if server.setup_script:
+            # Use existing setup script
+            args = ["--user"] + (server.extra_args.split() if server.extra_args else [])
+            script = getattr(sh, server.setup_script.replace("-", "_"))
+            script(*args)
+        elif server.uvx_package:
+            # Use uvx to install and configure the MCP server
+            console.print(f"[blue]Installing {server.uvx_package} with uvx...[/blue]")
+
+            # The command will be: uvx markitdown-mcp (or whatever the package provides)
+            # For markitdown-mcp, the command is just 'markitdown-mcp'
+            command = (
+                server.uvx_package
+                if server.uvx_package == "markitdown-mcp"
+                else server.uvx_package.replace("-", "_")
+            )
+
+            console.print(f"[blue]Adding {name} MCP server...[/blue]")
+            # Add the MCP server using uvx command
+            sh.claude.mcp.add(name, "uvx", command, "-s", "user", "-t", "stdio")
+
+        console.print(f"[green]✅ {name} configured successfully[/green]")
+    except Exception as e:
+        console.print(f"[red]❌ Failed to setup {name}: {e}[/red]")
+
+
+def show_status(
+    current: Dict[str, dict],
+    to_add: List[str],
+    up_to_date: List[str],
+    verbose: bool = False,
+):
+    """Show current status in a nice table."""
+    table = Table(title="MCP Server Status")
+    table.add_column("Server", style="cyan")
+    table.add_column("Status", style="green")
+    table.add_column("Action", style="yellow")
+
+    for name in up_to_date:
+        table.add_row(name, "✅ Configured", "None needed")
+
+    for name in to_add:
+        table.add_row(name, "❌ Missing", "Will add")
+
+    console.print(table)
+
+    if verbose and current:
+        console.print("\n[bold]Current Server Details:[/bold]")
+        for name, data in current.items():
+            console.print(f"\n[cyan]{name}:[/cyan]")
+            console.print(data["details"])
+
+
+@app.command()
+def sync(
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be done"),
+    verbose: bool = typer.Option(False, "--verbose", help="Verbose output"),
+):
+    """Synchronize MCP servers to desired state."""
+    console.print("[bold blue]🔧 Claude Code MCP Server Management[/bold blue]\n")
+
+    if dry_run:
+        console.print("[yellow]Running in DRY RUN mode[/yellow]\n")
+
+    # Discover current state
+    with console.status("Discovering current servers..."):
+        current = get_current_servers()
+
+    # Analyze what needs to be done
+    to_add, up_to_date = analyze_state(current)
+
+    # Show status
+    show_status(current, to_add, up_to_date, verbose)
+
+    if not to_add:
+        console.print("\n[green]✅ All servers are in desired state![/green]")
+        return
+
+    # Sync servers
+    console.print(f"\n[blue]Setting up {len(to_add)} server(s)...[/blue]")
+    for name in to_add:
+        setup_server(name, dry_run)
+
+    if not dry_run:
+        console.print("\n[green]✅ Synchronization completed![/green]")
+
+
+@app.command("list")
+def list_servers(
+    verbose: bool = typer.Option(False, "--verbose", help="Show detailed information"),
+):
+    """List current and desired MCP servers."""
+    current = get_current_servers()
+    to_add, up_to_date = analyze_state(current)
+    show_status(current, to_add, up_to_date, verbose)
+
+
+@app.command("add")
+def add_server(
+    name: str = typer.Argument(..., help="Server name"),
+    script: str = typer.Option(None, "--script", help="Setup script name"),
+    uvx_package: str = typer.Option(None, "--uvx", help="Package to install via uvx"),
+    extra_args: str = typer.Option(
+        "", "--extra-args", help="Extra script arguments (--user is automatic)"
+    ),
+):
+    """Add a new server to desired configuration (for this session only)."""
+    if not script and not uvx_package:
+        console.print("[red]❌ Must specify either --script or --uvx[/red]")
+        return
+
+    DESIRED_SERVERS[name] = Server(name, script, extra_args, uvx_package)
+    method = f"script '{script}'" if script else f"uvx package '{uvx_package}'"
+    console.print(f"[green]✅ Added {name} using {method} (--user automatic)[/green]")
+
+
+if __name__ == "__main__":
+    app()
