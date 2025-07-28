@@ -1,17 +1,23 @@
 ---
-allowed-tools: Bash(git diff:*), Bash(git commit:*), Bash(git add:*), Bash(git status:*), Bash(git log:*), Bash(git update-index:*)
+allowed-tools: Bash(git diff:*), Bash(git commit:*), Bash(git add:*), Bash(git log:*), Bash(git update-index:*)
 description: Create git commits with flexible natural language instructions
 ---
 
 # Flexible Git Commit Command
 
-- Current changes: !`git status --porcelain`
+- Current changes: !`git diff --name-status`
 
 ## Execution Protocol
 
 **SILENT MODE**: Execute with minimal output - only show final commit message(s).
 
-**BATCH OPERATIONS**: Use chained git commands in single tool calls for efficiency.
+**BATCH OPERATIONS**: Use efficient 2-command pattern:
+
+1. **Analysis**: `git log --oneline -3 && [git add -A &&] git diff --cached` (skip `add -A` for
+   staged-only)
+2. **Execution**: `git commit -m "message"` (no chaining)
+
+Never use `git status` - diff output contains all needed file information.
 
 **MANDATORY DIFF ANALYSIS**: ALWAYS examine actual code changes with `git diff` before creating
 commits. NEVER commit based solely on filenames, diff stats, or assumptions.
@@ -30,25 +36,25 @@ Parse the natural language instruction provided after `/commit`:
 ## Task Flow
 
 1. **Parse instruction**: Determine workflow from natural language argument
-2. **Execute workflow**: Follow appropriate path based on instruction
-3. **EXAMINE ACTUAL DIFF**: Use `git diff` to read and understand actual code changes
-4. **Analyze changes**: Use batched commands for diff analysis and repo style detection
-5. **Detect commit style**: Check if last 3 commits ALL have type: prefixes
-6. **Generate commit message(s)**: Based on actual code understanding, follow message rules
-7. **Commit**: Execute commit(s) based on workflow
-8. **Handle hook failures**: Auto-retry once for hook modifications
+2. **Analysis command**: `git log --oneline -3 && [git add -A &&] git diff --cached`
+3. **Analyze output**: Read log for commit style, read diff for actual code changes
+4. **Generate commit message**: Based on actual code understanding and detected commit style
+5. **Execution command**: `git commit -m "message"`
+6. **Handle hook failures**: If failed, retry with `git update-index --again && git commit -m
+   "message"`
 
 ## Workflows
 
 ### Default Workflow (no arguments)
 
-- Commit only staged changes
+- Analysis: `git log --oneline -3 && git diff --cached`
+- Execution: `git commit -m "message"`
 - Fail if no staged changes exist
 
 ### "all" Workflow
 
-- Stage all changes with `git add -A`
-- Create single commit with all changes
+- Analysis: `git log --oneline -3 && git add -A && git diff --cached`
+- Execution: `git commit -m "message"`
 
 ### Multiple Commits Workflow
 
@@ -106,10 +112,14 @@ assessments or value judgments - stick to objective technical facts
 
 ## Pre-commit Hook Handling
 
-If commit fails due to hooks:
+When commit fails due to pre-commit hooks:
 
-1. Auto-fixes: Use `git update-index --again` and retry once
-2. Second failure or no auto-fixes: Stop and report to user
+1. **First failure with auto-fixes**: Chain `git update-index --again && git commit -m "message"` to
+   re-stage hook modifications and retry
+2. **Second failure or validation errors**: Stop and report to user
+3. **No modifications detected**: Report hook validation failure
+
+**Critical**: Always re-stage hook-modified files using `git update-index --again` before retry.
 
 Never manually fix code issues or bypass hook requirements.
 
