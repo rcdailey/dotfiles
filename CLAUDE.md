@@ -89,3 +89,8 @@ For new files:
 
 1. Add them with `chezmoi add <file>`
 2. Use appropriate prefixes (`dot_`, `private_`, `executable_`) for the target behavior
+
+## Performance Optimization
+
+- FOR zsh performance issues, use <https://github.com/romkatv/zsh-bench> for analysis and
+  optimization.

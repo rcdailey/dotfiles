@@ -38,8 +38,8 @@
 
 - USE Zsh for all shell operations and script execution - leveraging Zinit plugin manager for
   optimal performance and automation.
-- FOR zsh performance issues, use <https://github.com/romkatv/zsh-bench> for analysis and
-  optimization.
+- ALWAYS use `#!/usr/bin/env <interpreter>` for script shebangs (e.g., `#!/usr/bin/env zsh`,
+  `#!/usr/bin/env python3`, `#!/usr/bin/env bash`) for portability across systems.
 - ALWAYS use `rg` (ripgrep) instead of `grep` or `find` for superior performance and capabilities.
 - ALWAYS use GitHub MCP tools as the primary method for GitHub operations (e.g. don't use WebFetch
   for github.com) and information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are
