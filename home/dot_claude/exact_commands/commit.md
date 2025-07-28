@@ -1,46 +1,93 @@
 ---
 allowed-tools: Bash(git diff:*), Bash(git commit:*), Bash(git add:*), Bash(git status:*), Bash(git log:*), Bash(git update-index:*)
-description: Create a git commit for staged changes only
+description: Create git commits with flexible natural language instructions
 ---
 
-# Commit Staged Changes
+# Flexible Git Commit Command
 
-- Staged changes: !`git diff --cached`
+- Current changes: !`git status --porcelain`
 
 ## Execution Protocol
 
-**SILENT MODE**: Execute with minimal output - only show final commit message.
+**SILENT MODE**: Execute with minimal output - only show final commit message(s).
 
-**BATCH OPERATIONS**: Use chained git commands in single tool calls:
+**BATCH OPERATIONS**: Use chained git commands in single tool calls for efficiency.
 
-- Analysis: `git diff --cached && git log --oneline -3`
-- Commit: `git commit -m "subject line
+**MANDATORY DIFF ANALYSIS**: ALWAYS examine actual code changes with `git diff` before creating
+commits. NEVER commit based solely on filenames, diff stats, or assumptions.
 
-body line 1 body line 2"`
+## Argument Parsing
+
+Parse the natural language instruction provided after `/commit`:
+
+- **No arguments** (just `/commit`): Commit only staged changes
+- **"all"**: Stage all changes (`git add -A`) then commit
+- **"make multiple commits"** or **"multiple commits"**: Interactive staging workflow to break work
+  into logical commits
+- **Custom instructions**: Parse human-readable descriptions and execute accordingly
+- **Ambiguous input**: Default to staged-only commit workflow and ask for clarification
 
 ## Task Flow
 
-1. **Parse arguments**: Extract `--all` flag and `--why "message"` context
-2. **Stage if needed**: Run `git add -A` only if `--all` present
-3. **Analyze changes**: Use batched command for diff analysis and repo style detection
-4. **Detect commit style**: Check if last 3 commits ALL have type: prefixes - if yes, use
-   conventional commits, if no, use standard imperative
-5. **Generate commit message**: Follow rules below, incorporate `--why` context if provided
-6. **Commit**: Use simple git commit command
-7. **Handle hook failures**: If pre-commit hooks modify files, stage the changes and retry commit
+1. **Parse instruction**: Determine workflow from natural language argument
+2. **Execute workflow**: Follow appropriate path based on instruction
+3. **EXAMINE ACTUAL DIFF**: Use `git diff` to read and understand actual code changes
+4. **Analyze changes**: Use batched commands for diff analysis and repo style detection
+5. **Detect commit style**: Check if last 3 commits ALL have type: prefixes
+6. **Generate commit message(s)**: Based on actual code understanding, follow message rules
+7. **Commit**: Execute commit(s) based on workflow
+8. **Handle hook failures**: Auto-retry once for hook modifications
+
+## Workflows
+
+### Default Workflow (no arguments)
+
+- Commit only staged changes
+- Fail if no staged changes exist
+
+### "all" Workflow
+
+- Stage all changes with `git add -A`
+- Create single commit with all changes
+
+### Multiple Commits Workflow
+
+- Examine actual diff content with `git diff` to understand all changes
+- Group related changes using these heuristics (in priority order):
+  1. File type separation: Keep code, tests, docs, config files in separate commits
+  2. Directory boundaries: Group changes within same directory/module
+  3. Change type: Separate refactoring, new features, bug fixes, cleanup
+  4. Dependency order: Commit foundation changes before dependent changes
+- For each logical group:
+  - Stage specific files or patches using `git add <files>` or `git add -p`
+  - Use `git diff --cached` to verify what is being committed
+  - Generate appropriate commit message based on actual staged code changes
+  - Commit the group
+  - Continue until all changes are committed
+- Use interactive staging (`git add -p`) for splitting changes within single files
+- Aim for 2-5 commits maximum to maintain clarity
+
+## Examples
+
+- `/commit` → Commit staged changes only
+- `/commit all` → Stage all changes, then commit
+- `/commit make multiple commits` → Break changes into logical commits
+- `/commit just the tests` → Stage and commit only test files
 
 ## Message Rules
 
 **Format**: Check recent commits - use conventional commits ONLY if last 3 commits consistently use
 type prefixes
 
-**Subject**: Imperative mood, capitalize first letter, no period, ≤50 chars
+**Subject**: Imperative mood, capitalize first letter, no period, ≤50 chars. Test: "If applied, this
+commit will [subject line]"
 
 **Types**: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert (only if repo uses
 conventional commits)
 
-**Body**: Answer journalist questions - what changed specifically, why was it needed, what effect
-does it have? Use bullet points, wrap at 72 chars
+**Body**: Focus on WHY changes were made, not what code was changed. Explain the problem being
+solved, motivation, and context. What changed is visible in the diff. Use bullet points, wrap at 72
+chars
 
 **Content**: Be direct, eliminate filler words, don't assume reader knows context. Avoid subjective
 assessments or value judgments - stick to objective technical facts
@@ -50,27 +97,27 @@ assessments or value judgments - stick to objective technical facts
 
 ## Rules
 
-- Only commit staged changes (unless `--all` flag)
-- Use `--why` context to inform message, don't copy directly
-- Detect commit style: use conventional commits ONLY if last 3 commits consistently have type:
-  prefixes
+- Follow workflow based on natural language instruction
+- ALWAYS examine actual diff content before creating commit messages
+- NEVER make assumptions based on filenames, paths, or diff stats alone
+- Use conventional commits ONLY if last 3 commits consistently have type prefixes
 - No Claude attribution or metadata
-- Focus on technical change description
+- Always validate changes exist before attempting commits
 
 ## Pre-commit Hook Handling
 
-**Scope**: Only handle automatic hook fixes - do NOT manually fix code issues
+If commit fails due to hooks:
 
-If commit fails due to pre-commit hooks:
+1. Auto-fixes: Use `git update-index --again` and retry once
+2. Second failure or no auto-fixes: Stop and report to user
 
-1. **First failure with auto-fixes**: Use `git update-index --again` to re-add only modified files
-   and retry commit once
-2. **Second failure**: Stop and report to user - do not attempt manual fixes
-3. **No auto-fixes**: Stop immediately - user must resolve hook errors manually
+Never manually fix code issues or bypass hook requirements.
 
-**Never**:
+## Error Scenarios
 
-- Manually fix linting/formatting issues
-- Modify code to satisfy hooks
-- Override or bypass hook requirements
-- Make multiple retry attempts beyond one auto-fix retry
+- No changes: Stop and report status
+- Detached HEAD: Warn user, suggest creating branch
+- Merge conflicts: Stop immediately
+- No repository: Verify working directory is git repo
+- Permission errors: Report specific issue
+- Hook failures: Follow pre-commit protocol
