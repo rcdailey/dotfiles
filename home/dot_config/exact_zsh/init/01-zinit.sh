@@ -4,3 +4,7 @@ if [[ ! -f "$ZINIT_HOME/zinit.zsh" ]]; then
     command git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME" >/dev/null 2>&1
 fi
 source "$ZINIT_HOME/zinit.zsh"
+
+# Load essential annexes
+zinit light-mode for \
+    zdharma-continuum/zinit-annex-default-ice

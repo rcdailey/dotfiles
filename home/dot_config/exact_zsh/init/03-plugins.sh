@@ -1,14 +1,17 @@
 # Zinit plugin loading
 # Load plugins that may produce console output first, then others
 
-# Node version management (may produce output on first install)
-zinit ice silent
-zinit load "lukechilds/zsh-nvm"             # Full NVM integration + auto-switching
+# Set silent as default for all subsequent commands to avoid instant prompt warnings
+zinit default-ice silent
 
-# Load essential plugins (fish-style features)
-zinit load "zsh-users/zsh-autosuggestions"
-zinit load "zsh-users/zsh-syntax-highlighting"
-zinit load "zsh-users/zsh-history-substring-search"
+# Load ALL plugins with wait to avoid instant prompt conflicts
+zinit wait lucid for \
+    "lukechilds/zsh-nvm" \
+    "junegunn/fzf" \
+    "Aloxaf/fzf-tab" \
+    "zsh-users/zsh-autosuggestions" \
+    "zsh-users/zsh-syntax-highlighting" \
+    "zsh-users/zsh-history-substring-search"
 
 # Load Oh-My-Zsh functionality via snippets
 zinit snippet "OMZP::git"                    # Git aliases + completion
@@ -19,6 +22,7 @@ zinit snippet "OMZP::terraform"             # tf completion
 zinit snippet "OMZP::colored-man-pages"     # Prettier man pages
 zinit snippet "OMZP::extract"               # Smart archive extraction
 
-# Modern theme with excellent dark terminal support
+# Clear default ice and set specific ice for theme
+zinit default-ice --clear
 zinit ice depth=1
 zinit load romkatv/powerlevel10k
