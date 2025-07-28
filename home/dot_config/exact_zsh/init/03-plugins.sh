@@ -1,17 +1,17 @@
 # Zinit plugin loading
 # Load plugins that may produce console output first, then others
 
-# Set silent as default for all subsequent commands to avoid instant prompt warnings
-zinit default-ice silent
+# Load plugins that need to be available immediately
+zinit ice silent
+zinit load "zsh-users/zsh-history-substring-search"
 
-# Load ALL plugins with wait to avoid instant prompt conflicts
-zinit wait lucid for \
+# Load other plugins with wait to avoid instant prompt conflicts
+zinit ice silent wait lucid for \
     "lukechilds/zsh-nvm" \
     "junegunn/fzf" \
     "Aloxaf/fzf-tab" \
     "zsh-users/zsh-autosuggestions" \
-    "zsh-users/zsh-syntax-highlighting" \
-    "zsh-users/zsh-history-substring-search"
+    "zsh-users/zsh-syntax-highlighting"
 
 # Load Oh-My-Zsh functionality via snippets
 zinit snippet "OMZP::git"                    # Git aliases + completion
@@ -22,7 +22,6 @@ zinit snippet "OMZP::terraform"             # tf completion
 zinit snippet "OMZP::colored-man-pages"     # Prettier man pages
 zinit snippet "OMZP::extract"               # Smart archive extraction
 
-# Clear default ice and set specific ice for theme
-zinit default-ice --clear
+# Load theme with specific ice
 zinit ice depth=1
 zinit load romkatv/powerlevel10k
