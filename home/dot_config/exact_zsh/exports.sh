@@ -14,13 +14,11 @@ if [ "$TERM_PROGRAM" = "vscode" ]; then
   unset GIT_PAGER
 fi
 
-[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 
-# Enable globstar for ** pattern matching (recursively match directories)
-# Only enable if bash version 4.0 or higher (globstar was added in bash 4.0)
-if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
-    shopt -s globstar
-fi
+# Enable extended globbing for zsh (globstar is enabled by default in zsh)
+# Extended globbing provides advanced pattern matching features
+setopt EXTENDED_GLOB
 
 # XDG Base Directory Specification - consistent across all platforms
 export XDG_CONFIG_HOME="$HOME/.config"

@@ -1,4 +1,4 @@
-# Custom bash functions
+# Custom shell functions
 
 # Git .gitignore function - simplified version matching original
 function gi() {

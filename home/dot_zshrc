@@ -1,3 +1,43 @@
-eval "$(oh-my-posh init zsh --config ~/oh-my-posh/json.omp.json)"
+# Enable Powerlevel10k instant prompt. MUST be at the very top.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
 
-source ~/.bash_aliases
+# Load initialization scripts in order
+for config_file in ~/.config/zsh/init/*.sh; do
+    [[ -r "$config_file" ]] && source "$config_file"
+done
+
+# Load regular configuration scripts
+for config_file in ~/.config/zsh/*.sh; do
+    [[ -r "$config_file" ]] && source "$config_file"
+done
+
+# Zsh optimizations and settings
+setopt AUTO_CD                    # cd by typing directory name if it's not a command
+setopt HIST_VERIFY               # Show command with history expansion before running
+setopt SHARE_HISTORY             # Share command history between sessions
+setopt APPEND_HISTORY            # Append to history file, don't overwrite
+setopt HIST_IGNORE_SPACE         # Don't record commands that start with space
+setopt HIST_IGNORE_DUPS          # Don't record duplicates in history
+setopt CORRECT                   # Spell correction for commands
+setopt EXTENDED_GLOB             # Extended globbing features
+
+# History settings
+HISTSIZE=10000
+SAVEHIST=10000
+HISTFILE=~/.zsh_history
+
+# Completion settings
+autoload -Uz compinit
+compinit
+
+# Key bindings for history substring search
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
+
+# Load local customizations (excluded from git)
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

@@ -30,7 +30,7 @@ repos:
   hooks:
   - id: shellcheck
     args: [--severity=warning]
-    exclude: ^home/dot_config/bash/
+    exclude: ^home/(dot_config/exact_zsh/|dot_p10k\.zsh|\.chezmoiscripts/.*\.sh)
 
 # YAML validation
 - repo: https://github.com/adrienverge/yamllint

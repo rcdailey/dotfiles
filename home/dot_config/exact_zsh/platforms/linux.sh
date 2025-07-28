@@ -10,7 +10,7 @@ if [ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
-# ls function for aliases - this is used by the aliases in dot_bash_aliases
+# ls function for platform-specific ls behavior
 myls() { \ls -hF --color "$@"; }
 
 # This is to support the migration to k8s in the nezuko repository
