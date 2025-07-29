@@ -12,6 +12,6 @@ fi
 
 # Install all packages from Brewfile in home directory
 echo "Brewfile changed, installing packages..."
-cd "$HOME" && brew bundle
+brew bundle --file="$HOME/Brewfile"
 
 echo "Package installation complete!"
