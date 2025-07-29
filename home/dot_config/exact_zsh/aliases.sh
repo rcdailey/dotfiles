@@ -6,6 +6,9 @@ alias pc="pre-commit"
 alias pcr="pre-commit run"
 alias pcra="pre-commit run --all-files"
 
+# Git with noglob to handle refspec characters (^, @, ~)
+alias git='noglob git'
+
 # Kubernetes aliases (k alias provided by kubectl plugin, but keeping kz)
 alias kz="kubectl kustomize"
 
