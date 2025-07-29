@@ -5,11 +5,20 @@
 zinit ice silent
 zinit load "zsh-users/zsh-history-substring-search"
 
+# Load fzf and fzf-tab first (fzf-tab needs to load after compinit but before other widgets)
+zinit ice silent
+zinit load "junegunn/fzf"
+
+# Load fzf-tab (options are set in .zshrc)
+zinit ice silent
+zinit load "Aloxaf/fzf-tab"
+
+# Enable fzf-tab after loading
+enable-fzf-tab
+
 # Load other plugins with wait to avoid instant prompt conflicts
 zinit ice silent wait lucid for \
     "lukechilds/zsh-nvm" \
-    "junegunn/fzf" \
-    "Aloxaf/fzf-tab" \
     "zsh-users/zsh-autosuggestions" \
     "zsh-users/zsh-syntax-highlighting"
 

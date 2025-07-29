@@ -1,6 +1,9 @@
 ---
 fix: true
 
+ignores:
+- "docs/memory-bank/**"
+
 config:
   line-length:
     line_length: 100

@@ -1,5 +1,6 @@
 # Enable Powerlevel10k instant prompt. MUST be at the very top.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+# Disable instant prompt in VS Code to fix prompt rendering
+if [[ "$TERM_PROGRAM" != "vscode" ]] && [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
@@ -12,6 +13,9 @@ done
 for config_file in ~/.config/zsh/*.sh; do
     [[ -r "$config_file" ]] && source "$config_file"
 done
+
+# Shell options required for Powerlevel10k compatibility
+setopt prompt_subst
 
 # Zsh optimizations and settings
 setopt AUTO_CD                    # cd by typing directory name if it's not a command
@@ -41,3 +45,20 @@ bindkey '^[[B' history-substring-search-down
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Finalize Powerlevel10k setup (must be last)
+if (( ${+functions[p10k]} )); then
+    p10k finalize
+
+    # VS Code compatibility: Powerlevel10k doesn't work properly in VS Code terminal
+    # so we use a fallback prompt that provides similar functionality
+    if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+        typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
+        p10k reload 2>/dev/null || true
+
+        # If Powerlevel10k still hasn't set up properly, use fallback
+        if [[ ${#PS1} -lt 10 ]]; then
+            PS1=$'\e[36m%n@%m\e[0m:\e[34m%~\e[0m%# '
+        fi
+    fi
+fi

@@ -18,13 +18,27 @@ zstyle ':completion:*:descriptions' format '[%d]'
 # Case-insensitive completion matching
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 
-# fzf-tab basic configuration (official recommendations)
-zstyle ':completion:*' menu no                    # Disable default menu for fzf-tab
-zstyle ':completion:*:descriptions' format '[%d]' # Set descriptions format to enable group support
-zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}  # Enable filename colorizing
-zstyle ':completion:*:git-checkout:*' sort false  # Disable sort when completing git checkout
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath 2>/dev/null || ls -1 --color=always $realpath'
-zstyle ':fzf-tab:*' switch-group '<' '>'          # Switch group using < and >
+# fzf-tab will use its default configuration
+# Explicit configuration commented out to prefer defaults over manual settings
+# zstyle ':completion:*' menu no                    # Disable default menu for fzf-tab
+# zstyle ':completion:*:descriptions' format '[%d]' # Set descriptions format to enable group support
+# zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}  # Enable filename colorizing
+# zstyle ':completion:*:git-checkout:*' sort false  # Disable sort when completing git checkout
+# zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath 2>/dev/null || ls -1 --color=always $realpath'
+# zstyle ':fzf-tab:*' switch-group '<' '>'          # Switch group using < and >
+
+
+
+
+# Workaround for Powerlevel10k bug: malformed pattern (utf|UTF)(-|)8 in __p9k_intro_locale
+# This suppresses stderr from _p9k_on_expand until the upstream bug is fixed
+# See: hardcoded pattern in __p9k_intro_locale variable causes "bad pattern" errors
+if (( $+functions[_p9k_on_expand] )); then
+    functions[_p9k_on_expand_orig]=$functions[_p9k_on_expand]
+    _p9k_on_expand() {
+        { _p9k_on_expand_orig "$@" } 2>/dev/null
+    }
+fi
 
 # Custom completions (if needed)
 # Add any project-specific completions here

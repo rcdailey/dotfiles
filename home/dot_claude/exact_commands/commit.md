@@ -1,133 +1,87 @@
 ---
-allowed-tools: Bash(git diff:*), Bash(git commit:*), Bash(git add:*), Bash(git log:*), Bash(git update-index:*)
+allowed-tools: Bash(git diff:*), Bash(git commit:*), Bash(git add:*), Bash(git log:*), Bash(git update-index:*), Bash(git reset:*)
 description: Create git commits with flexible natural language instructions
 ---
 
-# Flexible Git Commit Command
+# Git Commit Command
 
-- Current changes: !`git diff --name-status`
+Execute with minimal output - only show final commit message(s).
 
-## Execution Protocol
+## Systematic Workflows
 
-**SILENT MODE**: Execute with minimal output - only show final commit message(s).
+Parse natural language instruction and execute corresponding workflow:
 
-**BATCH OPERATIONS**: Use efficient 2-command pattern:
+### Staged Workflow (`/commit`)
 
-1. **Analysis**: `git log --oneline -3 && [git add -A &&] git diff --cached` (skip `add -A` for
-   staged-only)
-2. **Execution**: `git commit -m "message"` (no chaining)
+Commit only staged changes.
 
-Never use `git status` - diff output contains all needed file information.
+- **Inspect**: `git log --oneline -3 origin/HEAD && git diff --cached`
+- **Act**: `git commit -m "message"`
+- Fail if no staged changes exist
 
-**MANDATORY DIFF ANALYSIS**: ALWAYS examine actual code changes with `git diff` before creating
-commits. NEVER commit based solely on filenames, diff stats, or assumptions.
+### All Workflow (`/commit all`)
+
+Stage and commit all changes.
+
+- **Inspect**: `git log --oneline -3 origin/HEAD && git add -A && git diff --cached`
+- **Act**: `git commit -m "message"`
+
+### Multi-commit Workflow (`/commit make multiple commits`)
+
+Break changes into logical commits.
+
+- **Inspect**: `git log --oneline -3 origin/HEAD && git reset && git add -N . && git diff && git
+  reset`
+- **Group changes** using these heuristics (priority order):
+  1. File type separation: code, tests, docs, config files
+  2. Directory boundaries: same directory/module
+  3. Change type: refactoring, features, fixes, cleanup
+  4. Dependency order: foundation changes before dependent changes
+- **For each logical group**:
+  - **Act**: `git add <files> && git commit -m "message"`
+  - Continue until all changes committed
+- Use `git add -p` for splitting changes within files
+- Aim for 2-5 commits maximum
 
 ## Argument Parsing
 
-Parse the natural language instruction provided after `/commit`:
-
-- **No arguments** (just `/commit`): Commit only staged changes
-- **"all"**: Stage all changes (`git add -A`) then commit
-- **"make multiple commits"** or **"multiple commits"**: Interactive staging workflow to break work
-  into logical commits
-- **Custom instructions**: Parse human-readable descriptions and execute accordingly
-- **Ambiguous input**: Default to staged-only commit workflow and ask for clarification
-
-## Task Flow
-
-1. **Parse instruction**: Determine workflow from natural language argument
-2. **Analysis command**: `git log --oneline -3 && [git add -A &&] git diff --cached`
-3. **Analyze output**: Read log for commit style, read diff for actual code changes
-4. **Generate commit message**: Based on actual code understanding and detected commit style
-5. **Execution command**: `git commit -m "message"`
-6. **Handle hook failures**: If failed, retry with `git update-index --again && git commit -m
-   "message"`
-
-## Workflows
-
-### Default Workflow (no arguments)
-
-- Analysis: `git log --oneline -3 && git diff --cached`
-- Execution: `git commit -m "message"`
-- Fail if no staged changes exist
-
-### "all" Workflow
-
-- Analysis: `git log --oneline -3 && git add -A && git diff --cached`
-- Execution: `git commit -m "message"`
-
-### Multiple Commits Workflow
-
-- Examine actual diff content with `git diff` to understand all changes
-- Group related changes using these heuristics (in priority order):
-  1. File type separation: Keep code, tests, docs, config files in separate commits
-  2. Directory boundaries: Group changes within same directory/module
-  3. Change type: Separate refactoring, new features, bug fixes, cleanup
-  4. Dependency order: Commit foundation changes before dependent changes
-- For each logical group:
-  - Stage specific files or patches using `git add <files>` or `git add -p`
-  - Use `git diff --cached` to verify what is being committed
-  - Generate appropriate commit message based on actual staged code changes
-  - Commit the group
-  - Continue until all changes are committed
-- Use interactive staging (`git add -p`) for splitting changes within single files
-- Aim for 2-5 commits maximum to maintain clarity
-
-## Examples
-
-- `/commit` → Commit staged changes only
-- `/commit all` → Stage all changes, then commit
-- `/commit make multiple commits` → Break changes into logical commits
-- `/commit just the tests` → Stage and commit only test files
+- **No arguments**: Staged workflow
+- **"all"**: All workflow
+- **"make multiple commits"** or **"multiple commits"**: Multi-commit workflow
+- **Custom instructions**: Parse and execute accordingly
+- **Ambiguous input**: Default to staged workflow, ask for clarification
 
 ## Message Rules
 
-**Format**: Check recent commits - use conventional commits ONLY if last 3 commits consistently use
-type prefixes
+**MANDATORY**: ALWAYS examine actual diff content before creating commit messages. NEVER make
+assumptions based on filenames, paths, or diff stats alone.
+
+**Format**: Use conventional commits ONLY if last 3 commits consistently use type prefixes.
 
 **Subject**: Imperative mood, capitalize first letter, no period, ≤50 chars. Test: "If applied, this
 commit will [subject line]"
 
-**Types**: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert (only if repo uses
-conventional commits)
+**Types**: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert
 
-**Body**: Focus on WHY changes were made, not what code was changed. Explain the problem being
-solved, motivation, and context. What changed is visible in the diff. Use bullet points, wrap at 72
-chars
+**Body**: Focus on WHY changes were made, not what changed. Explain problem, motivation, context.
+Use bullet points, wrap at 72 chars.
 
-**Content**: Be direct, eliminate filler words, don't assume reader knows context. Avoid subjective
-assessments or value judgments - stick to objective technical facts
-
-**Multi-line syntax**: Use single -m with embedded newlines: `git commit -m "subject\n\nbody line
-1\nbody line 2"`
-
-## Rules
-
-- Follow workflow based on natural language instruction
-- ALWAYS examine actual diff content before creating commit messages
-- NEVER make assumptions based on filenames, paths, or diff stats alone
-- Use conventional commits ONLY if last 3 commits consistently have type prefixes
-- No Claude attribution or metadata
-- Always validate changes exist before attempting commits
+**Multi-line syntax**: `git commit -m "subject\n\nbody line 1\nbody line 2"`
 
 ## Pre-commit Hook Handling
 
-When commit fails due to pre-commit hooks:
+When commit fails due to hooks:
 
-1. **First failure with auto-fixes**: Chain `git update-index --again && git commit -m "message"` to
-   re-stage hook modifications and retry
-2. **Second failure or validation errors**: Stop and report to user
-3. **No modifications detected**: Report hook validation failure
-
-**Critical**: Always re-stage hook-modified files using `git update-index --again` before retry.
+1. **Auto-fixes**: `git update-index --again && git commit -m "message"`
+2. **Validation errors**: Stop and report to user
+3. **No modifications**: Report hook validation failure
 
 Never manually fix code issues or bypass hook requirements.
 
-## Error Scenarios
+## Error Handling
 
-- No changes: Stop and report status
-- Detached HEAD: Warn user, suggest creating branch
-- Merge conflicts: Stop immediately
-- No repository: Verify working directory is git repo
-- Permission errors: Report specific issue
-- Hook failures: Follow pre-commit protocol
+- **No changes**: Stop and report status
+- **Detached HEAD**: Warn user, suggest creating branch
+- **Merge conflicts**: Stop immediately
+- **No repository**: Verify working directory is git repo
+- **Hook failures**: Follow pre-commit protocol

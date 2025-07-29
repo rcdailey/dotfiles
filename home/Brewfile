@@ -1,0 +1,32 @@
+# Dotfiles Brewfile
+# Essential command-line tools for the development environment
+
+# Shell enhancement tools
+brew "fzf"                    # Required for fzf-tab interactive completion
+brew "ripgrep"                # Fast grep replacement (rg command)
+brew "eza"                    # Modern ls replacement with colors
+brew "git-delta"              # Better git diff viewer
+brew "jq"                     # JSON processor for scripts
+
+# Development tools
+brew "gh"                     # GitHub CLI for git operations
+brew "coreutils"              # GNU utilities (gls, etc.) for consistent behavior
+brew "chezmoi"                # Dotfiles manager
+
+# Kubernetes tools
+brew "kubectl"                # Kubernetes command-line tool
+brew "k9s"                    # Kubernetes dashboard
+
+# Optional development tools (commented out - uncomment as needed)
+# brew "helm"                 # Kubernetes package manager
+# brew "terraform"            # Infrastructure as code
+# brew "docker"               # Container platform
+# brew "node"                 # Node.js runtime
+# brew "python"               # Python runtime
+
+# GUI Applications (casks)
+# cask "visual-studio-code"   # Code editor
+# cask "docker"               # Docker Desktop
+
+# Fonts for terminal (Nerd Fonts for Powerlevel10k)
+cask "font-fira-code-nerd-font"
