@@ -1,4 +1,4 @@
-# Environment variables and exports
+# Environment variables and exports (console-output safe for instant prompt)
 
 # Editor and paging
 export EDITOR="code"
@@ -20,16 +20,10 @@ fi
 # Extended globbing provides advanced pattern matching features
 setopt EXTENDED_GLOB
 
-# XDG Base Directory Specification - consistent across all platforms
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_CACHE_HOME="$HOME/.cache"
-export XDG_STATE_HOME="$HOME/.local/state"
-
-# History control
-export HISTCONTROL=ignoreboth
-export HISTSIZE=1000
-export HISTFILESIZE=2000
+# History settings (zsh-specific, removed bash cruft)
+export HISTSIZE=10000
+export SAVEHIST=10000
+export HISTFILE=~/.zsh_history
 
 # Development
 export COLUMNS

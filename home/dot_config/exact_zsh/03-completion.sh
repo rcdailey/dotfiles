@@ -1,0 +1,36 @@
+# Zsh completion system setup
+
+# Skip security check and initialize zsh completion system
+autoload -Uz compinit
+compinit -u
+
+# Essential completion behavior options (relevant with fzf-tab)
+setopt ALWAYS_TO_END                  # Move cursor to end of completed word
+setopt COMPLETE_IN_WORD               # Complete from both ends of a word
+setopt AUTO_PARAM_SLASH               # Add trailing slash for directories automatically
+
+# Basic completion styling
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*:descriptions' format '[%d]'
+
+# Case-insensitive completion matching
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+
+# Git alias completion support for fzf-tab
+# This ensures git aliases appear in tab completions
+zstyle ':completion:*:*:git:*' user-commands $(git config --get-regexp '^alias\.' | cut -c7- | cut -d' ' -f1 2>/dev/null)
+
+# Disable sorting for git commands to maintain natural order
+zstyle ':completion:*:git:*' sort false
+
+# CRITICAL: Workaround for Powerlevel10k bug - GitHub issue #2887
+# https://github.com/romkatv/powerlevel10k/issues/2887
+# Malformed pattern (utf|UTF)(-|)8 in __p9k_intro_locale causes infinite error loop
+# This suppresses stderr from _p9k_on_expand until the upstream bug is fixed
+if (( $+functions[_p9k_on_expand] )); then
+    functions[_p9k_on_expand_orig]=$functions[_p9k_on_expand]
+    _p9k_on_expand() {
+        { _p9k_on_expand_orig "$@" } 2>/dev/null
+    }
+fi

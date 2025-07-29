@@ -26,19 +26,32 @@ specific to this repository and are not managed by chezmoi.
 
 ### Key Configuration Areas
 
-**Shell Configuration (Modular Bash Setup):**
+**Shell Configuration (Modern Zsh Setup with Optimal Initialization Order):**
 
-- `home/dot_bashrc` - Main bash configuration that sources modular files
-- `home/dot_config/bash/` - Modular bash configuration directory:
-  - `completion.sh` - Bash completion settings
-  - `exports.sh` - Environment variables and exports
-  - `functions.sh` - Custom bash functions
-  - `mise.sh` - Mise (formerly rtx) tool activation
-  - `nvm.sh` - Node Version Manager setup
-  - `path.sh` - PATH modifications
-  - `platform.sh.tmpl` - Platform-specific configurations
-  - `prompt.sh` - Shell prompt configuration
-  - `platforms/` - Platform-specific overrides (darwin.sh, linux.sh, windows.sh)
+- `home/dot_zshenv` - XDG Base Directory variables (loaded before .zshrc)
+- `home/dot_zshrc` - Main zsh configuration with critical timing optimizations
+- `home/dot_config/exact_zsh/` - Numbered configuration files loaded in strict sequence:
+  - `01-environment.sh` - Environment variables and exports (console-safe)
+  - `02-zinit.sh` - Zinit plugin manager initialization
+  - `03-completion.sh` - Completion system + Powerlevel10k bug workaround
+  - `04-plugins.sh` - Plugin loading with strict timing (fzf-tab critical order)
+  - `05-configuration.sh` - Aliases, functions, shell options, PATH modifications
+  - `06-platform.sh.tmpl` - Consolidated platform-specific configurations
+
+**CRITICAL Initialization Order Requirements:**
+
+- XDG variables must be in .zshenv (before .zshrc processing)
+- Powerlevel10k instant prompt must be early in .zshrc
+- fzf-tab MUST load after compinit, before widget-wrapping plugins
+- mise split: `mise env` before instant prompt, `mise activate` after
+- Never modify this loading order without understanding timing dependencies
+
+**Essential Bug Workaround (DO NOT REMOVE):**
+
+- `03-completion.sh` contains critical Powerlevel10k bug fix for GitHub issue #2887
+- Workaround prevents infinite "bad pattern: (utf|UTF)(-|)8" error loop during tab completion
+- Function wrapper suppresses stderr from _p9k_on_expand until upstream fix is available
+- Removing this workaround will break tab completion completely
 
 **Git Configuration:**
 
@@ -67,6 +80,29 @@ Files ending in `.tmpl` are chezmoi templates that can:
 - Include conditional content based on OS, environment variables, etc.
 - Use `{{ if eq .chezmoi.os "linux" }}` for OS-specific sections
 - Use `{{ if eq .env "work" }}` for environment-specific configurations
+
+### File Removal Management
+
+**`.chezmoiremove` File Handling:**
+
+- A `.chezmoiremove` file (with optional `.tmpl` extension) contains a list of targets to remove
+  from the destination
+- Always interpreted as a template regardless of extension
+- **IMPORTANT**: This repository has an existing `home/.chezmoiremove` file with organized sections
+
+**Organization Strategy:**
+
+- Group entries by year-month with clear section headers
+- Include "PRUNE AFTER" dates for each section (typically 30+ days after changes)
+- Add inline comments showing where files moved (`# → new-location`)
+- Include context about why changes were made
+- Use template at bottom for consistent future additions
+
+**Maintenance:**
+
+- Review periodically and remove old entries after prune dates
+- Longer retention for major reorganizations (60-90 days)
+- Keep recent entries until confirmed working on all target systems
 
 ### Key Features
 

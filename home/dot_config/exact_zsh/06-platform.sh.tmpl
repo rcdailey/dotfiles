@@ -1,0 +1,59 @@
+# Platform-specific configurations consolidated using chezmoi templating
+
+{{ if eq .chezmoi.os "darwin" }}
+# macOS-specific configurations
+
+# Enable color support
+export CLICOLOR=1
+export LSCOLORS=ExFxBxDxCxegedabagacad
+
+# Homebrew initialization
+eval "$(/opt/homebrew/bin/brew shellenv)"
+export PATH="/opt/homebrew/opt/python/libexec/bin:$PATH"
+
+# Simplified ls setup (zsh globbing reduces need for complex aliases)
+# Use GNU ls if available (installed via brew install coreutils)
+if command -v gls >/dev/null 2>&1; then
+    alias ls='gls -hF --color=auto'
+    alias ll='gls -la --color=auto --group-directories-first'
+else
+    alias ls='ls -hF -G'
+    alias ll='ls -la -G'
+fi
+
+# Docker configuration for specific projects
+export DOCKER_DATA_PATH="/Volumes/docker"
+{{ end }}
+
+{{ if eq .chezmoi.os "linux" }}
+# Linux-specific configurations
+
+# Enable color support for ls
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+fi
+
+# Linux Homebrew fallback
+if [ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+
+# ls function for platform-specific ls behavior
+myls() { \ls -hF --color "$@"; }
+
+# This is to support the migration to k8s in the nezuko repository
+export DOCKER_DATA_PATH="/mnt/docker-data"
+{{ end }}
+
+{{ if eq .chezmoi.os "windows" }}
+# Windows-specific configurations
+
+# Prepend Chocolatey bin to PATH to prioritize it over Git for Windows tools
+export PATH="$HOME/AppData/Local/UniGetUI/Chocolatey/bin:$PATH"
+
+# Node.js platform check bypass for Windows environments
+export NODE_SKIP_PLATFORM_CHECK=1
+
+# ls function for aliases (using standard ls with color support)
+myls() { \ls -hF --color "$@"; }
+{{ end }}
