@@ -8,7 +8,7 @@ remote_branches="$(git for-each-ref --format='%(refname:short)' refs/remotes/ori
 # echo "---------------------"
 
 while IFS= read -r branch; do
-    if ! grep -Fxq "origin/$branch" <<< "$remote_branches"; then
-        echo "$branch"
-    fi
-done <<< "$branches"
+  if ! grep -Fxq "origin/$branch" <<<"$remote_branches"; then
+    echo "$branch"
+  fi
+done <<<"$branches"

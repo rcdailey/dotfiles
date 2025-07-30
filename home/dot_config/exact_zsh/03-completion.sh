@@ -1,6 +1,7 @@
 # Zsh completion system setup
 
 # Skip security check and initialize zsh completion system
+# Reason: Single user machines, no security risk, improves automation
 autoload -Uz compinit
 compinit -u
 
@@ -19,7 +20,7 @@ zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:
 
 # Git alias completion support for fzf-tab
 # This ensures git aliases appear in tab completions
-zstyle ':completion:*:*:git:*' user-commands $(git config --get-regexp '^alias\.' | cut -c7- | cut -d' ' -f1 2>/dev/null)
+zstyle ':completion:*:*:git:*' user-commands "$(git config --get-regexp '^alias\.' | cut -c7- | cut -d' ' -f1 2>/dev/null)"
 
 # Disable sorting for git commands to maintain natural order
 zstyle ':completion:*:git:*' sort false
@@ -31,6 +32,6 @@ zstyle ':completion:*:git:*' sort false
 if (( $+functions[_p9k_on_expand] )); then
     functions[_p9k_on_expand_orig]=$functions[_p9k_on_expand]
     _p9k_on_expand() {
-        { _p9k_on_expand_orig "$@" } 2>/dev/null
+        { _p9k_on_expand_orig "$@"; } 2>/dev/null
     }
 fi

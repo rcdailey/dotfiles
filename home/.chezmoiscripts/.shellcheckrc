@@ -1,0 +1,5 @@
+# Shellcheck configuration for chezmoi scripts
+# These are executable zsh scripts that chezmoi runs
+
+# Disable SC1071 for zsh scripts since shellcheck doesn't support zsh
+disable=SC1071  # ShellCheck only supports sh/bash/dash/ksh/'busybox sh' scripts

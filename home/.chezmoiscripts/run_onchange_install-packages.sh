@@ -5,7 +5,7 @@
 # This script runs whenever the Brewfile content changes
 
 # Check if brew is available
-if ! command -v brew &> /dev/null; then
+if ! command -v brew &>/dev/null; then
   echo "Error: Homebrew is not installed or not in PATH" >&2
   exit 1
 fi

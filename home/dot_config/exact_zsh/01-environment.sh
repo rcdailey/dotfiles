@@ -14,11 +14,7 @@ if [ "$TERM_PROGRAM" = "vscode" ]; then
   unset GIT_PAGER
 fi
 
-[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
-
-# Enable extended globbing for zsh (globstar is enabled by default in zsh)
-# Extended globbing provides advanced pattern matching features
-setopt EXTENDED_GLOB
+[[ $TERM_PROGRAM == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 
 # History settings (zsh-specific, removed bash cruft)
 export HISTSIZE=10000
@@ -27,8 +23,9 @@ export HISTFILE=~/.zsh_history
 
 # Development
 export COLUMNS
-export DOCKER_UID="$(id -u)"
-export DOCKER_GID="$(id -g)"
+DOCKER_UID="$(id -u)"
+DOCKER_GID="$(id -g)"
+export DOCKER_UID DOCKER_GID
 
 # Terminal color support - enable 256-color and true color support across all platforms
 export TERM=xterm-256color
@@ -36,7 +33,7 @@ export COLORTERM=truecolor
 
 # Disable husky pre-commit hooks (slows down git)
 export HUSKY_SKIP_HOOKS=1 # For legacy purposes
-export HUSKY=0 # This replaces HUSKY_SKIP_HOOKS
+export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
 
 # Homebrew - disable new casks/formula messages and analytics
 export HOMEBREW_NO_ANALYTICS=1
@@ -46,6 +43,6 @@ export HOMEBREW_NO_UPDATE_REPORT_FORMULAE=1
 export HOMEBREW_NO_UPDATE_REPORT_CASKS=1
 
 # In some cases TMPDIR is not defined, such as VS Code integrated terminal on Windows
-if [[ -z "$TMPDIR" ]]; then
-    export TMPDIR=/tmp
+if [[ -z $TMPDIR ]]; then
+  export TMPDIR=/tmp
 fi

@@ -14,9 +14,9 @@
 
 obj_name="$(git rev-parse --verify "$1")"
 shift
-git log "$@" --all --pretty=format:'%T %h %s' \
-| while read tree commit subject ; do
-    if git ls-tree -r $tree | grep -q "$obj_name" ; then
-        echo $commit "$subject"
+git log "$@" --all --pretty=format:'%T %h %s' |
+  while read -r tree commit subject; do
+    if git ls-tree -r "$tree" | grep -q "$obj_name"; then
+      echo "$commit" "$subject"
     fi
-done
+  done

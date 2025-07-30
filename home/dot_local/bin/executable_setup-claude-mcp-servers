@@ -3,12 +3,6 @@
 
 import sys
 import subprocess
-import typer
-from rich.console import Console
-from rich.table import Table
-import sh
-from typing import Dict, List
-from dataclasses import dataclass
 
 
 # Auto-install dependencies
@@ -37,6 +31,13 @@ def ensure_deps():
 
 
 ensure_deps()
+
+import typer  # noqa: E402  # Import after ensure_deps() for dependency self-installation
+from rich.console import Console  # noqa: E402  # Import after ensure_deps() for dependency self-installation
+from rich.table import Table  # noqa: E402  # Import after ensure_deps() for dependency self-installation
+import sh  # noqa: E402  # Import after ensure_deps() for dependency self-installation
+from typing import Dict, List  # noqa: E402  # Import after ensure_deps() for dependency self-installation
+from dataclasses import dataclass  # noqa: E402  # Import after ensure_deps() for dependency self-installation
 
 # =============================================================================
 # MCP SERVERS TO MANAGE

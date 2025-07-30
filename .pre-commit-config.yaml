@@ -18,7 +18,7 @@ repos:
 
 # Python: Ruff for linting and formatting
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.12.5
+  rev: v0.12.7
   hooks:
   - id: ruff-check
     args: [--fix]
@@ -29,8 +29,6 @@ repos:
   rev: v0.10.0.1
   hooks:
   - id: shellcheck
-    args: [--severity=warning]
-    exclude: ^home/(dot_config/exact_zsh/|dot_p10k\.zsh|\.chezmoiscripts/.*\.sh)
 
 # YAML validation
 - repo: https://github.com/adrienverge/yamllint

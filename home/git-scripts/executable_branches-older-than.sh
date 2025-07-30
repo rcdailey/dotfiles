@@ -4,8 +4,8 @@ refpattern=${2:-refs/heads}
 
 git for-each-ref \
   --sort=-committerdate \
-  --format="%(committerdate:short) %(refname:short)" "$refpattern" \
-| awk "\$0 <= \"$(date --date="-$age months" +'%Y-%m-%d')\""
+  --format="%(committerdate:short) %(refname:short)" "$refpattern" |
+  awk "\$0 <= \"$(date --date="-$age months" +'%Y-%m-%d')\""
 
 # if [[ "$remote" != "" ]]; then
 #     branch_list=$(git branch -r --list "$remote/*" | grep -v HEAD | sed "s/\* //")

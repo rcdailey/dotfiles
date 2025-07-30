@@ -25,7 +25,7 @@
 # - Version regex must match AWS SDK 4-component versions (e.g., 3.7.302.15)
 # - Script assumes Directory.Packages.props exists in current working directory
 
-set -e  # Exit on error
+set -e # Exit on error
 
 # Handle CTRL+C gracefully
 trap 'echo -e "\n\nScript interrupted by user."; exit 130' INT
@@ -33,48 +33,48 @@ trap 'echo -e "\n\nScript interrupted by user."; exit 130' INT
 # Parse command line arguments
 DRY_RUN=false
 for arg in "$@"; do
-    case $arg in
-        -n|--dry-run)
-            DRY_RUN=true
-            shift
-            ;;
-        -h|--help)
-            echo "Usage: $0 [OPTIONS]"
-            echo "Options:"
-            echo "  -n, --dry-run    Show what would be updated without making changes"
-            echo "  -h, --help       Show this help message"
-            echo ""
-            echo "This script finds and updates outdated NuGet packages in Directory.Packages.props files."
-            echo "It searches upward from the current directory to find the nearest props file."
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $arg"
-            echo "Use --help for usage information."
-            exit 1
-            ;;
-    esac
+  case $arg in
+  -n | --dry-run)
+    DRY_RUN=true
+    shift
+    ;;
+  -h | --help)
+    echo "Usage: $0 [OPTIONS]"
+    echo "Options:"
+    echo "  -n, --dry-run    Show what would be updated without making changes"
+    echo "  -h, --help       Show this help message"
+    echo ""
+    echo "This script finds and updates outdated NuGet packages in Directory.Packages.props files."
+    echo "It searches upward from the current directory to find the nearest props file."
+    exit 0
+    ;;
+  *)
+    echo "Unknown option: $arg"
+    echo "Use --help for usage information."
+    exit 1
+    ;;
+  esac
 done
 
 # Function to install missing tools via brew
 install_tool() {
-    local tool_name="$1"
-    local brew_package="$2"
+  local tool_name="$1"
+  local brew_package="$2"
 
-    if ! command -v "$tool_name" >/dev/null 2>&1; then
-        if command -v brew >/dev/null 2>&1; then
-            echo "Installing missing dependency: $tool_name"
-            if ! brew install "$brew_package"; then
-                echo "ERROR: Failed to install $tool_name via brew"
-                exit 1
-            fi
-        else
-            echo "ERROR: $tool_name is required but not installed."
-            echo "Please install it manually or install Homebrew first."
-            echo "With Homebrew: brew install $brew_package"
-            exit 1
-        fi
+  if ! command -v "$tool_name" >/dev/null 2>&1; then
+    if command -v brew >/dev/null 2>&1; then
+      echo "Installing missing dependency: $tool_name"
+      if ! brew install "$brew_package"; then
+        echo "ERROR: Failed to install $tool_name via brew"
+        exit 1
+      fi
+    else
+      echo "ERROR: $tool_name is required but not installed."
+      echo "Please install it manually or install Homebrew first."
+      echo "With Homebrew: brew install $brew_package"
+      exit 1
     fi
+  fi
 }
 
 # Check for required dependencies and install if possible
@@ -83,71 +83,71 @@ install_tool "xmlstarlet" "xmlstarlet"
 
 # Function to find Directory.Packages.props by traversing up the directory tree
 find_packages_props() {
-    local current_dir
-    current_dir="$(pwd)"
+  local current_dir
+  current_dir="$(pwd)"
 
-    while [ "$current_dir" != "/" ]; do
-        if [ -f "$current_dir/Directory.Packages.props" ]; then
-            echo "$current_dir/Directory.Packages.props"
-            return 0
-        fi
-        current_dir="$(dirname "$current_dir")"
-    done
-
-    # Check root directory as well
-    if [ -f "/Directory.Packages.props" ]; then
-        echo "/Directory.Packages.props"
-        return 0
+  while [ "$current_dir" != "/" ]; do
+    if [ -f "$current_dir/Directory.Packages.props" ]; then
+      echo "$current_dir/Directory.Packages.props"
+      return 0
     fi
+    current_dir="$(dirname "$current_dir")"
+  done
 
-    return 1
+  # Check root directory as well
+  if [ -f "/Directory.Packages.props" ]; then
+    echo "/Directory.Packages.props"
+    return 0
+  fi
+
+  return 1
 }
 
 # Function to prompt user for single keystroke confirmation
 prompt_user_confirmation() {
-    local props_file="$1"
+  local props_file="$1"
 
-    echo "Found Directory.Packages.props at: $props_file"
-    echo -n "Continue with this file? (y/n): "
+  echo "Found Directory.Packages.props at: $props_file"
+  echo -n "Continue with this file? (y/n): "
 
-    local response
-    # Check if we can read from terminal, otherwise default to 'y' for non-interactive use
-    if [ -t 0 ]; then
-        read -n 1 -r response
-        echo  # Add newline after single character input
+  local response
+  # Check if we can read from terminal, otherwise default to 'y' for non-interactive use
+  if [ -t 0 ]; then
+    read -n 1 -r response
+    echo # Add newline after single character input
 
-        case "$response" in
-            [Yy])
-                return 0
-                ;;
-            [Nn])
-                echo "Operation cancelled by user."
-                return 1
-                ;;
-            *)
-                echo "Invalid response. Please press 'y' for yes or 'n' for no."
-                prompt_user_confirmation "$props_file"
-                ;;
-        esac
-    else
-        # Non-interactive mode - default to yes
-        echo "y (non-interactive mode)"
-        return 0
-    fi
+    case "$response" in
+    [Yy])
+      return 0
+      ;;
+    [Nn])
+      echo "Operation cancelled by user."
+      return 1
+      ;;
+    *)
+      echo "Invalid response. Please press 'y' for yes or 'n' for no."
+      prompt_user_confirmation "$props_file"
+      ;;
+    esac
+  else
+    # Non-interactive mode - default to yes
+    echo "y (non-interactive mode)"
+    return 0
+  fi
 }
 
 # Discover Directory.Packages.props file
 echo "Searching for Directory.Packages.props..."
 if ! PACKAGES_PROPS_FILE=$(find_packages_props); then
-    echo "ERROR: No Directory.Packages.props file found in current directory or any parent directories."
-    echo "This script requires a Directory.Packages.props file for .NET Central Package Management."
-    echo "Please run this script from within a .NET project that uses centralized package management."
-    exit 1
+  echo "ERROR: No Directory.Packages.props file found in current directory or any parent directories."
+  echo "This script requires a Directory.Packages.props file for .NET Central Package Management."
+  echo "Please run this script from within a .NET project that uses centralized package management."
+  exit 1
 fi
 
 # Get user confirmation before proceeding
 if ! prompt_user_confirmation "$PACKAGES_PROPS_FILE"; then
-    exit 130
+  exit 130
 fi
 
 echo "Discovering outdated packages using NuGet API..."
@@ -159,274 +159,280 @@ echo "Discovering outdated packages using NuGet API..."
 # The regex pattern below matches 3-4 component version numbers ONLY (e.g., 1.2.3, 1.2.3.4, 1.0.0-beta)
 # This indirectly excludes version ranges like [7,8), (1.0,2.0], etc. since they don't start with digits
 # This approach is much simpler than trying to handle all possible version range corner cases
-all_packages=$(cat "$PACKAGES_PROPS_FILE" | \
-    xmlstarlet sel -T -t -m "//PackageVersion | //GlobalPackageReference" -v "@Include" -o "|" -v "@Version" -n | \
-    rg '\|[0-9]+(\.[0-9]+){1,}(-[a-zA-Z0-9\.-]+)?$')
+all_packages=$(xmlstarlet sel -T -t -m "//PackageVersion | //GlobalPackageReference" -v "@Include" -o "|" -v "@Version" -n "$PACKAGES_PROPS_FILE" |
+  rg '\|[0-9]+(\.[0-9]+){1,}(-[a-zA-Z0-9\.-]+)?$')
 
 # Pre-build lookup maps for faster package detection
 package_versions=$(xmlstarlet sel -t -m "//PackageVersion" -v "@Include" -n "$PACKAGES_PROPS_FILE" 2>/dev/null)
 global_packages=$(xmlstarlet sel -t -m "//GlobalPackageReference" -v "@Include" -n "$PACKAGES_PROPS_FILE" 2>/dev/null)
 
 if [ -z "$all_packages" ]; then
-    echo "No packages found in $PACKAGES_PROPS_FILE!"
-    exit 1
+  echo "No packages found in $PACKAGES_PROPS_FILE!"
+  exit 1
 fi
-
 
 # Get outdated packages in parallel
 echo "Checking $(echo "$all_packages" | wc -l) packages for updates..."
 
 # Function to check latest version from NuGet API
 check_package_version() {
-    local package_name="$1"
-    local current_version="$2"
-    local package_lower
-    package_lower=$(echo "$package_name" | tr '[:upper:]' '[:lower:]')
+  local package_name="$1"
+  local current_version="$2"
+  local package_lower
+  package_lower=$(echo "$package_name" | tr '[:upper:]' '[:lower:]')
 
-    # Query NuGet API for latest stable version (exclude prerelease)
-    local latest_version
-    latest_version=$(curl -s "https://api.nuget.org/v3-flatcontainer/$package_lower/index.json" | \
-        jq -r '.versions[] | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$"))' 2>/dev/null | tail -1)
+  # Query NuGet API for latest stable version (exclude prerelease)
+  local latest_version
+  latest_version=$(curl -s "https://api.nuget.org/v3-flatcontainer/$package_lower/index.json" |
+    jq -r '.versions[] | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$"))' 2>/dev/null | tail -1)
 
-    # Check if we got a valid response and version is different
-    if [ "$latest_version" != "null" ] && [ -n "$latest_version" ] && [ "$latest_version" != "$current_version" ]; then
-        echo "$package_name|$latest_version"
-    fi
+  # Check if we got a valid response and version is different
+  if [ "$latest_version" != "null" ] && [ -n "$latest_version" ] && [ "$latest_version" != "$current_version" ]; then
+    echo "$package_name|$latest_version"
+  fi
 }
 
 # Export function for parallel execution
 export -f check_package_version
 
-outdated_data=$(echo "$all_packages" | xargs -I {} -P 10 bash -c 'check_package_version $(echo "{}" | cut -d"|" -f1) $(echo "{}" | cut -d"|" -f2)' | sort -u)
+outdated_data=$(echo "$all_packages" | xargs -I {} -P 10 bash -c "check_package_version \$(echo '{}' | cut -d'|' -f1) \$(echo '{}' | cut -d'|' -f2)" | sort -u)
 
 if [ -z "$outdated_data" ]; then
-    echo "All packages are up to date!"
-    exit 0
+  echo "All packages are up to date!"
+  exit 0
 fi
 
 # Show dry-run message if enabled
 if [ "$DRY_RUN" = true ]; then
-    echo ""
-    echo "🔍 DRY RUN MODE - No files will be modified"
-    echo ""
+  echo ""
+  echo "🔍 DRY RUN MODE - No files will be modified"
+  echo ""
 fi
 
 # Verify the discovered file still exists (sanity check)
 if [ ! -f "$PACKAGES_PROPS_FILE" ]; then
-    echo "ERROR: $PACKAGES_PROPS_FILE not found!"
-    exit 1
+  echo "ERROR: $PACKAGES_PROPS_FILE not found!"
+  exit 1
 fi
 
 # Collect current versions for table display
-echo "0" > /tmp/upgrade_updated.tmp
-echo "0" > /tmp/upgrade_failed.tmp
+echo "0" >/tmp/upgrade_updated.tmp
+echo "0" >/tmp/upgrade_failed.tmp
 
 # Build the upgrade table data
 echo "$outdated_data" | while IFS='|' read -r package_name latest_version; do
-    if [ ! -z "$package_name" ] && [ ! -z "$latest_version" ]; then
-        # Get current version from the original package data
-        current_version=$(echo "$all_packages" | grep "^$package_name|" | cut -d'|' -f2)
+  if [ -n "$package_name" ] && [ -n "$latest_version" ]; then
+    # Get current version from the original package data
+    current_version=$(echo "$all_packages" | grep "^$package_name|" | cut -d'|' -f2)
 
-        # Determine package type for display
-        package_type="Package"
-        if echo "$global_packages" | grep -q "^$package_name$"; then
-            package_type="Global"
-        fi
-
-        # Add to table data (format: package_name|current_version|latest_version|type)
-        echo "$package_name|$current_version|$latest_version|$package_type" >> /tmp/upgrade_table.tmp
+    # Determine package type for display
+    package_type="Package"
+    if echo "$global_packages" | grep -q "^$package_name$"; then
+      package_type="Global"
     fi
+
+    # Add to table data (format: package_name|current_version|latest_version|type)
+    echo "$package_name|$current_version|$latest_version|$package_type" >>/tmp/upgrade_table.tmp
+  fi
 done
 
 # Display the upgrade table
 if [ -f "/tmp/upgrade_table.tmp" ] && [ -s "/tmp/upgrade_table.tmp" ]; then
-    package_count=$(wc -l < /tmp/upgrade_table.tmp)
-    echo "Found $package_count outdated packages to upgrade"
-    echo ""
-    echo "Packages to upgrade:"
-    echo ""
+  package_count=$(wc -l </tmp/upgrade_table.tmp)
+  echo "Found $package_count outdated packages to upgrade"
+  echo ""
+  echo "Packages to upgrade:"
+  echo ""
 
-    # Calculate dynamic column widths
-    max_pkg_len=12  # Minimum for "Package Name" header
-    max_curr_len=7  # Minimum for "Current" header
-    max_new_len=6   # Minimum for "Latest" header
+  # Calculate dynamic column widths
+  max_pkg_len=12 # Minimum for "Package Name" header
+  max_curr_len=7 # Minimum for "Current" header
+  max_new_len=6  # Minimum for "Latest" header
 
-    # Find the maximum length for each column
-    while IFS='|' read -r pkg_name curr_ver new_ver pkg_type; do
-        pkg_len=${#pkg_name}
-        curr_len=${#curr_ver}
-        new_len=${#new_ver}
+  # Find the maximum length for each column
+  while IFS='|' read -r pkg_name curr_ver new_ver pkg_type; do
+    pkg_len=${#pkg_name}
+    curr_len=${#curr_ver}
+    new_len=${#new_ver}
 
-        [ $pkg_len -gt $max_pkg_len ] && max_pkg_len=$pkg_len
-        [ $curr_len -gt $max_curr_len ] && max_curr_len=$curr_len
-        [ $new_len -gt $max_new_len ] && max_new_len=$new_len
-    done < /tmp/upgrade_table.tmp
+    [ "$pkg_len" -gt "$max_pkg_len" ] && max_pkg_len=$pkg_len
+    [ "$curr_len" -gt "$max_curr_len" ] && max_curr_len=$curr_len
+    [ "$new_len" -gt "$max_new_len" ] && max_new_len=$new_len
+  done </tmp/upgrade_table.tmp
 
-    # Get terminal width, default to 120 if not available
-    term_width=$(tput cols 2>/dev/null || echo 120)
+  # Get terminal width, default to 120 if not available
+  term_width=$(tput cols 2>/dev/null || echo 120)
 
-    # Reserve space for type column (8 chars) and spacing (6 spaces: 3 separators × 2 spaces each)
-    # Also account for color codes in the latest version column (approximately 10 extra chars)
-    available_width=$((term_width - 8 - 6 - 10))
+  # Reserve space for type column (8 chars) and spacing (6 spaces: 3 separators × 2 spaces each)
+  # Also account for color codes in the latest version column (approximately 10 extra chars)
+  available_width=$((term_width - 8 - 6 - 10))
 
-    # If total needed width exceeds available, truncate package name column
-    total_needed=$((max_pkg_len + max_curr_len + max_new_len))
-    if [ $total_needed -gt $available_width ]; then
-        max_pkg_len=$((available_width - max_curr_len - max_new_len))
-        # Ensure minimum readable width
-        [ $max_pkg_len -lt 20 ] && max_pkg_len=20
+  # If total needed width exceeds available, truncate package name column
+  total_needed=$((max_pkg_len + max_curr_len + max_new_len))
+  if [ $total_needed -gt $available_width ]; then
+    max_pkg_len=$((available_width - max_curr_len - max_new_len))
+    # Ensure minimum readable width
+    [ $max_pkg_len -lt 20 ] && max_pkg_len=20
+  fi
+
+  # Color definitions for dark backgrounds
+  GREEN='\033[0;32m'  # Green for patch updates (safe)
+  YELLOW='\033[1;33m' # Bright yellow for minor updates (caution)
+  RED='\033[1;31m'    # Bright red for major updates (breaking)
+  CYAN='\033[0;36m'   # Cyan for prerelease/special cases
+  RESET='\033[0m'     # Reset color
+
+  # Function to determine semantic version change type
+  get_version_change_type() {
+    local current="$1"
+    local latest="$2"
+
+    # Extract major.minor.patch from versions (handle 4-part AWS versions)
+    local curr_major curr_minor curr_patch
+    curr_major=$(echo "$current" | cut -d'.' -f1)
+    curr_minor=$(echo "$current" | cut -d'.' -f2)
+    curr_patch=$(echo "$current" | cut -d'.' -f3)
+
+    local new_major new_minor new_patch
+    new_major=$(echo "$latest" | cut -d'.' -f1)
+    new_minor=$(echo "$latest" | cut -d'.' -f2)
+    new_patch=$(echo "$latest" | cut -d'.' -f3)
+
+    # Handle cases where version parts might be missing or contain non-numeric data
+    curr_major=${curr_major:-0}
+    curr_minor=${curr_minor:-0}
+    curr_patch=${curr_patch:-0}
+    new_major=${new_major:-0}
+    new_minor=${new_minor:-0}
+    new_patch=${new_patch:-0}
+
+    # Remove any non-numeric suffixes for comparison
+    curr_major=${curr_major//[^0-9]*/}
+    curr_minor=${curr_minor//[^0-9]*/}
+    curr_patch=${curr_patch//[^0-9]*/}
+    new_major=${new_major//[^0-9]*/}
+    new_minor=${new_minor//[^0-9]*/}
+    new_patch=${new_patch//[^0-9]*/}
+
+    # Default to 0 if empty after cleaning
+    curr_major=${curr_major:-0}
+    curr_minor=${curr_minor:-0}
+    curr_patch=${curr_patch:-0}
+    new_major=${new_major:-0}
+    new_minor=${new_minor:-0}
+    new_patch=${new_patch:-0}
+
+    if [ "$new_major" -gt "$curr_major" ]; then
+      echo "major"
+    elif [ "$new_major" -eq "$curr_major" ] && [ "$new_minor" -gt "$curr_minor" ]; then
+      echo "minor"
+    elif [ "$new_major" -eq "$curr_major" ] && [ "$new_minor" -eq "$curr_minor" ] && [ "$new_patch" -gt "$curr_patch" ]; then
+      echo "patch"
+    else
+      echo "other"
     fi
+  }
 
-    # Color definitions for dark backgrounds
-    GREEN='\033[0;32m'      # Green for patch updates (safe)
-    YELLOW='\033[1;33m'     # Bright yellow for minor updates (caution)
-    RED='\033[1;31m'        # Bright red for major updates (breaking)
-    CYAN='\033[0;36m'       # Cyan for prerelease/special cases
-    RESET='\033[0m'         # Reset color
+  # Function to get colored version number based on version change
+  get_colored_version() {
+    local version="$1"
+    local change_type="$2"
+    case "$change_type" in
+    "major") printf "${RED}%s${RESET}" "$version" ;;
+    "minor") printf "${YELLOW}%s${RESET}" "$version" ;;
+    "patch") printf "${GREEN}%s${RESET}" "$version" ;;
+    *) printf "${CYAN}%s${RESET}" "$version" ;;
+    esac
+  }
 
-    # Function to determine semantic version change type
-    get_version_change_type() {
-        local current="$1"
-        local latest="$2"
+  # Function to truncate text if needed
+  truncate_text() {
+    local text="$1"
+    local max_len="$2"
+    if [ ${#text} -gt "$max_len" ]; then
+      echo "${text:0:$((max_len - 3))}..."
+    else
+      echo "$text"
+    fi
+  }
 
-        # Extract major.minor.patch from versions (handle 4-part AWS versions)
-        local curr_major curr_minor curr_patch
-        curr_major=$(echo "$current" | cut -d'.' -f1)
-        curr_minor=$(echo "$current" | cut -d'.' -f2)
-        curr_patch=$(echo "$current" | cut -d'.' -f3)
+  # Print header
+  printf "%-${max_pkg_len}s  %-${max_curr_len}s  %-${max_new_len}s  %-8s\n" "Package Name" "Current" "Latest" "Type"
+  printf "%-${max_pkg_len}s  %-${max_curr_len}s  %-${max_new_len}s  %-8s\n" \
+    "$(printf '=%.0s' $(seq 1 "$max_pkg_len"))" \
+    "$(printf '=%.0s' $(seq 1 "$max_curr_len"))" \
+    "$(printf '=%.0s' $(seq 1 "$max_new_len"))" \
+    "========"
 
-        local new_major new_minor new_patch
-        new_major=$(echo "$latest" | cut -d'.' -f1)
-        new_minor=$(echo "$latest" | cut -d'.' -f2)
-        new_patch=$(echo "$latest" | cut -d'.' -f3)
+  # Print data rows with colored version numbers
+  while IFS='|' read -r pkg_name curr_ver new_ver pkg_type; do
+    truncated_pkg=$(truncate_text "$pkg_name" "$max_pkg_len")
 
-        # Handle cases where version parts might be missing or contain non-numeric data
-        curr_major=${curr_major:-0}; curr_minor=${curr_minor:-0}; curr_patch=${curr_patch:-0}
-        new_major=${new_major:-0}; new_minor=${new_minor:-0}; new_patch=${new_patch:-0}
+    # Determine version change type and get colored version
+    change_type=$(get_version_change_type "$curr_ver" "$new_ver")
+    colored_new_ver=$(get_colored_version "$new_ver" "$change_type")
 
-        # Remove any non-numeric suffixes for comparison
-        curr_major=$(echo "$curr_major" | sed 's/[^0-9].*//')
-        curr_minor=$(echo "$curr_minor" | sed 's/[^0-9].*//')
-        curr_patch=$(echo "$curr_patch" | sed 's/[^0-9].*//')
-        new_major=$(echo "$new_major" | sed 's/[^0-9].*//')
-        new_minor=$(echo "$new_minor" | sed 's/[^0-9].*//')
-        new_patch=$(echo "$new_patch" | sed 's/[^0-9].*//')
+    # Print row with colored target version
+    # Use manual spacing to handle colored text properly
+    pkg_spaces=$(printf "%*s" $((max_pkg_len - ${#truncated_pkg})) "")
+    curr_spaces=$(printf "%*s" $((max_curr_len - ${#curr_ver})) "")
+    new_spaces=$(printf "%*s" $((max_new_len - ${#new_ver})) "")
 
-        # Default to 0 if empty after cleaning
-        curr_major=${curr_major:-0}; curr_minor=${curr_minor:-0}; curr_patch=${curr_patch:-0}
-        new_major=${new_major:-0}; new_minor=${new_minor:-0}; new_patch=${new_patch:-0}
+    printf "%s%s  %s%s  %s%s  %-8s\n" \
+      "$truncated_pkg" "$pkg_spaces" "$curr_ver" "$curr_spaces" "$colored_new_ver" "$new_spaces" "$pkg_type"
+  done </tmp/upgrade_table.tmp
 
-        if [ "$new_major" -gt "$curr_major" ]; then
-            echo "major"
-        elif [ "$new_major" -eq "$curr_major" ] && [ "$new_minor" -gt "$curr_minor" ]; then
-            echo "minor"
-        elif [ "$new_major" -eq "$curr_major" ] && [ "$new_minor" -eq "$curr_minor" ] && [ "$new_patch" -gt "$curr_patch" ]; then
-            echo "patch"
-        else
-            echo "other"
-        fi
-    }
-
-    # Function to get colored version number based on version change
-    get_colored_version() {
-        local version="$1"
-        local change_type="$2"
-        case "$change_type" in
-            "major") printf "${RED}%s${RESET}" "$version" ;;
-            "minor") printf "${YELLOW}%s${RESET}" "$version" ;;
-            "patch") printf "${GREEN}%s${RESET}" "$version" ;;
-            *) printf "${CYAN}%s${RESET}" "$version" ;;
-        esac
-    }
-
-    # Function to truncate text if needed
-    truncate_text() {
-        local text="$1"
-        local max_len="$2"
-        if [ ${#text} -gt $max_len ]; then
-            echo "${text:0:$((max_len-3))}..."
-        else
-            echo "$text"
-        fi
-    }
-
-    # Print header
-    printf "%-${max_pkg_len}s  %-${max_curr_len}s  %-${max_new_len}s  %-8s\n" "Package Name" "Current" "Latest" "Type"
-    printf "%-${max_pkg_len}s  %-${max_curr_len}s  %-${max_new_len}s  %-8s\n" \
-        "$(printf '=%.0s' $(seq 1 $max_pkg_len))" \
-        "$(printf '=%.0s' $(seq 1 $max_curr_len))" \
-        "$(printf '=%.0s' $(seq 1 $max_new_len))" \
-        "========"
-
-    # Print data rows with colored version numbers
-    while IFS='|' read -r pkg_name curr_ver new_ver pkg_type; do
-        truncated_pkg=$(truncate_text "$pkg_name" "$max_pkg_len")
-
-        # Determine version change type and get colored version
-        change_type=$(get_version_change_type "$curr_ver" "$new_ver")
-        colored_new_ver=$(get_colored_version "$new_ver" "$change_type")
-
-        # Print row with colored target version
-        # Use manual spacing to handle colored text properly
-        pkg_spaces=$(printf "%*s" $((max_pkg_len - ${#truncated_pkg})) "")
-        curr_spaces=$(printf "%*s" $((max_curr_len - ${#curr_ver})) "")
-        new_spaces=$(printf "%*s" $((max_new_len - ${#new_ver})) "")
-
-        printf "%s%s  %s%s  %s%s  %-8s\n" \
-            "$truncated_pkg" "$pkg_spaces" "$curr_ver" "$curr_spaces" "$colored_new_ver" "$new_spaces" "$pkg_type"
-    done < /tmp/upgrade_table.tmp
-
-    # Print color legend
-    echo ""
-    echo "Legend:"
-    printf "  ${GREEN}Green${RESET} version numbers: Patch updates (safe)\n"
-    printf "  ${YELLOW}Yellow${RESET} version numbers: Minor updates (review recommended)\n"
-    printf "  ${RED}Red${RESET} version numbers: Major updates (breaking changes likely)\n"
-    printf "  ${CYAN}Cyan${RESET} version numbers: Other version changes\n"
-    echo ""
+  # Print color legend
+  echo ""
+  echo "Legend:"
+  printf "  %sGreen%s version numbers: Patch updates (safe)\n" "$GREEN" "$RESET"
+  printf "  %sYellow%s version numbers: Minor updates (review recommended)\n" "$YELLOW" "$RESET"
+  printf "  %sRed%s version numbers: Major updates (breaking changes likely)\n" "$RED" "$RESET"
+  printf "  %sCyan%s version numbers: Other version changes\n" "$CYAN" "$RESET"
+  echo ""
 fi
 
 # Now perform the actual updates
 if [ -f "/tmp/upgrade_table.tmp" ] && [ -s "/tmp/upgrade_table.tmp" ]; then
-    if [ "$DRY_RUN" = false ]; then
-        echo "Applying updates..."
-        echo ""
-    fi
+  if [ "$DRY_RUN" = false ]; then
+    echo "Applying updates..."
+    echo ""
+  fi
 
-    while IFS='|' read -r package_name current_version latest_version package_type; do
-        if [ "$DRY_RUN" = true ]; then
-            # Just count for summary
-            updated=$(cat /tmp/upgrade_updated.tmp)
-            echo $((updated + 1)) > /tmp/upgrade_updated.tmp
+  while IFS='|' read -r package_name current_version latest_version package_type; do
+    if [ "$DRY_RUN" = true ]; then
+      # Just count for summary
+      updated=$(cat /tmp/upgrade_updated.tmp)
+      echo $((updated + 1)) >/tmp/upgrade_updated.tmp
+    else
+      # Update PackageVersion elements
+      if echo "$package_versions" | grep -q "^$package_name$"; then
+        # Use sed to update the version attribute
+        if sed -i.tmp "s/<PackageVersion Include=\"$package_name\" Version=\"[^\"]*\"/<PackageVersion Include=\"$package_name\" Version=\"$latest_version\"/g" "$PACKAGES_PROPS_FILE"; then
+          updated=$(cat /tmp/upgrade_updated.tmp)
+          echo $((updated + 1)) >/tmp/upgrade_updated.tmp
         else
-            # Update PackageVersion elements
-            if echo "$package_versions" | grep -q "^$package_name$"; then
-                # Use sed to update the version attribute
-                if sed -i.tmp "s/<PackageVersion Include=\"$package_name\" Version=\"[^\"]*\"/<PackageVersion Include=\"$package_name\" Version=\"$latest_version\"/g" "$PACKAGES_PROPS_FILE"; then
-                    updated=$(cat /tmp/upgrade_updated.tmp)
-                    echo $((updated + 1)) > /tmp/upgrade_updated.tmp
-                else
-                    echo "Failed to update $package_name"
-                    failed=$(cat /tmp/upgrade_failed.tmp)
-                    echo $((failed + 1)) > /tmp/upgrade_failed.tmp
-                fi
-            # Also check for GlobalPackageReference elements
-            elif echo "$global_packages" | grep -q "^$package_name$"; then
-                if sed -i.tmp "s/<GlobalPackageReference Include=\"$package_name\" Version=\"[^\"]*\"/<GlobalPackageReference Include=\"$package_name\" Version=\"$latest_version\"/g" "$PACKAGES_PROPS_FILE"; then
-                    updated=$(cat /tmp/upgrade_updated.tmp)
-                    echo $((updated + 1)) > /tmp/upgrade_updated.tmp
-                else
-                    echo "Failed to update $package_name (global)"
-                    failed=$(cat /tmp/upgrade_failed.tmp)
-                    echo $((failed + 1)) > /tmp/upgrade_failed.tmp
-                fi
-            else
-                echo "Package $package_name not found in $PACKAGES_PROPS_FILE"
-                failed=$(cat /tmp/upgrade_failed.tmp)
-                echo $((failed + 1)) > /tmp/upgrade_failed.tmp
-            fi
+          echo "Failed to update $package_name"
+          failed=$(cat /tmp/upgrade_failed.tmp)
+          echo $((failed + 1)) >/tmp/upgrade_failed.tmp
         fi
-    done < /tmp/upgrade_table.tmp
+      # Also check for GlobalPackageReference elements
+      elif echo "$global_packages" | grep -q "^$package_name$"; then
+        if sed -i.tmp "s/<GlobalPackageReference Include=\"$package_name\" Version=\"[^\"]*\"/<GlobalPackageReference Include=\"$package_name\" Version=\"$latest_version\"/g" "$PACKAGES_PROPS_FILE"; then
+          updated=$(cat /tmp/upgrade_updated.tmp)
+          echo $((updated + 1)) >/tmp/upgrade_updated.tmp
+        else
+          echo "Failed to update $package_name (global)"
+          failed=$(cat /tmp/upgrade_failed.tmp)
+          echo $((failed + 1)) >/tmp/upgrade_failed.tmp
+        fi
+      else
+        echo "Package $package_name not found in $PACKAGES_PROPS_FILE"
+        failed=$(cat /tmp/upgrade_failed.tmp)
+        echo $((failed + 1)) >/tmp/upgrade_failed.tmp
+      fi
+    fi
+  done </tmp/upgrade_table.tmp
 fi
 
 # Clean up table temp file
@@ -442,15 +448,15 @@ rm -f /tmp/upgrade_updated.tmp /tmp/upgrade_failed.tmp
 
 echo ""
 if [ "$DRY_RUN" = true ]; then
-    echo "🔍 Dry run complete: $updated packages would be updated, $failed failed"
-    echo ""
-    echo "No changes were made to $PACKAGES_PROPS_FILE"
-    echo "Re-run without --dry-run to apply these updates."
+  echo "🔍 Dry run complete: $updated packages would be updated, $failed failed"
+  echo ""
+  echo "No changes were made to $PACKAGES_PROPS_FILE"
+  echo "Re-run without --dry-run to apply these updates."
 else
-    echo "Package upgrade complete: $updated succeeded, $failed failed"
-    echo ""
-    echo "Changes made to $PACKAGES_PROPS_FILE"
-    echo "Run 'dotnet build' to verify everything still compiles."
-    echo ""
-    echo "To revert changes: git checkout \"$(basename "$PACKAGES_PROPS_FILE")\""
+  echo "Package upgrade complete: $updated succeeded, $failed failed"
+  echo ""
+  echo "Changes made to $PACKAGES_PROPS_FILE"
+  echo "Run 'dotnet build' to verify everything still compiles."
+  echo ""
+  echo "To revert changes: git checkout \"$(basename "$PACKAGES_PROPS_FILE")\""
 fi

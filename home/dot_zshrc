@@ -37,13 +37,13 @@ if (( ${+functions[p10k]} )); then
 
     # VS Code compatibility: Powerlevel10k doesn't work properly in VS Code terminal
     # so we use a fallback prompt that provides similar functionality
-    if [[ "$TERM_PROGRAM" == "vscode" ]]; then
-        typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
-        p10k reload 2>/dev/null || true
+    # if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+    #     typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
+    #     p10k reload 2>/dev/null || true
 
-        # If Powerlevel10k still hasn't set up properly, use fallback
-        if [[ ${#PS1} -lt 10 ]]; then
-            PS1=$'\e[36m%n@%m\e[0m:\e[34m%~\e[0m%# '
-        fi
-    fi
+    #     # If Powerlevel10k still hasn't set up properly, use fallback
+    #     if [[ ${#PS1} -lt 10 ]]; then
+    #         PS1=$'\e[36m%n@%m\e[0m:\e[34m%~\e[0m%# '
+    #     fi
+    # fi
 fi

@@ -1,0 +1,17 @@
+# Shellcheck configuration for sourced zsh configuration files
+# These files are sourced, not executed, so certain rules don't apply
+
+# Set shell type for all files in this directory
+shell=zsh
+
+# Disable rules that don't apply to sourced files
+disable=SC2148  # Tips depend on target shell and yours is unknown. Add a shebang or a 'shell' directive.
+
+# Disable rules for legitimate zsh patterns
+disable=SC1090  # ShellCheck can't follow non-constant source (expected for dynamic sourcing)
+disable=SC1091  # Not following: file was not specified as input (expected for external files)
+disable=SC2296  # Parameter expansions can't start with ( - zsh parameter expansion syntax
+disable=SC1087  # Use braces when expanding arrays - zsh functions array syntax
+disable=SC2125  # Brace expansions and globs are literal - zsh functions array assignment
+disable=SC2102  # Ranges can only match single chars - zsh functions array syntax
+disable=SC2154  # Variable is referenced but not assigned - zsh functions from plugins

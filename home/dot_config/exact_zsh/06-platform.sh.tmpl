@@ -1,7 +1,9 @@
 # Platform-specific configurations consolidated using chezmoi templating
 
 {{ if eq .chezmoi.os "darwin" }}
+####################################################################
 # macOS-specific configurations
+####################################################################
 
 # Enable color support
 export CLICOLOR=1
@@ -26,7 +28,9 @@ export DOCKER_DATA_PATH="/Volumes/docker"
 {{ end }}
 
 {{ if eq .chezmoi.os "linux" }}
+####################################################################
 # Linux-specific configurations
+####################################################################
 
 # Enable color support for ls
 if [ -x /usr/bin/dircolors ]; then
@@ -46,7 +50,9 @@ export DOCKER_DATA_PATH="/mnt/docker-data"
 {{ end }}
 
 {{ if eq .chezmoi.os "windows" }}
+####################################################################
 # Windows-specific configurations
+####################################################################
 
 # Prepend Chocolatey bin to PATH to prioritize it over Git for Windows tools
 export PATH="$HOME/AppData/Local/UniGetUI/Chocolatey/bin:$PATH"
@@ -57,3 +63,4 @@ export NODE_SKIP_PLATFORM_CHECK=1
 # ls function for aliases (using standard ls with color support)
 myls() { \ls -hF --color "$@"; }
 {{ end }}
+####################################################################
