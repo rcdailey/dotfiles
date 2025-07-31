@@ -7,6 +7,8 @@
     "*.yaml.tmpl": "yaml",
     "*.yml.tmpl": "yaml",
     "*.ps1.tmpl": "powershell",
-    "*_config": "ssh_config"
+    "*_config": "ssh_config",
+    "Brewfile.tmpl": "ruby",
+    "*zshenv.tmpl": "shellscript"
   }
 }
