@@ -28,7 +28,8 @@ specific to this repository and are not managed by chezmoi.
 
 **Shell Configuration (Modern Zsh Setup with Optimal Initialization Order):**
 
-- `home/dot_zshenv` - XDG Base Directory variables (loaded before .zshrc)
+- `home/dot_zshenv.tmpl` - XDG Base Directory variables with platform-specific paths (loaded before .zshrc)
+- `home/dot_zprofile` - Profile-level initialization for login shells
 - `home/dot_zshrc` - Main zsh configuration with critical timing optimizations
 - `home/dot_config/exact_zsh/` - Numbered configuration files loaded in strict sequence:
   - `01-environment.sh` - Environment variables and exports (console-safe)
@@ -40,7 +41,7 @@ specific to this repository and are not managed by chezmoi.
 
 **CRITICAL Initialization Order Requirements:**
 
-- XDG variables must be in .zshenv (before .zshrc processing)
+- XDG variables must be in .zshenv.tmpl (before .zshrc processing)
 - Powerlevel10k instant prompt must be early in .zshrc
 - fzf-tab MUST load after compinit, before widget-wrapping plugins
 - mise split: `mise env` before instant prompt, `mise activate` after
@@ -66,6 +67,11 @@ specific to this repository and are not managed by chezmoi.
 - `home/git-scripts/` - Collection of git utility scripts:
   - `git-*` commands become available as git subcommands
   - Includes branch management, cleanup, and analysis tools
+
+**Package Management:**
+
+- `home/Brewfile.tmpl` - Homebrew package definitions with templating support
+- `home/.chezmoiscripts/run_onchange_after_install-packages.sh.tmpl` - Automated package installation
 
 **Tool Configurations:**
 
@@ -104,10 +110,20 @@ Files ending in `.tmpl` are chezmoi templates that can:
 - Longer retention for major reorganizations (60-90 days)
 - Keep recent entries until confirmed working on all target systems
 
+### External Documentation
+
+**Reference Documentation:**
+
+- `docs/external/` - Comprehensive external tool documentation including:
+  - zsh manual and configuration guides
+  - Plugin documentation (zinit, fzf-tab, powerlevel10k)
+  - Performance optimization guides
+  - Tool-specific references (mise, pre-commit, etc.)
+
 ### Key Features
 
 - **Cross-platform compatibility** with platform-specific overrides
-- **Modular bash configuration** preventing monolithic shell files
+- **Modular zsh configuration** preventing monolithic shell files
 - **Extensive git alias system** for productivity
 - **Professional development environment** with tool integrations
 - **Secure handling** of private files and SSH configurations
