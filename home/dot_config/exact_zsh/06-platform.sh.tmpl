@@ -12,15 +12,6 @@ export LSCOLORS=ExFxBxDxCxegedabagacad
 # Homebrew initialization (already handled in .zprofile via HOMEBREW_PREFIX)
 export PATH="/opt/homebrew/opt/python/libexec/bin:$PATH"
 
-# Simplified ls setup (zsh globbing reduces need for complex aliases)
-# Use GNU ls if available (installed via brew install coreutils)
-if (( $+commands[gls] )); then
-    alias ls='gls -hF --color=auto'
-    alias ll='gls -la --color=auto --group-directories-first'
-else
-    alias ls='ls -hF -G'
-    alias ll='ls -la -G'
-fi
 
 # Docker configuration for specific projects
 export DOCKER_DATA_PATH="/Volumes/docker"
@@ -38,9 +29,6 @@ fi
 
 # Homebrew initialization (already handled in .zprofile via HOMEBREW_PREFIX)
 
-# ls aliases for platform-specific ls behavior
-alias ls='ls -hF --color=auto'
-alias ll='ls -la --color=auto'
 
 # This is to support the migration to k8s in the nezuko repository
 export DOCKER_DATA_PATH="/mnt/docker-data"
@@ -57,7 +45,5 @@ export PATH="$HOME/AppData/Local/UniGetUI/Chocolatey/bin:$PATH"
 # Node.js platform check bypass for Windows environments
 export NODE_SKIP_PLATFORM_CHECK=1
 
-# ls function for aliases (using standard ls with color support)
-myls() { \ls -hF --color "$@"; }
 {{ end }}
 ####################################################################

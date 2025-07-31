@@ -13,6 +13,15 @@ setopt EXTENDED_GLOB     # Extended globbing features
 
 # PATH modifications moved to .zprofile for performance
 
+# Cross-platform ls replacement with eza
+if (( $+commands[eza] )); then
+    alias ls='eza --color=auto --icons=auto --group-directories-first'
+    alias ll='eza -la --color=auto --icons=auto --group-directories-first --header'
+else
+    alias ls='ls -hF'
+    alias ll='ls -la'
+fi
+
 # Essential tool aliases
 alias c="docker compose"
 alias cm="chezmoi"
