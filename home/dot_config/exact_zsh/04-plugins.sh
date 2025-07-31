@@ -24,7 +24,8 @@ zinit load "lukechilds/zsh-nvm"
 # These can be safely deferred as they don't have strict timing requirements
 zinit ice wait lucid for \
     "zsh-users/zsh-autosuggestions" \
-    "zsh-users/zsh-syntax-highlighting"
+    "zsh-users/zsh-syntax-highlighting" \
+    "lukechilds/zsh-better-npm-completion"
 
 # Enable fzf-tab after loading
 enable-fzf-tab

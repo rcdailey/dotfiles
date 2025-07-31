@@ -46,6 +46,7 @@ specific to this repository and are not managed by chezmoi.
 - fzf-tab MUST load after compinit, before widget-wrapping plugins
 - mise split: `mise env` before instant prompt, `mise activate` after
 - Never modify this loading order without understanding timing dependencies
+- PREFER adding lazy-loadable plugins to existing `wait lucid for \` lists for performance
 
 **Essential Bug Workaround (DO NOT REMOVE):**
 
