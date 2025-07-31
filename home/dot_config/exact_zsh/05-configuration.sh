@@ -89,3 +89,7 @@ bindkey '^[[4~' end-of-line       # Alternative END sequence
 
 # Key binding for DEL key (forward delete)
 bindkey '^[[3~' delete-char       # DEL key deletes character under cursor
+
+# fzf-tab configuration
+zstyle ':completion:*' menu no
+zstyle ':completion:*:npm:*' sort false

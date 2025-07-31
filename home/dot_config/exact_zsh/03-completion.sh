@@ -37,6 +37,6 @@ zstyle ':completion:*:git:*' sort false
 if (( $+functions[_p9k_on_expand] )); then
     functions[_p9k_on_expand_orig]=$functions[_p9k_on_expand]
     _p9k_on_expand() {
-        { _p9k_on_expand_orig "$@"; } 2>/dev/null
+        { _p9k_on_expand_orig "$@"; } 2>/dev/null || true
     }
 fi
