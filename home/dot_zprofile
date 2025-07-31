@@ -13,14 +13,7 @@ if [ -d "$HOME/.local/bin" ]; then
   PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Go tools PATH - add if go is installed
-if command -v go >/dev/null 2>&1; then
-  if [[ -z $GOPATH_CACHED ]]; then
-    GOPATH_CACHED="$(go env GOPATH)"
-    export GOPATH_CACHED
-  fi
-  export PATH="$GOPATH_CACHED/bin:$PATH"
-fi
+# Go tools PATH moved to 05-configuration.sh for interactive shell access
 
 # Append home dir to path so we can access scripts in there
 export PATH="$PATH:$HOME:$HOME/git-scripts"

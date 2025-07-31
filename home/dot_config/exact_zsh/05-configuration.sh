@@ -11,7 +11,15 @@ setopt HIST_IGNORE_DUPS  # Don't record duplicates in history
 setopt CORRECT           # Spell correction for commands
 setopt EXTENDED_GLOB     # Extended globbing features
 
-# PATH modifications moved to .zprofile for performance
+# PATH modifications for Go tools (needed in all interactive shells)
+# Add Go tools to PATH if go is installed
+if command -v go >/dev/null 2>&1; then
+  if [[ -z $GOPATH_CACHED ]]; then
+    GOPATH_CACHED="$(go env GOPATH)"
+    export GOPATH_CACHED
+  fi
+  export PATH="$GOPATH_CACHED/bin:$PATH"
+fi
 
 # Cross-platform ls replacement with eza
 if (( $+commands[eza] )); then
