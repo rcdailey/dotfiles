@@ -2,8 +2,13 @@
 
 # Skip security check and initialize zsh completion system
 # Reason: Single user machines, no security risk, improves automation
+# Daily cache optimization: only rebuild completion dump once per day
 autoload -Uz compinit
-compinit -u
+if [[ ~/.zcompdump(#qNmh+24) ]]; then
+  compinit -u
+else
+  compinit -C -u
+fi
 
 # Essential completion behavior options (relevant with fzf-tab)
 setopt ALWAYS_TO_END                  # Move cursor to end of completed word

@@ -1,0 +1,33 @@
+# XDG Base Directory Specification
+# These variables must be set before any .zshrc processing to ensure
+# proper dependency resolution for tools like Zinit that rely on them.
+
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+# Homebrew prefix path (platform-specific)
+{{- if eq .chezmoi.os "darwin" }}
+export HOMEBREW_PREFIX="/opt/homebrew"
+{{- else if eq .chezmoi.os "linux" }}
+export HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
+{{- end }}
+
+# Core shell behavior (needed by all shell types)
+export HISTFILE=~/.zsh_history
+export HISTSIZE=10000
+export SAVEHIST=10000
+
+# Terminal capabilities (needed by non-interactive shells)
+export TERM=xterm-256color
+export COLORTERM=truecolor
+
+# Editor (needed by scripts/non-interactive contexts)
+export EDITOR="code"
+
+# Essential fallback (needed for VS Code/Windows compatibility)
+# In some cases TMPDIR is not defined, such as VS Code integrated terminal on Windows
+if [[ -z $TMPDIR ]]; then
+  export TMPDIR=/tmp
+fi

@@ -11,27 +11,7 @@ setopt HIST_IGNORE_DUPS  # Don't record duplicates in history
 setopt CORRECT           # Spell correction for commands
 setopt EXTENDED_GLOB     # Extended globbing features
 
-# PATH modifications
-# Add user's private bin to PATH if it exists
-if [ -d "$HOME/bin" ]; then
-  PATH="$HOME/bin:$PATH"
-fi
-
-if [ -d "$HOME/.local/bin" ]; then
-  PATH="$HOME/.local/bin:$PATH"
-fi
-
-# Go tools PATH - add if go is installed
-if command -v go >/dev/null 2>&1; then
-  if [[ -z $GOPATH_CACHED ]]; then
-    GOPATH_CACHED="$(go env GOPATH)"
-    export GOPATH_CACHED
-  fi
-  export PATH="$GOPATH_CACHED/bin:$PATH"
-fi
-
-# Append home dir to path so we can access scripts in there
-export PATH="$PATH:$HOME:$HOME/git-scripts"
+# PATH modifications moved to .zprofile for performance
 
 # Essential tool aliases
 alias c="docker compose"
@@ -89,3 +69,6 @@ bindkey '^[[H' beginning-of-line  # Standard ANSI HOME
 bindkey '^[[F' end-of-line        # Standard ANSI END
 bindkey '^[[1~' beginning-of-line # Alternative HOME sequence
 bindkey '^[[4~' end-of-line       # Alternative END sequence
+
+# Key binding for DEL key (forward delete)
+bindkey '^[[3~' delete-char       # DEL key deletes character under cursor

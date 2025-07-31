@@ -1,13 +1,17 @@
-# Environment variables and exports (console-output safe for instant prompt)
+# Performance monitoring: Uncomment to profile startup time
+# zmodload zsh/zprof  # Enable at top of .zshrc, then add 'zprof' at bottom
 
-# Editor and paging
-export EDITOR="code"
+# Environment variables and exports (console-output safe for instant prompt)
+# Note: Core variables (EDITOR, TERM, HISTFILE, etc.) are now in .zshenv
+
+# Tool-specific paging (interactive shell context)
 export LESS="-RSic~ -x2"
 export DELTA_PAGER="less"
 export PSQL_PAGER="pspg"
 export LESSHISTSIZE=0
 export LESSCHARSET=UTF-8
 
+# VS Code integration (interactive context)
 # Unset GIT_PAGER if running inside VS Code integrated terminal
 # This addresses a bug where GIT_PAGER is set to `cat` by the Copilot extension.
 if [ "$TERM_PROGRAM" = "vscode" ]; then
@@ -16,21 +20,13 @@ fi
 
 [[ $TERM_PROGRAM == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 
-# History settings (zsh-specific, removed bash cruft)
-export HISTSIZE=10000
-export SAVEHIST=10000
-export HISTFILE=~/.zsh_history
-
-# Development
+# Development tools (command substitution safe for interactive shells)
 export COLUMNS
 DOCKER_UID="$(id -u)"
 DOCKER_GID="$(id -g)"
 export DOCKER_UID DOCKER_GID
 
-# Terminal color support - enable 256-color and true color support across all platforms
-export TERM=xterm-256color
-export COLORTERM=truecolor
-
+# Tool configuration (interactive context)
 # Disable husky pre-commit hooks (slows down git)
 export HUSKY_SKIP_HOOKS=1 # For legacy purposes
 export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
@@ -41,8 +37,3 @@ export HOMEBREW_BOOTSNAP=1
 export HOMEBREW_NO_ENV_HINTS=1
 export HOMEBREW_NO_UPDATE_REPORT_FORMULAE=1
 export HOMEBREW_NO_UPDATE_REPORT_CASKS=1
-
-# In some cases TMPDIR is not defined, such as VS Code integrated terminal on Windows
-if [[ -z $TMPDIR ]]; then
-  export TMPDIR=/tmp
-fi

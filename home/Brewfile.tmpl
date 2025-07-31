@@ -1,0 +1,44 @@
+##################################################################################
+## IMPORTANT NOTICES
+##
+## - Do not install 'node' via brew. Use `nvm` instead which is set up via zinit
+##
+##################################################################################
+
+# Shell enhancement tools
+brew "fzf"
+brew "ripgrep"
+brew "eza"
+brew "git-delta"
+brew "jq"
+brew "shfmt"
+brew "shellcheck"
+
+# Development tools
+brew "gh"
+brew "coreutils"
+brew "chezmoi"
+brew "python"
+brew "tree"
+brew "uv"
+brew "pre-commit"
+brew "detect-secrets"
+
+## Use NPM instead due to auto-update mult-location issue:
+## `npm install -g @anthropic-ai/claude-code`
+## See: https://formulae.brew.sh/cask/claude-code
+##
+#cask "claude-code"
+
+# Kubernetes tools
+brew "kubectl"
+brew "k9s"
+brew "helm"
+
+# Fonts for terminal (Nerd Fonts for Powerlevel10k)
+cask "font-fira-code-nerd-font"
+
+{{- if eq .chezmoi.os "darwin" }}
+# Terraform (macOS only - deprecated on Linux)
+brew "terraform"
+{{- end }}

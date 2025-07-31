@@ -1,2 +1,26 @@
 # Set PATH, MANPATH, etc., for Homebrew.
-eval "$(/opt/homebrew/bin/brew shellenv)"
+if [ -n "$HOMEBREW_PREFIX" ] && [ -f "$HOMEBREW_PREFIX/bin/brew" ]; then
+    eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
+fi
+
+# PATH modifications (moved from 05-configuration.sh for performance)
+# Add user's private bin to PATH if it exists
+if [ -d "$HOME/bin" ]; then
+  PATH="$HOME/bin:$PATH"
+fi
+
+if [ -d "$HOME/.local/bin" ]; then
+  PATH="$HOME/.local/bin:$PATH"
+fi
+
+# Go tools PATH - add if go is installed
+if command -v go >/dev/null 2>&1; then
+  if [[ -z $GOPATH_CACHED ]]; then
+    GOPATH_CACHED="$(go env GOPATH)"
+    export GOPATH_CACHED
+  fi
+  export PATH="$GOPATH_CACHED/bin:$PATH"
+fi
+
+# Append home dir to path so we can access scripts in there
+export PATH="$PATH:$HOME:$HOME/git-scripts"

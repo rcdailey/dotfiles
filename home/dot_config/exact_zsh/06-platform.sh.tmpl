@@ -9,13 +9,12 @@
 export CLICOLOR=1
 export LSCOLORS=ExFxBxDxCxegedabagacad
 
-# Homebrew initialization
-eval "$(/opt/homebrew/bin/brew shellenv)"
+# Homebrew initialization (already handled in .zprofile via HOMEBREW_PREFIX)
 export PATH="/opt/homebrew/opt/python/libexec/bin:$PATH"
 
 # Simplified ls setup (zsh globbing reduces need for complex aliases)
 # Use GNU ls if available (installed via brew install coreutils)
-if command -v gls >/dev/null 2>&1; then
+if (( $+commands[gls] )); then
     alias ls='gls -hF --color=auto'
     alias ll='gls -la --color=auto --group-directories-first'
 else
@@ -37,13 +36,11 @@ if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
 fi
 
-# Linux Homebrew fallback
-if [ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-fi
+# Homebrew initialization (already handled in .zprofile via HOMEBREW_PREFIX)
 
-# ls function for platform-specific ls behavior
-myls() { \ls -hF --color "$@"; }
+# ls aliases for platform-specific ls behavior
+alias ls='ls -hF --color=auto'
+alias ll='ls -la --color=auto'
 
 # This is to support the migration to k8s in the nezuko repository
 export DOCKER_DATA_PATH="/mnt/docker-data"
