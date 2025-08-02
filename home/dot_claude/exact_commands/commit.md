@@ -7,6 +7,8 @@ description: Create git commits with flexible natural language instructions
 
 Execute with minimal output - only show final commit message(s).
 
+**IMPORTANT**: Do not use TodoWrite or any todo/task management tools. Work directly without task tracking.
+
 ## Systematic Workflows
 
 Parse natural language instruction and execute corresponding workflow:
