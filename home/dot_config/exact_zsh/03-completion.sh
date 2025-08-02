@@ -32,11 +32,24 @@ zstyle ':completion:*:git:*' sort false
 
 # CRITICAL: Workaround for Powerlevel10k bug - GitHub issue #2887
 # https://github.com/romkatv/powerlevel10k/issues/2887
-# Malformed pattern (utf|UTF)(-|)8 in __p9k_intro_locale causes infinite error loop
-# This suppresses stderr from _p9k_on_expand until the upstream bug is fixed
-if (( $+functions[_p9k_on_expand] )); then
-    functions[_p9k_on_expand_orig]=$functions[_p9k_on_expand]
-    _p9k_on_expand() {
-        { _p9k_on_expand_orig "$@"; } 2>/dev/null || true
+# Malformed pattern (utf|UTF)(-|)8 causes infinite error loop during tab completion
+# This suppresses stderr from affected p9k functions until the upstream bug is fixed
+
+# List of known affected functions
+local p9k_buggy_functions=(
+  '_p9k_on_expand'
+  '_p9k__dir'
+  '_p9k__shorten_dir'
+  '_p9k_prompt_dir_init'
+)
+
+for func in $p9k_buggy_functions; do
+  if (( $+functions[$func] )); then
+    functions[${func}_orig]=$functions[$func]
+    eval "
+    $func() {
+      { ${func}_orig \"\$@\"; } 2>/dev/null || true
     }
-fi
+    "
+  fi
+done
