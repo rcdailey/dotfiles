@@ -15,17 +15,13 @@ zinit load "zsh-users/zsh-history-substring-search"
 zinit load "junegunn/fzf"
 zinit load "Aloxaf/fzf-tab"
 
-# Use built-in lazy loading instead of `ice wait lucid` because the zinit
-# lazy loading results in `node` being not found.
-export NVM_LAZY_LOAD=true
-zinit load "lukechilds/zsh-nvm"
+# Node.js will be installed via Homebrew instead of nvm
 
 # Load other plugins with turbo mode for performance (widget-wrapping plugins)
 # These can be safely deferred as they don't have strict timing requirements
 zinit ice wait lucid for \
     "zsh-users/zsh-autosuggestions" \
-    "zsh-users/zsh-syntax-highlighting" \
-    "lukechilds/zsh-better-npm-completion"
+    "zsh-users/zsh-syntax-highlighting"
 
 # Enable fzf-tab after loading
 enable-fzf-tab
