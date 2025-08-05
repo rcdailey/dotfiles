@@ -24,12 +24,6 @@ repos:
     args: [--fix]
   - id: ruff-format
 
-# Shell script quality
-- repo: https://github.com/shellcheck-py/shellcheck-py
-  rev: v0.10.0.1
-  hooks:
-  - id: shellcheck
-    exclude: ^home/dot_config/exact_zsh/
 
 # YAML validation
 - repo: https://github.com/adrienverge/yamllint

@@ -66,7 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hook-scripts/grep-to-ripgrep.py"
+            "command": "~/.claude/hooks/tool-redirections.zsh"
           }
         ]
       },
@@ -75,7 +75,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hook-scripts/webfetch-github-redirect.sh"
+            "command": "~/.claude/hooks/webfetch-github-redirect.sh"
           }
         ]
       }
