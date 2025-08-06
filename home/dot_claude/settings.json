@@ -7,7 +7,7 @@
     "BASH_DEFAULT_TIMEOUT_MS": "300000"
   },
   "permissions": {
-    "deny": [],
+    "deny": ["WebSearch", "WebFetch"],
     "allow": [
       "Bash(awk:*)",
       "Bash(brew info:*)",
@@ -56,7 +56,8 @@
       "Bash(xmlstarlet:*)",
       "Bash(yamllint:*)",
       "Bash(zip:*)",
-      "WebFetch"
+      "mcp__tavily__tavily-search",
+      "mcp__tavily__tavily-extract"
     ]
   },
   "hooks": {
