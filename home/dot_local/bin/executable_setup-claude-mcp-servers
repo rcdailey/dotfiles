@@ -49,15 +49,45 @@ MCP_SERVERS = [
     {"name": "github", "script": "setup-github-mcp"},
     # MarkItDown MCP - installs via uvx
     {"name": "markitdown", "uvx": "markitdown-mcp"},
-    # Add more servers here:
-    # {'name': 'filesystem', 'uvx': 'mcp-filesystem'},
-    # {'name': 'anthropic', 'script': 'setup-anthropic-mcp', 'args': '--debug'},
+    # Tavily MCP - web search and content extraction
+    {"name": "tavily", "npx": "tavily-mcp", "env": "TAVILY_API_KEY=rbw:tavily-api-key"},
 ]
 
 # =============================================================================
 
 console = Console()
 app = typer.Typer(help="Manage Claude Code MCP Servers", no_args_is_help=False)
+
+
+def resolve_env_var(env_string: str) -> str:
+    """Resolve environment variables with secret lookups.
+
+    Supports formats like:
+    - VAR_NAME=rbw:secret-name (gets secret from rbw)
+    - VAR_NAME=literal_value (uses literal value)
+    - VAR_NAME (returns as-is for runtime resolution)
+    """
+    if "=" not in env_string:
+        return env_string
+
+    var_name, value = env_string.split("=", 1)
+
+    if value.startswith("rbw:"):
+        secret_name = value[4:]  # Remove "rbw:" prefix
+        try:
+            result = subprocess.run(
+                ["rbw", "get", secret_name], capture_output=True, text=True, check=True
+            )
+            return f"{var_name}={result.stdout.strip()}"
+        except subprocess.CalledProcessError as e:
+            console.print(f"[red]Failed to get {secret_name} from rbw: {e}[/red]")
+            console.print(
+                "[red]This likely means rbw is not authenticated. Run 'rbw unlock' first.[/red]"
+            )
+            raise typer.Exit(1)
+
+    # Return as-is for literal values or other formats
+    return env_string
 
 
 @app.callback(invoke_without_command=True)
@@ -78,6 +108,8 @@ class Server:
     setup_script: str = None
     extra_args: str = ""
     uvx_package: str = None
+    npx_package: str = None
+    env_vars: str = None
 
 
 # Convert simple config to Server objects
@@ -88,6 +120,8 @@ for config in MCP_SERVERS:
         setup_script=config.get("script"),
         extra_args=config.get("args", ""),
         uvx_package=config.get("uvx"),
+        npx_package=config.get("npx"),
+        env_vars=config.get("env"),
     )
 
 
@@ -142,6 +176,11 @@ def setup_server(name: str, dry_run: bool = False):
             console.print(
                 f"[blue](DRY RUN) Would add {name} MCP server using uvx {server.uvx_package}[/blue]"
             )
+        elif server.npx_package:
+            env_info = f" with env vars '{server.env_vars}'" if server.env_vars else ""
+            console.print(
+                f"[blue](DRY RUN) Would add {name} MCP server using npx {server.npx_package}{env_info}[/blue]"
+            )
         return
 
     console.print(f"[blue]Setting up {name}...[/blue]")
@@ -150,11 +189,18 @@ def setup_server(name: str, dry_run: bool = False):
         if server.setup_script:
             # Use existing setup script
             args = ["--user"] + (server.extra_args.split() if server.extra_args else [])
+            if server.env_vars:
+                console.print(
+                    f"[yellow]Warning: Environment variables not supported for script-based servers: {server.env_vars}[/yellow]"
+                )
             script = getattr(sh, server.setup_script.replace("-", "_"))
             script(*args)
         elif server.uvx_package:
             # Use uvx to install and configure the MCP server
-            console.print(f"[blue]Installing {server.uvx_package} with uvx...[/blue]")
+            env_info = " with env vars" if server.env_vars else ""
+            console.print(
+                f"[blue]Installing {server.uvx_package} with uvx{env_info}...[/blue]"
+            )
 
             # The command will be: uvx markitdown-mcp (or whatever the package provides)
             # For markitdown-mcp, the command is just 'markitdown-mcp'
@@ -165,10 +211,36 @@ def setup_server(name: str, dry_run: bool = False):
             )
 
             console.print(f"[blue]Adding {name} MCP server...[/blue]")
+            # Build command arguments
+            args = [name]
+            if server.env_vars:
+                resolved_env = resolve_env_var(server.env_vars)
+                args.extend(["-e", resolved_env])
+            args.extend(["uvx", command, "-s", "user", "-t", "stdio"])
+
             # Add the MCP server using uvx command
-            sh.claude.mcp.add(name, "uvx", command, "-s", "user", "-t", "stdio")
+            sh.claude.mcp.add(*args)
+        elif server.npx_package:
+            # Use npx to run the MCP server
+            env_info = " with env vars" if server.env_vars else ""
+            console.print(
+                f"[blue]Adding {name} MCP server using npx {server.npx_package}{env_info}...[/blue]"
+            )
+
+            # Build command arguments
+            args = [name, "-s", "user"]
+            if server.env_vars:
+                resolved_env = resolve_env_var(server.env_vars)
+                args.extend(["-e", resolved_env])
+            args.extend(["-t", "stdio", "--", "npx", "-y", server.npx_package])
+
+            # Add the MCP server using npx command
+            sh.claude.mcp.add(*args)
 
         console.print(f"[green]✅ {name} configured successfully[/green]")
+    except typer.Exit:
+        # Let typer.Exit propagate (for rbw authentication failures)
+        raise
     except Exception as e:
         console.print(f"[red]❌ Failed to setup {name}: {e}[/red]")
 
@@ -227,8 +299,12 @@ def sync(
 
     # Sync servers
     console.print(f"\n[blue]Setting up {len(to_add)} server(s)...[/blue]")
-    for name in to_add:
-        setup_server(name, dry_run)
+    try:
+        for name in to_add:
+            setup_server(name, dry_run)
+    except typer.Exit:
+        # Propagate rbw authentication failures immediately
+        raise
 
     if not dry_run:
         console.print("\n[green]✅ Synchronization completed![/green]")
@@ -249,18 +325,33 @@ def add_server(
     name: str = typer.Argument(..., help="Server name"),
     script: str = typer.Option(None, "--script", help="Setup script name"),
     uvx_package: str = typer.Option(None, "--uvx", help="Package to install via uvx"),
+    npx_package: str = typer.Option(None, "--npx", help="Package to install via npx"),
+    env_vars: str = typer.Option(
+        None, "--env", help="Environment variables (e.g., 'KEY1=val1,KEY2=val2')"
+    ),
     extra_args: str = typer.Option(
         "", "--extra-args", help="Extra script arguments (--user is automatic)"
     ),
 ):
     """Add a new server to desired configuration (for this session only)."""
-    if not script and not uvx_package:
-        console.print("[red]❌ Must specify either --script or --uvx[/red]")
+    if not script and not uvx_package and not npx_package:
+        console.print("[red]❌ Must specify either --script, --uvx, or --npx[/red]")
         return
 
-    DESIRED_SERVERS[name] = Server(name, script, extra_args, uvx_package)
-    method = f"script '{script}'" if script else f"uvx package '{uvx_package}'"
-    console.print(f"[green]✅ Added {name} using {method} (--user automatic)[/green]")
+    DESIRED_SERVERS[name] = Server(
+        name, script, extra_args, uvx_package, npx_package, env_vars
+    )
+    method = (
+        f"script '{script}'"
+        if script
+        else f"uvx package '{uvx_package}'"
+        if uvx_package
+        else f"npx package '{npx_package}'"
+    )
+    env_info = " with env vars" if env_vars else ""
+    console.print(
+        f"[green]✅ Added {name} using {method}{env_info} (--user automatic)[/green]"
+    )
 
 
 if __name__ == "__main__":
