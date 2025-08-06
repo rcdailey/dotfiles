@@ -7,6 +7,14 @@
     "Additional self-hosted AzDO hostnames for SSH" "" -}}
 {{- end -}}
 
+######################################################################################
+## According to the docs, this must remain above all other configuration
+encryption = "age"
+[age]
+    identity = "key.txt"
+    recipient = "age1zf6u0y5ljwa2hsyhe05hpjp6ad7lzdl5979ejdsj9de3nyx4y5yq987dse"
+######################################################################################
+
 color = "on"
 
 [diff]
