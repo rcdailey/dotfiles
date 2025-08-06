@@ -37,3 +37,6 @@ export HOMEBREW_BOOTSNAP=1
 export HOMEBREW_NO_ENV_HINTS=1
 export HOMEBREW_NO_UPDATE_REPORT_FORMULAE=1
 export HOMEBREW_NO_UPDATE_REPORT_CASKS=1
+
+# Auto-load Bitwarden session if available
+[[ -f "$HOME/.bitwarden-session" ]] && source "$HOME/.bitwarden-session"

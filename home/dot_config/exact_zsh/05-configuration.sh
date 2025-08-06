@@ -33,6 +33,7 @@ fi
 # Essential tool aliases
 alias c="docker compose"
 alias cm="chezmoi"
+alias lg="lazygit"
 alias tf="terraform"
 alias pc="pre-commit"
 alias pcr="pre-commit run"
@@ -70,12 +71,11 @@ alias tree='tree -Csu'
 alias cmci='chezmoi git -- caa'
 alias cmst='chezmoi git -- st'
 
-# Custom shell functions
-
-# Git .gitignore function - simplified version matching original
-function gi() {
-  curl -sL "https://www.gitignore.io/api/$*"
-}
+# Autoload all custom functions from functions directory
+if [[ -d "$XDG_CONFIG_HOME/zsh/functions" ]]; then
+  fpath=("$XDG_CONFIG_HOME/zsh/functions" $fpath)
+  autoload -Uz $XDG_CONFIG_HOME/zsh/functions/*(:t)
+fi
 
 # Key bindings for history substring search
 bindkey '^[[A' history-substring-search-up

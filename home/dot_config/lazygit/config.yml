@@ -1,0 +1,11 @@
+# yaml-language-server:$schema=https://raw.githubusercontent.com/jesseduffield/lazygit/master/schema/config.json
+git:
+  paging:
+    pager: delta --dark --paging=never
+
+keybinding:
+  universal:
+    prevPage: <pgup>
+    nextPage: <pgdown>
+    scrollUpMain: ","
+    scrollDownMain: "."

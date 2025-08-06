@@ -1,0 +1,32 @@
+#!/usr/bin/env zsh
+# Bitwarden session management - ensures valid session is available
+
+# Check if current session is valid
+if [[ -n "$BW_SESSION" ]] && bw status --session "$BW_SESSION" 2>/dev/null | grep -q "unlocked"; then
+    echo "Bitwarden session already active"
+    return 0
+fi
+
+# Try loading from file
+if [[ -f "$HOME/.bitwarden-session" ]]; then
+    source "$HOME/.bitwarden-session"
+    if [[ -n "$BW_SESSION" ]] && bw status --session "$BW_SESSION" 2>/dev/null | grep -q "unlocked"; then
+        echo "Bitwarden session loaded from file"
+        return 0
+    fi
+fi
+
+# Need to unlock
+if bw status | grep -q "unlocked\|logged in"; then
+    local session=$(bw unlock --raw 2>/dev/null)
+    if [[ -n "$session" ]]; then
+        echo "export BW_SESSION='$session'" > ~/.bitwarden-session
+        chmod 600 ~/.bitwarden-session
+        export BW_SESSION="$session"
+        echo "Bitwarden session unlocked and saved"
+        return 0
+    fi
+else
+    echo "Please login to Bitwarden first: bw login --apikey"
+    return 1
+fi

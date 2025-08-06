@@ -1,0 +1,4 @@
+#!/usr/bin/env zsh
+# Git .gitignore function - simplified version matching original
+
+curl -sL "https://www.gitignore.io/api/$*"
