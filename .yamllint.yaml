@@ -7,3 +7,4 @@ rules:
     allow-non-breakable-words: true
   indentation:
     indent-sequences: false
+  document-start: disable
