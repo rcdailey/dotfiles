@@ -12,3 +12,13 @@ views:
     - "%MEM/L|R"
     - AGE
     - RESTARTS|R
+
+  # Optimized events view - hide SUBOBJECT and SOURCE columns to make MESSAGE more visible
+  events:
+    sortColumn: LAST SEEN:asc
+    columns:
+    - LAST SEEN
+    - TYPE
+    - REASON
+    - OBJECT
+    - MESSAGE
