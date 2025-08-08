@@ -45,6 +45,13 @@ brew "sops"
 cask "font-fira-code-nerd-font"
 
 {{- if eq .chezmoi.os "darwin" }}
+##################################################################################
+## MACOS ONLY
+##################################################################################
+
 # Terraform (macOS only - deprecated on Linux)
 brew "terraform"
+
+# apt-get is likely used for the `ip` CLI tool on linux
+brew "iproute2mac"
 {{- end }}
