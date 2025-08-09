@@ -60,6 +60,10 @@
       "mcp__tavily__tavily-extract"
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "zsh ~/.claude/statusline-git.sh"
+  },
   "hooks": {
     "PreToolUse": [
       {
