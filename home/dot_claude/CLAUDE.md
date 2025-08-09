@@ -43,11 +43,26 @@
 
 ## Tool Usage Requirements
 
+### Shell and Command-Line Tools
+
 - USE Zsh for all shell operations and script execution - leveraging Zinit plugin manager for
   optimal performance and automation.
 - ALWAYS use `#!/usr/bin/env <interpreter>` for script shebangs (e.g., `#!/usr/bin/env zsh`,
   `#!/usr/bin/env python3`, `#!/usr/bin/env bash`) for portability across systems.
-- ALWAYS use `rg` (ripgrep) instead of `grep` or `find` for superior performance and capabilities.
+
+### Search and File Operations
+
+- ALWAYS use `rg` (ripgrep) instead of `grep` for all text searching operations
+- NEVER use `find -name` for file discovery - use `rg --files -g "pattern"` instead
+- AVOID chaining `rg` with `grep` or multiple `rg` commands - combine patterns in single `rg` command
+- PREFER `rg` with regex patterns over complex pipeline operations
+- Examples of correct patterns:
+  - File search: `rg --files -g "*kustomization.yaml" path/`
+  - Text search: `rg "pattern1|pattern2" path/` (not `rg pattern1 | rg pattern2`)
+  - Filtered search: `rg "pattern" --glob "!**/obj/**" path/` (not `rg pattern | grep -v obj`)
+
+### External Service Integration
+
 - ALWAYS use GitHub MCP tools as the primary method for GitHub operations (e.g. don't use WebFetch
   for github.com) and information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are
   unavailable.
