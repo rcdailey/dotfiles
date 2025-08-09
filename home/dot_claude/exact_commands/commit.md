@@ -15,10 +15,10 @@ Parse natural language instruction and execute corresponding workflow:
 
 ### Staged Workflow (`/commit`)
 
-Commit only staged changes.
+Commit only staged changes. DO NOT add any files.
 
 - **Inspect**: `git log --oneline -3 origin/HEAD && git diff --cached`
-- **Act**: `git commit -m "message"`
+- **Act**: `git commit -m "message"` (NO git add commands)
 - Fail if no staged changes exist
 
 ### All Workflow (`/commit all`)
@@ -47,11 +47,16 @@ Break changes into logical commits.
 
 ## Argument Parsing
 
-- **No arguments**: Staged workflow
+- **No arguments**: Staged workflow (NO git add commands)
 - **"all"**: All workflow
 - **"make multiple commits"** or **"multiple commits"**: Multi-commit workflow
 - **Custom instructions**: Parse and execute accordingly
 - **Ambiguous input**: Default to staged workflow, ask for clarification
+
+## Critical Rules
+
+- **NEVER** run `git add` commands in staged workflow (no arguments)
+- **ONLY** use `git add` when explicitly requested via "all" or multi-commit workflows
 
 ## Message Rules
 
