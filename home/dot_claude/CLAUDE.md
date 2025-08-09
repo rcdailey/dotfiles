@@ -60,6 +60,7 @@
   - File search: `rg --files -g "*kustomization.yaml" path/`
   - Text search: `rg "pattern1|pattern2" path/` (not `rg pattern1 | rg pattern2`)
   - Filtered search: `rg "pattern" --glob "!**/obj/**" path/` (not `rg pattern | grep -v obj`)
+  - File filtering: `rg --files -g "*pattern*" path/` (not `ls | rg pattern`)
 
 ### External Service Integration
 

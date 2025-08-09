@@ -37,6 +37,11 @@ REDIRECTIONS = [
         examples=["rg files | grep -v '/obj/'", "cat file | grep pattern"],
     ),
     RedirectionRule(
+        pattern=re.compile(r"\bls\b.*\|.*\b(rg|grep)\b"),
+        message="Use 'rg --files -g pattern' instead of 'ls | rg/grep' for file filtering",
+        examples=["ls -la | rg pattern", "ls *.txt | grep file"],
+    ),
+    RedirectionRule(
         pattern=re.compile(r"\brg\b.*\|.*(grep|rg)\b"),
         message="Avoid chaining rg/grep - use single 'rg' command with combined patterns or regex",
         examples=["rg pattern | rg other", "rg --files | grep filter"],
@@ -64,6 +69,8 @@ def dry_run() -> None:
         "rg files | grep -v '/obj/'",
         "cat file | grep pattern",
         "ls | grep -E '^test'",
+        "ls -la | rg blocky",
+        "ls *.txt | grep file",
         "rg pattern | rg other",
         "rg --files | grep filter",
         "sops --set file.yaml key value",
