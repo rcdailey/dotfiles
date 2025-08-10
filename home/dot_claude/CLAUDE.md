@@ -17,9 +17,9 @@
 
 ## Response & Output Requirements
 
-- NEVER use emojis, Unicode symbols (including ✅ ⏳ ❌), or visual indicators under ANY
-  circumstances. This includes section headers, bullet points, status indicators, or any
-  decorative elements. Text-only responses are required.
+- NEVER use emojis, Unicode symbols (including ✅ ⏳ ❌), or visual indicators under ANY circumstances.
+  This includes section headers, bullet points, status indicators, or any decorative elements.
+  Text-only responses are required.
 - Do not liberally use bold formatting when creating bullet point lists.
 - Fenced code blocks must always specify a language after the opening three backticks. If no
   language is needed, use `txt` as the language.
@@ -54,19 +54,44 @@
 
 - ALWAYS use `rg` (ripgrep) instead of `grep` for all text searching operations
 - NEVER use `find -name` for file discovery - use `rg --files -g "pattern"` instead
-- AVOID chaining `rg` with `grep` or multiple `rg` commands - combine patterns in single `rg` command
+- AVOID chaining `rg` with `grep` or multiple `rg` commands - combine patterns in single `rg`
+  command
 - PREFER `rg` with regex patterns over complex pipeline operations
 - Examples of correct patterns:
   - File search: `rg --files -g "*kustomization.yaml" path/`
-  - Text search: `rg "pattern1|pattern2" path/` (not `rg pattern1 | rg pattern2`)
-  - Filtered search: `rg "pattern" --glob "!**/obj/**" path/` (not `rg pattern | grep -v obj`)
-  - File filtering: `rg --files -g "*pattern*" path/` (not `ls | rg pattern`)
+  - Text search: `rg "pattern1|pattern2" path/` (not `rg pattern1 | rg pattern2`) - Filtered search:
+  `rg "pattern" --glob "!**/obj/**" path/` (not `rg pattern | grep -v obj`) - File filtering: `rg
+  --files -g "*pattern*" path/` (not `ls | rg pattern`)
 
 ### External Service Integration
 
 - ALWAYS use GitHub MCP tools as the primary method for GitHub operations (e.g. don't use WebFetch
   for github.com) and information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are
   unavailable.
+
+## Task Management Requirements
+
+### TodoWrite Tool Usage
+
+- ONLY use TodoWrite for complex, multi-step tasks requiring 3+ distinct operations
+- NEVER create single-item todo lists - handle simple tasks directly
+- RESERVE for systematic operations where tracking prevents scope loss across long contexts
+- USE for implementation planning, debugging workflows, or coordinated file changes
+- AVOID for: simple questions, single file edits, straightforward searches, or basic commands
+
+Examples of appropriate usage:
+
+- Implementing a new feature across multiple files
+- Debugging complex issues requiring investigation + fixes
+- Refactoring that touches many components
+- Multi-step deployment or configuration tasks
+
+Examples of inappropriate usage:
+
+- "Run git status" (single command)
+- "Find the main function" (simple search)
+- "Fix this typo" (single edit)
+- "What does this code do?" (analysis question)
 
 ## Configuration Principles
 
