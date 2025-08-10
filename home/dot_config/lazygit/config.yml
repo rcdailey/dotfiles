@@ -1,9 +1,13 @@
 # yaml-language-server:$schema=https://raw.githubusercontent.com/jesseduffield/lazygit/master/schema/config.json
 promptToReturnFromSubprocess: false
+disableStartupPopups: true
 
 git:
   paging:
     pager: delta --dark --paging=never
+
+gui:
+  mouseEvents: false
 
 keybinding:
   universal:
