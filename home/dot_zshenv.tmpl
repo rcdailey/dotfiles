@@ -31,3 +31,6 @@ export EDITOR="code"
 if [[ -z $TMPDIR ]]; then
   export TMPDIR=/tmp
 fi
+
+# Timezone for kubectl logs and other tools (POSIX format with DST support)
+export TZ="America/Chicago"
