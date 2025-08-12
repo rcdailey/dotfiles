@@ -12,11 +12,10 @@ dir_name=$(basename "$current_dir")
 
 # Check if we're in a git repository and get branch
 cd "$current_dir" 2>/dev/null
+base_status=$(printf "[\e[38;2;0;150;255m%s\e[0m] 📁 \e[38;2;255;215;0m%s\e[0m" "$model_name" "$dir_name")
 if git rev-parse --git-dir >/dev/null 2>&1; then
     branch=$(git branch --show-current 2>/dev/null || echo "detached")
-    # Format and output the status line with colors, including git info
-    printf "[\e[34m%s\e[0m] 📁 \e[33m%s\e[0m | \e[32m🌿 %s\e[0m" "$model_name" "$dir_name" "$branch"
+    printf "%s | \e[38;2;0;255;0m🌿 %s\e[0m" "$base_status" "$branch"
 else
-    # Format and output the status line with colors, no git info
-    printf "[\e[34m%s\e[0m] 📁 \e[33m%s\e[0m" "$model_name" "$dir_name"
+    printf "%s" "$base_status"
 fi
