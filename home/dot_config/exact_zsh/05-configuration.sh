@@ -71,11 +71,7 @@ alias tree='tree -Csu'
 alias cmci='chezmoi git -- caa'
 alias cmst='chezmoi git -- st'
 
-# Autoload all custom functions from functions directory
-if [[ -d "$XDG_CONFIG_HOME/zsh/functions" ]]; then
-  fpath=("$XDG_CONFIG_HOME/zsh/functions" $fpath)
-  autoload -Uz $XDG_CONFIG_HOME/zsh/functions/*(:t)
-fi
+# Custom functions are autoloaded via .zshenv for all shell types
 
 # Key bindings for history substring search
 bindkey '^[[A' history-substring-search-up

@@ -34,3 +34,9 @@ fi
 
 # Timezone for kubectl logs and other tools (POSIX format with DST support)
 export TZ="America/Chicago"
+
+# Function autoloading (needed by both interactive and non-interactive shells)
+if [[ -d "$XDG_CONFIG_HOME/zsh/functions" ]]; then
+  fpath=("$XDG_CONFIG_HOME/zsh/functions" $fpath)
+  autoload -Uz $XDG_CONFIG_HOME/zsh/functions/*(:t)
+fi
