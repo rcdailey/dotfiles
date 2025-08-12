@@ -49,8 +49,9 @@ cask "font-fira-code-nerd-font"
 ## MACOS ONLY
 ##################################################################################
 
-# Terraform (macOS only - deprecated on Linux)
-brew "terraform"
+# Terraform via HashiCorp tap (macOS only - deprecated on Linux)
+tap "hashicorp/tap"
+brew "hashicorp/tap/terraform"
 
 # apt-get is likely used for the `ip` CLI tool on linux
 brew "iproute2mac"
