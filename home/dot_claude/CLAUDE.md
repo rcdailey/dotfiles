@@ -69,30 +69,6 @@
   for github.com) and information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are
   unavailable.
 
-## Task Management Requirements
-
-### TodoWrite Tool Usage
-
-- ONLY use TodoWrite for complex, multi-step tasks requiring 3+ distinct operations
-- NEVER create single-item todo lists - handle simple tasks directly
-- RESERVE for systematic operations where tracking prevents scope loss across long contexts
-- USE for implementation planning, debugging workflows, or coordinated file changes
-- AVOID for: simple questions, single file edits, straightforward searches, or basic commands
-
-Examples of appropriate usage:
-
-- Implementing a new feature across multiple files
-- Debugging complex issues requiring investigation + fixes
-- Refactoring that touches many components
-- Multi-step deployment or configuration tasks
-
-Examples of inappropriate usage:
-
-- "Run git status" (single command)
-- "Find the main function" (simple search)
-- "Fix this typo" (single edit)
-- "What does this code do?" (analysis question)
-
 ## Configuration Principles
 
 - PREFER default values by omission over explicit configuration - minimal configuration improves
