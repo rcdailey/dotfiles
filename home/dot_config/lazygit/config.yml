@@ -15,6 +15,20 @@ keybinding:
     nextPage: <pgdown>
     scrollUpMain: ","
     scrollDownMain: "."
+    nextItem-alt: "<disabled>"
+    prevItem-alt: "<disabled>"
+  commits:
+    amendToCommit: "a"
+    resetCommitAuthor: "A"
+    moveDownCommit: "j"
+    moveUpCommit: "k"
+    openLogMenu: "l"
+    markCommitAsFixup: "F"
+    createFixupCommit: "f"
+  files:
+    amendLastCommit: "a"
+    toggleStagedAll: "s"
+    stashAllChanges: "<disabled>"
 
 customCommands:
 - key: D
