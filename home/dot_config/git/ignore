@@ -6,5 +6,6 @@
 # Ignore claude local settings
 .claude/settings.local.json
 
-# Convention for 'temp' ignored files living in repos
+# Convention for 'temp' ignored files and directories living in repos
 *.ignored.*
+*.ignored/
