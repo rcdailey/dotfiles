@@ -42,6 +42,14 @@ REDIRECTIONS = [
         examples=["ls -la | rg pattern", "ls *.txt | grep file"],
     ),
     RedirectionRule(
+        pattern=re.compile(r"\bfind\b.*\|.*\b(rg|grep)\b"),
+        message="Use 'rg --files -g pattern' instead of 'find | rg/grep' combinations",
+        examples=[
+            "find . -type d | rg pattern",
+            "find /path -name '*.txt' | grep filter",
+        ],
+    ),
+    RedirectionRule(
         pattern=re.compile(r"\brg\b.*\|.*(grep|rg)\b"),
         message="Avoid chaining rg/grep - use single 'rg' command with combined patterns or regex",
         examples=["rg pattern | rg other", "rg --files | grep filter"],
@@ -66,6 +74,8 @@ def dry_run() -> None:
         "grep -v unwanted file.txt",
         "find /path -name '*.txt'",
         "find . -name 'test*'",
+        "find . -maxdepth 2 -type d | rg pattern",
+        "find /usr -type f | grep config",
         "rg files | grep -v '/obj/'",
         "cat file | grep pattern",
         "ls | grep -E '^test'",
@@ -131,7 +141,10 @@ def main() -> None:
     # Check each redirection pattern
     for rule in REDIRECTIONS:
         if rule.pattern.search(command):
-            print(f"• {rule.message}", file=sys.stderr)
+            # Simple error message since context injection provides full rules
+            error_msg = f"TOOL USAGE VIOLATION: {rule.message}"
+
+            print(error_msg, file=sys.stderr)
             sys.exit(2)
 
 

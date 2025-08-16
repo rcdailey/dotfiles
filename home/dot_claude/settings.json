@@ -106,6 +106,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/context-injector.py"
+          }
+        ]
+      }
     ]
   }
 }

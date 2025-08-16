@@ -52,22 +52,42 @@
 
 ### Search and File Operations
 
-- ALWAYS use `rg` (ripgrep) instead of `grep` for all text searching operations
-- NEVER use `find -name` for file discovery - use `rg --files -g "pattern"` instead
-- AVOID chaining `rg` with `grep` or multiple `rg` commands - combine patterns in single `rg`
-  command
-- PREFER `rg` with regex patterns over complex pipeline operations
-- Examples of correct patterns:
-  - File search: `rg --files -g "*kustomization.yaml" path/`
-  - Text search: `rg "pattern1|pattern2" path/` (not `rg pattern1 | rg pattern2`) - Filtered search:
-  `rg "pattern" --glob "!**/obj/**" path/` (not `rg pattern | grep -v obj`) - File filtering: `rg
-  --files -g "*pattern*" path/` (not `ls | rg pattern`)
+**YOU MUST FOLLOW THESE RULES - VIOLATIONS WILL BE BLOCKED BY HOOKS:**
+
+**NEVER ACCEPTABLE COMMANDS:**
+
+- NEVER: `grep` (use `rg` instead)
+- NEVER: `find -name` (use `rg --files -g "pattern"` instead)
+- NEVER: `ls | rg`, `find | rg`, `rg | grep` (use single `rg` command)
+
+**REQUIRED PATTERNS - THESE ARE THE ONLY ACCEPTABLE APPROACHES:**
+
+- File discovery: `rg --files -g "pattern"`
+- Text search: `rg "pattern1|pattern2"`
+- Filtered search: `rg "pattern" --glob "!**/obj/**"`
+- File filtering: `rg --files -g "*pattern*"`
+
+**IMPORTANT:** These rules exist in your active memory. Check this section before ANY file
+operation.
+
+**Why these rules exist:** `rg` is faster, more feature-rich, and eliminates the need for command
+chaining. Violations indicate a fundamental misunderstanding of available tooling.
 
 ### External Service Integration
 
 - ALWAYS use GitHub MCP tools as the primary method for GitHub operations (e.g. don't use WebFetch
   for github.com) and information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are
   unavailable.
+
+## Behavioral Requirements
+
+**IMPORTANT:** Before using ANY command-line tools:
+
+1. Reference the "Search and File Operations" section above
+2. Verify your command follows the required patterns
+3. If unsure, use List, Glob, or Grep tools instead of Bash
+
+**CRITICAL:** Your hooks will block violations, but you should follow these rules proactively.
 
 ## Configuration Principles
 
