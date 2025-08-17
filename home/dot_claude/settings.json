@@ -7,7 +7,6 @@
     "BASH_DEFAULT_TIMEOUT_MS": "300000"
   },
   "permissions": {
-    "deny": ["WebSearch", "WebFetch"],
     "allow": [
       "Bash(arp:*)",
       "Bash(awk:*)",
@@ -22,10 +21,14 @@
       "Bash(du:*)",
       "Bash(echo:*)",
       "Bash(find:*)",
+      "Bash(gh label:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr list:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
+      "Bash(git ls-tree:*)",
       "Bash(git mv:*)",
       "Bash(git reflog:*)",
       "Bash(git rev-parse:*)",
@@ -70,16 +73,34 @@
       "Bash(which:*)",
       "Bash(xmlstarlet:*)",
       "Bash(yamllint:*)",
+      "Bash(yq eval-all:*)",
+      "Bash(yq eval:*)",
       "Bash(zip:*)",
+      "mcp__github__get_commit",
+      "mcp__github__get_discussion_comments",
+      "mcp__github__get_discussion",
       "mcp__github__get_file_contents",
       "mcp__github__get_issue_comments",
       "mcp__github__get_issue",
-      "mcp__github__list_discussions",
+      "mcp__github__get_job_logs",
+      "mcp__github__get_latest_release",
+      "mcp__github__get_pull_request_comments",
+      "mcp__github__get_pull_request",
+      "mcp__github__get_workflow_run",
       "mcp__github__search_code",
       "mcp__github__search_issues",
       "mcp__github__search_repositories",
       "mcp__tavily__tavily-extract",
       "mcp__tavily__tavily-search"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "mcp__github__list_discussions",
+      "mcp__github__list_pull_requests",
+      "mcp__github__list_releases",
+      "mcp__github__list_workflow_jobs",
+      "WebFetch",
+      "WebSearch"
     ]
   },
   "statusLine": {
