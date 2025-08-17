@@ -73,12 +73,6 @@ operation.
 **Why these rules exist:** `rg` is faster, more feature-rich, and eliminates the need for command
 chaining. Violations indicate a fundamental misunderstanding of available tooling.
 
-### External Service Integration
-
-- ALWAYS use GitHub MCP tools as the primary method for GitHub operations (e.g. don't use WebFetch
-  for github.com) and information retrieval; use GitHub CLI (gh) only as fallback when MCP tools are
-  unavailable.
-
 ## Behavioral Requirements
 
 **IMPORTANT:** Before using ANY command-line tools:

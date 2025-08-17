@@ -105,6 +105,15 @@
             "command": "~/.claude/hooks/webfetch-github-redirect.sh"
           }
         ]
+      },
+      {
+        "matcher": "mcp__tavily__*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/tool-redirections.py"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [

@@ -61,6 +61,15 @@ REDIRECTIONS = [
     ),
 ]
 
+# Tavily MCP restrictions
+TAVILY_RESTRICTIONS = [
+    RedirectionRule(
+        pattern=re.compile(r"\bgithub\.com\b", re.IGNORECASE),
+        message="Use GitHub MCP tools or 'gh' CLI instead of Tavily for GitHub content",
+        examples=["github.com repositories", "github issues", "github files"],
+    ),
+]
+
 
 def dry_run() -> None:
     """Test all redirection patterns against sample commands."""
@@ -113,6 +122,40 @@ def dry_run() -> None:
 
         print()
 
+    # Test Tavily queries and URLs
+    tavily_test_queries = [
+        # Should match GitHub pattern
+        "search github.com repositories",
+        "find issues on GitHub.com",
+        "https://github.com/user/repo",
+        # Should NOT match
+        "search for python tutorials",
+        "find documentation online",
+        "https://stackoverflow.com/questions",
+    ]
+
+    print("=== Tavily Restrictions ===")
+    for i, rule in enumerate(TAVILY_RESTRICTIONS, 1):
+        print(f"=== Tavily Rule {i}: {rule.pattern.pattern} ===")
+        print(f"Examples: {', '.join(rule.examples)}")
+
+        matches = [query for query in tavily_test_queries if rule.pattern.search(query)]
+        non_matches = [
+            query for query in tavily_test_queries if not rule.pattern.search(query)
+        ]
+
+        if matches:
+            print("MATCHES:")
+            for query in matches:
+                print(f"  {query}")
+
+        if non_matches:
+            print("  No matches:")
+            for query in non_matches:
+                print(f"  {query}")
+
+        print()
+
 
 def main() -> None:
     """Main hook logic."""
@@ -130,22 +173,40 @@ def main() -> None:
     tool_name = input_data.get("tool_name", "")
     command = input_data.get("tool_input", {}).get("command", "")
 
-    # Only process Bash commands
-    if tool_name != "Bash" or not command:
-        sys.exit(0)
+    # Process Bash commands
+    if tool_name == "Bash" and command:
+        # Skip validation for git and ssh commands to avoid false positives
+        if re.match(r"^\s*(git|ssh)\s", command):
+            sys.exit(0)
 
-    # Skip validation for git and ssh commands to avoid false positives
-    if re.match(r"^\s*(git|ssh)\s", command):
-        sys.exit(0)
+        # Check each redirection pattern
+        for rule in REDIRECTIONS:
+            if rule.pattern.search(command):
+                error_msg = f"TOOL USAGE VIOLATION: {rule.message}"
+                print(error_msg, file=sys.stderr)
+                sys.exit(2)
 
-    # Check each redirection pattern
-    for rule in REDIRECTIONS:
-        if rule.pattern.search(command):
-            # Simple error message since context injection provides full rules
-            error_msg = f"TOOL USAGE VIOLATION: {rule.message}"
+    # Process Tavily MCP tools
+    elif tool_name.startswith("mcp__tavily__"):
+        query = input_data.get("tool_input", {}).get("query", "")
+        urls = input_data.get("tool_input", {}).get("urls", [])
 
-            print(error_msg, file=sys.stderr)
-            sys.exit(2)
+        # Check query for GitHub references
+        if query:
+            for rule in TAVILY_RESTRICTIONS:
+                if rule.pattern.search(query):
+                    error_msg = f"TAVILY USAGE VIOLATION: {rule.message}"
+                    print(error_msg, file=sys.stderr)
+                    sys.exit(2)
+
+        # Check URLs for GitHub references
+        if urls:
+            for url in urls:
+                for rule in TAVILY_RESTRICTIONS:
+                    if rule.pattern.search(url):
+                        error_msg = f"TAVILY USAGE VIOLATION: {rule.message}"
+                        print(error_msg, file=sys.stderr)
+                        sys.exit(2)
 
 
 if __name__ == "__main__":
