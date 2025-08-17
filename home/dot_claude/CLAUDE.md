@@ -73,6 +73,30 @@ operation.
 **Why these rules exist:** `rg` is faster, more feature-rich, and eliminates the need for command
 chaining. Violations indicate a fundamental misunderstanding of available tooling.
 
+### GitHub Integration Requirements
+
+**YOU MUST FOLLOW THIS HIERARCHY - VIOLATIONS WILL BE BLOCKED BY HOOKS:**
+
+#### PRIORITY 1: GitHub MCP Tools
+
+- GitHub MCP tools are the PRIMARY method for all GitHub operations
+- Use for repositories, issues, pull requests, file contents, commits, and search operations
+- REQUIRED when Tavily web fetches are prevented for GitHub content
+
+#### PRIORITY 2: GitHub CLI (gh) - List Operations Only
+
+- ONLY use `gh` CLI for list commands when corresponding MCP tools are unavailable
+- Acceptable: `gh pr list`, `gh issue list`, `gh release list`, `gh run list`
+- These operations are specifically denied in MCP tool permissions
+
+#### BLOCKED: Other GitHub Access Methods
+
+- NEVER use WebFetch, Tavily, or other web tools for github.com repository content
+- NEVER use general web search for GitHub-specific information
+
+**IMPORTANT:** This hierarchy exists to prevent costly external API calls and ensure optimal
+performance. Hooks will enforce these rules automatically.
+
 ## Behavioral Requirements
 
 **IMPORTANT:** Before using ANY command-line tools:
