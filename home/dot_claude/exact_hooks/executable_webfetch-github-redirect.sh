@@ -24,7 +24,7 @@ if [[ "$url" =~ ^https?://github\.com/[^/]+/[^/]+(/.*)?$ ]]; then
   owner_repo=$(echo "$url" | sed -n 's|^https\?://github\.com/\([^/]\+/[^/]\+\).*|\1|p')
 
   echo "WebFetch blocked for GitHub repository: $owner_repo" >&2
-  echo "Use GitHub MCP tools (preferred) or 'gh' CLI instead." >&2
+  echo "Use GitHub MCP tools (PRIORITY 1) or 'gh' CLI for list operations only." >&2
 
   # Exit code 2 blocks tool call and shows stderr to Claude
   exit 2

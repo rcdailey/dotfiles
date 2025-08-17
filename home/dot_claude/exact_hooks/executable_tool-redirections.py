@@ -64,9 +64,13 @@ REDIRECTIONS = [
 # Tavily MCP restrictions
 TAVILY_RESTRICTIONS = [
     RedirectionRule(
-        pattern=re.compile(r"\bgithub\.com\b", re.IGNORECASE),
-        message="Use GitHub MCP tools or 'gh' CLI instead of Tavily for GitHub content",
-        examples=["github.com repositories", "github issues", "github files"],
+        pattern=re.compile(r"(?<!docs\.)github\.com", re.IGNORECASE),
+        message="Use GitHub MCP tools (PRIORITY 1) for GitHub repository content. Only use 'gh' CLI for list operations when MCP tools unavailable.",
+        examples=[
+            "github.com/user/repo",
+            "github.com/org/project",
+            "https://github.com/example",
+        ],
     ),
 ]
 
@@ -124,11 +128,14 @@ def dry_run() -> None:
 
     # Test Tavily queries and URLs
     tavily_test_queries = [
-        # Should match GitHub pattern
+        # Should match GitHub pattern (repositories)
         "search github.com repositories",
         "find issues on GitHub.com",
         "https://github.com/user/repo",
-        # Should NOT match
+        "https://github.com/actions/checkout",
+        # Should NOT match (docs.github.com)
+        "https://docs.github.com/en/actions/how-tos/sharing-automations/reusing-workflows",
+        "https://docs.github.com/en/github/getting-started-with-github",
         "search for python tutorials",
         "find documentation online",
         "https://stackoverflow.com/questions",
