@@ -2,6 +2,28 @@
 
 set -e
 
+# Function to check if MCP server exists at specified scope
+check_mcp_server_exists() {
+    local scope=$1
+
+    # Use claude mcp get to check existence without side effects
+    local get_output=$(claude mcp get github 2>&1 || true)
+
+    # If the get command fails, server doesn't exist
+    if echo "$get_output" | rg -q "No MCP server found with name: github"; then
+        return 1
+    fi
+
+    # If get succeeds, check if it matches the requested scope
+    if [[ "$scope" == "user" ]]; then
+        echo "$get_output" | rg -q "Scope: User config" || return 1
+    elif [[ "$scope" == "local" ]]; then
+        echo "$get_output" | rg -q "Scope: Local config" || return 1
+    fi
+
+    return 0
+}
+
 # Parse command line arguments
 USER_SCOPE=false
 REMOVE_MODE=false
@@ -25,6 +47,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Auto-detect user scope only during normal setup (not when using special flags)
+if [[ "$USER_SCOPE" == false ]] && [[ "$REMOVE_MODE" == false ]] && check_mcp_server_exists "user"; then
+    echo "User-level GitHub MCP server detected. Using --user scope automatically."
+    USER_SCOPE=true
+fi
+
+# Set scope variables
 if [[ "$USER_SCOPE" == true ]]; then
     SCOPE="user"
     SCOPE_MESSAGE="user scope"
@@ -33,12 +62,11 @@ else
     SCOPE_MESSAGE="local scope"
 fi
 
+# Handle removal mode
 if [[ "$REMOVE_MODE" == true ]]; then
     echo "=== GitHub MCP Server Removal ==="
     echo "Removing GitHub MCP server from $SCOPE_MESSAGE..."
-
     claude mcp remove github -s "$SCOPE"
-
     echo "✅ GitHub MCP server removed successfully from $SCOPE_MESSAGE!"
     exit 0
 fi
@@ -88,10 +116,20 @@ echo "Token obtained successfully"
 # Configure Claude MCP server
 echo "Configuring GitHub MCP server..."
 
+# Remove existing server if it exists (this handles token updates gracefully)
+if check_mcp_server_exists "$SCOPE"; then
+    echo "Updating existing GitHub MCP server configuration..."
+    claude mcp remove github -s "$SCOPE"
+fi
+
 claude mcp add github "https://api.githubcopilot.com/mcp/" \
     -s "$SCOPE" \
     -t http \
     -H "Authorization: Bearer $TOKEN"
 
 echo "✅ GitHub MCP server configured successfully!"
-echo "The server is configured at $SCOPE_MESSAGE and will persist for this $([ "$USER_SCOPE" == true ] && echo "user across all projects" || echo "project only")."
+if [[ "$USER_SCOPE" == true ]]; then
+    echo "The server is configured at $SCOPE_MESSAGE and will persist for this user across all projects."
+else
+    echo "The server is configured at $SCOPE_MESSAGE and will persist for this project only."
+fi
