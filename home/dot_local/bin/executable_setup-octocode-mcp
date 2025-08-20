@@ -1,0 +1,127 @@
+#!/bin/bash
+
+set -e
+
+# Function to check if MCP server exists at specified scope
+check_mcp_server_exists() {
+    local scope=$1
+
+    # Use claude mcp get to check existence without side effects
+    local get_output=$(claude mcp get octocode 2>&1 || true)
+
+    # If the get command fails, server doesn't exist
+    if echo "$get_output" | rg -q "No MCP server found with name: octocode"; then
+        return 1
+    fi
+
+    # If get succeeds, check if it matches the requested scope
+    if [[ "$scope" == "user" ]]; then
+        echo "$get_output" | rg -q "Scope: User config" || return 1
+    elif [[ "$scope" == "local" ]]; then
+        echo "$get_output" | rg -q "Scope: Local config" || return 1
+    fi
+
+    return 0
+}
+
+# Parse command line arguments
+USER_SCOPE=false
+REMOVE_MODE=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --user)
+            USER_SCOPE=true
+            shift
+            ;;
+        --remove)
+            REMOVE_MODE=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--user] [--remove]"
+            echo "  --user    Configure at user level instead of local level"
+            echo "  --remove  Remove the MCP server configuration"
+            exit 1
+            ;;
+    esac
+done
+
+# Auto-detect user scope only during normal setup (not when using special flags)
+if [[ "$USER_SCOPE" == false ]] && [[ "$REMOVE_MODE" == false ]] && check_mcp_server_exists "user"; then
+    echo "User-level Octocode MCP server detected. Using --user scope automatically."
+    USER_SCOPE=true
+fi
+
+# Set scope variables
+if [[ "$USER_SCOPE" == true ]]; then
+    SCOPE="user"
+    SCOPE_MESSAGE="user scope"
+else
+    SCOPE="local"
+    SCOPE_MESSAGE="local scope"
+fi
+
+# Handle removal mode
+if [[ "$REMOVE_MODE" == true ]]; then
+    echo "=== Octocode MCP Server Removal ==="
+    echo "Removing Octocode MCP server from $SCOPE_MESSAGE..."
+    claude mcp remove octocode -s "$SCOPE"
+    echo "✅ Octocode MCP server removed successfully from $SCOPE_MESSAGE!"
+    exit 0
+fi
+
+echo "=== Octocode MCP Server Setup ==="
+
+# Install gh via brew if it doesn't exist
+if ! command -v gh &> /dev/null; then
+    echo "Installing GitHub CLI..."
+    brew install gh
+fi
+
+# Set browser for cross-platform compatibility
+case "$(uname -s)" in
+    Darwin*)
+        export BROWSER="open"
+        ;;
+    Linux*)
+        export BROWSER="xdg-open"
+        ;;
+    CYGWIN*|MINGW*|MSYS*)
+        export BROWSER="cmd.exe /c start"
+        ;;
+esac
+echo "BROWSER set to: $BROWSER"
+
+# Check if already authenticated
+if gh auth status &> /dev/null; then
+    echo "Already authenticated with GitHub"
+else
+    echo "Authenticating with GitHub..."
+    echo "If browser doesn't open automatically, you'll see a device code and URL to visit manually."
+    gh auth login --git-protocol ssh --skip-ssh-key --web
+fi
+
+echo "GitHub authentication verified"
+
+# Configure Claude MCP server
+echo "Configuring Octocode MCP server..."
+
+# Remove existing server if it exists (this handles updates gracefully)
+if check_mcp_server_exists "$SCOPE"; then
+    echo "Updating existing Octocode MCP server configuration..."
+    claude mcp remove octocode -s "$SCOPE"
+fi
+
+# Add the Octocode MCP server using npx
+claude mcp add octocode \
+    -s "$SCOPE" \
+    -t stdio \
+    -- npx -y octocode-mcp@latest
+
+echo "✅ Octocode MCP server configured successfully!"
+if [[ "$USER_SCOPE" == true ]]; then
+    echo "The server is configured at $SCOPE_MESSAGE and will persist for this user across all projects."
+else
+    echo "The server is configured at $SCOPE_MESSAGE and will persist for this project only."
+fi

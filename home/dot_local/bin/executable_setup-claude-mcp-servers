@@ -47,6 +47,8 @@ from dataclasses import dataclass  # noqa: E402  # Import after ensure_deps() fo
 MCP_SERVERS = [
     # GitHub MCP - uses existing setup script
     {"name": "github", "script": "setup-github-mcp"},
+    # Octocode MCP - AI-powered code analysis and repository research
+    {"name": "octocode", "script": "setup-octocode-mcp"},
     # MarkItDown MCP - installs via uvx
     {"name": "markitdown", "uvx": "markitdown-mcp"},
     # Tavily MCP - web search and content extraction
