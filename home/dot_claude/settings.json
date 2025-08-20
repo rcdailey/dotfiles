@@ -21,11 +21,35 @@
       "Bash(du:*)",
       "Bash(echo:*)",
       "Bash(find:*)",
+      "Bash(gh auth status:*)",
+      "Bash(gh browse:*)",
+      "Bash(gh completion:*)",
+      "Bash(gh config get:*)",
+      "Bash(gh gist list:*)",
+      "Bash(gh gist view:*)",
+      "Bash(gh gpg-key list:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
       "Bash(gh label:*)",
+      "Bash(gh org list:*)",
+      "Bash(gh org view:*)",
       "Bash(gh pr checks:*)",
       "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh release download:*)",
+      "Bash(gh release list:*)",
+      "Bash(gh release view:*)",
+      "Bash(gh repo list:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh run download:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh search:*)",
+      "Bash(gh ssh-key list:*)",
+      "Bash(gh status:*)",
+      "Bash(gh workflow list:*)",
+      "Bash(gh workflow view:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(git ls-tree:*)",
@@ -76,32 +100,10 @@
       "Bash(yq eval-all:*)",
       "Bash(yq eval:*)",
       "Bash(zip:*)",
-      "mcp__github__get_commit",
-      "mcp__github__get_discussion_comments",
-      "mcp__github__get_discussion",
-      "mcp__github__get_file_contents",
-      "mcp__github__get_issue_comments",
-      "mcp__github__get_issue",
-      "mcp__github__get_job_logs",
-      "mcp__github__get_latest_release",
-      "mcp__github__get_pull_request_comments",
-      "mcp__github__get_pull_request",
-      "mcp__github__get_workflow_run",
-      "mcp__github__search_code",
-      "mcp__github__search_issues",
-      "mcp__github__search_repositories",
       "mcp__tavily__tavily-extract",
       "mcp__tavily__tavily-search"
     ],
-    "deny": [
-      "Bash(git push:*)",
-      "mcp__github__list_discussions",
-      "mcp__github__list_pull_requests",
-      "mcp__github__list_releases",
-      "mcp__github__list_workflow_jobs",
-      "WebFetch",
-      "WebSearch"
-    ]
+    "deny": ["Bash(git push:*)", "WebFetch", "WebSearch"]
   },
   "statusLine": {
     "type": "command",
@@ -115,15 +117,6 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/tool-redirections.py"
-          }
-        ]
-      },
-      {
-        "matcher": "WebFetch",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/webfetch-github-redirect.sh"
           }
         ]
       },
