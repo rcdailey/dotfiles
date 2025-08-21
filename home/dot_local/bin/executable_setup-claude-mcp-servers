@@ -53,6 +53,11 @@ MCP_SERVERS = [
     {"name": "markitdown", "uvx": "markitdown-mcp"},
     # Tavily MCP - web search and content extraction
     {"name": "tavily", "npx": "tavily-mcp", "env": "TAVILY_API_KEY=rbw:tavily-api-key"},
+    # Sequential Thinking MCP - structured problem-solving through thoughts
+    {
+        "name": "sequential-thinking",
+        "npx": "@modelcontextprotocol/server-sequential-thinking",
+    },
 ]
 
 # =============================================================================

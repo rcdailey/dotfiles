@@ -100,6 +100,10 @@
       "Bash(yq eval-all:*)",
       "Bash(yq eval:*)",
       "Bash(zip:*)",
+      "mcp__octocode__githubGetFileContent",
+      "mcp__octocode__githubSearchCode",
+      "mcp__octocode__githubViewRepoStructure",
+      "mcp__sequential-thinking__sequentialthinking",
       "mcp__tavily__tavily-extract",
       "mcp__tavily__tavily-search"
     ],
