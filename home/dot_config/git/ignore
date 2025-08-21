@@ -3,8 +3,9 @@
 # list.
 .git/
 
-# Ignore claude local settings
+# Ignore claude local files
 .claude/settings.local.json
+CLAUDE.local.md
 
 # Convention for 'temp' ignored files and directories living in repos
 *.ignored.*
