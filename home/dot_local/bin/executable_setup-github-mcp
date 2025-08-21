@@ -25,12 +25,12 @@ check_mcp_server_exists() {
 }
 
 # Parse command line arguments
-USER_SCOPE=false
+USER_SCOPE=true
 REMOVE_MODE=false
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --user)
-            USER_SCOPE=true
+        --local)
+            USER_SCOPE=false
             shift
             ;;
         --remove)
@@ -39,18 +39,18 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--user] [--remove]"
-            echo "  --user    Configure at user level instead of local level"
+            echo "Usage: $0 [--local] [--remove]"
+            echo "  --local   Configure at local level instead of user level"
             echo "  --remove  Remove the MCP server configuration"
             exit 1
             ;;
     esac
 done
 
-# Auto-detect user scope only during normal setup (not when using special flags)
-if [[ "$USER_SCOPE" == false ]] && [[ "$REMOVE_MODE" == false ]] && check_mcp_server_exists "user"; then
-    echo "User-level GitHub MCP server detected. Using --user scope automatically."
-    USER_SCOPE=true
+# Auto-detect local scope only during normal setup (not when using special flags)
+if [[ "$USER_SCOPE" == true ]] && [[ "$REMOVE_MODE" == false ]] && check_mcp_server_exists "local"; then
+    echo "Local-level GitHub MCP server detected. Using --local scope automatically."
+    USER_SCOPE=false
 fi
 
 # Set scope variables
