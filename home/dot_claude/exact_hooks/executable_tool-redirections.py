@@ -62,7 +62,17 @@ REDIRECTIONS = [
 ]
 
 # Tavily MCP restrictions
-TAVILY_RESTRICTIONS = []
+TAVILY_RESTRICTIONS = [
+    RedirectionRule(
+        pattern=re.compile(r"(?<!docs\.)github\.com", re.IGNORECASE),
+        message="Use GitHub MCP tools (PRIORITY 1) for GitHub repository content. Only use 'gh' CLI for list operations when MCP tools unavailable.",
+        examples=[
+            "github.com/user/repo",
+            "github.com/org/project",
+            "https://github.com/example",
+        ],
+    ),
+]
 
 
 def dry_run() -> None:

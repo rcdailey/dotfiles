@@ -73,6 +73,18 @@ operation.
 **Why these rules exist:** `rg` is faster, more feature-rich, and eliminates the need for command
 chaining. Violations indicate a fundamental misunderstanding of available tooling.
 
+### GitHub Integration Requirements
+
+**YOU MUST FOLLOW THIS HIERARCHY - VIOLATIONS WILL BE BLOCKED BY HOOKS:**
+
+- NEVER use WebFetch, Tavily, or other web tools for github.com repository content
+- NEVER use general web search for GitHub-specific information
+- DO NOT use Github MCP tooling for "list" commands due to inefficient token usage for these.
+  Instead, use the `gh` CLI for listing pull requests, workflow jobs, issues, comments, etc.
+
+**IMPORTANT:** This hierarchy exists to prevent costly external API calls and ensure optimal
+performance. Hooks will enforce these rules automatically.
+
 ## Behavioral Requirements
 
 **IMPORTANT:** Before using ANY command-line tools:
