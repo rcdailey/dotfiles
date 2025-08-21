@@ -1,10 +1,5 @@
-# Ignore patterns for Claude Code's @-file auto complete behavior. These ignore patterns normally
-# shouldn't be necessary, however they are needed to hide certain paths from the auto completion
-# list.
-.git/
-
 # Ignore claude local files
-.claude/settings.local.json
+settings.local.json
 CLAUDE.local.md
 
 # Convention for 'temp' ignored files and directories living in repos
