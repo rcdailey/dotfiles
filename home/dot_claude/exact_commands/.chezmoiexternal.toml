@@ -27,9 +27,9 @@
     url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/refactor-code.md"
     refreshPeriod = "18h"
 
-["ccs/code-review.md"]
+["ccs/pr-review.md"]
     type = "file"
-    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/code-review.md"
+    url = "https://github.com/arkavo-org/opentdf-rs/raw/refs/heads/main/.claude/commands/pr-review.md"
     refreshPeriod = "18h"
 
 ["ccs/prime.md"]
@@ -45,6 +45,11 @@
 ["ccs/debug-error.md"]
     type = "file"
     url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/debug-error.md"
+    refreshPeriod = "18h"
+
+["ccs/fix-pr.md"]
+    type = "file"
+    url = "https://github.com/metabase/metabase/raw/refs/heads/master/.claude/commands/fix-pr.md"
     refreshPeriod = "18h"
 
 ###########################################
