@@ -10,6 +10,9 @@ else
   compinit -C -u
 fi
 
+# Enable bash completion compatibility for tools that only provide bash completions
+autoload -U +X bashcompinit && bashcompinit
+
 # Essential completion behavior options (relevant with fzf-tab)
 setopt ALWAYS_TO_END                  # Move cursor to end of completed word
 setopt COMPLETE_IN_WORD               # Complete from both ends of a word
@@ -19,6 +22,9 @@ setopt AUTO_PARAM_SLASH               # Add trailing slash for directories autom
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' group-name ''
 zstyle ':completion:*:descriptions' format '[%d]'
+
+# Completion system behavior configuration
+zstyle ':completion:*' completer _complete _files
 
 # Case-insensitive completion matching
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'

@@ -89,3 +89,10 @@ bindkey '^[[3~' delete-char       # DEL key deletes character under cursor
 # fzf-tab configuration
 zstyle ':completion:*' menu no
 zstyle ':completion:*:npm:*' sort false
+
+# Terraform completion setup (uses terraform's native bash completion via bashcompinit)
+if (( $+commands[terraform] )); then
+  complete -o nospace -C /opt/homebrew/bin/terraform terraform
+  # Enable completion for tf alias
+  complete -o nospace -C /opt/homebrew/bin/terraform tf
+fi

@@ -13,17 +13,14 @@ else
   url=$(echo "$input" | grep -o '"url":"[^"]*"' | sed 's/"url":"\([^"]*\)"/\1/')
 fi
 
-# Only process WebFetch tools
-if [[ "$tool_name" != "WebFetch" ]] || [[ -z "$url" ]]; then
+# Only process tavily-extract tools
+if [[ "$tool_name" != "mcp__tavily__tavily-extract" ]] || [[ -z "$url" ]]; then
   exit 0
 fi
 
-# Check if URL is a GitHub repository URL
-if [[ "$url" =~ ^https?://github\.com/[^/]+/[^/]+(/.*)?$ ]]; then
-  # Extract owner/repo from URL
-  owner_repo=$(echo "$url" | sed -n 's|^https\?://github\.com/\([^/]\+/[^/]\+\).*|\1|p')
-
-  echo "WebFetch blocked for GitHub repository: $owner_repo" >&2
+# Check if URL is a GitHub repository or raw content URL
+if [[ "$url" =~ ^https?://(github\.com|raw\.githubusercontent\.com)/[^/]+/[^/]+(/.*)?$ ]]; then
+  echo "Error: Do not use Tavily tools against GitHub repositories" >&2
   echo "Use GitHub MCP tools (PRIORITY 1) or 'gh' CLI for list operations only." >&2
 
   # Exit code 2 blocks tool call and shows stderr to Claude
