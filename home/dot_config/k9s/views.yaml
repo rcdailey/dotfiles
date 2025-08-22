@@ -2,7 +2,7 @@
 views:
   # Optimized containers view - prioritize essential info and resource usage
   v1/pods:
-    sortColumn: NAMESPACE:desc
+    sortColumn: NAMESPACE:asc
     columns:
     - NAME
     - STATUS
