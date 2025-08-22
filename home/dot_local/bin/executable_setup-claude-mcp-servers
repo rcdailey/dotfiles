@@ -175,7 +175,7 @@ def setup_server(name: str, dry_run: bool = False):
 
     if dry_run:
         if server.setup_script:
-            args = ["--user"] + (server.extra_args.split() if server.extra_args else [])
+            args = server.extra_args.split() if server.extra_args else []
             console.print(
                 f"[blue](DRY RUN) Would setup {name} using {server.setup_script} {' '.join(args)}[/blue]"
             )
@@ -195,7 +195,7 @@ def setup_server(name: str, dry_run: bool = False):
     try:
         if server.setup_script:
             # Use existing setup script
-            args = ["--user"] + (server.extra_args.split() if server.extra_args else [])
+            args = server.extra_args.split() if server.extra_args else []
             if server.env_vars:
                 console.print(
                     f"[yellow]Warning: Environment variables not supported for script-based servers: {server.env_vars}[/yellow]"
