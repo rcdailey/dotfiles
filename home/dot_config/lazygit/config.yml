@@ -36,3 +36,8 @@ customCommands:
   context: commits,subCommits
   description: Diff against the selected commit
   output: terminal
+- key: C
+  command: claude -p /commit
+  context: commits
+  description: Commit changes using Claude
+  output: popup
