@@ -50,11 +50,6 @@ REDIRECTIONS = [
         ],
     ),
     RedirectionRule(
-        pattern=re.compile(r"\brg\b.*\|.*(grep|rg)\b"),
-        message="Avoid chaining rg/grep - use single 'rg' command with combined patterns or regex",
-        examples=["rg pattern | rg other", "rg --files | grep filter"],
-    ),
-    RedirectionRule(
         pattern=re.compile(r"sops\s+--set"),
         message="Use 'sops set' instead of 'sops --set'\nCorrect: sops set file.sops.yaml '[\"section\"][\"key\"]' '\"value\"'",
         examples=["sops --set file.yaml key value"],
@@ -94,7 +89,7 @@ def dry_run() -> None:
         "ls | grep -E '^test'",
         "ls -la | rg blocky",
         "ls *.txt | grep file",
-        "rg pattern | rg other",
+        "rg pattern | grep other",
         "rg --files | grep filter",
         "sops --set file.yaml key value",
         # Should NOT match any patterns
