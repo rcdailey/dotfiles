@@ -38,6 +38,6 @@ customCommands:
   output: terminal
 - key: C
   command: claude -p /commit
-  context: commits
+  context: files
   description: Commit changes using Claude
   output: popup
