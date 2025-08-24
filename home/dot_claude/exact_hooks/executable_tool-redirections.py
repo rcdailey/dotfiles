@@ -158,6 +158,39 @@ def dry_run() -> None:
 
         print()
 
+    # Test Tavily parameter validation
+    print("=== Tavily Parameter Validation ===")
+    tavily_test_inputs = [
+        # Should be blocked - include_raw_content=true
+        {
+            "tool_name": "mcp__tavily__tavily-search",
+            "tool_input": {"query": "test", "include_raw_content": True},
+        },
+        {
+            "tool_name": "mcp__tavily__tavily-extract",
+            "tool_input": {
+                "urls": ["https://example.com"],
+                "include_raw_content": True,
+            },
+        },
+        # Should be allowed - default behavior
+        {"tool_name": "mcp__tavily__tavily-search", "tool_input": {"query": "test"}},
+        {
+            "tool_name": "mcp__tavily__tavily-extract",
+            "tool_input": {"urls": ["https://example.com"]},
+        },
+    ]
+
+    for test_input in tavily_test_inputs:
+        has_raw_content = test_input.get("tool_input", {}).get(
+            "include_raw_content", False
+        )
+        tool_name = test_input["tool_name"]
+        status = "BLOCKED" if has_raw_content else "ALLOWED"
+        print(f"  {tool_name} with include_raw_content={has_raw_content}: {status}")
+
+    print()
+
 
 def main() -> None:
     """Main hook logic."""
@@ -190,8 +223,15 @@ def main() -> None:
 
     # Process Tavily MCP tools
     elif tool_name.startswith("mcp__tavily__"):
-        query = input_data.get("tool_input", {}).get("query", "")
-        urls = input_data.get("tool_input", {}).get("urls", [])
+        tool_input = input_data.get("tool_input", {})
+        query = tool_input.get("query", "")
+        urls = tool_input.get("urls", [])
+
+        # Check for raw content flag (token-expensive)
+        if tool_input.get("include_raw_content", False):
+            error_msg = "TAVILY USAGE VIOLATION: NEVER use 'include_raw_content=true' - causes excessive token usage. Use default content extraction instead."
+            print(error_msg, file=sys.stderr)
+            sys.exit(2)
 
         # Check query for GitHub references
         if query:

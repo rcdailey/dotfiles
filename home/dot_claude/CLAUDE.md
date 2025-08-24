@@ -75,15 +75,40 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
 
 ### GitHub Integration Requirements
 
-**YOU MUST FOLLOW THIS HIERARCHY - VIOLATIONS WILL BE BLOCKED BY HOOKS:**
+**COMPREHENSIVE TOOL DECISION MATRIX - VIOLATIONS AUTOMATICALLY BLOCKED BY HOOKS:**
 
-- NEVER use WebFetch, Tavily, or other web tools for github.com repository content
-- NEVER use general web search for GitHub-specific information
-- DO NOT use Github MCP tooling for "list" commands due to inefficient token usage for these.
-  Instead, use the `gh` CLI for listing pull requests, workflow jobs, issues, comments, etc.
+**LISTING Operations (High Token Cost - Use CLI Only):**
 
-**IMPORTANT:** This hierarchy exists to prevent costly external API calls and ensure optimal
-performance. Hooks will enforce these rules automatically.
+- Issues: `gh issue list` ✅ | `mcp__github__list_issues` ❌ BLOCKED - Pull Requests: `gh pr list` ✅ |
+`mcp__github__list_pull_requests` ❌ BLOCKED - Workflows: `gh workflow list` ✅ |
+`mcp__github__list_workflow_jobs` ❌ BLOCKED - Discussions: `gh api graphql` ✅ |
+`mcp__github__list_discussions` ❌ BLOCKED - Releases: `gh release list` ✅ |
+`mcp__github__list_releases` ❌ BLOCKED
+
+**SEARCHING Operations (Optimization Required):**
+
+- Code Search: `mcp__octocode__githubSearchCode` ✅ | `mcp__github__search_code` ❌ BLOCKED -
+Repository Search: `mcp__octocode__githubSearchRepositories` ✅ | `mcp__github__search_repositories`
+❌ BLOCKED - PR Search: `mcp__octocode__githubSearchPullRequests` ✅ |
+`mcp__github__search_pull_requests` ❌ BLOCKED - Issue Search: `gh search issues` ✅ |
+`mcp__github__search_issues` ❌ BLOCKED
+
+**GETTING Single Items (Efficient - Allowed):**
+
+- Single Issue: `mcp__github__get_issue` ✅
+- Single PR: `mcp__github__get_pull_request` ✅
+- File Contents: `mcp__github__get_file_contents` ✅ or `mcp__octocode__githubGetFileContent` ✅
+- Commits: `mcp__github__get_commit` ✅
+
+**NEVER ALLOWED:**
+
+- WebFetch, Tavily, or web search for github.com repository content
+- General web search for GitHub-specific information
+- Any `mcp__github__list_*` tools (use `gh` CLI instead)
+- `mcp__github__search_code|repositories|pull_requests` (use Octocode instead)
+
+**Why This Hierarchy:** Prevents costly token usage, ensures fastest response times, and leverages
+the most capable tools for each operation type. All rules are automatically enforced by hooks.
 
 ## Behavioral Requirements
 

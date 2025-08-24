@@ -111,13 +111,6 @@
       "mcp__github__get_pull_request_comments",
       "mcp__github__get_pull_request",
       "mcp__github__get_workflow_run",
-      "mcp__github__list_discussions",
-      "mcp__github__list_pull_requests",
-      "mcp__github__list_releases",
-      "mcp__github__list_workflow_jobs",
-      "mcp__github__search_code",
-      "mcp__github__search_issues",
-      "mcp__github__search_repositories",
       "mcp__octocode__githubGetFileContent",
       "mcp__octocode__githubSearchCode",
       "mcp__octocode__githubSearchRepositories",
@@ -126,7 +119,19 @@
       "mcp__tavily__tavily-extract",
       "mcp__tavily__tavily-search"
     ],
-    "deny": ["Bash(git push:*)", "WebFetch", "WebSearch"]
+    "deny": [
+      "Bash(git push:*)",
+      "WebFetch",
+      "WebSearch",
+      "mcp__github__list_discussions",
+      "mcp__github__list_pull_requests",
+      "mcp__github__list_releases",
+      "mcp__github__list_workflow_jobs",
+      "mcp__github__search_code",
+      "mcp__github__search_issues",
+      "mcp__github__search_repositories",
+      "mcp__github__search_pull_requests"
+    ]
   },
   "statusLine": {
     "type": "command",

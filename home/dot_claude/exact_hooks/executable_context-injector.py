@@ -2,46 +2,22 @@
 
 """
 UserPromptSubmit hook for context injection.
-Automatically adds tool usage reminders when prompts mention file operations.
+Always adds tool usage requirements to ensure optimal tool selection.
 """
-
-import json
-import sys
-import re
 
 
 def main():
     """Main hook logic for context injection."""
     try:
-        input_data = json.load(sys.stdin)
-        prompt = input_data.get("prompt", "")
-
-        # Check if prompt mentions file operations, searching, GitHub, or bash commands
-        file_operation_patterns = [
-            r"\bfind\b",
-            r"\bgrep\b",
-            r"\bls\b.*\|",
-            r"\bbash\b",
-            r"\bsearch\b",
-            r"\bfile\b",
-            r"\bdirectory\b",
-            r"\bgithub\b",
-        ]
-
-        if any(
-            re.search(pattern, prompt, re.IGNORECASE)
-            for pattern in file_operation_patterns
-        ):
-            additional_context = """
-CRITICAL ABSOLUTE TOOL USAGE REQUIREMENTS:
-• NEVER use 'grep' - ALWAYS use 'rg' (ripgrep)
-• NEVER use 'find -name' - ALWAYS use 'rg --files -g "pattern"'
-• NEVER chain commands like 'rg | grep', 'ls | rg', 'find | rg'
-• NEVER request raw content when using Tavily tools
-"""
-
-            output = {"hookSpecificOutput": {"additionalContext": additional_context}}
-            print(json.dumps(output))
+        # Always inject tool usage guidance for optimal performance
+        # For UserPromptSubmit hooks, stdout is directly added to context
+        print("""
+TOOL USAGE REQUIREMENTS (ENFORCED BY HOOKS):
+• Use 'rg' for: text search, file discovery (rg --files -g "pattern")
+• Use 'gh' CLI for: listing issues/PRs/workflows, searching issues
+• Use mcp__octocode__* for: code/repo/PR search (superior to GitHub MCP)
+• Use mcp__github__get_* for: single item retrieval only
+• NEVER use: grep, find -name, command chaining, include_raw_content=true""")
 
     except Exception:
         pass  # Silent failure to avoid disrupting workflow
