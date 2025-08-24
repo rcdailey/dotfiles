@@ -126,6 +126,10 @@
 [mergetool "bc"]
     cmd = BComp.exe "$(wslpath -aw $LOCAL)" "$(wslpath -aw $REMOTE)" "$(wslpath -aw $BASE)" "$(wslpath -aw $MERGED)"
     trustexitcode = true
+
+# Required for WSL directory diff mode to work properly
+[core]
+    symlinks = false
 {{- end }}
 
 #####################################################################
