@@ -41,3 +41,17 @@ customCommands:
   context: files
   description: Commit changes using Claude
   output: log
+- key: I
+  command: >
+    GIT_EDITOR="sed -i '1s/^/break \\n /'" git rebase --interactive
+    --autostash --keep-empty --empty=keep --no-autosquash
+    {{.SelectedLocalBranch.Name}}
+  context: localBranches
+  description: Interactive rebase with lazygit control
+- key: I
+  command: >
+    GIT_EDITOR="sed -i '1s/^/break \\n /'" git rebase --interactive
+    --autostash --keep-empty --empty=keep --no-autosquash
+    {{.SelectedRemoteBranch.RemoteName}}/{{.SelectedRemoteBranch.Name}}
+  context: remoteBranches
+  description: Interactive rebase with lazygit control
