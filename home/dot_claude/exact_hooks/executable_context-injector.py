@@ -37,6 +37,7 @@ CRITICAL ABSOLUTE TOOL USAGE REQUIREMENTS:
 • NEVER use 'grep' - ALWAYS use 'rg' (ripgrep)
 • NEVER use 'find -name' - ALWAYS use 'rg --files -g "pattern"'
 • NEVER chain commands like 'rg | grep', 'ls | rg', 'find | rg'
+• NEVER request raw content when using Tavily tools
 """
 
             output = {"hookSpecificOutput": {"additionalContext": additional_context}}
