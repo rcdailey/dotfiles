@@ -116,6 +116,7 @@
       "mcp__github__get_pull_request_files",
       "mcp__github__get_pull_request",
       "mcp__github__get_workflow_run",
+      "mcp__ide__getDiagnostics",
       "mcp__octocode__githubGetFileContent",
       "mcp__octocode__githubSearchCode",
       "mcp__octocode__githubSearchRepositories",
@@ -132,10 +133,11 @@
       "mcp__github__list_pull_requests",
       "mcp__github__list_releases",
       "mcp__github__list_workflow_jobs",
+      "mcp__github__list_workflow_runs",
       "mcp__github__search_code",
       "mcp__github__search_issues",
-      "mcp__github__search_repositories",
-      "mcp__github__search_pull_requests"
+      "mcp__github__search_pull_requests",
+      "mcp__github__search_repositories"
     ]
   },
   "statusLine": {
