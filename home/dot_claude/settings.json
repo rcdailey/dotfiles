@@ -4,7 +4,8 @@
   "model": "sonnet",
   "env": {
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "BASH_DEFAULT_TIMEOUT_MS": "300000"
+    "BASH_DEFAULT_TIMEOUT_MS": "300000",
+    "USE_BUILTIN_RIPGREP": "0"
   },
   "permissions": {
     "allow": [

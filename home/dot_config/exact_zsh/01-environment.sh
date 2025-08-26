@@ -31,6 +31,8 @@ export DOCKER_UID DOCKER_GID
 export HUSKY_SKIP_HOOKS=1 # For legacy purposes
 export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
 
+export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
+
 # Homebrew - disable new casks/formula messages and analytics
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_BOOTSNAP=1

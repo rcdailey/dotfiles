@@ -1,0 +1,23 @@
+# Ripgrep configuration file
+# This file is processed line-by-line as command-line arguments
+
+# Search hidden files by default (dotfiles like .gitignore, .github/, etc.)
+--hidden
+
+# Exclude .git directory from searches (still ignores other VCS-ignored content)
+--glob=!.git/*
+
+# Smart case matching: case-insensitive unless pattern contains uppercase
+--smart-case
+
+# Show line numbers for context
+--line-number
+
+# Limit line length to prevent extremely long lines from cluttering output
+--max-columns=150
+
+# Show column numbers for precise location
+--column
+
+# Use heading format for better readability (groups matches by file)
+--heading
