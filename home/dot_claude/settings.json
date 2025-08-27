@@ -129,16 +129,7 @@
     "deny": [
       "Bash(git push:*)",
       "WebFetch",
-      "WebSearch",
-      "mcp__github__list_discussions",
-      "mcp__github__list_pull_requests",
-      "mcp__github__list_releases",
-      "mcp__github__list_workflow_jobs",
-      "mcp__github__list_workflow_runs",
-      "mcp__github__search_code",
-      "mcp__github__search_issues",
-      "mcp__github__search_pull_requests",
-      "mcp__github__search_repositories"
+      "WebSearch"
     ]
   },
   "statusLine": {
@@ -167,6 +158,33 @@
       },
       {
         "matcher": "mcp__tavily__*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/tool-redirections.py"
+          }
+        ]
+      },
+      {
+        "matcher": "LS",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/tool-redirections.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Search",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/tool-redirections.py"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__github__*",
         "hooks": [
           {
             "type": "command",

@@ -54,18 +54,77 @@ REDIRECTIONS = [
         message="Use 'sops set' instead of 'sops --set'\nCorrect: sops set file.sops.yaml '[\"section\"][\"key\"]' '\"value\"'",
         examples=["sops --set file.yaml key value"],
     ),
+    RedirectionRule(
+        pattern=re.compile(r"\bgh\s+api\b"),
+        message="Use specific gh commands instead of 'gh api' for better usability and reliability\nExamples: 'gh pr list', 'gh issue list', 'gh release list', 'gh run list'",
+        examples=["gh api repos/:owner/:repo/pulls", "gh api graphql"],
+    ),
 ]
 
 # Tavily MCP restrictions
 TAVILY_RESTRICTIONS = [
     RedirectionRule(
         pattern=re.compile(r"(?<!docs\.)github\.com", re.IGNORECASE),
-        message="Use GitHub MCP tools (PRIORITY 1) for GitHub repository content. Only use 'gh' CLI for list operations when MCP tools unavailable.",
+        message="Use Octocode tools (PRIORITY 1) for GitHub repository analysis: githubSearchCode, githubSearchRepositories, githubGetFileContent, githubViewRepoStructure. For single items use standard GitHub MCP tools. Only use 'gh' CLI for listing operations.",
         examples=[
             "github.com/user/repo",
             "github.com/org/project",
             "https://github.com/example",
+            "repository analysis",
+            "code search across repos",
         ],
+    ),
+]
+
+# GitHub MCP tool redirections
+GITHUB_MCP_REDIRECTIONS = [
+    RedirectionRule(
+        pattern=re.compile(r"mcp__github__search_code"),
+        message="Use 'mcp__octocode__githubSearchCode' instead of mcp__github__search_code for superior GitHub code search with bulk operations, filtering, and optimized token usage.",
+        examples=[
+            "searching code across repositories",
+            "finding specific functions or patterns",
+        ],
+    ),
+    RedirectionRule(
+        pattern=re.compile(r"mcp__github__search_repositories"),
+        message="Use 'mcp__octocode__githubSearchRepositories' instead of mcp__github__search_repositories for comprehensive repository discovery with quality filtering and bulk operations.",
+        examples=["finding repositories by topic", "discovering similar projects"],
+    ),
+    RedirectionRule(
+        pattern=re.compile(r"mcp__github__search_pull_requests"),
+        message="Use 'mcp__octocode__githubSearchPullRequests' instead of mcp__github__search_pull_requests for advanced PR analysis with filtering and comprehensive metadata.",
+        examples=["analyzing pull request patterns", "finding PRs by criteria"],
+    ),
+    RedirectionRule(
+        pattern=re.compile(r"mcp__github__search_issues"),
+        message="Use 'gh search issues' instead of mcp__github__search_issues for GitHub issue searching with better performance and native CLI integration.",
+        examples=["finding issues by criteria", "searching issue content"],
+    ),
+    RedirectionRule(
+        pattern=re.compile(r"mcp__github__list_pull_requests"),
+        message="Use 'gh pr list' instead of mcp__github__list_pull_requests for listing pull requests with better performance and native CLI integration.",
+        examples=["listing repository PRs", "filtering PRs by status"],
+    ),
+    RedirectionRule(
+        pattern=re.compile(r"mcp__github__list_releases"),
+        message="Use 'gh release list' instead of mcp__github__list_releases for listing releases with better performance and native CLI integration.",
+        examples=["listing repository releases", "checking latest versions"],
+    ),
+    RedirectionRule(
+        pattern=re.compile(r"mcp__github__list_workflow_jobs"),
+        message="Use 'gh run list' instead of mcp__github__list_workflow_jobs for workflow information with better performance and native CLI integration.",
+        examples=["checking workflow job status", "monitoring CI/CD runs"],
+    ),
+    RedirectionRule(
+        pattern=re.compile(r"mcp__github__list_workflow_runs"),
+        message="Use 'gh run list' instead of mcp__github__list_workflow_runs for workflow run information with better performance and native CLI integration.",
+        examples=["listing workflow runs", "checking CI/CD history"],
+    ),
+    RedirectionRule(
+        pattern=re.compile(r"mcp__github__list_discussions"),
+        message="Use 'mcp__github__get_discussion' for individual discussion retrieval. For comprehensive discussion analysis, combine with Octocode tools for repository exploration.",
+        examples=["retrieving specific discussions", "analyzing discussion content"],
     ),
 ]
 
@@ -208,6 +267,18 @@ def main() -> None:
     tool_name = input_data.get("tool_name", "")
     command = input_data.get("tool_input", {}).get("command", "")
 
+    # Block LS tool - require rg instead
+    if tool_name == "LS":
+        error_msg = "TOOL USAGE VIOLATION: Use 'rg --files' or 'rg --files -g pattern' instead of LS tool for file listing"
+        print(error_msg, file=sys.stderr)
+        sys.exit(2)
+
+    # Block Search tool - require rg instead
+    if tool_name == "Search":
+        error_msg = 'TOOL USAGE VIOLATION: Use \'rg\' instead of Search tool for content searching\nExamples: rg "pattern", rg -i "pattern" (case insensitive), rg "pattern" --type js (file type), rg -A3 -B3 "pattern" (with context)'
+        print(error_msg, file=sys.stderr)
+        sys.exit(2)
+
     # Process Bash commands
     if tool_name == "Bash" and command:
         # Skip validation for git and ssh commands to avoid false positives
@@ -218,6 +289,15 @@ def main() -> None:
         for rule in REDIRECTIONS:
             if rule.pattern.search(command):
                 error_msg = f"TOOL USAGE VIOLATION: {rule.message}"
+                print(error_msg, file=sys.stderr)
+                sys.exit(2)
+
+    # Process GitHub MCP tools
+    elif tool_name.startswith("mcp__github__"):
+        # Check each GitHub MCP redirection pattern
+        for rule in GITHUB_MCP_REDIRECTIONS:
+            if rule.pattern.search(tool_name):
+                error_msg = f"GITHUB MCP TOOL VIOLATION: {rule.message}"
                 print(error_msg, file=sys.stderr)
                 sys.exit(2)
 
