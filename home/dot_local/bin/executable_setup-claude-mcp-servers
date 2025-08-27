@@ -1,8 +1,43 @@
 #!/usr/bin/env python3
-"""Claude Code MCP Server Management Script"""
+"""Claude Code MCP Server Management Script
+
+IMPLEMENTATION GUIDANCE FOR CONTRIBUTORS:
+=========================================
+
+This script follows a clean, deterministic architecture for MCP server configuration.
+When adding new transport types, follow these patterns:
+
+TRANSPORT TYPES:
+- uvx: Package-based installation via uvx (uvx_package field)
+- npx: Package-based installation via npx (npx_package field)
+- script: Existing setup script execution (setup_script field)
+- http: Direct HTTP transport to remote MCP services (http field)
+- bridge: Stdio transport via bridge script to remote services (bridge field)
+
+ADDING NEW TRANSPORTS:
+1. Add field to Server dataclass (e.g., "my_transport: str = None")
+2. Create setup function (e.g., "setup_my_transport(name, server, dry_run)")
+3. Add to setup decision tree in setup_server() with elif clause
+4. Update dry-run logic to show what would be done
+
+CONFIGURATION EXAMPLES:
+- HTTP: {"name": "api", "http": "https://api.service.com/mcp", "scope": "user"}
+- Bridge: {"name": "remote", "bridge": "/path/to/bridge.js", "env": "KEY=value"}
+- NPX: {"name": "tool", "npx": "@package/mcp-server", "env": "API_KEY=xyz"}
+
+PRINCIPLES:
+- Keep it deterministic: Each server config has exactly one transport type
+- No custom_setup functions: Use standard patterns only
+- Consistent parameter handling: env, scope, extra_args work the same way
+- Clean separation: Each transport type has its own handler function
+
+ENVIRONMENT VARIABLES:
+Use resolve_env_var() helper for rbw/environment variable expansion in env strings.
+"""
 
 import sys
 import subprocess
+import os
 
 
 # Auto-install dependencies
@@ -57,6 +92,13 @@ MCP_SERVERS = [
     {
         "name": "sequential-thinking",
         "npx": "@modelcontextprotocol/server-sequential-thinking",
+    },
+    # MCP Memory Service - semantic memory via bridge transport
+    {
+        "name": "memory",
+        "bridge": "https://raw.githubusercontent.com/doobidoo/mcp-memory-service/main/examples/http-mcp-bridge.js",
+        "env": "MCP_MEMORY_HTTP_ENDPOINT=https://mcp-memory.dailey.app/api",
+        "args": "user",  # scope
     },
 ]
 
@@ -117,6 +159,85 @@ class Server:
     uvx_package: str = None
     npx_package: str = None
     env_vars: str = None
+    http: str = None
+    bridge: str = None
+
+
+def setup_http_transport(name: str, server: Server, dry_run: bool = False):
+    """Set up MCP server using HTTP transport."""
+    if dry_run:
+        scope_info = f" --scope {server.extra_args}" if server.extra_args else ""
+        console.print(
+            f"[blue](DRY RUN) Would add {name} MCP server via HTTP transport to {server.http}{scope_info}[/blue]"
+        )
+        return
+
+    console.print(f"[blue]Adding {name} MCP server via HTTP transport...[/blue]")
+
+    # Build command arguments
+    args = ["--transport", "http", name, server.http]
+
+    # Add scope if specified in extra_args
+    if server.extra_args:
+        args.extend(["--scope", server.extra_args])
+
+    # Add the MCP server using HTTP transport
+    sh.claude.mcp.add(*args)
+
+
+def setup_bridge_transport(name: str, server: Server, dry_run: bool = False):
+    """Set up MCP server using bridge transport (stdio with bridge script)."""
+    import urllib.request
+
+    if dry_run:
+        env_info = f" with env vars '{server.env_vars}'" if server.env_vars else ""
+        console.print(
+            f"[blue](DRY RUN) Would setup {name} using bridge script {server.bridge}{env_info}[/blue]"
+        )
+        return
+
+    console.print(f"[blue]Setting up {name} using bridge transport...[/blue]")
+
+    # Handle bridge script download if it's a URL
+    bridge_path = server.bridge
+    if server.bridge.startswith("http"):
+        # Download bridge script to standard location
+        bridge_dir = os.path.expanduser("~/.local/share/mcp-bridges")
+        os.makedirs(bridge_dir, exist_ok=True)
+        bridge_filename = server.bridge.split("/")[-1]
+        bridge_path = os.path.join(bridge_dir, bridge_filename)
+
+        console.print(f"[blue]Downloading bridge script to {bridge_path}...[/blue]")
+        try:
+            urllib.request.urlretrieve(server.bridge, bridge_path)
+            os.chmod(bridge_path, 0o755)
+        except Exception as e:
+            raise Exception(f"Failed to download bridge script: {e}")
+    else:
+        # Expand tilde in local paths
+        bridge_path = os.path.expanduser(server.bridge)
+        if not os.path.exists(bridge_path):
+            raise Exception(f"Bridge script not found: {bridge_path}")
+
+    console.print(f"[blue]Adding {name} MCP server via bridge...[/blue]")
+
+    # Build command arguments
+    args = [name]
+
+    # Add scope if specified in extra_args
+    if server.extra_args:
+        args.extend(["--scope", server.extra_args])
+
+    # Add environment variables
+    if server.env_vars:
+        resolved_env = resolve_env_var(server.env_vars)
+        args.extend(["--env", resolved_env])
+
+    # Add stdio transport and bridge command
+    args.extend(["--", "node", bridge_path])
+
+    # Add the MCP server using bridge transport
+    sh.claude.mcp.add(*args)
 
 
 # Convert simple config to Server objects
@@ -129,30 +250,66 @@ for config in MCP_SERVERS:
         uvx_package=config.get("uvx"),
         npx_package=config.get("npx"),
         env_vars=config.get("env"),
+        http=config.get("http"),
+        bridge=config.get("bridge"),
     )
 
 
 def get_current_servers() -> Dict[str, dict]:
     """Get currently configured MCP servers."""
     try:
-        result = sh.claude.mcp.list(_tty_out=False)
-        servers = {}
+        # Use subprocess instead of sh library for better control
+        result = subprocess.run(
+            ["claude", "mcp", "list"], capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            return {}
 
-        for line in str(result).strip().split("\n"):
+        servers = {}
+        for line in result.stdout.strip().split("\n"):
             if ":" in line and not line.startswith("Checking"):
                 name = line.split(":")[0].strip()
                 if name:
                     try:
-                        details = sh.claude.mcp.get(name, _tty_out=False)
-                        servers[name] = {"details": str(details)}
+                        details_result = subprocess.run(
+                            ["claude", "mcp", "get", name],
+                            capture_output=True,
+                            text=True,
+                        )
+                        if details_result.returncode == 0:
+                            config = parse_mcp_config(details_result.stdout)
+                            servers[name] = config
+                        else:
+                            servers[name] = {"command": "unknown", "arguments": []}
                     except Exception:
                         console.print(
                             f"[yellow]Warning: Could not get details for {name}[/yellow]"
                         )
+                        servers[name] = {"command": "unknown", "arguments": []}
 
         return servers
     except Exception:
         return {}
+
+
+def parse_mcp_config(config_str: str) -> dict:
+    """Parse claude mcp get output into structured config."""
+    config = {"command": "", "arguments": [], "type": ""}
+
+    for line in config_str.split("\n"):
+        line = line.strip()
+        if line.startswith("Type: "):
+            config["type"] = line.replace("Type: ", "")
+        elif line.startswith("Command: "):
+            config["command"] = line.replace("Command: ", "")
+        elif line.startswith("Args: "):
+            args_str = line.replace("Args: ", "")
+            config["arguments"] = [args_str] if args_str else []
+        elif line.startswith("URL: "):
+            # For HTTP transport
+            config["url"] = line.replace("URL: ", "")
+
+    return config
 
 
 def analyze_state(current: Dict[str, dict]) -> tuple[List[str], List[str]]:
@@ -162,16 +319,75 @@ def analyze_state(current: Dict[str, dict]) -> tuple[List[str], List[str]]:
 
     for name in DESIRED_SERVERS:
         if name in current:
-            up_to_date.append(name)
+            # Server exists, but check if configuration matches
+            if needs_update(name, current[name]):
+                to_add.append(name)  # Will remove and re-add
+            else:
+                up_to_date.append(name)
         else:
             to_add.append(name)
 
     return to_add, up_to_date
 
 
-def setup_server(name: str, dry_run: bool = False):
+def needs_update(name: str, current_config: dict) -> bool:
+    """Check if server configuration needs updating."""
+    server = DESIRED_SERVERS[name]
+    current_command = current_config.get("command", "")
+    current_args = current_config.get("arguments", [])
+    current_type = current_config.get("type", "")
+
+    # Check transport type changes
+    if server.npx_package:
+        # NPX servers should have command=npx and package name in args
+        if current_command != "npx":
+            return True
+        # Check if package name appears anywhere in the args string
+        args_str = " ".join(current_args)
+        return server.npx_package not in args_str
+
+    elif server.uvx_package:
+        # UVX servers should have command=uvx and package name in args
+        if current_command != "uvx":
+            return True
+        args_str = " ".join(current_args)
+        return server.uvx_package not in args_str
+
+    elif server.setup_script:
+        # Script-based servers use custom setup - check if they exist at all
+        # If they exist, assume they're correct (scripts handle their own logic)
+        return False
+
+    elif server.http:
+        # HTTP transport should have type=http
+        return current_type != "http"
+
+    elif server.bridge:
+        # Bridge transport uses stdio with node command
+        return current_command != "node"
+
+    return False
+
+
+def setup_server(
+    name: str, dry_run: bool = False, current_servers: Dict[str, dict] = None
+):
     """Set up a server using its configured script or pip package."""
     server = DESIRED_SERVERS[name]
+
+    # Check if server already exists and remove it first if updating
+    if current_servers is None:
+        current_servers = get_current_servers()
+    if name in current_servers:
+        if dry_run:
+            console.print(
+                f"[yellow](DRY RUN) Would remove existing {name} MCP server before updating[/yellow]"
+            )
+        else:
+            console.print(
+                f"[yellow]Removing existing {name} MCP server for update...[/yellow]"
+            )
+            sh.claude.mcp.remove(name)
 
     if dry_run:
         if server.setup_script:
@@ -188,6 +404,10 @@ def setup_server(name: str, dry_run: bool = False):
             console.print(
                 f"[blue](DRY RUN) Would add {name} MCP server using npx {server.npx_package}{env_info}[/blue]"
             )
+        elif server.http:
+            setup_http_transport(name, server, dry_run=True)
+        elif server.bridge:
+            setup_bridge_transport(name, server, dry_run=True)
         return
 
     console.print(f"[blue]Setting up {name}...[/blue]")
@@ -243,6 +463,12 @@ def setup_server(name: str, dry_run: bool = False):
 
             # Add the MCP server using npx command
             sh.claude.mcp.add(*args)
+        elif server.http:
+            # Use HTTP transport
+            setup_http_transport(name, server, dry_run=False)
+        elif server.bridge:
+            # Use bridge transport
+            setup_bridge_transport(name, server, dry_run=False)
 
         console.print(f"[green]✅ {name} configured successfully[/green]")
     except typer.Exit:
@@ -268,7 +494,10 @@ def show_status(
         table.add_row(name, "✅ Configured", "None needed")
 
     for name in to_add:
-        table.add_row(name, "❌ Missing", "Will add")
+        if name in current:
+            table.add_row(name, "🔄 Update needed", "Will update")
+        else:
+            table.add_row(name, "❌ Missing", "Will add")
 
     console.print(table)
 
@@ -308,7 +537,7 @@ def sync(
     console.print(f"\n[blue]Setting up {len(to_add)} server(s)...[/blue]")
     try:
         for name in to_add:
-            setup_server(name, dry_run)
+            setup_server(name, dry_run, current)
     except typer.Exit:
         # Propagate rbw authentication failures immediately
         raise
