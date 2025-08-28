@@ -51,7 +51,6 @@ alias keygen-ed25519="ssh-keygen -t ed25519 -a 100 -P ''"
 
 # Platform-specific aliases (Windows/WSL)
 alias npp="notepad++ -multiInst -nosession -noPlugin"
-alias clip="cat > /dev/clipboard"
 alias paste="cat /dev/clipboard"
 
 # Directory navigation (optional with zsh AUTO_CD feature)
