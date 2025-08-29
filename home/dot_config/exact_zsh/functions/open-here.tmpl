@@ -1,0 +1,8 @@
+#!/usr/bin/env zsh
+# Cross-platform function to open current directory in file manager
+
+{{- if eq .chezmoi.os "darwin" }}
+open .
+{{- else if eq .chezmoi.os "windows" }}
+explorer .
+{{- end }}

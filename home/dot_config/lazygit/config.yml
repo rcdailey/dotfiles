@@ -51,3 +51,41 @@ customCommands:
   context: remoteBranches
   description: Fast-forward merge selected remote branch to current branch
   output: log
+- key: x
+  command: git format-patch -1 {{.SelectedCommit.Hash}}
+  context: commits,subCommits
+  description: Create patch file for selected commit
+  output: popup
+- key: X
+  description: Patch creation menu
+  commandMenu:
+  - key: s
+    command: git format-patch -1 {{.SelectedCommit.Hash}}
+    context: commits,subCommits
+    description: Single commit patch (current directory)
+    output: popup
+  - key: d
+    command: git format-patch -1 {{.SelectedCommit.Hash}} -o {{.Form.OutputDir | quote}}
+    context: commits,subCommits
+    description: Single commit patch (custom directory)
+    output: popup
+    prompts:
+    - type: input
+      title: Output directory for patch file
+      key: OutputDir
+      initialValue: "patches"
+  - key: r
+    command: git format-patch {{.SelectedCommitRange.From}}^..{{.SelectedCommitRange.To}}
+    context: commits,subCommits
+    description: Range patch (selected commits)
+    output: popup
+- key: <c-x>
+  command: git format-patch {{.SelectedCommitRange.From}}^..{{.SelectedCommitRange.To}}
+  context: commits,subCommits
+  description: Create patch files for selected commit range
+  output: popup
+- key: O
+  command: open-here
+  context: global
+  description: Open repository directory in file manager
+  output: none
