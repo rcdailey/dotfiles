@@ -12,6 +12,7 @@ TRANSPORT TYPES:
 - npx: Package-based installation via npx (npx_package field)
 - script: Existing setup script execution (setup_script field)
 - http: Direct HTTP transport to remote MCP services (http field)
+- sse: Server-Sent Events transport to remote MCP services (sse field)
 - bridge: Stdio transport via bridge script to remote services (bridge field)
 
 ADDING NEW TRANSPORTS:
@@ -22,6 +23,7 @@ ADDING NEW TRANSPORTS:
 
 CONFIGURATION EXAMPLES:
 - HTTP: {"name": "api", "http": "https://api.service.com/mcp", "scope": "user"}
+- SSE: {"name": "rider", "sse": "http://localhost:64342/sse", "scope": "user"}
 - Bridge: {"name": "remote", "bridge": "/path/to/bridge.js", "env": "KEY=value"}
 - NPX: {"name": "tool", "npx": "@package/mcp-server", "env": "API_KEY=xyz"}
 
@@ -93,11 +95,10 @@ MCP_SERVERS = [
         "name": "sequential-thinking",
         "npx": "@modelcontextprotocol/server-sequential-thinking",
     },
-    # MCP Memory Service - semantic memory via bridge transport
+    # Rider MCP - IDE integration via SSE transport
     {
-        "name": "memory",
-        "bridge": "https://raw.githubusercontent.com/doobidoo/mcp-memory-service/main/examples/http-mcp-bridge.js",
-        "env": "MCP_MEMORY_HTTP_ENDPOINT=https://mcp-memory.dailey.app/api",
+        "name": "rider",
+        "sse": "http://localhost:64342/sse",
         "args": "user",  # scope
     },
 ]
@@ -160,6 +161,7 @@ class Server:
     npx_package: str = None
     env_vars: str = None
     http: str = None
+    sse: str = None
     bridge: str = None
 
 
@@ -182,6 +184,36 @@ def setup_http_transport(name: str, server: Server, dry_run: bool = False):
         args.extend(["--scope", server.extra_args])
 
     # Add the MCP server using HTTP transport
+    sh.claude.mcp.add(*args)
+
+
+def setup_sse_transport(name: str, server: Server, dry_run: bool = False):
+    """Set up MCP server using SSE transport."""
+    if dry_run:
+        scope_info = f" --scope {server.extra_args}" if server.extra_args else ""
+        console.print(
+            f"[blue](DRY RUN) Would add {name} MCP server via SSE transport to {server.sse}{scope_info}[/blue]"
+        )
+        return
+
+    console.print(f"[blue]Adding {name} MCP server via SSE transport...[/blue]")
+
+    # Build command arguments
+    args = [name]
+
+    # Add scope if specified in extra_args
+    if server.extra_args:
+        args.extend(["-s", server.extra_args])
+
+    # Add environment variables
+    if server.env_vars:
+        resolved_env = resolve_env_var(server.env_vars)
+        args.extend(["-e", resolved_env])
+
+    # Add SSE transport and URL
+    args.extend(["-t", "sse", server.sse])
+
+    # Add the MCP server using SSE transport
     sh.claude.mcp.add(*args)
 
 
@@ -251,6 +283,7 @@ for config in MCP_SERVERS:
         npx_package=config.get("npx"),
         env_vars=config.get("env"),
         http=config.get("http"),
+        sse=config.get("sse"),
         bridge=config.get("bridge"),
     )
 
@@ -362,6 +395,10 @@ def needs_update(name: str, current_config: dict) -> bool:
         # HTTP transport should have type=http
         return current_type != "http"
 
+    elif server.sse:
+        # SSE transport should have type=sse
+        return current_type != "sse"
+
     elif server.bridge:
         # Bridge transport uses stdio with node command
         return current_command != "node"
@@ -406,6 +443,8 @@ def setup_server(
             )
         elif server.http:
             setup_http_transport(name, server, dry_run=True)
+        elif server.sse:
+            setup_sse_transport(name, server, dry_run=True)
         elif server.bridge:
             setup_bridge_transport(name, server, dry_run=True)
         return
@@ -466,6 +505,9 @@ def setup_server(
         elif server.http:
             # Use HTTP transport
             setup_http_transport(name, server, dry_run=False)
+        elif server.sse:
+            # Use SSE transport
+            setup_sse_transport(name, server, dry_run=False)
         elif server.bridge:
             # Use bridge transport
             setup_bridge_transport(name, server, dry_run=False)
