@@ -76,11 +76,11 @@ TAVILY_RESTRICTIONS = [
     ),
 ]
 
-# GitHub MCP tool redirections
-GITHUB_MCP_REDIRECTIONS = [
+# GitHub CLI enforcements (replacing GitHub MCP tools)
+GITHUB_CLI_REDIRECTIONS = [
     RedirectionRule(
         pattern=re.compile(r"mcp__github__search_code"),
-        message="Use 'mcp__octocode__githubSearchCode' instead of mcp__github__search_code for superior GitHub code search with bulk operations, filtering, and optimized token usage.",
+        message="Use 'mcp__octocode__githubSearchCode' instead for superior GitHub code search with bulk operations, filtering, and optimized token usage.",
         examples=[
             "searching code across repositories",
             "finding specific functions or patterns",
@@ -88,43 +88,58 @@ GITHUB_MCP_REDIRECTIONS = [
     ),
     RedirectionRule(
         pattern=re.compile(r"mcp__github__search_repositories"),
-        message="Use 'mcp__octocode__githubSearchRepositories' instead of mcp__github__search_repositories for comprehensive repository discovery with quality filtering and bulk operations.",
+        message="Use 'mcp__octocode__githubSearchRepositories' instead for comprehensive repository discovery with quality filtering and bulk operations.",
         examples=["finding repositories by topic", "discovering similar projects"],
     ),
     RedirectionRule(
         pattern=re.compile(r"mcp__github__search_pull_requests"),
-        message="Use 'mcp__octocode__githubSearchPullRequests' instead of mcp__github__search_pull_requests for advanced PR analysis with filtering and comprehensive metadata.",
+        message="Use 'gh search prs' for PR searching with better performance and native CLI integration.",
         examples=["analyzing pull request patterns", "finding PRs by criteria"],
     ),
     RedirectionRule(
         pattern=re.compile(r"mcp__github__search_issues"),
-        message="Use 'gh search issues' instead of mcp__github__search_issues for GitHub issue searching with better performance and native CLI integration.",
+        message="Use 'gh search issues' for GitHub issue searching with better performance and native CLI integration.",
         examples=["finding issues by criteria", "searching issue content"],
     ),
     RedirectionRule(
         pattern=re.compile(r"mcp__github__list_pull_requests"),
-        message="Use 'gh pr list' instead of mcp__github__list_pull_requests for listing pull requests with better performance and native CLI integration.",
+        message="Use 'gh pr list' for listing pull requests with better performance and native CLI integration.",
         examples=["listing repository PRs", "filtering PRs by status"],
     ),
     RedirectionRule(
+        pattern=re.compile(r"mcp__github__list_issues"),
+        message="Use 'gh issue list' for listing issues with better performance and native CLI integration.",
+        examples=["listing repository issues", "filtering issues by status"],
+    ),
+    RedirectionRule(
         pattern=re.compile(r"mcp__github__list_releases"),
-        message="Use 'gh release list' instead of mcp__github__list_releases for listing releases with better performance and native CLI integration.",
+        message="Use 'gh release list' for listing releases with better performance and native CLI integration.",
         examples=["listing repository releases", "checking latest versions"],
     ),
     RedirectionRule(
         pattern=re.compile(r"mcp__github__list_workflow_jobs"),
-        message="Use 'gh run list' instead of mcp__github__list_workflow_jobs for workflow information with better performance and native CLI integration.",
+        message="Use 'gh run list' for workflow information with better performance and native CLI integration.",
         examples=["checking workflow job status", "monitoring CI/CD runs"],
     ),
     RedirectionRule(
         pattern=re.compile(r"mcp__github__list_workflow_runs"),
-        message="Use 'gh run list' instead of mcp__github__list_workflow_runs for workflow run information with better performance and native CLI integration.",
+        message="Use 'gh run list' for workflow run information with better performance and native CLI integration.",
         examples=["listing workflow runs", "checking CI/CD history"],
     ),
     RedirectionRule(
         pattern=re.compile(r"mcp__github__list_discussions"),
-        message="Use 'mcp__github__get_discussion' for individual discussion retrieval. For comprehensive discussion analysis, combine with Octocode tools for repository exploration.",
-        examples=["retrieving specific discussions", "analyzing discussion content"],
+        message="Use 'gh api' with GraphQL for discussion operations with better performance and native CLI integration.",
+        examples=["retrieving discussions", "analyzing discussion content"],
+    ),
+    RedirectionRule(
+        pattern=re.compile(r"mcp__github__get_"),
+        message="Use appropriate 'gh' CLI commands for GitHub data retrieval: 'gh issue view', 'gh pr view', 'gh release view', 'gh run view', etc.",
+        examples=[
+            "getting single issues",
+            "viewing PRs",
+            "checking releases",
+            "workflow details",
+        ],
     ),
 ]
 
@@ -292,12 +307,12 @@ def main() -> None:
                 print(error_msg, file=sys.stderr)
                 sys.exit(2)
 
-    # Process GitHub MCP tools
+    # Process GitHub MCP tools (now redirected to gh CLI)
     elif tool_name.startswith("mcp__github__"):
-        # Check each GitHub MCP redirection pattern
-        for rule in GITHUB_MCP_REDIRECTIONS:
+        # Check each GitHub CLI redirection pattern
+        for rule in GITHUB_CLI_REDIRECTIONS:
             if rule.pattern.search(tool_name):
-                error_msg = f"GITHUB MCP TOOL VIOLATION: {rule.message}"
+                error_msg = f"GITHUB TOOL VIOLATION: {rule.message}"
                 print(error_msg, file=sys.stderr)
                 sys.exit(2)
 

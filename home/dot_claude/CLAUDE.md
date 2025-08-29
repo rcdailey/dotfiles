@@ -77,35 +77,35 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
 
 **COMPREHENSIVE TOOL DECISION MATRIX - VIOLATIONS AUTOMATICALLY BLOCKED BY HOOKS:**
 
-**LISTING Operations (High Token Cost - Use CLI Only):**
+**LISTING Operations (Use gh CLI Only):**
 
-- Issues: `gh issue list` ✅ | `mcp__github__list_issues` ❌ BLOCKED - Pull Requests: `gh pr list` ✅ |
-`mcp__github__list_pull_requests` ❌ BLOCKED - Workflows: `gh workflow list` ✅ |
-`mcp__github__list_workflow_jobs` ❌ BLOCKED - Discussions: `gh api graphql` ✅ |
-`mcp__github__list_discussions` ❌ BLOCKED - Releases: `gh release list` ✅ |
-`mcp__github__list_releases` ❌ BLOCKED
+- Issues: `gh issue list`, `gh issue view [number]`
+- Pull Requests: `gh pr list`, `gh pr view [number]`
+- Workflows: `gh workflow list`, `gh run list`, `gh run view [id]`
+- Discussions: `gh api graphql` (for complex queries)
+- Releases: `gh release list`, `gh release view [tag]`
 
-**SEARCHING Operations (Optimization Required):**
+**SEARCHING Operations (Optimization Hierarchy):**
 
-- Code Search: `mcp__octocode__githubSearchCode` ✅ | `mcp__github__search_code` ❌ BLOCKED -
-Repository Search: `mcp__octocode__githubSearchRepositories` ✅ | `mcp__github__search_repositories`
-❌ BLOCKED - PR Search: `mcp__octocode__githubSearchPullRequests` ✅ |
-`mcp__github__search_pull_requests` ❌ BLOCKED - Issue Search: `gh search issues` ✅ |
-`mcp__github__search_issues` ❌ BLOCKED
+- Code Search: `mcp__octocode__githubSearchCode` (PREFERRED for bulk/advanced)
+- Repository Search: `mcp__octocode__githubSearchRepositories` (PREFERRED for bulk/advanced)
+- Issue Search: `gh search issues`, `gh issue list --search`
+- PR Search: `gh search prs`, `gh pr list --search`
 
-**GETTING Single Items (Efficient - Allowed):**
+**SINGLE ITEM RETRIEVAL (gh CLI Commands):**
 
-- Single Issue: `mcp__github__get_issue` ✅
-- Single PR: `mcp__github__get_pull_request` ✅
-- File Contents: `mcp__github__get_file_contents` ✅ or `mcp__octocode__githubGetFileContent` ✅
-- Commits: `mcp__github__get_commit` ✅
+- Single Issue: `gh issue view [number]`
+- Single PR: `gh pr view [number]`, `gh pr diff [number]`
+- File Contents: `mcp__octocode__githubGetFileContent` (PREFERRED)
+- Commits: `gh api repos/{owner}/{repo}/commits/{sha}`
+- Releases: `gh release view [tag]`
+- Workflows: `gh run view [id]`
 
 **NEVER ALLOWED:**
 
 - WebFetch, Tavily, or web search for github.com repository content
 - General web search for GitHub-specific information
-- Any `mcp__github__list_*` tools (use `gh` CLI instead)
-- `mcp__github__search_code|repositories|pull_requests` (use Octocode instead)
+- ALL `mcp__github__*` tools (completely replaced by gh CLI and octocode)
 
 **Why This Hierarchy:** Prevents costly token usage, ensures fastest response times, and leverages
 the most capable tools for each operation type. All rules are automatically enforced by hooks.

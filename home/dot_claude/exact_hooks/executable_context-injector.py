@@ -14,10 +14,9 @@ def main():
         print("""
 TOOL USAGE REQUIREMENTS (ENFORCED BY HOOKS):
 • Use 'rg' for: text search, file discovery (rg --files -g "pattern")
-• Use 'gh' CLI for: listing issues/PRs/workflows, searching issues
-• Use mcp__octocode__* for: code/repo/PR search (superior to GitHub MCP)
-• Use mcp__github__get_* for: single item retrieval only
-• NEVER use: grep, find -name, command chaining, include_raw_content=true""")
+• Use 'gh' CLI for: all GitHub operations (listing, viewing, searching)
+• Use mcp__octocode__* for: advanced code/repo search (superior performance)
+• NEVER use: grep, find -name, command chaining, include_raw_content=true, GitHub MCP tools""")
 
     except Exception:
         pass  # Silent failure to avoid disrupting workflow
