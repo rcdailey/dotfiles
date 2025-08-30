@@ -1,7 +1,4 @@
-# Set PATH, MANPATH, etc., for Homebrew.
-if [ -n "$HOMEBREW_PREFIX" ] && [ -f "$HOMEBREW_PREFIX/bin/brew" ]; then
-    eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
-fi
+# Homebrew environment setup moved to .zshenv for all shell sessions
 
 # PATH modifications (moved from 05-configuration.sh for performance)
 # Add user's private bin to PATH if it exists

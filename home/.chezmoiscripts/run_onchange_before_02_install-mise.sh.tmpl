@@ -1,0 +1,40 @@
+#!/usr/bin/env zsh
+set -e
+
+# Install mise and ensure it's available for subsequent scripts
+# Script hash: {{ .chezmoi.sourceFile | include | sha256sum }}
+
+# Ensure Homebrew is available from previous script
+{{- if eq .chezmoi.os "darwin" }}
+[[ -f "/opt/homebrew/bin/brew" ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+{{- else }}
+[[ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+{{- end }}
+
+# Check if mise is already installed
+if command -v mise &>/dev/null; then
+  echo "mise already installed: $(mise --version)"
+  exit 0
+fi
+
+echo "Installing mise..."
+
+# Official mise installation script (works on macOS and Linux)
+curl -fsSL https://mise.run | sh
+
+# Add mise to PATH for subsequent scripts
+export PATH="$HOME/.local/bin:$PATH"
+
+# Source mise environment for immediate availability
+if command -v mise &>/dev/null; then
+  # Set up mise environment (console-safe)
+  eval "$(mise env -s zsh)" 2>/dev/null || true
+  # Activate mise for project-aware functionality
+  eval "$(mise activate zsh)" 2>/dev/null || true
+  echo "mise installed and available: $(mise --version)"
+else
+  echo "ERROR: mise installation failed or not in PATH" >&2
+  exit 1
+fi
+
+echo "mise installation complete!"

@@ -93,13 +93,15 @@ case "$(uname -s)" in
 esac
 echo "BROWSER set to: $BROWSER"
 
-# Check if already authenticated
-if gh auth status &> /dev/null; then
-    echo "Already authenticated with GitHub"
-else
-    echo "Authenticating with GitHub..."
-    echo "If browser doesn't open automatically, you'll see a device code and URL to visit manually."
-    gh auth login --git-protocol ssh --skip-ssh-key --web
+# Check if already authenticated - fail fast if not
+if ! gh auth status &> /dev/null; then
+    echo "❌ ERROR: GitHub CLI authentication required but not found."
+    echo ""
+    echo "Please authenticate with GitHub first by running:"
+    echo "  gh auth login"
+    echo ""
+    echo "Then re-run this script."
+    exit 1
 fi
 
 echo "GitHub authentication verified"

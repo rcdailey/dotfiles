@@ -1,0 +1,77 @@
+# Development tool configuration via mise
+# Fonts are managed separately via Homebrew
+
+[tools]
+# Core Languages
+node = "latest"
+python = "latest"
+rust = "latest"
+go = "latest"
+
+# CLI Development Tools
+"aqua:twpayne/chezmoi" = "latest"
+"npm:@anthropic-ai/claude-code" = "latest"
+"aqua:junegunn/fzf" = "latest"
+"aqua:BurntSushi/ripgrep" = "latest"
+"cargo:eza" = "latest"
+"aqua:dandavison/delta" = "latest"
+"aqua:jqlang/jq" = "latest"
+"aqua:mikefarah/yq" = "latest"
+"aqua:mvdan/sh" = "latest"
+"aqua:koalaman/shellcheck" = "latest"
+"aqua:FiloSottile/age" = "latest"
+"aqua:cli/cli" = "latest"
+"aqua:jesseduffield/lazygit" = "latest"
+"aqua:astral-sh/uv" = "latest"
+"aqua:golangci/golangci-lint" = "latest"
+"aqua:go-task/task" = "latest"
+"aqua:nektos/act" = "latest"
+"pipx:git-filter-repo" = "latest"
+"aqua:google/go-containerregistry" = "latest"
+"aqua:rclone/rclone" = "latest"
+# nmap: Complex system tool, keep in Homebrew
+"pipx:yamllint" = "latest"
+# dnscontrol: Keep in Homebrew (not in aqua registry)
+
+# System Utilities
+"cargo:rbw" = "latest"
+"ubi:tree-sitter/tree-sitter" = "latest"
+"aqua:uutils/coreutils" = "latest"
+
+# Python Tools
+"pipx:pre-commit" = "latest"
+
+# Kubernetes & Cloud Tools
+"aqua:kubernetes/kubectl" = "latest"
+"aqua:derailed/k9s" = "latest"
+"aqua:kubernetes-sigs/kustomize" = "latest"
+"aqua:getsops/sops" = "latest"
+helm = "latest"
+
+{{- if eq .chezmoi.os "darwin" }}
+# macOS-Specific Tools
+"aqua:hashicorp/terraform" = "latest"
+{{- end }}
+
+# Additional Utilities
+{{- if ne .chezmoi.os "darwin" }}
+# Linux-specific alternatives to macOS tools
+# iproute2 (ss command) is available via system package manager
+{{- end }}
+
+[settings]
+# Automatically install missing tools when entering directories
+auto_install = true
+
+# Use parallel downloads for faster installation
+jobs = 4
+
+# Trust configuration files in the user's home directory
+trusted_config_paths = ["~/.config/mise"]
+
+# Enable experimental features for better backend support
+experimental = true
+
+[env]
+# Environment variables can be set here if needed
+# Example: EDITOR = "vim"

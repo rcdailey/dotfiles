@@ -1,0 +1,29 @@
+#!/usr/bin/env zsh
+set -e
+
+# Install Homebrew packages (zsh, fonts) from Brewfile when it changes
+# Brewfile hash: {{ include "Brewfile.tmpl" | sha256sum }}
+# script hash: {{ .chezmoi.sourceFile | include | sha256sum }}
+
+# Ensure Homebrew environment is available
+{{- if eq .chezmoi.os "darwin" }}
+[[ -f "/opt/homebrew/bin/brew" ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+{{- else }}
+[[ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+{{- end }}
+
+if ! command -v brew &>/dev/null; then
+  echo "ERROR: Homebrew not found" >&2
+  exit 1
+fi
+
+export HOMEBREW_BUNDLE_FILE="{{ .chezmoi.homeDir }}/Brewfile"
+
+if [[ ! -f "$HOMEBREW_BUNDLE_FILE" ]]; then
+  echo "ERROR: Brewfile not found at $HOMEBREW_BUNDLE_FILE" >&2
+  exit 1
+fi
+
+echo "Installing Homebrew packages from Brewfile..."
+brew bundle --verbose
+echo "Homebrew package installation complete!"

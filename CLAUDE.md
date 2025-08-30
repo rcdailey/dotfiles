@@ -28,7 +28,8 @@ specific to this repository and are not managed by chezmoi.
 
 **Shell Configuration (Modern Zsh Setup with Optimal Initialization Order):**
 
-- `home/dot_zshenv.tmpl` - XDG Base Directory variables with platform-specific paths (loaded before .zshrc)
+- `home/dot_zshenv.tmpl` - XDG Base Directory variables with platform-specific paths (loaded before
+  .zshrc)
 - `home/dot_zprofile` - Profile-level initialization for login shells
 - `home/dot_zshrc` - Main zsh configuration with critical timing optimizations
 - `home/dot_config/exact_zsh/` - Numbered configuration files loaded in strict sequence:
@@ -72,7 +73,13 @@ specific to this repository and are not managed by chezmoi.
 **Package Management:**
 
 - `home/Brewfile.tmpl` - Homebrew package definitions with templating support
-- `home/.chezmoiscripts/run_onchange_after_install-packages.sh.tmpl` - Automated package installation
+- `home/.chezmoiscripts/run_onchange_before_01_install-homebrew.sh.tmpl` - Homebrew installation
+- `home/.chezmoiscripts/run_onchange_before_02_install-mise.sh.tmpl` - Mise tool installation
+- `home/.chezmoiscripts/run_onchange_before_03_remove-old-brew-packages.sh.tmpl` - Package cleanup
+- `home/.chezmoiscripts/run_onchange_after_03_setup-zsh-shell.sh.tmpl` - Zsh shell setup
+- `home/.chezmoiscripts/run_onchange_after_01_install-mise-tools.sh.tmpl` - Mise tool installation
+- `home/.chezmoiscripts/run_onchange_after_02_install-homebrew-packages.sh.tmpl` - Homebrew package
+  installation
 
 **Tool Configurations:**
 
@@ -110,16 +117,6 @@ Files ending in `.tmpl` are chezmoi templates that can:
 - Review periodically and remove old entries after prune dates
 - Longer retention for major reorganizations (60-90 days)
 - Keep recent entries until confirmed working on all target systems
-
-### External Documentation
-
-**Reference Documentation:**
-
-- `docs/external/` - Comprehensive external tool documentation including:
-  - zsh manual and configuration guides
-  - Plugin documentation (zinit, fzf-tab, powerlevel10k)
-  - Performance optimization guides
-  - Tool-specific references (mise, pre-commit, etc.)
 
 ### Key Features
 

@@ -1,0 +1,41 @@
+#!/usr/bin/env zsh
+set -e
+
+# Install mise development tools when configuration changes
+# mise config hash: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
+# script hash: {{ .chezmoi.sourceFile | include | sha256sum }}
+
+# Ensure mise environment is available (from installation scripts)
+export PATH="$HOME/.local/bin:$PATH"
+
+# Clear any old mise shell functions that might interfere
+unset -f mise 2>/dev/null || true
+
+# Use direct path to avoid shell function conflicts
+MISE_BIN="$HOME/.local/bin/mise"
+
+if [[ -x "$MISE_BIN" ]]; then
+  # Set up mise environment using direct path
+  eval "$($MISE_BIN env -s zsh)" 2>/dev/null || true
+  eval "$($MISE_BIN activate zsh)" 2>/dev/null || true
+else
+  echo "ERROR: mise not found at $MISE_BIN" >&2
+  echo "This script should run after mise installation scripts." >&2
+  exit 1
+fi
+
+echo "mise configuration changed, installing all development tools..."
+
+# Install all tools from mise configuration using direct path
+# This includes programming languages, CLI tools, and chezmoi itself
+$MISE_BIN install --verbose
+
+echo "All mise tools installed successfully!"
+echo ""
+echo "Installed tools include:"
+echo "- Programming languages: $($MISE_BIN ls | grep -E '(node|python)' | wc -l | tr -d ' ') languages"
+echo "- Development tools: All CLI tools for development workflow"
+echo "- System utilities: Cross-platform system tools"
+echo "- Kubernetes tools: kubectl, k9s, kustomize, etc."
+echo ""
+echo "Future updates: Run 'chezmoi update' to update dotfiles and all tools"

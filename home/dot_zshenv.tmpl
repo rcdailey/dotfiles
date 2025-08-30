@@ -14,6 +14,12 @@ export HOMEBREW_PREFIX="/opt/homebrew"
 export HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
 {{- end }}
 
+# Set up Homebrew environment for all shell sessions
+# This is critical for zinit plugin compilation which runs in non-login shells
+if [ -n "$HOMEBREW_PREFIX" ] && [ -f "$HOMEBREW_PREFIX/bin/brew" ]; then
+    eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
+fi
+
 # Core shell behavior (needed by all shell types)
 export HISTFILE=~/.zsh_history
 export HISTSIZE=10000

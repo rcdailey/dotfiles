@@ -1,0 +1,103 @@
+#!/usr/bin/env zsh
+set -e
+
+# Remove development packages from Homebrew (temporary migration script)
+# Script hash: {{ .chezmoi.sourceFile | include | sha256sum }}
+
+# Ensure Homebrew environment is available
+{{- if eq .chezmoi.os "darwin" }}
+[[ -f "/opt/homebrew/bin/brew" ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+{{- else }}
+[[ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+{{- end }}
+
+if ! command -v brew &>/dev/null; then
+  echo "Homebrew not found, skipping package removal"
+  exit 0
+fi
+
+echo "Removing development packages from Homebrew (migrating to mise)..."
+
+# Development packages that mise will now manage
+# These are the exact packages from the original Brewfile.tmpl
+PACKAGES_TO_REMOVE=(
+  # Shell enhancement tools
+  "fzf"
+  "ripgrep"
+  "eza"
+  "git-delta"
+  "jq"
+  "shfmt"
+  "shellcheck"
+  "age"
+
+  # Development tools
+  "gh"
+  "coreutils"
+  "chezmoi"
+  "node"
+  "python"
+  "tree"
+  "uv"
+  "pre-commit"
+  "lazygit"
+  "rbw"
+  "go"
+  "golangci-lint"
+  "go-task"
+  "git-filter-repo"
+  "act"
+  "crane"
+  "rclone"
+  "yamllint"
+
+  # Kubernetes tools
+  "mise"  # Remove old mise if installed via brew
+  "kubectl"
+  "k9s"
+  "kustomize"
+  "yq"
+  "sops"
+  "helm"
+)
+
+{{- if eq .chezmoi.os "darwin" }}
+# macOS-specific packages
+MACOS_PACKAGES=(
+  "hashicorp/tap/terraform"
+  "iproute2mac"
+)
+{{- end }}
+
+# Function to safely remove if package is installed
+safe_remove() {
+  local package="$1"
+
+  # Check if package is installed
+  if brew list --formula 2>/dev/null | grep -q "^${package}$"; then
+    echo "Removing formula: $package"
+    brew uninstall --ignore-dependencies --force "$package" 2>/dev/null || true
+  elif brew list --cask 2>/dev/null | grep -q "^${package}$"; then
+    echo "Removing cask: $package"
+    brew uninstall --force "$package" 2>/dev/null || true
+  fi
+}
+
+# Remove common packages
+for package in "${PACKAGES_TO_REMOVE[@]}"; do
+  safe_remove "$package"
+done
+
+{{- if eq .chezmoi.os "darwin" }}
+# Remove macOS-specific packages
+for package in "${MACOS_PACKAGES[@]}"; do
+  safe_remove "$package"
+done
+{{- end }}
+
+# Cleanup orphaned dependencies and cache
+echo "Cleaning up Homebrew..."
+brew cleanup --prune=all 2>/dev/null || true
+brew autoremove 2>/dev/null || true
+
+echo "Homebrew package removal complete!"

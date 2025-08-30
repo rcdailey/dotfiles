@@ -1,161 +1,52 @@
 # Dotfiles
 
-Personal dotfiles repository managed by chezmoi, featuring a modern zsh configuration with Zinit
-plugin manager, Powerlevel10k theme, and comprehensive development tools.
+Modern dotfiles managed by chezmoi with automated setup, age encryption, and cross-platform support.
 
-## Architecture
+## Quick Start
 
-This repository uses chezmoi with `.chezmoiroot` set to `home/`, meaning only the `home/` directory
-contains managed dotfiles. Key features:
-
-- **Modular zsh configuration** with Zinit plugin manager
-- **Powerlevel10k theme** with instant prompt support
-- **Cross-platform compatibility** with platform-specific overrides
-- **Comprehensive git configuration** with extensive aliases
-- **Custom development scripts** and utilities
-
-### Directory Structure
-
-```txt
-home/
-├── dot_zshrc                    # Main zsh configuration
-├── dot_config/exact_zsh/        # Modular zsh configuration
-│   ├── init/                    # Initialization scripts (load order)
-│   │   ├── 01-zinit.sh          # Zinit plugin manager setup
-│   │   ├── 02-environment.sh    # Environment variables
-│   │   └── 03-plugins.sh        # Plugin loading configuration
-│   ├── aliases.sh               # Command aliases
-│   ├── completion.sh            # Completion settings
-│   ├── functions.sh             # Custom functions
-│   └── platforms/               # Platform-specific overrides
-├── dot_gitconfig.tmpl           # Git configuration with aliases
-├── git-scripts/                 # Custom git utilities
-└── dot_p10k.zsh                 # Powerlevel10k theme configuration
+```bash
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --ssh rcdailey/dotfiles
 ```
 
-## Initial Setup
+This installs chezmoi, clones the repo, and applies all configurations automatically.
 
-### Prerequisites
+## Features
 
-**macOS/Linux - Homebrew:**
+- **Automated Installation**: Scripts handle Homebrew, mise, and shell setup
+- **Age Encryption**: Secure handling of sensitive files
+- **Modern Zsh**: Zinit plugin manager with Powerlevel10k theme
+- **Tool Management**: mise for development tools, minimal Homebrew
+- **Claude Code Integration**: Custom hooks and commands
+- **Git Utilities**: 20+ custom git scripts and extensive aliases
 
-```zsh
-sudo apt update && sudo apt install -y build-essential procps curl file git
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+## Key Tools
 
-**Windows - Chocolatey (PowerShell as Admin):**
-
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-```
-
-### chezmoi Installation & Setup
-
-**Install chezmoi:**
-
-```zsh
-# macOS/Linux
-brew install chezmoi
-
-# Windows
-choco install chezmoi
-```
-
-**Initialize and apply dotfiles:**
-
-```zsh
-chezmoi init rcdailey --ssh --apply
-```
-
-### Post-Installation
-
-After applying dotfiles, your zsh will automatically:
-
-- Install Zinit plugin manager on first run
-- Load Powerlevel10k theme with instant prompt
-- Configure fzf-tab enhanced completion
-- Set up development tool integrations
-
-## Shell Configuration
-
-### Zsh Features
-
-- **Zinit Plugin Manager**: Fast, feature-rich plugin management
-- **Powerlevel10k Theme**: High-performance, customizable prompt
-- **Enhanced Completion**: fzf-tab for interactive completions
-- **History Optimization**: Shared history with deduplication
-- **Smart Aliases**: Essential development shortcuts
-
-### Key Plugins
-
-- `zsh-history-substring-search`: Arrow key history navigation
-- `zsh-autosuggestions`: Command completion suggestions
-- `zsh-syntax-highlighting`: Syntax highlighting for commands
-- `fzf-tab`: Interactive fuzzy completion
-- `lukechilds/zsh-nvm`: Node version management
-
-### Aliases & Functions
-
-```zsh
-# Essential shortcuts
-cm        # chezmoi
-c         # docker compose
-tf        # terraform
-k         # kubectl (from oh-my-zsh plugin)
-
-# Navigation
-1..       # cd ..
-2..       # cd ../..
-# ... up to 8..
-
-# Development
-gi        # gitignore.io integration
-claude    # Claude Code with local override support
-```
+- **chezmoi**: Dotfile management with templating
+- **mise**: Development tool version management
+- **Zinit**: Fast zsh plugin manager
+- **age**: Modern file encryption
+- **Claude Code**: AI-powered development assistant
 
 ## Daily Commands
 
-### chezmoi Management
+```bash
+# chezmoi management
+chezmoi status         # Check for changes
+chezmoi diff          # Preview changes
+chezmoi apply         # Apply changes
+chezmoi update        # Pull and apply
 
-```zsh
-# Quick status check
-chezmoi status
-
-# Preview changes
-chezmoi diff
-
-# Apply changes
-chezmoi apply
-
-# Edit a dotfile
-chezmoi edit ~/.zshrc
-
-# Add new file
-chezmoi add ~/.vimrc
-
-# Update from remote
-chezmoi update
-
-# Git operations
-chezmoi git -- status
-chezmoi git -- add .
-chezmoi git -- commit -m "Update config"
+# Tool updates
+brew upgrade          # Update system packages
+mise upgrade          # Update development tools
+zinit update --all    # Update zsh plugins
 ```
 
-### Zsh-Specific Commands
+## Configuration
 
-```zsh
-# Reload configuration
-exec zsh
+- Uses `.chezmoiroot` set to `home/` directory
+- Age encryption for sensitive files (SSH keys, etc.)
+- Cross-platform support (macOS, Linux, Windows)
+- Environment separation (work/personal/other)
 
-# Configure Powerlevel10k theme
-p10k configure
-
-# Plugin management
-zinit update --all
-zinit status
-
-# Performance analysis
-zsh-bench  # Run performance benchmark
-```
+For detailed information, see `CLAUDE.md` and individual configuration files.

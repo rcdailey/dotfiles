@@ -69,6 +69,11 @@ def ensure_deps():
 
 ensure_deps()
 
+# Force Python to refresh its import cache after installing new packages
+import importlib  # noqa: E402  # Import after ensure_deps() for dependency self-installation
+
+importlib.invalidate_caches()
+
 import typer  # noqa: E402  # Import after ensure_deps() for dependency self-installation
 from rich.console import Console  # noqa: E402  # Import after ensure_deps() for dependency self-installation
 from rich.table import Table  # noqa: E402  # Import after ensure_deps() for dependency self-installation
@@ -457,8 +462,25 @@ def setup_server(
                 console.print(
                     f"[yellow]Warning: Environment variables not supported for script-based servers: {server.env_vars}[/yellow]"
                 )
-            script = getattr(sh, server.setup_script.replace("-", "_"))
-            script(*args)
+
+            # Use subprocess instead of sh library for better error handling
+            script_name = server.setup_script
+            cmd = [script_name] + args
+            result = subprocess.run(cmd, capture_output=True, text=True)
+
+            if result.returncode != 0:
+                # Print the error output for debugging
+                if result.stderr:
+                    console.print(f"[red]Script error output:[/red]\n{result.stderr}")
+                if result.stdout:
+                    console.print(f"[yellow]Script output:[/yellow]\n{result.stdout}")
+                raise Exception(
+                    f"Setup script {script_name} failed with exit code {result.returncode}"
+                )
+
+            # Print successful output
+            if result.stdout:
+                console.print(result.stdout)
         elif server.uvx_package:
             # Use uvx to install and configure the MCP server
             env_info = " with env vars" if server.env_vars else ""
