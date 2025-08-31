@@ -126,6 +126,24 @@ Files ending in `.tmpl` are chezmoi templates that can:
 - **Professional development environment** with tool integrations
 - **Secure handling** of private files and SSH configurations
 
+### Platform-Specific File Management
+
+**Platform exclusion using `.chezmoiignore`:**
+
+- Use `.chezmoiignore` patterns to exclude files on specific platforms
+- Pattern: `{{ if ne .chezmoi.os "target_os" }}` to exclude files when NOT on target OS
+- Example: Linux-only files excluded on macOS/Windows:
+
+```txt
+{{ if ne .chezmoi.os "linux" }}
+.local/bin/setup-xremap
+.config/xremap/**
+{{ end }}
+```
+
+- Common OS values: `"linux"`, `"darwin"` (macOS), `"windows"`
+- PREFER `.chezmoiignore` over template conditionals for entire file exclusion
+
 ## Development Workflow
 
 When making changes:

@@ -1,0 +1,267 @@
+#!/usr/bin/env bash
+#
+# xremap Installation Helper Script (Linux only)
+#
+# This script downloads and installs xremap for system-level key remapping.
+# Run manually when you want to set up SHIFT+ENTER to ALT+ENTER mapping.
+#
+# Usage:
+#   ./setup-xremap --install    # Download, install, and enable xremap
+#   ./setup-xremap --uninstall  # Remove xremap and disable service
+#   ./setup-xremap              # Show status and usage
+#
+# What --install does:
+# 1. Downloads latest xremap binary from GitHub releases
+# 2. Installs to ~/.local/bin/xremap
+# 3. Adds user to 'input' group for device access
+# 4. Enables and starts systemd service automatically
+
+set -euo pipefail
+
+readonly SCRIPT_NAME="$(basename "$0")"
+readonly INSTALL_DIR="$HOME/.local/bin"
+readonly BINARY_PATH="$INSTALL_DIR/xremap"
+readonly GITHUB_REPO="xremap/xremap"
+
+log() {
+    echo "[${SCRIPT_NAME}] $*"
+}
+
+error() {
+    echo "[${SCRIPT_NAME}] ERROR: $*" >&2
+    exit 1
+}
+
+check_dependencies() {
+    local deps=("curl" "sudo")
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" >/dev/null 2>&1; then
+            error "Required dependency '$dep' not found"
+        fi
+    done
+}
+
+get_latest_version() {
+    log "Fetching latest xremap version..." >&2
+    curl -s "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" |
+        grep '"tag_name":' |
+        sed 's/.*"tag_name": "\([^"]*\)".*/\1/'
+}
+
+download_xremap() {
+    local version="$1"
+    local download_url="https://github.com/${GITHUB_REPO}/releases/download/${version}/xremap-linux-x86_64-x11.zip"
+    local temp_dir
+    temp_dir="$(mktemp -d)"
+
+    log "Downloading xremap ${version}..."
+    curl -L -o "${temp_dir}/xremap.zip" "$download_url"
+
+    log "Extracting xremap..."
+    mkdir -p "$INSTALL_DIR"
+    cd "$temp_dir"
+    unzip -q xremap.zip
+    mv xremap "$BINARY_PATH"
+    chmod +x "$BINARY_PATH"
+
+    log "Cleaning up temporary files..."
+    rm -rf "$temp_dir"
+}
+
+setup_permissions() {
+    log "Setting up device permissions for xremap..."
+
+    # Add user to input group
+    if ! groups | grep -q input; then
+        sudo usermod -a -G input "$USER"
+        log "Added to 'input' group. You'll need to log out and back in for this to take effect."
+    else
+        log "User already in 'input' group"
+    fi
+
+    # Create udev rule to allow input group access to uinput device
+    local udev_rule="/etc/udev/rules.d/99-xremap.rules"
+    if [[ ! -f "$udev_rule" ]]; then
+        log "Creating udev rule for uinput device access..."
+        echo 'KERNEL=="uinput", GROUP="input", TAG+="uaccess"' | sudo tee "$udev_rule" > /dev/null
+        log "Created $udev_rule"
+
+        # Reload udev rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger
+        log "Reloaded udev rules"
+    else
+        log "udev rule already exists at $udev_rule"
+    fi
+
+    # Ensure uinput module is loaded permanently
+    local modules_conf="/etc/modules-load.d/uinput.conf"
+    if [[ ! -f "$modules_conf" ]]; then
+        log "Creating modules config to load uinput at boot..."
+        echo 'uinput' | sudo tee "$modules_conf" > /dev/null
+        log "Created $modules_conf"
+
+        # Load module immediately
+        sudo modprobe uinput
+        log "Loaded uinput module"
+    else
+        log "uinput module config already exists at $modules_conf"
+        # Ensure module is loaded now
+        if ! lsmod | rg -q uinput; then
+            sudo modprobe uinput
+            log "Loaded uinput module"
+        fi
+    fi
+}
+
+verify_installation() {
+    if [[ -x "$BINARY_PATH" ]]; then
+        local installed_version
+        installed_version="$("$BINARY_PATH" --version 2>&1 | head -n1 || echo "unknown")"
+        log "xremap installed successfully: $installed_version"
+        log "Location: $BINARY_PATH"
+    else
+        error "Installation verification failed"
+    fi
+}
+
+enable_service() {
+    log "Enabling and starting xremap systemd service..."
+
+    # Reload user daemon in case service file was just created
+    systemctl --user daemon-reload
+
+    # Enable and start the service
+    if systemctl --user enable xremap.service; then
+        log "Service enabled successfully"
+    else
+        error "Failed to enable xremap service"
+    fi
+
+    if systemctl --user start xremap.service; then
+        log "Service started successfully"
+    else
+        log "Service start failed - this is normal if you haven't logged out/in yet"
+        log "The service will start automatically after you log out and back in"
+    fi
+
+    # Show service status
+    systemctl --user status xremap.service --no-pager || true
+}
+
+disable_service() {
+    log "Disabling and stopping xremap systemd service..."
+
+    systemctl --user stop xremap.service 2>/dev/null || log "Service was not running"
+    systemctl --user disable xremap.service 2>/dev/null || log "Service was not enabled"
+
+    log "Service disabled successfully"
+}
+
+uninstall_xremap() {
+    log "Uninstalling xremap..."
+
+    disable_service
+
+    if [[ -f "$BINARY_PATH" ]]; then
+        rm -f "$BINARY_PATH"
+        log "Removed xremap binary from $BINARY_PATH"
+    else
+        log "xremap binary not found at $BINARY_PATH"
+    fi
+
+    log "Note: User remains in 'input' group (safe to leave)"
+    log "Note: Configuration files preserved in ~/.config/xremap/"
+    log "Uninstall complete!"
+}
+
+show_status() {
+    echo "=== xremap Status ==="
+
+    if [[ -x "$BINARY_PATH" ]]; then
+        echo "Binary: Installed at $BINARY_PATH"
+        "$BINARY_PATH" --version 2>/dev/null || echo "Version check failed"
+    else
+        echo "Binary: Not installed"
+    fi
+
+    if groups | grep -q input; then
+        echo "Permissions: User in 'input' group"
+    else
+        echo "Permissions: User NOT in 'input' group"
+    fi
+
+    if systemctl --user is-enabled xremap.service >/dev/null 2>&1; then
+        echo "Service: Enabled"
+        if systemctl --user is-active xremap.service >/dev/null 2>&1; then
+            echo "Service: Running"
+        else
+            echo "Service: Not running"
+        fi
+    else
+        echo "Service: Not enabled"
+    fi
+
+    echo ""
+    echo "Usage:"
+    echo "  setup-xremap --install    # Install and enable xremap"
+    echo "  setup-xremap --uninstall  # Remove xremap and disable service"
+    echo "  setup-xremap              # Show this status"
+}
+
+install_xremap() {
+    log "Starting xremap installation..."
+
+    if [[ -x "$BINARY_PATH" ]]; then
+        log "xremap already installed at $BINARY_PATH"
+        "$BINARY_PATH" --version
+    else
+        local version
+        version="$(get_latest_version)"
+        if [[ -z "$version" ]]; then
+            error "Could not fetch latest version"
+        fi
+
+        download_xremap "$version"
+        verify_installation
+    fi
+
+    setup_permissions
+    enable_service
+
+    cat <<EOF
+
+=== Installation Complete ===
+
+xremap is now installed and the service is enabled.
+
+IMPORTANT: You must log out and back in (or reboot) for the 'input'
+group membership to take effect. The service will start automatically
+after you log back in.
+
+To check status later: setup-xremap
+To test: Try SHIFT+ENTER in gnome-terminal or VS Code
+
+EOF
+}
+
+main() {
+    check_dependencies
+
+    case "${1:-}" in
+        --install)
+            install_xremap
+            ;;
+        --uninstall)
+            uninstall_xremap
+            ;;
+        "")
+            show_status
+            ;;
+        *)
+            error "Unknown option: $1. Use --install, --uninstall, or no arguments for status"
+            ;;
+    esac
+}
+
+main "$@"

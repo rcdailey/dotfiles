@@ -1,0 +1,39 @@
+# xremap Configuration
+# Maps SHIFT+ENTER to ALT+ENTER for specific applications
+#
+# This configuration targets terminal emulators and IDEs where
+# ALT+ENTER provides perfect newline behavior that we want to
+# trigger with the more accessible SHIFT+ENTER combination.
+
+keymap:
+- name: Terminal Applications - SHIFT+ENTER to ALT+ENTER
+  application:
+    only:
+    # Terminal Emulators
+    - Gnome-terminal
+    - gnome-terminal-server.Gnome-terminal
+    - Xfce4-terminal
+    - konsole.Konsole
+    - Alacritty
+    - kitty.kitty
+
+    # Development IDEs
+    - Code
+    - code.Code
+    - jetbrains-rider
+    - jetbrains-rider.jetbrains-rider
+    - jetbrains-idea
+    - jetbrains-idea.jetbrains-idea
+    - jetbrains-pycharm
+    - jetbrains-pycharm.jetbrains-pycharm
+    - jetbrains-webstorm
+    - jetbrains-webstorm.jetbrains-webstorm
+
+    # Other Terminal Applications
+    - vim
+    - nvim
+    - emacs
+
+  remap:
+    # Map SHIFT+ENTER to ALT+ENTER
+    Shift-Enter: M-Enter

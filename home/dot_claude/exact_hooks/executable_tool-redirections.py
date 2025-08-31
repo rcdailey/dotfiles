@@ -64,7 +64,7 @@ REDIRECTIONS = [
 # Tavily MCP restrictions
 TAVILY_RESTRICTIONS = [
     RedirectionRule(
-        pattern=re.compile(r"(?<!docs\.)github\.com", re.IGNORECASE),
+        pattern=re.compile(r"(?<!docs\.)(?<!gist\.)github\.com", re.IGNORECASE),
         message="Use Octocode tools (PRIORITY 1) for GitHub repository analysis: githubSearchCode, githubSearchRepositories, githubGetFileContent, githubViewRepoStructure. For single items use standard GitHub MCP tools. Only use 'gh' CLI for listing operations.",
         examples=[
             "github.com/user/repo",
@@ -202,9 +202,12 @@ def dry_run() -> None:
         "find issues on GitHub.com",
         "https://github.com/user/repo",
         "https://github.com/actions/checkout",
-        # Should NOT match (docs.github.com)
+        # Should NOT match (docs.github.com and gist.github.com)
         "https://docs.github.com/en/actions/how-tos/sharing-automations/reusing-workflows",
         "https://docs.github.com/en/github/getting-started-with-github",
+        "https://gist.github.com/user/12345",
+        "https://gist.github.com/anonymous/abcdef123456",
+        "gist.github.com/user/snippet",
         "search for python tutorials",
         "find documentation online",
         "https://stackoverflow.com/questions",

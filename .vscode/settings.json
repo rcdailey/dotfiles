@@ -10,5 +10,8 @@
     "*_config": "ssh_config",
     "Brewfile.tmpl": "ruby",
     "*zshenv.tmpl": "shellscript"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "kennylong.kubernetes-yaml-formatter"
   }
 }

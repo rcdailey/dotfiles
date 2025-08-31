@@ -14,3 +14,6 @@ fi
 
 # Append home dir to path so we can access scripts in there
 export PATH="$PATH:$HOME:$HOME/git-scripts"
+
+# Added by Toolbox App
+export PATH="$PATH:~/.local/share/JetBrains/Toolbox/scripts"

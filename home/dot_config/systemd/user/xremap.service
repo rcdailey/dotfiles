@@ -1,0 +1,25 @@
+[Unit]
+Description=xremap - Key remapper for X11 and Wayland
+Documentation=https://github.com/xremap/xremap
+After=graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+Type=exec
+ExecStart=%h/.local/bin/xremap %h/.config/xremap/config.yml --watch
+ExecStartPost=/bin/bash -c 'sleep 2 && DISPLAY=:0 /usr/bin/xset r rate 190 33'
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Resource limits
+MemoryHigh=100M
+CPUQuota=10%
+
+# Environment
+Environment=DISPLAY=:0
+Environment=WAYLAND_DISPLAY=wayland-0
+
+[Install]
+WantedBy=default.target
