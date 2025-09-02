@@ -81,6 +81,8 @@ bindkey '^[[H' beginning-of-line  # Standard ANSI HOME
 bindkey '^[[F' end-of-line        # Standard ANSI END
 bindkey '^[[1~' beginning-of-line # Alternative HOME sequence
 bindkey '^[[4~' end-of-line       # Alternative END sequence
+bindkey '^[OH' beginning-of-line  # GNOME Terminal / JetBrains IDE HOME
+bindkey '^[OF' end-of-line        # GNOME Terminal / JetBrains IDE END
 
 # Key binding for DEL key (forward delete)
 bindkey '^[[3~' delete-char       # DEL key deletes character under cursor
