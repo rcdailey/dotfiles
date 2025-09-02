@@ -2,9 +2,7 @@
 extends: default
 
 rules:
-  line-length:
-    max: 100
-    allow-non-breakable-words: true
+  line-length: disable
   indentation:
     indent-sequences: false
   document-start: disable

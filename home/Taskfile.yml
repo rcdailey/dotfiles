@@ -1,0 +1,176 @@
+version: '3'
+
+# Global settings
+# silent: true - Suppresses command echoing (task: [name] command output)
+# This keeps output clean and focused on actual results
+silent: true
+
+# Global variables for cross-platform paths
+# These use Taskfile's {{.OS}} variable for OS detection instead of shell uname calls
+vars:
+  HOMEBREW_PREFIX:
+    sh: |
+      if [[ "{{.OS}}" == "darwin" ]]; then
+        echo "/opt/homebrew"
+      else
+        echo "/home/linuxbrew/.linuxbrew"
+      fi
+  ZSH_PATH:
+    sh: |
+      if [[ "{{.OS}}" == "darwin" ]]; then
+        echo "/opt/homebrew/bin/zsh"
+      else
+        echo "/home/linuxbrew/.linuxbrew/bin/zsh"
+      fi
+
+tasks:
+  default:
+    desc: Complete system setup (homebrew + mise + tools + zsh)
+    # Use sequential 'cmds' with 'task:' calls instead of 'deps' to prevent
+    # parallel execution conflicts (multiple brew processes, race conditions)
+    cmds:
+    - task: homebrew
+    - task: mise
+    - task: tools
+    - task: zsh
+
+  help:
+    desc: Show available tasks
+    cmds:
+    - echo "Available tasks:"
+    - echo "  default    - Complete system setup (homebrew + mise + tools + zsh)"
+    - echo "  homebrew   - Install Homebrew package manager"
+    - echo "  mise       - Install mise tool manager"
+    - echo "  tools      - Install all development tools via mise"
+    - echo "  zsh        - Set up zsh as default shell"
+    - echo "  clean      - Clean up package caches"
+    - echo "  upgrade-task - Replace bootstrap task with mise-managed version"
+
+  homebrew:
+    desc: Install Homebrew package manager and packages
+    # run: once - Ensures this task only executes once even when called by
+    # multiple other tasks (mise and zsh both depend on homebrew)
+    run: once
+    cmds:
+    - |
+      echo "Setting up Homebrew..."
+      if command -v brew >/dev/null 2>&1; then
+        echo "Homebrew already installed: $(brew --version | head -n1)"
+      else
+        echo "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+        # Source Homebrew environment
+        eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+
+        if command -v brew >/dev/null 2>&1; then
+          echo "Homebrew installed successfully: $(brew --version | head -n1)"
+        else
+          echo "ERROR: Homebrew installation failed" >&2
+          exit 1
+        fi
+      fi
+
+      echo "Installing Homebrew packages..."
+      eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+      export HOMEBREW_BUNDLE_FILE="$HOME/Brewfile"
+      # Remove --verbose flag to reduce noise during repeated runs
+      brew bundle
+
+  mise:
+    desc: Install mise tool manager
+    deps: [homebrew]
+    # run: once - Prevents multiple executions when called by different tasks
+    run: once
+    cmds:
+    - |
+      echo "Setting up mise..."
+      if command -v mise >/dev/null 2>&1; then
+        echo "mise already installed: $(mise --version)"
+      else
+        echo "Installing mise..."
+        curl -fsSL https://mise.run | sh
+        export PATH="$HOME/.local/bin:$PATH"
+        if command -v mise >/dev/null 2>&1; then
+          echo "mise installed successfully: $(mise --version)"
+        else
+          echo "ERROR: mise installation failed" >&2
+          exit 1
+        fi
+      fi
+
+  tools:
+    desc: Install all development tools via mise
+    deps: [mise]
+    cmds:
+    - |
+      echo "Installing development tools..."
+      export PATH="$HOME/.local/bin:$PATH"
+      eval "$(mise env -s zsh)" 2>/dev/null || true
+      eval "$(mise activate zsh)" 2>/dev/null || true
+      # Remove --verbose flag to reduce noise during repeated runs
+      # mise install is idempotent - only installs missing/outdated tools
+      mise install
+      echo "Development tools installed successfully!"
+
+  zsh:
+    desc: Set up zsh as default shell
+    deps: [homebrew]
+    cmds:
+    - |
+      echo "Setting up zsh..."
+      ZSH_PATH="{{.ZSH_PATH}}"
+      if [[ "$SHELL" == "$ZSH_PATH" ]]; then
+        echo "zsh is already the default shell"
+      else
+        echo "Found zsh at: $ZSH_PATH"
+        echo "Version: $($ZSH_PATH --version)"
+        if ! grep -q "^$ZSH_PATH$" /etc/shells 2>/dev/null; then
+          echo "Adding zsh to /etc/shells (requires sudo)..."
+          echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
+        fi
+        echo "Changing default shell to zsh..."
+        chsh -s "$ZSH_PATH"
+        echo "Zsh setup complete! Restart terminal for changes to take effect."
+      fi
+
+  clean:
+    desc: Clean up package caches
+    cmds:
+    - |
+      echo "Cleaning up package caches..."
+      if command -v brew >/dev/null 2>&1; then
+        eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+        brew cleanup --prune=all
+        brew autoremove
+      fi
+      if command -v mise >/dev/null 2>&1; then
+        export PATH="$HOME/.local/bin:$PATH"
+        mise cache clear
+      fi
+      echo "Cache cleanup complete!"
+
+  upgrade-task:
+    desc: Replace bootstrap task with mise-managed version
+    deps: [tools]
+    cmds:
+    - |
+      echo "Upgrading to mise-managed task..."
+      export PATH="$HOME/.local/bin:$PATH"
+      eval "$(mise env -s zsh)" 2>/dev/null || true
+
+      # Check if mise version is available
+      if command -v task >/dev/null 2>&1 && mise which task >/dev/null 2>&1; then
+        echo "Task is now managed by mise: $(task --version)"
+
+        # Remove bootstrap binary if it exists
+        if [[ -f "/usr/local/bin/task" && ! "$(which task)" == *"mise"* ]]; then
+          echo "Removing bootstrap task binary..."
+          sudo rm -f /usr/local/bin/task
+        fi
+
+        echo "Task upgrade complete!"
+      else
+        echo "mise-managed task not available yet"
+        exit 1
+      fi

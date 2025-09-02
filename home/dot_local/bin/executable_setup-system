@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# System setup helper - bootstraps task then runs system setup
+# Usage: setup-system [task]
+# Examples:
+#   setup-system           # Complete setup (task default)
+#   setup-system homebrew  # Install only Homebrew
+#   setup-system tools     # Install development tools
+#   setup-system help      # Show available tasks
+
+set -e
+
+TASKFILE="$HOME/Taskfile.yml"
+
+# Check if Taskfile exists
+if [[ ! -f "$TASKFILE" ]]; then
+    echo "ERROR: Taskfile.yml not found at $TASKFILE" >&2
+    echo "Run 'chezmoi apply' to install it from dotfiles" >&2
+    exit 1
+fi
+
+# Bootstrap task if not available
+if ! command -v task >/dev/null 2>&1; then
+    echo "Task not found, installing via official script..."
+
+    # Install to ~/.local/bin (standard user binary location)
+    mkdir -p "$HOME/.local/bin"
+    curl -sSfL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
+
+    # Verify installation
+    if ! command -v task >/dev/null 2>&1; then
+        echo "ERROR: Task installation failed" >&2
+        exit 1
+    fi
+
+    echo "Task installed successfully: $(task --version)"
+fi
+
+# Change to home directory and run task with provided arguments
+cd "$HOME"
+
+# If no arguments provided, run default task
+if [[ $# -eq 0 ]]; then
+    echo "Running complete system setup..."
+    exec task default
+else
+    exec task "$@"
+fi
