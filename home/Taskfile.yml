@@ -87,6 +87,8 @@ tasks:
       if command -v mise >/dev/null 2>&1; then
         eval "$(mise env -s zsh)" 2>/dev/null || true
         eval "$(mise activate zsh)" 2>/dev/null || true
+        # Remove unused tool versions first
+        mise prune --yes
         # mise install is idempotent - only installs missing/outdated tools
         mise install
         echo "Development tools installed successfully!"
@@ -155,7 +157,7 @@ tasks:
         "gh" "coreutils" "chezmoi" "node" "python@3.13" "tree" "uv" "pre-commit"
         "lazygit" "rbw" "go" "k9s" "kubectl" "kustomize" "yq" "sops" "helm"
         "terraform" "act" "crane" "rclone" "yamllint" "golangci-lint"
-        "go-task" "git-filter-repo" "iproute2mac"
+        "go-task" "git-filter-repo" "iproute2mac" "awscli"
       )
 
       # Function to safely remove if package is installed
