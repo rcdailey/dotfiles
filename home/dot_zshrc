@@ -1,10 +1,6 @@
 # Modern zsh configuration with optimal initialization order
 # Priority: Correctness of initialization timing over all other concerns
 
-# CRITICAL: Static mise environment setup BEFORE instant prompt (console-safe)
-if command -v mise >/dev/null 2>&1; then
-    eval "$(mise env -s zsh)" >/dev/null 2>&1
-fi
 
 # Enable Powerlevel10k instant prompt. MUST be at the very top after pre-setup.
 # Disable instant prompt in VS Code to fix prompt rendering
@@ -17,10 +13,6 @@ for config_file in ~/.config/zsh/[0-9]*.sh*; do
     [[ -r "$config_file" ]] && source "$config_file"
 done
 
-# CRITICAL: Dynamic mise activation AFTER instant prompt for project-aware functionality
-if command -v mise >/dev/null 2>&1; then
-    eval "$(mise activate zsh)" >/dev/null 2>&1
-fi
 
 # Shell options required for Powerlevel10k compatibility
 setopt prompt_subst
