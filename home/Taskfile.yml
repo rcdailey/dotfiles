@@ -155,7 +155,7 @@ tasks:
       PACKAGES_TO_REMOVE=(
         "fzf" "ripgrep" "eza" "git-delta" "jq" "shfmt" "shellcheck" "age"
         "gh" "coreutils" "chezmoi" "node" "python@3.13" "tree" "uv" "pre-commit"
-        "lazygit" "rbw" "go" "k9s" "kubectl" "kustomize" "yq" "sops" "helm"
+        "lazygit" "go" "k9s" "kubectl" "kustomize" "yq" "sops" "helm"
         "terraform" "act" "crane" "rclone" "yamllint" "golangci-lint"
         "go-task" "git-filter-repo" "iproute2mac" "awscli"
       )
