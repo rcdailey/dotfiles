@@ -60,7 +60,7 @@ REDIRECTIONS = [
 TAVILY_RESTRICTIONS = [
     RedirectionRule(
         pattern=re.compile(r"(?<!docs\.)(?<!gist\.)github\.com", re.IGNORECASE),
-        message="Use Octocode tools (PRIORITY 1) for GitHub repository analysis: githubSearchCode, githubSearchRepositories, githubGetFileContent, githubViewRepoStructure. For single items use standard GitHub MCP tools. Only use 'gh' CLI for listing operations.",
+        message="BLOCKED: GitHub repository detected. MUST retry this request using GitHub CLI tools (gh) instead.",
         examples=[
             "github.com/user/repo",
             "github.com/org/project",
