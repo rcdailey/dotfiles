@@ -54,11 +54,6 @@ REDIRECTIONS = [
         message="Use 'sops set' instead of 'sops --set'\nCorrect: sops set file.sops.yaml '[\"section\"][\"key\"]' '\"value\"'",
         examples=["sops --set file.yaml key value"],
     ),
-    RedirectionRule(
-        pattern=re.compile(r"\bgh\s+api\b"),
-        message="Use specific gh commands instead of 'gh api' for better usability and reliability\nExamples: 'gh pr list', 'gh issue list', 'gh release list', 'gh run list'",
-        examples=["gh api repos/:owner/:repo/pulls", "gh api graphql"],
-    ),
 ]
 
 # Tavily MCP restrictions
