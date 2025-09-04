@@ -132,6 +132,11 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/tool-redirections.py"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/guard-cd.sh",
+            "timeout": 10
           }
         ]
       },
@@ -168,6 +173,18 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/tool-redirections.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/show-cwd.sh",
+            "timeout": 10
           }
         ]
       }
