@@ -203,6 +203,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "mcp__tavily__tavily-extract",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/tavily-extract-retry.py",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "UserPromptSubmit": []

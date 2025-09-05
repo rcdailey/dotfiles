@@ -1,0 +1,3 @@
+#!/usr/bin/env zsh
+
+claude mcp add --scope user --transport sse atlassian https://mcp.atlassian.com/v1/sse
