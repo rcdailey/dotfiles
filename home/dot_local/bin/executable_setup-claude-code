@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+
+# setup-claude-code - Install native Claude Code binary
+#
+# This script installs the native Claude Code binary using the official installer
+# from https://claude.ai/install.sh
+#
+# Usage:
+#   setup-claude-code [version]
+#
+# Arguments:
+#   version    Optional version to install (stable, latest, or specific version number)
+#              Defaults to 'stable' if not specified
+#
+# Examples:
+#   setup-claude-code           # Install stable version
+#   setup-claude-code latest    # Install latest version
+#   setup-claude-code 1.0.58    # Install specific version
+
+set -euo pipefail
+
+# Configuration
+readonly SCRIPT_NAME="${0##*/}"
+readonly INSTALLER_URL="https://claude.ai/install.sh"
+
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly NC='\033[0m' # No Color
+
+# Logging functions
+log() {
+    printf "%b[%s]%b %s\n" "$BLUE" "$SCRIPT_NAME" "$NC" "$*" >&2
+}
+
+error() {
+    printf "%b[%s ERROR]%b %s\n" "$RED" "$SCRIPT_NAME" "$NC" "$*" >&2
+}
+
+success() {
+    printf "%b[%s SUCCESS]%b %s\n" "$GREEN" "$SCRIPT_NAME" "$NC" "$*" >&2
+}
+
+warn() {
+    printf "%b[%s WARN]%b %s\n" "$YELLOW" "$SCRIPT_NAME" "$NC" "$*" >&2
+}
+
+# Usage information
+usage() {
+    cat <<EOF
+Usage: $SCRIPT_NAME [version]
+
+Install native Claude Code binary using the official installer.
+
+Arguments:
+  version    Optional version to install (stable, latest, or specific version)
+             Defaults to 'stable' if not specified
+
+Examples:
+  $SCRIPT_NAME           # Install stable version
+  $SCRIPT_NAME latest    # Install latest version
+  $SCRIPT_NAME 1.0.58    # Install specific version
+
+Options:
+  -h, --help    Show this help message
+EOF
+}
+
+# Check if running on supported platform
+check_platform() {
+    case "$(uname -s)" in
+        Linux|Darwin)
+            log "Platform $(uname -s) is supported"
+            ;;
+        *)
+            error "Unsupported platform: $(uname -s)"
+            error "This script supports Linux and macOS only"
+            exit 1
+            ;;
+    esac
+}
+
+# Check for required dependencies
+check_dependencies() {
+    local missing_deps=()
+
+    for cmd in curl bash; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            missing_deps+=("$cmd")
+        fi
+    done
+
+    if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        error "Missing required dependencies: ${missing_deps[*]}"
+        error "Please install the missing dependencies and try again"
+        exit 1
+    fi
+
+    log "All required dependencies are available"
+}
+
+# Check if Alpine Linux or musl-based distribution
+check_alpine() {
+    if [[ -f /etc/alpine-release ]] || ldd --version 2>&1 | grep -q musl; then
+        warn "Detected Alpine Linux or musl-based distribution"
+        warn "You may need to install additional packages: libgcc libstdc++ ripgrep"
+        warn "Run: apk add libgcc libstdc++ ripgrep"
+        warn "And set: export USE_BUILTIN_RIPGREP=0"
+
+        # Check if packages are available
+        for pkg in libgcc libstdc++; do
+            if ! ldconfig -p | grep -q "$pkg"; then
+                warn "Package $pkg may not be installed"
+            fi
+        done
+
+        if ! command -v rg >/dev/null 2>&1; then
+            warn "ripgrep (rg) is not installed"
+        fi
+    fi
+}
+
+# Install Claude Code
+install_claude_code() {
+    local version="${1:-stable}"
+
+    log "Installing Claude Code version: $version"
+
+    # Construct the installer command
+    local install_cmd="curl -fsSL $INSTALLER_URL | bash"
+    if [[ "$version" != "stable" ]]; then
+        install_cmd="curl -fsSL $INSTALLER_URL | bash -s $version"
+    fi
+
+    log "Running installer command: $install_cmd"
+
+    # Run the installer
+    if eval "$install_cmd"; then
+        success "Claude Code installation completed"
+    else
+        error "Claude Code installation failed"
+        exit 1
+    fi
+}
+
+# Verify installation
+verify_installation() {
+    log "Verifying Claude Code installation..."
+
+    # Check if claude command is available
+    if ! command -v claude >/dev/null 2>&1; then
+        warn "Claude command not found in PATH"
+        warn "You may need to restart your shell or source your shell configuration"
+        return 1
+    fi
+
+    # Check claude version to verify it's working
+    log "Checking Claude Code version..."
+    if claude --version >/dev/null 2>&1; then
+        success "Claude Code installation verified successfully"
+        log "Run 'claude doctor' manually if you want to check for any issues"
+    else
+        warn "Claude command found but not responding properly"
+        return 1
+    fi
+}
+
+# Clean up old installations
+cleanup_old_installations() {
+    log "Checking for old Claude Code installations..."
+
+    # Check for npm global installation
+    if npm list -g @anthropic-ai/claude-code >/dev/null 2>&1; then
+        warn "Found npm global installation of Claude Code"
+        warn "Consider removing it with: npm uninstall -g @anthropic-ai/claude-code"
+        warn "This may help avoid conflicts with the native binary"
+    fi
+
+    # Check for outdated symlinks or aliases
+    if [[ -L "$HOME/.local/bin/claude" ]] && [[ ! -e "$HOME/.local/bin/claude" ]]; then
+        warn "Found broken symlink: $HOME/.local/bin/claude"
+        warn "Consider removing it to avoid conflicts"
+    fi
+}
+
+# Main function
+main() {
+    local version="stable"
+
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -*)
+                error "Unknown option: $1"
+                usage
+                exit 1
+                ;;
+            *)
+                version="$1"
+                shift
+                ;;
+        esac
+    done
+
+    log "Starting Claude Code native binary installation"
+
+    # Pre-installation checks
+    check_platform
+    check_dependencies
+    check_alpine
+    cleanup_old_installations
+
+    # Install Claude Code
+    install_claude_code "$version"
+
+    # Verify installation
+    if verify_installation; then
+        success "Claude Code setup completed successfully!"
+        log "You can now run 'claude' to start using Claude Code"
+    else
+        warn "Installation completed but verification had issues"
+        warn "Try restarting your shell and running 'claude doctor'"
+    fi
+}
+
+# Run main function with all arguments
+main "$@"

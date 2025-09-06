@@ -1,47 +1,118 @@
 #!/usr/bin/env bash
-# System setup helper - bootstraps task then runs system setup
-# Usage: setup-system [task]
-# Examples:
-#   setup-system           # Complete setup (task default)
-#   setup-system homebrew  # Install only Homebrew
-#   setup-system tools     # Install development tools
-#   setup-system help      # Show available tasks
+# System setup helper - complete system setup without Task dependency
+# Runs all setup steps sequentially, skipping already completed steps
 
 set -e
 
-TASKFILE="$HOME/Taskfile.yml"
+echo "Running complete system setup..."
 
-# Check if Taskfile exists
-if [[ ! -f "$TASKFILE" ]]; then
-    echo "ERROR: Taskfile.yml not found at $TASKFILE" >&2
-    echo "Run 'chezmoi apply' to install it from dotfiles" >&2
+# Step 1: Install Homebrew
+echo "Setting up Homebrew..."
+if command -v brew >/dev/null 2>&1; then
+    echo "Homebrew already installed: $(brew --version | head -n1)"
+else
+    echo "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    # Bootstrap: Use deterministic paths to source Homebrew initially
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        if [[ "$(uname -m)" == "arm64" ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        else
+            eval "$(/usr/local/bin/brew shellenv)"
+        fi
+    else
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    fi
+
+    if command -v brew >/dev/null 2>&1; then
+        echo "Homebrew installed successfully: $(brew --version | head -n1)"
+    else
+        echo "ERROR: Homebrew installation failed" >&2
+        exit 1
+    fi
+fi
+
+# Step 2: Install Homebrew packages
+echo "Installing Homebrew packages..."
+eval "$(brew shellenv)"
+export HOMEBREW_BUNDLE_FILE="$HOME/Brewfile"
+brew bundle
+
+# Step 3: Install mise via official installer
+echo "Installing mise..."
+if command -v mise >/dev/null 2>&1 && mise --version | grep -q "^mise [0-9]"; then
+    echo "mise already installed: $(mise --version)"
+else
+    echo "Installing mise via official installer..."
+    curl -fsSL https://mise.run | sh
+
+    # Add mise to PATH for this session
+    export PATH="$HOME/.local/bin:$PATH"
+
+    if command -v mise >/dev/null 2>&1; then
+        echo "mise installed successfully: $(mise --version)"
+    else
+        echo "ERROR: mise installation failed" >&2
+        exit 1
+    fi
+fi
+
+# Step 4: Install development tools via mise
+echo "Installing development tools..."
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise env -s bash)" 2>/dev/null || true
+    eval "$(mise activate bash)" 2>/dev/null || true
+    # Remove unused tool versions first
+    mise prune --yes
+    # mise install is idempotent - only installs missing/outdated tools
+    mise install
+    echo "Development tools installed successfully!"
+else
+    echo "ERROR: mise not available - check Homebrew installation" >&2
     exit 1
 fi
 
-# Bootstrap task if not available
-if ! command -v task >/dev/null 2>&1; then
-    echo "Task not found, installing via official script..."
+# Step 5: Set up zsh as default shell
+echo "Setting up zsh..."
+ZSH_PATH="$(brew --prefix zsh)/bin/zsh"
 
-    # Install to ~/.local/bin (standard user binary location)
-    mkdir -p "$HOME/.local/bin"
-    curl -sSfL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
-
-    # Verify installation
-    if ! command -v task >/dev/null 2>&1; then
-        echo "ERROR: Task installation failed" >&2
-        exit 1
+# Check if current shell is already a homebrew zsh (handle symlinks)
+if [[ "$SHELL" == "$ZSH_PATH" ]] || [[ "$(readlink -f "$SHELL" 2>/dev/null || echo "$SHELL")" == "$(readlink -f "$ZSH_PATH" 2>/dev/null || echo "$ZSH_PATH")" ]]; then
+    echo "zsh is already the default shell (current: $SHELL)"
+else
+    if [[ -x "$ZSH_PATH" ]]; then
+        echo "Found homebrew zsh at: $ZSH_PATH"
+        echo "Version: $($ZSH_PATH --version)"
+    else
+        echo "Homebrew zsh not found, falling back to system zsh"
+        ZSH_PATH="$(which zsh)"
+        echo "Using system zsh at: $ZSH_PATH"
     fi
 
-    echo "Task installed successfully: $(task --version)"
+    # Check if zsh is already in /etc/shells
+    if ! grep -q "^$ZSH_PATH$" /etc/shells 2>/dev/null; then
+        echo ""
+        echo "Adding zsh to /etc/shells (requires sudo password)..."
+        if echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null; then
+            echo "Successfully added zsh to /etc/shells"
+        else
+            echo "Failed to add zsh to /etc/shells. You may need to run:"
+            echo "  echo '$ZSH_PATH' | sudo tee -a /etc/shells"
+            exit 1
+        fi
+    fi
+
+    echo ""
+    echo "Changing default shell to zsh (may require password)..."
+    if chsh -s "$ZSH_PATH"; then
+        echo "Zsh setup complete! Restart terminal for changes to take effect."
+    else
+        echo "Failed to change shell. You may need to run:"
+        echo "  chsh -s '$ZSH_PATH'"
+        exit 1
+    fi
 fi
 
-# Change to home directory and run task with provided arguments
-cd "$HOME"
-
-# If no arguments provided, run default task
-if [[ $# -eq 0 ]]; then
-    echo "Running complete system setup..."
-    exec task default
-else
-    exec task "$@"
-fi
+echo ""
+echo "System setup complete!"
