@@ -11,6 +11,18 @@ setopt HIST_IGNORE_DUPS  # Don't record duplicates in history
 setopt CORRECT           # Spell correction for commands
 setopt EXTENDED_GLOB     # Extended globbing features
 
+# Add standard user directories to PATH (devbox doesn't include these by default)
+if [ -d "$HOME/bin" ]; then
+  export PATH="$HOME/bin:$PATH"
+fi
+
+if [ -d "$HOME/.local/bin" ]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# Append additional directories
+export PATH="$PATH:$HOME:$HOME/git-scripts"
+
 # PATH modifications for Go tools (needed in all interactive shells)
 # Add Go tools to PATH if go is installed
 if command -v go >/dev/null 2>&1; then
@@ -72,6 +84,11 @@ alias cmst='chezmoi git -- st'
 
 # Custom functions are autoloaded via .zshenv for all shell types
 
+# mise activation for interactive shells (full activation)
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate zsh)"
+fi
+
 # Key bindings for history substring search
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
@@ -93,7 +110,7 @@ zstyle ':completion:*:npm:*' sort false
 
 # Terraform completion setup (uses terraform's native bash completion via bashcompinit)
 if (( $+commands[terraform] )); then
-  complete -o nospace -C /opt/homebrew/bin/terraform terraform
+  complete -o nospace -C terraform terraform
   # Enable completion for tf alias
-  complete -o nospace -C /opt/homebrew/bin/terraform tf
+  complete -o nospace -C terraform tf
 fi

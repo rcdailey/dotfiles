@@ -1,5 +1,8 @@
 # Zsh completion system setup
 
+# Add zinit completions directory to fpath for automatic completion loading
+fpath=("${XDG_DATA_HOME:-$HOME/.local/share}/zinit/completions" $fpath)
+
 # Skip security check and initialize zsh completion system
 # Reason: Single user machines, no security risk, improves automation
 # Daily cache optimization: only rebuild completion dump once per day

@@ -26,6 +26,15 @@ zinit ice wait lucid for \
 # Enable fzf-tab after loading
 enable-fzf-tab
 
+# Generate mise completions with conditional installation
+# Only reinstalls completion if symlink is missing or source is newer
+zinit ice as"completion" id-as"mise" \
+  atclone"mise completion zsh > _mise" \
+  atpull"%atclone" \
+  atload'[[ ! -L "${ZINIT[COMPLETIONS_DIR]}/_mise" ]] && zinit creinstall mise'
+zinit load zdharma-continuum/null
+
+
 # Load Oh-My-Zsh functionality via snippets with turbo mode (can be deferred)
 zinit ice wait"2" lucid for \
     "OMZP::git" \
