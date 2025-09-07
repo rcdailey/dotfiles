@@ -1,42 +1,4 @@
 # .chezmoiremove - Files to remove from target system
-#
-# ORGANIZATION: Group entries by year-month with pruning guidance
-# PRUNING RULE: Remove entries after successful apply + 30 days (or longer for major changes)
-# NOTE: This file is always interpreted as a chezmoi template
 
-# =============================================================================
-# 2025-07 - Zsh Configuration Reorganization (PRUNE AFTER: 2025-09-01)
-# Major restructuring from modular files to numbered initialization order
-# =============================================================================
-
-# Individual modular files consolidated into numbered files
-.config/zsh/aliases.sh           # → 05-configuration.sh
-.config/zsh/completion.sh        # → 03-completion.sh
-.config/zsh/exports.sh           # → 01-environment.sh
-.config/zsh/functions.sh         # → 05-configuration.sh
-.config/zsh/mise.sh              # → split between 01-environment.sh and .zshrc
-.config/zsh/path.sh              # → 05-configuration.sh
-.config/zsh/platform.sh.tmpl     # → 06-platform.sh.tmpl
-
-# Directories and all contents removed
-.config/zsh/init/                # Entire directory removed
-.config/zsh/init/01-zinit.sh     # → 02-zinit.sh
-.config/zsh/init/02-environment.sh # → 01-environment.sh
-.config/zsh/init/03-plugins.sh   # → 04-plugins.sh
-
-.config/zsh/platforms/           # Entire directory removed
-.config/zsh/platforms/darwin.sh  # → 06-platform.sh.tmpl
-.config/zsh/platforms/linux.sh   # → 06-platform.sh.tmpl
-.config/zsh/platforms/windows.sh # → 06-platform.sh.tmpl
-
-.config/bash/
-
-# =============================================================================
-# TEMPLATE FOR FUTURE ADDITIONS:
-#
-# YYYY-MM - Brief Description (PRUNE AFTER: YYYY-MM-DD)
-# Explanation of what changed and why
-# =============================================================================
-# path/to/removed/file             # → where it moved or why removed
-# path/to/removed/directory/       # → consolidated into X
-#
+.local/bin/setup-github-mcp
+.local/bin/setup-octocode-mcp
