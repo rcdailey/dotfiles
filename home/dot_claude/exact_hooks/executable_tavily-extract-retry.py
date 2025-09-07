@@ -56,8 +56,31 @@ def has_meaningful_content(tool_response: Dict[str, Any]) -> bool:
         for item in content_items:
             if isinstance(item, dict) and item.get("type") == "text":
                 text = item.get("text", "")
-                if isinstance(text, str) and len(text.strip()) > 50:
-                    return True
+                if isinstance(text, str):
+                    # Check for meaningful content indicators
+                    text_stripped = text.strip()
+                    if len(text_stripped) > 50:
+                        return True
+                    # Check for truncation indicators that suggest hidden content
+                    if "… +" in text or "lines (ctrl+r to expand)" in text:
+                        return True
+                    # Check for common content patterns that indicate successful extraction
+                    if any(
+                        pattern in text_stripped.lower()
+                        for pattern in [
+                            "<title>",
+                            "<h1>",
+                            "<h2>",
+                            "<p>",
+                            "<!doctype",
+                            "# ",
+                            "## ",
+                            "### ",  # Markdown headers
+                            "content-type:",
+                            "charset=",  # Meta content
+                        ]
+                    ):
+                        return True
 
     return False
 
@@ -87,7 +110,27 @@ def dry_run() -> None:
             "tool_input": {"urls": ["https://example.com"]},
             "tool_response": {
                 "success": True,
-                "content": "This is meaningful content from the webpage.",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "This is meaningful content from the webpage that is longer than 50 characters.",
+                    }
+                ],
+            },
+            "should_block": False,
+        },
+        # Should NOT trigger retry - truncated content indicator
+        {
+            "name": "Truncated content with expansion indicator",
+            "tool_input": {"urls": ["https://example.com"]},
+            "tool_response": {
+                "success": True,
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Title: JetBrains ReSharper\n… +584 lines (ctrl+r to expand)",
+                    }
+                ],
             },
             "should_block": False,
         },
