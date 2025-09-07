@@ -18,16 +18,16 @@ keybinding:
     nextItem-alt: "<disabled>"
     prevItem-alt: "<disabled>"
   commits:
-    amendToCommit: "a"
-    resetCommitAuthor: "A"
-    moveDownCommit: "j"
-    moveUpCommit: "k"
-    openLogMenu: "l"
-    markCommitAsFixup: "F"
-    createFixupCommit: "f"
+    amendToCommit: a
+    resetCommitAuthor: A
+    moveDownCommit: j
+    moveUpCommit: k
+    openLogMenu: l
+    markCommitAsFixup: F
+    createFixupCommit: f
   files:
-    amendLastCommit: "a"
-    toggleStagedAll: "s"
+    amendLastCommit: a
+    toggleStagedAll: s
     stashAllChanges: "<disabled>"
 
 customCommands:
@@ -37,10 +37,15 @@ customCommands:
   description: Diff against the selected commit
   output: terminal
 - key: C
-  command: claude -p /commit
+  description: Claude Code commit with instructions
   context: files
-  description: Commit changes using Claude
-  output: log
+  prompts:
+  - type: input
+    title: "Commit instructions (optional - leave empty for staged changes only):"
+    key: CommitArgs
+    initialValue: ""
+  command: claude -p {{printf "/commit %s" .Form.CommitArgs | quote}}
+  loadingText: Claude is committing...
 - key: f
   command: git merge --ff-only {{.SelectedLocalBranch.Name}}
   context: localBranches
@@ -73,7 +78,7 @@ customCommands:
     - type: input
       title: Output directory for patch file
       key: OutputDir
-      initialValue: "patches"
+      initialValue: patches
   - key: r
     command: git format-patch {{.SelectedCommitRange.From}}^..{{.SelectedCommitRange.To}}
     context: commits,subCommits
@@ -84,6 +89,12 @@ customCommands:
   context: commits,subCommits
   description: Create patch files for selected commit range
   output: popup
+- key: H
+  description: Run pre-commit hooks
+  context: files
+  command: pre-commit run
+  output: terminal
+  loadingText: Running pre-commit hooks...
 - key: O
   command: open-here
   context: global
