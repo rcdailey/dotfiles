@@ -7,7 +7,8 @@ description: Create git commits with flexible natural language instructions
 
 Execute with minimal output - only show final commit message(s).
 
-**IMPORTANT**: Do not use TodoWrite or any todo/task management tools. Work directly without task tracking.
+**IMPORTANT**: Do not use TodoWrite or any todo/task management tools. Work directly without task
+tracking.
 
 ## Systematic Workflows
 
@@ -17,7 +18,9 @@ Parse natural language instruction and execute corresponding workflow:
 
 Commit only staged changes. DO NOT add any files.
 
-- **Inspect**: `git log --oneline -3 origin/HEAD && git diff --cached`
+- **Inspect**: Use multiple parallel Bash tool calls:
+  1. `git log --oneline -3 origin/HEAD` (or `git log --oneline -3 origin/master`)
+  2. `git diff --cached`
 - **Act**: `git commit -m "message"` (NO git add commands)
 - Fail if no staged changes exist
 
@@ -25,22 +28,31 @@ Commit only staged changes. DO NOT add any files.
 
 Stage and commit all changes.
 
-- **Inspect**: `git log --oneline -3 origin/HEAD && git add -A && git diff --cached`
+- **Inspect**: Use multiple parallel Bash tool calls:
+  1. `git log --oneline -3 origin/HEAD` (or `git log --oneline -3 origin/master`)
+  2. `git add -A`
+  3. `git diff --cached`
 - **Act**: `git commit -m "message"`
 
 ### Multi-commit Workflow (`/commit make multiple commits`)
 
 Break changes into logical commits.
 
-- **Inspect**: `git log --oneline -3 origin/HEAD && git reset && git add -N . && git diff && git
-  reset`
+- **Inspect**: Use multiple parallel Bash tool calls:
+  1. `git log --oneline -3 origin/HEAD` (or `git log --oneline -3 origin/master`)
+  2. `git reset`
+  3. `git add -N .`
+  4. `git diff`
+  5. `git reset`
 - **Group changes** using these heuristics (priority order):
   1. File type separation: code, tests, docs, config files
   2. Directory boundaries: same directory/module
   3. Change type: refactoring, features, fixes, cleanup
   4. Dependency order: foundation changes before dependent changes
 - **For each logical group**:
-  - **Act**: `git add <files> && git commit -m "message"`
+  - **Act**: Use separate Bash tool calls:
+    1. `git add <files>`
+    2. `git commit -m "message"`
   - Continue until all changes committed
 - Use `git add -p` for splitting changes within files
 - Aim for 2-5 commits maximum
@@ -79,7 +91,9 @@ Use bullet points, wrap at 72 chars.
 
 When commit fails due to hooks:
 
-1. **Auto-fixes**: `git update-index --again && git commit -m "message"`
+1. **Auto-fixes**: Use separate Bash tool calls:
+   - `git update-index --again`
+   - `git commit -m "message"`
 2. **Validation errors**: Stop and report to user
 3. **No modifications**: Report hook validation failure
 
