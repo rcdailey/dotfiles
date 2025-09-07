@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+# git-exclude-renovate
+# Configures git to exclude renovate/* branches from fetch operations
+# Usage: git exclude-renovate
+
+set -euo pipefail
+
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly NC='\033[0m' # No Color
+
+error() {
+    echo -e "${RED}Error: $1${NC}" >&2
+    exit 1
+}
+
+info() {
+    echo -e "${GREEN}Info: $1${NC}"
+}
+
+warn() {
+    echo -e "${YELLOW}Warning: $1${NC}"
+}
+
+# Check if we're in a git repository
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    error "Not in a git repository"
+fi
+
+# Check if origin remote exists
+if ! git config remote.origin.url >/dev/null 2>&1; then
+    error "No 'origin' remote configured"
+fi
+
+# The negative refspec we want to add
+readonly NEGATIVE_REFSPEC='^refs/heads/renovate/*'
+
+# Check if the negative refspec already exists
+if git config --get-all remote.origin.fetch | grep -Fq "$NEGATIVE_REFSPEC"; then
+    info "Renovate branches are already excluded from fetch"
+else
+    # Add the negative refspec
+    git config --add remote.origin.fetch "$NEGATIVE_REFSPEC"
+    info "Added negative refspec to exclude renovate/* branches"
+fi
+
+# Clean up existing remote renovate branches
+renovate_branches=$(git branch -r | grep 'origin/renovate/' || true)
+if [[ -n "$renovate_branches" ]]; then
+    info "Cleaning up existing remote renovate branches:"
+    echo "$renovate_branches" | while read -r branch; do
+        branch=$(echo "$branch" | xargs)  # trim whitespace
+        if [[ -n "$branch" ]]; then
+            git branch -rd "$branch"
+            echo "  Removed: $branch"
+        fi
+    done
+    info "Cleanup complete"
+else
+    info "No existing renovate branches to clean up"
+fi
+
+echo
+info "Configuration complete! Renovate branches will no longer be fetched."
+info "Run 'git fetch' to see the effect on future fetch operations."
