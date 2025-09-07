@@ -115,6 +115,16 @@ the most capable tools for each operation type. All rules are automatically enfo
 
 ## Research and Information Gathering
 
+**PRIORITY 1: Library and Tooling Research (context7 MCP REQUIRED):**
+
+- MANDATORY: Use context7 MCP tools (resolve-library-id and get-library-docs) BEFORE using any
+  library, framework, or tool, or building any plans involving them.
+- ALWAYS resolve library IDs first, then fetch comprehensive documentation with context7.
+- This provides up-to-date, authoritative documentation directly from source repositories.
+- NEVER assume library capabilities, API patterns, or best practices without context7 verification.
+
+**PRIORITY 2: General Research (tavily MCP tools):**
+
 - USE web searching (tavily MCP tools) liberally for factual information on demand. NEVER make
   assumptions when current information is available. Proactively search for:
   - Technical specifications and current best practices

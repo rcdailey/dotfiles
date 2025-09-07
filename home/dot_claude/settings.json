@@ -128,7 +128,9 @@
       "mcp__octocode__githubViewRepoStructure",
       "mcp__sequential-thinking__sequentialthinking",
       "mcp__tavily__tavily-extract",
-      "mcp__tavily__tavily-search"
+      "mcp__tavily__tavily-search",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
     ],
     "deny": [
       "Bash(git push:*)",

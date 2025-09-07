@@ -39,18 +39,24 @@ def resolve_env_var(env_string: str) -> str:
         sys.exit(1)
 
 
-def resolve_server_env(server_config: dict) -> dict:
-    """Resolve any rbw: secrets in server environment variables."""
-    if "env" not in server_config or not server_config["env"]:
-        return server_config
-
+def resolve_server_secrets(server_config: dict) -> dict:
+    """Resolve any rbw: secrets in server environment variables and headers."""
     resolved_config = server_config.copy()
-    resolved_env = {}
 
-    for key, value in server_config["env"].items():
-        resolved_env[key] = resolve_env_var(value)
+    # Resolve environment variables
+    if "env" in server_config and server_config["env"]:
+        resolved_env = {}
+        for key, value in server_config["env"].items():
+            resolved_env[key] = resolve_env_var(value)
+        resolved_config["env"] = resolved_env
 
-    resolved_config["env"] = resolved_env
+    # Resolve headers
+    if "headers" in server_config and server_config["headers"]:
+        resolved_headers = {}
+        for key, value in server_config["headers"].items():
+            resolved_headers[key] = resolve_env_var(value)
+        resolved_config["headers"] = resolved_headers
+
     return resolved_config
 
 
@@ -121,7 +127,7 @@ def main():
     servers_to_update = []
 
     for server_name, server_config in mcp_servers.items():
-        resolved_config = resolve_server_env(server_config)
+        resolved_config = resolve_server_secrets(server_config)
 
         if server_name in current_servers:
             if current_servers[server_name] != resolved_config:
