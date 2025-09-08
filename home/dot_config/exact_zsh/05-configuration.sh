@@ -33,10 +33,10 @@ if command -v go >/dev/null 2>&1; then
   export PATH="$GOPATH_CACHED/bin:$PATH"
 fi
 
-# Cross-platform ls replacement with eza
-if (( $+commands[eza] )); then
-    alias ls='eza --color=auto --icons=auto --group-directories-first'
-    alias ll='eza -la --color=auto --icons=auto --group-directories-first --header'
+# Cross-platform ls replacement with lsd
+if (( $+commands[lsd] )); then
+    alias ls='lsd --color=auto --icon=auto --group-directories-first'
+    alias ll='lsd -la --color=auto --icon=auto --group-directories-first --header'
 else
     alias ls='ls -hF'
     alias ll='ls -la'
