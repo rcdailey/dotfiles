@@ -14,6 +14,8 @@ See: https://github.com/tavily-ai/tavily-mcp/issues/58
 
 import json
 import sys
+import os
+from datetime import datetime
 from typing import Any, Dict
 
 
@@ -36,22 +38,29 @@ def is_empty_content(content: Any) -> bool:
     return False
 
 
-def has_meaningful_content(tool_response: Dict[str, Any]) -> bool:
+def has_meaningful_content(tool_response: Any) -> bool:
     """
     Check if the tool response contains meaningful content.
 
     Returns False if the response indicates empty extraction (but tool succeeded).
     Returns True if tool failed (different issue, don't interfere).
     """
-    if not isinstance(tool_response, dict):
+    # Handle case where tool_response is directly a list (actual format)
+    if isinstance(tool_response, list):
+        content_items = tool_response
+    elif isinstance(tool_response, dict):
+        # If tool explicitly failed, don't interfere (different issue)
+        if tool_response.get("success") is False:
+            return True
+
+        # Check for nested content structure: { content: [{ type: "text", text: "..." }] }
+        content_items = tool_response.get("content", [])
+        if not isinstance(content_items, list):
+            return False
+    else:
         return False
 
-    # If tool explicitly failed, don't interfere (different issue)
-    if tool_response.get("success") is False:
-        return True
-
-    # Check MCP response structure: { content: [{ type: "text", text: "..." }] }
-    content_items = tool_response.get("content", [])
+    # Analyze content items
     if isinstance(content_items, list):
         for item in content_items:
             if isinstance(item, dict) and item.get("type") == "text":
@@ -90,23 +99,35 @@ def dry_run() -> None:
     print("Testing Tavily Extract Auto-Retry Hook:\n")
 
     test_cases = [
-        # Should trigger retry - empty content without advanced flag
+        # Should trigger retry - empty content without advanced flag (list format)
         {
-            "name": "Empty content, no advanced flag",
+            "name": "Empty content (list format), no advanced flag",
             "tool_input": {"urls": ["https://example.com"]},
-            "tool_response": {"success": True, "content": ""},
+            "tool_response": [{"type": "text", "text": ""}],
             "should_block": True,
         },
-        # Should trigger retry - no content field without advanced flag
+        # Should trigger retry - empty list without advanced flag
         {
-            "name": "Missing content field, no advanced flag",
+            "name": "Empty list, no advanced flag",
             "tool_input": {"urls": ["https://example.com"]},
-            "tool_response": {"success": True},
+            "tool_response": [],
             "should_block": True,
         },
-        # Should NOT trigger retry - has content
+        # Should NOT trigger retry - has content (actual format from real tool)
         {
-            "name": "Has meaningful content",
+            "name": "Has meaningful content (actual format)",
+            "tool_input": {"urls": ["https://example.com"]},
+            "tool_response": [
+                {
+                    "type": "text",
+                    "text": "Detailed Results:\n\nTitle: Example\nURL: https://example.com\nContent: This is meaningful content from the webpage that is longer than 50 characters and contains useful information.",
+                }
+            ],
+            "should_block": False,
+        },
+        # Should NOT trigger retry - legacy nested format still supported
+        {
+            "name": "Has meaningful content (legacy nested format)",
             "tool_input": {"urls": ["https://example.com"]},
             "tool_response": {
                 "success": True,
@@ -179,6 +200,24 @@ def dry_run() -> None:
         print()
 
 
+def log_tool_data(tool_input: Dict[str, Any], tool_response: Dict[str, Any]) -> None:
+    """Log raw tool input/output data to debug file."""
+    log_dir = os.path.expanduser("~/.local/share/claude-hooks-debug")
+    os.makedirs(log_dir, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    log_file = os.path.join(log_dir, f"tavily-extract-{timestamp}.json")
+
+    debug_data = {
+        "timestamp": datetime.now().isoformat(),
+        "tool_input": tool_input,
+        "tool_response": tool_response,
+    }
+
+    with open(log_file, "w") as f:
+        json.dump(debug_data, f, indent=2)
+
+
 def main() -> None:
     """Main hook logic."""
     if len(sys.argv) > 1 and sys.argv[1] == "--dry-run":
@@ -199,6 +238,9 @@ def main() -> None:
     # Only process tavily-extract tool
     if tool_name != "mcp__tavily__tavily-extract":
         sys.exit(0)
+
+    # Log the raw data for debugging
+    log_tool_data(tool_input, tool_response)
 
     # Check if already using advanced extraction
     extract_depth = tool_input.get("extract_depth", "basic")
