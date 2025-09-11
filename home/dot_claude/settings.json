@@ -15,8 +15,8 @@
   },
   "permissions": {
     "defaultMode": "default",
-    "ask": [],
-    "deny": ["Bash(git push:*)", "Bash(git add:*)", "WebFetch", "WebSearch"],
+    "ask": ["Bash(git push:*)", "Bash(git add:*)"],
+    "deny": ["WebFetch", "WebSearch"],
     "allow": [
       "Bash(arp:*)",
       "Bash(awk:*)",
