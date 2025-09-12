@@ -3,7 +3,8 @@
   "cleanupPeriodDays": 7,
   "model": "sonnet",
   "forceLoginMethod": "claudeai",
-  "enableAllProjectMcpServer": "true",
+  "enableAllProjectMcpServer": true,
+  "spinnerTipsEnabled": false,
   "env": {
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "300000",
