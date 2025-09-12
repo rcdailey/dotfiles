@@ -2,7 +2,6 @@
 allowed-tools: Bash
 argument-hint: [test description or behavior to implement]
 description: TDD Red Phase - Write a single failing test for specified behavior
-model: claude-3-5-sonnet-20241022
 ---
 
 # TDD Red Phase: Write Failing Test

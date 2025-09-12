@@ -2,7 +2,6 @@
 allowed-tools: Bash
 argument-hint: [context or guidance for minimal implementation]
 description: TDD Green Phase - Write minimal code to make failing test pass
-model: claude-3-5-sonnet-20241022
 ---
 
 # TDD Green Phase: Make Test Pass

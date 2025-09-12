@@ -2,7 +2,6 @@
 allowed-tools: Bash
 argument-hint: [refactoring goals or specific improvements to target]
 description: TDD Refactor Phase - Improve code quality while keeping tests green
-model: claude-3-5-sonnet-20241022
 ---
 
 # TDD Refactor Phase: Improve Code Quality
