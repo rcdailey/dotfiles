@@ -28,6 +28,8 @@
 - ALWAYS use the latest stable versions of tools, programming languages, libraries, and frameworks.
 - EMPLOY proper design methodologies such as SOLID and DRY principles.
 - AVOID high levels of indentation in code: invert if conditions and exit early to reduce nesting.
+- When editing or creating YAML code, NEVER unnecessarily quote values UNLESS it is required to
+  disambiguate characters or force specific types.
 
 ## Code Quality Requirements
 
