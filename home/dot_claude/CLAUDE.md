@@ -10,9 +10,10 @@
 
 ## Response & Output Requirements
 
-- NEVER use emojis, Unicode symbols (including ✅ ⏳ ❌), or visual indicators under ANY circumstances.
-  This includes section headers, bullet points, status indicators, or any decorative elements.
-  Text-only responses are required.
+- NEVER use emojis, Unicode symbols (including ✅ ⏳ ❌), or visual indicators in NEW content you
+  generate. This includes section headers, bullet points, status indicators, or any decorative
+  elements in your responses. Text-only responses are required for communication, but PRESERVE
+  existing symbols/emojis in code you edit.
 - Do not liberally use bold formatting when creating bullet point lists.
 - Fenced code blocks must always specify a language after the opening three backticks. If no
   language is needed, use `txt` as the language.
