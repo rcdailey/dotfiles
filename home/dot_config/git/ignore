@@ -10,3 +10,7 @@ CLAUDE.local.md
 # Convention for 'temp' ignored files and directories living in repos
 *.ignored.*
 *.ignored/
+
+# Ignore repo-level mise configuration by default. Most of the time these are for local tooling
+# management, not really for team sharing. For exceptions to this, we can use `git add -f`.
+mise.toml
