@@ -116,6 +116,11 @@ the most capable tools for each operation type. All rules are automatically enfo
 
 **CRITICAL:** Your hooks will block violations, but you should follow these rules proactively.
 
+### Planning Tools
+
+- When using planning tools, ONLY build plans for actionable implementation tasks.
+- COMPLETE all necessary research BEFORE using planning tools - research is NOT part of planning.
+
 ## Research and Information Gathering
 
 **PRIORITY 1: Library and Tooling Research (context7 MCP REQUIRED):**
