@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Claude Code MCP Server Management Script - JSON-First Approach
 
-Simple script that merges MCP server configurations from ~/.claude/mcp-servers.json
-into ~/.claude.json, replacing the complex transport-specific logic with direct
-JSON file manipulation.
+Simple script that unconditionally merges MCP server configurations from
+~/.claude/mcp-servers.json into ~/.claude.json, adding new servers and
+replacing existing ones. Resolves rbw: secrets during the merge process.
 """
 
 import json
-import os
 import subprocess
 import sys
 from datetime import datetime
@@ -27,15 +26,15 @@ def resolve_env_var(env_string: str) -> str:
     secret_name = env_string[4:]  # Remove "rbw:" prefix
     try:
         result = subprocess.run(
-            ["rbw", "get", secret_name],
-            capture_output=True,
-            text=True,
-            check=True
+            ["rbw", "get", secret_name], capture_output=True, text=True, check=True
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         print(f"Error: Failed to get {secret_name} from rbw: {e}", file=sys.stderr)
-        print("This likely means rbw is not authenticated. Run 'rbw unlock' first.", file=sys.stderr)
+        print(
+            "This likely means rbw is not authenticated. Run 'rbw unlock' first.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 
@@ -71,7 +70,7 @@ def create_backup(claude_json_path: Path) -> Path:
         backup_path = claude_json_path.parent / f".claude.{timestamp}.json"
 
     try:
-        with open(claude_json_path, 'r') as src, open(backup_path, 'w') as dst:
+        with open(claude_json_path, "r") as src, open(backup_path, "w") as dst:
             dst.write(src.read())
         print(f"Created backup: {backup_path}")
         return backup_path
@@ -90,18 +89,27 @@ def main():
 
     # Check if source configuration exists
     if not mcp_servers_json_path.exists():
-        print(f"Error: MCP servers configuration not found at {mcp_servers_json_path}", file=sys.stderr)
-        print("Expected this file to be deployed by chezmoi from home/dot_claude/mcp-servers.json", file=sys.stderr)
+        print(
+            f"Error: MCP servers configuration not found at {mcp_servers_json_path}",
+            file=sys.stderr,
+        )
+        print(
+            "Expected this file to be deployed by chezmoi from home/dot_claude/mcp-servers.json",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Check if claude.json exists
     if not claude_json_path.exists():
-        print(f"Error: Claude configuration not found at {claude_json_path}", file=sys.stderr)
+        print(
+            f"Error: Claude configuration not found at {claude_json_path}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Load MCP servers configuration
     try:
-        with open(mcp_servers_json_path, 'r') as f:
+        with open(mcp_servers_json_path, "r") as f:
             mcp_servers = json.load(f)
     except Exception as e:
         print(f"Error: Failed to load MCP servers configuration: {e}", file=sys.stderr)
@@ -109,7 +117,7 @@ def main():
 
     # Load Claude configuration
     try:
-        with open(claude_json_path, 'r') as f:
+        with open(claude_json_path, "r") as f:
             claude_config = json.load(f)
     except Exception as e:
         print(f"Error: Failed to load Claude configuration: {e}", file=sys.stderr)
@@ -122,37 +130,31 @@ def main():
     # Create backup before modifying
     create_backup(claude_json_path)
 
-    # Resolve any rbw: secrets and merge servers
+    # Resolve any rbw: secrets and merge servers unconditionally
     current_servers = claude_config["mcpServers"]
-    servers_to_update = []
+    updated_servers = []
 
     for server_name, server_config in mcp_servers.items():
         resolved_config = resolve_server_secrets(server_config)
-
-        if server_name in current_servers:
-            if current_servers[server_name] != resolved_config:
-                print(f"Updating MCP server: {server_name}")
-                servers_to_update.append(server_name)
-            else:
-                print(f"MCP server already up to date: {server_name}")
-        else:
-            print(f"Adding new MCP server: {server_name}")
-            servers_to_update.append(server_name)
+        is_new = server_name not in current_servers
 
         current_servers[server_name] = resolved_config
+        updated_servers.append(server_name)
+
+        if is_new:
+            print(f"Adding MCP server: {server_name}")
+        else:
+            print(f"Updating MCP server: {server_name}")
 
     # Write updated configuration back to file
-    if servers_to_update:
-        try:
-            with open(claude_json_path, 'w') as f:
-                json.dump(claude_config, f, indent=2)
-            print(f"\nSuccessfully updated {len(servers_to_update)} MCP server(s)")
-            print("Updated servers:", ", ".join(servers_to_update))
-        except Exception as e:
-            print(f"Error: Failed to write Claude configuration: {e}", file=sys.stderr)
-            sys.exit(1)
-    else:
-        print("\nAll MCP servers are already up to date")
+    try:
+        with open(claude_json_path, "w") as f:
+            json.dump(claude_config, f, indent=2)
+        print(f"\nSuccessfully processed {len(updated_servers)} MCP server(s)")
+        print("Processed servers:", ", ".join(updated_servers))
+    except Exception as e:
+        print(f"Error: Failed to write Claude configuration: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # Show summary of all servers
     print(f"\nTotal MCP servers configured: {len(current_servers)}")
