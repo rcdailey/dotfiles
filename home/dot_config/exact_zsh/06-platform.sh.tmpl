@@ -31,6 +31,18 @@ fi
 
 # This is to support the migration to k8s in the nezuko repository
 export DOCKER_DATA_PATH="/mnt/docker-data"
+
+# X11 Clipboard synchronization (PRIMARY ↔ CLIPBOARD)
+if command -v autocutsel >/dev/null 2>&1 && [ -n "$DISPLAY" ]; then
+    # Check if autocutsel is already running to avoid duplicates
+    if ! pgrep -f "autocutsel" >/dev/null 2>&1; then
+        # Sync CLIPBOARD → PRIMARY
+        autocutsel >/dev/null 2>&1 &
+        # Sync PRIMARY → CLIPBOARD
+        autocutsel -s PRIMARY >/dev/null 2>&1 &
+        disown
+    fi
+fi
 {{ end }}
 
 {{ if eq .chezmoi.os "windows" }}
