@@ -163,9 +163,13 @@ def dry_run() -> None:
         "rg pattern | grep other",
         "rg --files | grep filter",
         "sops --set file.yaml key value",
-        # Should NOT match any patterns
+        # Should NOT match any patterns (excluded commands)
         "git commit -m 'find the right solution'",
         "ssh user@host 'grep logs'",
+        "kubectl exec -n media restore-config -- grep -E 'api_key|download_dir|complete_dir' /config/sabnzbd.ini",
+        "kubectl exec -n media restore-config -- sh -c \"rg 'api_key|download_dir|complete_dir' /config/sabnzbd.ini || grep -E 'api_key|download_dir|complete_dir' /config/sabnzbd.ini\"",
+        "docker exec container grep pattern file",
+        "podman exec container find /path -name '*.txt'",
         "rg files | head -10",
         "sops set file.yaml key value",
         "find /usr/local -type f",
@@ -267,6 +271,31 @@ def dry_run() -> None:
 
     print()
 
+    # Test command exclusion logic
+    print("=== Command Exclusion Testing ===")
+    test_exclusion_commands = [
+        "kubectl exec -n media restore-config -- grep -E 'api_key|download_dir|complete_dir' /config/sabnzbd.ini",
+        "kubectl exec -n media restore-config -- sh -c \"rg 'api_key|download_dir|complete_dir' /config/sabnzbd.ini || grep -E 'api_key|download_dir|complete_dir' /config/sabnzbd.ini\"",
+        "docker exec container grep pattern file",
+        "podman exec container find /path -name '*.txt'",
+        "ssh user@host 'grep logs'",
+        "git commit -m 'find the right solution'",
+        "grep pattern file.txt",  # Should be blocked
+        "find /path -name '*.txt'",  # Should be blocked
+    ]
+
+    for cmd in test_exclusion_commands:
+        is_excluded = bool(
+            re.match(r"^\s*(git|ssh|kubectl\s+exec|docker\s+exec|podman\s+exec)\s", cmd)
+        )
+        would_match = any(rule.pattern.search(cmd) for rule in REDIRECTIONS)
+        status = (
+            "EXCLUDED" if is_excluded else ("BLOCKED" if would_match else "ALLOWED")
+        )
+        print(f"  {cmd[:50]}{'...' if len(cmd) > 50 else ''}: {status}")
+
+    print()
+
 
 def main() -> None:
     """Main hook logic."""
@@ -298,8 +327,10 @@ def main() -> None:
 
     # Process Bash commands
     if tool_name == "Bash" and command:
-        # Skip validation for git and ssh commands to avoid false positives
-        if re.match(r"^\s*(git|ssh)\s", command):
+        # Skip validation for remote execution and container commands to avoid false positives
+        if re.match(
+            r"^\s*(git|ssh|kubectl\s+exec|docker\s+exec|podman\s+exec)\s", command
+        ):
             sys.exit(0)
 
         # Check each redirection pattern
