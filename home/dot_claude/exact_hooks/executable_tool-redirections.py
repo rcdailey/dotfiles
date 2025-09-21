@@ -59,7 +59,9 @@ REDIRECTIONS = [
 # Tavily MCP restrictions
 TAVILY_RESTRICTIONS = [
     RedirectionRule(
-        pattern=re.compile(r"(?<!docs\.)(?<!gist\.)github\.com", re.IGNORECASE),
+        pattern=re.compile(
+            r"(?<!docs\.)(?<!gist\.)github\.com(?!/marketplace)", re.IGNORECASE
+        ),
         message="BLOCKED: GitHub repository detected. MUST retry this request using GitHub CLI tools (gh) instead.",
         examples=[
             "github.com/user/repo",
@@ -197,12 +199,14 @@ def dry_run() -> None:
         "find issues on GitHub.com",
         "https://github.com/user/repo",
         "https://github.com/actions/checkout",
-        # Should NOT match (docs.github.com and gist.github.com)
+        # Should NOT match (docs.github.com, gist.github.com, and marketplace)
         "https://docs.github.com/en/actions/how-tos/sharing-automations/reusing-workflows",
         "https://docs.github.com/en/github/getting-started-with-github",
         "https://gist.github.com/user/12345",
         "https://gist.github.com/anonymous/abcdef123456",
         "gist.github.com/user/snippet",
+        "https://github.com/marketplace/actions/workflow-run-debounce",
+        "github.com/marketplace/category/deployment",
         "search for python tutorials",
         "find documentation online",
         "https://stackoverflow.com/questions",
