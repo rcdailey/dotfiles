@@ -1,5 +1,47 @@
 # Claude Code Global Directives
 
+## CRITICAL REQUIREMENTS - ABSOLUTE MANDATES
+
+**These two directives are ABSOLUTELY REQUIRED and MUST be followed in ALL operations:**
+
+### 1. Universal Context7 Usage - MANDATORY FOR ALL OPERATIONS
+
+**ALWAYS use context7 MCP tools for ANY information need - not just libraries:**
+
+- MANDATORY: Use context7 tools (resolve-library-id and get-library-docs) for ALL knowledge gaps
+- Use context7 for general understanding of ANY topic, not just technical tooling
+- Use context7 for fact verification, current best practices, and research on ANY subject
+- NEVER assume or guess information when context7 can provide verified, current knowledge
+- Apply context7 proactively: if you encounter ANY concept, tool, practice, or topic you need to
+  understand better, use context7 IMMEDIATELY
+- Context7 provides up-to-date, authoritative information directly from source repositories
+
+**IMPORTANT:** This applies to ALL operations - planning, implementation, troubleshooting, research,
+and general assistance. Context7 is not optional.
+
+### 2. Ripgrep Usage - GREP IS ABSOLUTELY PROHIBITED
+
+**YOU MUST FOLLOW THESE RULES - VIOLATIONS WILL BE BLOCKED BY HOOKS:**
+
+**NEVER ACCEPTABLE COMMANDS:**
+
+- NEVER: `grep` (use `rg` instead)
+- NEVER: `find -name` (use `rg --files -g "pattern"` instead)
+- NEVER: `ls | rg`, `find | rg`, `rg | grep` (use single `rg` command)
+
+**REQUIRED PATTERNS - THESE ARE THE ONLY ACCEPTABLE APPROACHES:**
+
+- File discovery: `rg --files -g "pattern"`
+- Text search: `rg "pattern1|pattern2"`
+- Filtered search: `rg "pattern" --glob "!**/obj/**"`
+- File filtering: `rg --files -g "*pattern*"`
+
+**IMPORTANT:** These rules exist in your active memory. Check this section before ANY file
+operation.
+
+**Why these rules exist:** `rg` is faster, more feature-rich, and eliminates the need for command
+chaining. Violations indicate a fundamental misunderstanding of available tooling.
+
 ## General
 
 - NEVER assume conditions exist without verification.
@@ -48,26 +90,8 @@
 
 ### Search and File Operations
 
-**YOU MUST FOLLOW THESE RULES - VIOLATIONS WILL BE BLOCKED BY HOOKS:**
-
-**NEVER ACCEPTABLE COMMANDS:**
-
-- NEVER: `grep` (use `rg` instead)
-- NEVER: `find -name` (use `rg --files -g "pattern"` instead)
-- NEVER: `ls | rg`, `find | rg`, `rg | grep` (use single `rg` command)
-
-**REQUIRED PATTERNS - THESE ARE THE ONLY ACCEPTABLE APPROACHES:**
-
-- File discovery: `rg --files -g "pattern"`
-- Text search: `rg "pattern1|pattern2"`
-- Filtered search: `rg "pattern" --glob "!**/obj/**"`
-- File filtering: `rg --files -g "*pattern*"`
-
-**IMPORTANT:** These rules exist in your active memory. Check this section before ANY file
-operation.
-
-**Why these rules exist:** `rg` is faster, more feature-rich, and eliminates the need for command
-chaining. Violations indicate a fundamental misunderstanding of available tooling.
+**CRITICAL REMINDER:** Refer to "CRITICAL REQUIREMENTS" section above for mandatory ripgrep usage
+rules. These rules are absolutely required and enforced by hooks.
 
 ### GitHub Integration Requirements
 
@@ -123,15 +147,10 @@ the most capable tools for each operation type. All rules are automatically enfo
 
 ## Research and Information Gathering
 
-**PRIORITY 1: Library and Tooling Research (context7 MCP REQUIRED):**
+**CRITICAL REMINDER:** Refer to "CRITICAL REQUIREMENTS" section above for mandatory context7 usage
+in ALL operations. Context7 is required for ANY information need, not just libraries.
 
-- MANDATORY: Use context7 MCP tools (resolve-library-id and get-library-docs) BEFORE using any
-  library, framework, or tool, or building any plans involving them.
-- ALWAYS resolve library IDs first, then fetch comprehensive documentation with context7.
-- This provides up-to-date, authoritative documentation directly from source repositories.
-- NEVER assume library capabilities, API patterns, or best practices without context7 verification.
-
-**PRIORITY 2: General Research (tavily MCP tools):**
+**PRIORITY 1: General Research (tavily MCP tools):**
 
 - USE web searching (tavily MCP tools) liberally for factual information on demand. NEVER make
   assumptions when current information is available. Proactively search for:
