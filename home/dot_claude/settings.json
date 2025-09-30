@@ -1,23 +1,12 @@
 {
-  "includeCoAuthoredBy": false,
   "cleanupPeriodDays": 7,
-  "model": "sonnet",
-  "forceLoginMethod": "claudeai",
-  "enableAllProjectMcpServer": true,
-  "spinnerTipsEnabled": false,
   "env": {
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "300000",
     "USE_BUILTIN_RIPGREP": "0"
   },
-  "statusLine": {
-    "type": "command",
-    "command": "zsh ~/.claude/statusline-git.sh"
-  },
+  "includeCoAuthoredBy": false,
   "permissions": {
-    "defaultMode": "default",
-    "ask": ["Bash(git push:*)"],
-    "deny": ["WebFetch", "WebSearch"],
     "allow": [
       "Bash(arp:*)",
       "Bash(awk:*)",
@@ -141,8 +130,17 @@
       "mcp__tavily__tavily-search",
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs"
-    ]
+    ],
+    "deny": [
+      "WebFetch",
+      "WebSearch"
+    ],
+    "ask": [
+      "Bash(git push:*)"
+    ],
+    "defaultMode": "default"
   },
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -219,5 +217,13 @@
       }
     ],
     "UserPromptSubmit": []
-  }
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "zsh ~/.claude/statusline-git.sh"
+  },
+  "forceLoginMethod": "claudeai",
+  "spinnerTipsEnabled": false,
+  "alwaysThinkingEnabled": false,
+  "enableAllProjectMcpServer": true
 }
