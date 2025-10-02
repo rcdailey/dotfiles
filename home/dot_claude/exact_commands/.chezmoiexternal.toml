@@ -27,11 +27,6 @@
     url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/refactor-code.md"
     refreshPeriod = "18h"
 
-["ccs/pr-review.md"]
-    type = "file"
-    url = "https://github.com/arkavo-org/opentdf-rs/raw/refs/heads/main/.claude/commands/pr-review.md"
-    refreshPeriod = "18h"
-
 ["ccs/prime.md"]
     type = "file"
     url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/prime.md"
