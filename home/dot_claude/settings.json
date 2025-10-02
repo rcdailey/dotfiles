@@ -149,11 +149,6 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/tool-redirections.py"
-          },
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/guard-cd.sh",
-            "timeout": 10
           }
         ]
       },
