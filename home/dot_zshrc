@@ -1,6 +1,13 @@
 # Modern zsh configuration with optimal initialization order
 # Priority: Correctness of initialization timing over all other concerns
 
+# Skip full shell initialization in Claude Code - non-interactive automation context
+# Claude spawns many shell sessions for bash commands; loading plugins is unnecessary overhead
+if [[ -n "$CLAUDECODE" ]] || [[ ! -t 0 ]]; then
+    # Keep essential PATH only for tool availability (rg, git, etc.)
+    export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin:$PATH"
+    return 0
+fi
 
 # Enable Powerlevel10k instant prompt. MUST be at the very top after pre-setup.
 # Disable instant prompt in VS Code to fix prompt rendering
