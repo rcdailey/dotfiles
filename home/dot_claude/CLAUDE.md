@@ -6,18 +6,9 @@
 
 ### 1. Universal Context7 Usage - MANDATORY FOR ALL OPERATIONS
 
-**ALWAYS use context7 MCP tools for ANY information need - not just libraries:**
-
-- MANDATORY: Use context7 tools (resolve-library-id and get-library-docs) for ALL knowledge gaps
-- Use context7 for general understanding of ANY topic, not just technical tooling
-- Use context7 for fact verification, current best practices, and research on ANY subject
-- NEVER assume or guess information when context7 can provide verified, current knowledge
-- Apply context7 proactively: if you encounter ANY concept, tool, practice, or topic you need to
-  understand better, use context7 IMMEDIATELY
-- Context7 provides up-to-date, authoritative information directly from source repositories
-
-**IMPORTANT:** This applies to ALL operations - planning, implementation, troubleshooting, research,
-and general assistance. Context7 is not optional.
+Always use context7 when I need code generation, setup or configuration steps, or library/API
+documentation. This means you should automatically use the Context7 MCP tools to resolve library id
+and get library docs without me having to explicitly ask.
 
 ### 2. Ripgrep Usage - GREP IS ABSOLUTELY PROHIBITED
 
