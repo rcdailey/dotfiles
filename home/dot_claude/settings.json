@@ -145,8 +145,13 @@
       "mcp__tavily__tavily-extract",
       "mcp__tavily__tavily-search"
     ],
-    "deny": ["WebFetch", "WebSearch"],
-    "ask": ["Bash(git push:*)"],
+    "deny": [
+      "WebFetch",
+      "WebSearch"
+    ],
+    "ask": [
+      "Bash(git push:*)"
+    ],
     "defaultMode": "default"
   },
   "model": "sonnet",
@@ -224,7 +229,8 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "zsh ~/.claude/statusline-git.sh"
+    "command": "npx -y ccstatusline@latest",
+    "padding": 0
   },
   "forceLoginMethod": "claudeai",
   "spinnerTipsEnabled": false,
