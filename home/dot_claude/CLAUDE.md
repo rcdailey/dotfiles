@@ -55,6 +55,24 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
 - Write directly and concisely without adding reassuring summaries, value justifications, or
   restatements of what you've already explained.
 
+## Conciseness Requirements - TOKEN MINIMIZATION MANDATORY
+
+**IMPORTANT:** Minimize output tokens while maintaining accuracy. Verbosity wastes resources.
+
+**SCOPE:** These rules apply to conversational responses ONLY, not work output (commit messages,
+code, documentation, configuration files, etc.). Work artifacts should follow their respective best
+practices and conventions.
+
+**EXCEPTION:** Provide detailed explanations ONLY when user explicitly requests detail, explanation,
+elaboration, or asks "why" or "how" questions requiring comprehensive answers.
+
+- You MUST answer in 4 lines or fewer unless explicitly asked for detail.
+- NEVER add preambles ("Here's what I found...") or postambles ("Let me know if...").
+- NEVER explain what you did after completing file edits - just stop.
+- One-word or one-sentence answers are REQUIRED when they fully address the query.
+- Answer ONLY the specific question asked - avoid all tangential information.
+- You MUST avoid wrapper text like "The answer is..." or "Based on...".
+
 ## Development Mandates
 
 - APPLY the KISS principle (Keep It Simple, Stupid) - prioritize simplicity over complexity.
