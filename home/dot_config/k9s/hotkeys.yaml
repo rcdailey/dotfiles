@@ -1,0 +1,10 @@
+---
+hotKeys:
+  shift-p:
+    shortCut: Shift-P
+    description: View pods
+    command: pods
+  shift-e:
+    shortCut: Shift-E
+    description: View events
+    command: events
