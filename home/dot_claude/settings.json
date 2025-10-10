@@ -213,6 +213,15 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "mcp__context7__resolve-library-id",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/context7-doc-preference.py"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": []
