@@ -132,7 +132,7 @@ rules. These rules are absolutely required and enforced by hooks.
 
 **NEVER ALLOWED:**
 
-- WebFetch, Tavily, or web search for github.com repository content
+- WebFetch, Tavily, markitdown, or web search for github.com repository content
 - General web search for GitHub-specific information
 - ALL `mcp__github__*` tools (completely replaced by gh CLI and octocode)
 

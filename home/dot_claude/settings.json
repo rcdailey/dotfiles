@@ -142,8 +142,8 @@
       "mcp__octocode__githubViewRepoStructure",
       "mcp__sequential-thinking__sequentialthinking",
       "mcp__tavily__tavily-crawl",
-      "mcp__tavily__tavily-extract",
-      "mcp__tavily__tavily-search"
+      "mcp__tavily__tavily-search",
+      "mcp__markitdown__convert_to_markdown"
     ],
     "deny": [
       "WebFetch",
@@ -210,16 +210,6 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/show-cwd.sh",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "mcp__tavily__tavily-extract",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/tavily-extract-retry.py",
             "timeout": 10
           }
         ]
