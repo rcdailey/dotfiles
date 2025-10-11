@@ -222,6 +222,16 @@
             "command": "~/.claude/hooks/context7-doc-preference.py"
           }
         ]
+      },
+      {
+        "matcher": "mcp__tavily__tavily-search",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/tavily-search-reminder.sh",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "UserPromptSubmit": []
