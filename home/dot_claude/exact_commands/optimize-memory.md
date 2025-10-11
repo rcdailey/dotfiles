@@ -1,175 +1,182 @@
 # Optimize CLAUDE.md Memory Files
 
-You are a CLAUDE.md optimization specialist. Your mission is to optimize CLAUDE.md files for maximum
-effectiveness, token efficiency, and Claude compliance.
+You are a CLAUDE.md optimization specialist. Optimize CLAUDE.md files for maximum effectiveness,
+token efficiency, and Claude compliance while preserving project-specific signal.
 
-## Task Overview
+## Arguments
 
-**Arguments:** `$ARGUMENTS`
+**Input:** `$ARGUMENTS`
 
-If no arguments provided: Scan the repository for all CLAUDE.md files and optimize each
-contextually. If arguments provided: Interpret as natural language specification of which files to
-optimize (paths, patterns, or descriptions).
+- No arguments: Optimize all CLAUDE.md files in repository
+- With arguments: Interpret as paths, patterns, or file descriptions
+- Add `--quick` flag to skip git history analysis (Phase 0)
 
-## Core Mission: Optimization Excellence
-
-You will apply these research-backed optimization principles:
+## Optimization Principles
 
 ### 1. COMPLIANCE (Priority 1)
 
-- **CRITICAL:** Ensure Claude will follow and remember every instruction
+- Ensure Claude follows and remembers every instruction
 - Add emphasis ("IMPORTANT", "YOU MUST") to critical directives
 - Use clear, unambiguous language
-- Structure content for maximum cognitive load efficiency
+- Structure for cognitive load efficiency
 
 ### 2. TOKEN EFFICIENCY (Priority 2)
 
-- **Minimize without losing substance:** Every token must earn its place
-- Remove redundant, generic, or obvious content
-- Use concise, specific language over verbose explanations
-- Balance brevity with necessary detail for compliance
+- Minimize tokens without losing substance
+- Consolidate redundant or verbose content
+- Use concise, specific language
+- Balance brevity with necessary detail
 
-### 3. RESEARCH-BACKED BEST PRACTICES
+### 3. CONTENT TRANSFORMATION RULES
 
-**Content to REMOVE:**
+**CONSOLIDATE (not remove):**
 
-- Generic advice: "follow best practices", "write clean code", "be thorough"
-- Redundant MCP tool descriptions (unless Claude struggles with them)
-- Obvious programming principles that Claude inherently knows
-- Verbose explanations that can be condensed
-- Duplicate information between memory files
+- Verbose explanations → concise bullet points
+- Multiple similar instructions → single precise directive
+- Scattered context → organized sections
+- Abstract principles → concrete project-specific applications
 
-**Content to OPTIMIZE:**
+**CLARIFY:**
 
-- **Be specific:** "Use 2-space indentation" vs "format code properly"
-- **Use structure:** Bullet points under descriptive headings
-- **Focus on project-unique instructions:** Architecture, conventions, workflows
-- **Include essential context:** Common commands, testing procedures, file patterns
-- **Add enforcement:** Use "IMPORTANT" and "YOU MUST" for critical items
+- Vague directives → specific, measurable instructions
+- Generic advice → project-specific patterns
+- Implicit requirements → explicit enforcement
 
-**Structure Guidelines:**
+**PRESERVE (even if they sound generic):**
 
-- Use descriptive markdown headings to group related content
-- Format instructions as bullet points for scanability
-- Use XML tags for complex structured content when beneficial
-- Keep line length ≤ 100 characters where practical
+- Instructions referencing specific files, APIs, or conventions
+- Tool usage patterns addressing project-specific issues
+- Directives explaining WHY (rationale matters for compliance)
+- Content cross-referenced by hooks, scripts, or other CLAUDE files
+- MCP tool descriptions clarifying project-specific usage
 
-### 4. CONTEXT-AWARE PROCESSING
+**Safety check before removing content:**
 
-Analyze each file's **purpose and scope:**
+1. Does it reference project-specific artifacts? (Keep)
+2. Is it referenced elsewhere in the codebase? (Keep)
+3. Does it explain project-specific application of a principle? (Keep)
+4. Is it purely abstract with no project context? (Consider consolidating)
+
+### 4. STRUCTURE GUIDELINES
+
+- Descriptive markdown headings group related content
+- Bullet points for scanability
+- XML tags for complex structured content when beneficial
+- Line length ≤ 100 characters where practical
+
+### 5. CONTEXT-AWARE PROCESSING
+
+**File scope determines optimization strategy:**
 
 - **Global (`~/.claude/CLAUDE.md`)**: Personal preferences across all projects
 - **Project root (`./CLAUDE.md`)**: Team-shared project instructions
-- **Subtree CLAUDE.md files**: Specific area guidance within larger projects
+- **Subtree CLAUDE.md files**: Area-specific guidance within larger projects
 - **Local files (`./CLAUDE.local.md`)**: Personal project-specific notes
-
-Apply optimizations appropriate to the file's scope and intended audience.
 
 ## Execution Protocol
 
-### Phase 0: Git History Intelligence
+### Phase 0: Git History Intelligence (Skip with `--quick`)
 
-**CRITICAL:** Before optimizing any CLAUDE.md file, analyze its git history to understand:
+**When to use:** Full optimization passes, files with unknown optimization state
 
-1. **Run git analysis:** `git log -p -- path/to/CLAUDE.md | head -n 500`
-   - Review recent commits and their full context
-   - Identify previous optimization attempts and their focus areas
-   - Understand the reasoning behind recent changes
+**Skip when:** Quick edits, new files, or user specifies `--quick` flag
 
-2. **Identify optimization targets:**
-   - **New/unoptimized content:** Sections added since last optimization
-   - **Modified areas:** Content changed after previous optimization passes
-   - **Degraded areas:** Content that may need re-optimization due to context changes
-   - **Integration opportunities:** New cross-cutting concerns or consolidation needs
+**Process:**
 
-3. **Avoid re-optimization:**
-   - **Skip recently optimized sections** unless they've been modified
-   - **Preserve intent** from previous optimization commits
-   - **Focus energy** on genuinely improvable areas
+1. **Analyze git history:** `git log -p -- path/to/CLAUDE.md | head -n 500`
+   - Identify previous optimization attempts and their focus
+   - Understand reasoning behind recent changes
+   - Map already-optimized vs unoptimized sections
 
-4. **Strategic assessment:**
-   - If file shows recent comprehensive optimization, focus only on new/changed content
-   - If no optimization history exists, proceed with full file optimization
-   - If partial optimization detected, complete the optimization strategy
+2. **Identify high-value targets:**
+   - New/unoptimized content added since last optimization
+   - Modified sections that need re-optimization
+   - Integration opportunities for consolidation
+
+3. **Preserve recent work:**
+   - Skip sections optimized in last 2-3 commits unless modified
+   - Respect optimization intent from previous passes
+   - Focus energy on genuinely improvable areas
 
 ### Phase 1: Discovery & Analysis
 
-1. **If no arguments:** Search recursively for all CLAUDE.md and CLAUDE.local.md files and optimize
-   ALL of them
-2. **If arguments provided:** Interpret arguments as specific files to optimize:
-   - File paths (relative or absolute)
-   - File patterns or descriptions
-   - MAY READ other CLAUDE files for context, duplication analysis, and cross-cutting concerns
-   - ONLY WRITE/EDIT the files explicitly specified in arguments
-3. **For each target file:**
-   - **Apply Phase 0 git intelligence** to understand optimization history
-   - Analyze current content and structure **with historical context**
-   - Identify optimization opportunities **focusing on unoptimized/changed areas**
-   - Determine file context and scope
-   - Assess token efficiency and compliance issues **for targeted sections**
+**Scope determination:**
 
-### Phase 2: Targeted Optimization Strategy
+- No arguments: Find and optimize ALL CLAUDE.md and CLAUDE.local.md files recursively
+- With arguments: Optimize ONLY specified files (paths, patterns, descriptions)
+- MAY READ other CLAUDE files for context/duplication analysis
+- ONLY WRITE/EDIT explicitly specified target files
 
-For each file, create a **history-informed** optimization plan addressing:
+**Analysis for each target:**
 
-- **Smart targeting:** Focus only on areas identified in Phase 0 as needing work
-- **Content consolidation:** What to remove/merge/restructure (avoid re-optimizing recent work)
-- **Specificity improvements:** Vague → specific transformations (prioritize new/changed content)
-- **Structure enhancements:** Better organization and emphasis (respect previous structural
-  decisions)
-- **Token efficiency gains:** Estimated token savings (focus on highest-impact unoptimized areas)
-- **Compliance improvements:** How to ensure Claude follows instructions (build on previous intent)
-- **Preservation strategy:** Explicitly identify what NOT to change based on recent optimization
+1. Apply Phase 0 git intelligence (unless `--quick` specified)
+2. Identify file scope (global/project/subtree/local)
+3. Check for cross-references in hooks, scripts, other CLAUDE files
+4. Assess content against transformation rules (section 3)
+5. Map optimization opportunities with preservation constraints
 
-### Phase 3: History-Aware Implementation
+### Phase 2: Optimization Strategy
 
-1. **Apply targeted optimizations** based on Phase 0 analysis using MultiEdit tool
-2. **Preserve recent optimization work** - avoid re-optimizing recently improved sections
-3. **Edit the file in place** - do not show content in chat
-4. **Provide strategic summary** highlighting:
-   - Which areas were targeted (new/changed/unoptimized)
-   - Which areas were preserved (recently optimized)
-   - Rationale for optimization choices based on git history
+**Create targeted plan addressing:**
 
-## Expert Knowledge Integration
+- **Smart targeting:** Focus on high-value unoptimized areas
+- **Content consolidation:** Merge/restructure without losing signal
+- **Specificity improvements:** Vague → specific transformations
+- **Structure enhancements:** Better organization and emphasis
+- **Token efficiency:** Estimated savings from highest-impact changes
+- **Compliance improvements:** Ensure instruction adherence
+- **Preservation map:** Explicitly list what NOT to change
 
-Apply these research findings from Anthropic and the community:
+**Validation before proceeding:**
 
-- **Memory cascading:** Understand how files interact in the hierarchy
-- **Prompt engineering principles:** Treat CLAUDE.md as system prompt optimization
-- **Token economics:** Balance information density with readability
-- **Claude model behavior:** Leverage known response patterns and compliance methods
-- **Real-world usage patterns:** Apply proven workflow optimizations
+- Verify no project-specific content incorrectly flagged for removal
+- Confirm cross-references preserved
+- Check rationale explanations retained
+
+### Phase 3: Implementation
+
+1. **Apply optimizations** using Edit tool for targeted changes
+2. **Edit files in place** - do not show content in chat
+3. **Provide strategic summary:**
+   - Areas optimized (new/changed/consolidated)
+   - Areas preserved (recently optimized/cross-referenced)
+   - Rationale for major changes
+   - Token savings estimate
 
 ## Success Criteria
 
 Each optimized CLAUDE.md should be:
 
 - **More effective:** Claude follows instructions better
-- **More efficient:** Uses fewer tokens while preserving essential information
-- **Better structured:** Organized, scannable, and maintainable
-- **Context-appropriate:** Optimized for its specific purpose and scope
-- **Compliance-focused:** Maximum instruction adherence probability
+- **More efficient:** Fewer tokens while preserving signal
+- **Better structured:** Organized, scannable, maintainable
+- **Context-appropriate:** Optimized for its scope and audience
+- **Compliance-focused:** Maximum instruction adherence
 
-## Important Execution Notes
+## Execution Guidelines
 
-**History-Driven Intelligence:**
+**Phase 0 Strategy:**
 
-- **ALWAYS start with Phase 0** git history analysis for each target file
-- **Respect previous optimization work** - don't re-optimize recently improved content
-- **Target intelligently** - focus on new, changed, or genuinely unoptimized areas
-- **Preserve optimization intent** from previous commits
+- Use Phase 0 by default for comprehensive optimization
+- Skip with `--quick` for minor edits or new files
+- Respect previous optimization work - don't re-optimize recently improved sections
+- Target high-value unoptimized areas
 
-**Standard Operations:**
+**File Scope:**
 
-- **No arguments:** Edit ALL CLAUDE.md files found in repository
-- **With arguments:** ONLY edit the files explicitly specified in arguments
-- **Context reading:** MAY read other CLAUDE files to identify duplication and cross-cutting
-  concerns
-- **Edit files directly** using MultiEdit tool - do not show content in chat
-- **Do not create todo lists** unless scanning codebase for verification purposes
-- **Be conservative** with removing content that might be important
-- **Focus on proven optimizations** from the research
-- **Keep summaries brief and high-level** - avoid detailed explanations
+- No arguments: Edit ALL CLAUDE.md files in repository
+- With arguments: ONLY edit explicitly specified files
+- MAY read other CLAUDE files for context/duplication analysis
+- ONLY write to target files
 
-Begin optimization process now with the provided arguments: `$ARGUMENTS`
+**Operational Notes:**
+
+- Edit files directly using Edit tool - do not show content in chat
+- Do not create todo lists unless scanning codebase for verification
+- Be conservative - when uncertain, preserve content
+- Apply safety checks before removing any content (see section 3)
+- Keep summaries strategic and high-level
+
+**Key principle:** Consolidate and clarify, don't strip signal.
+
+Begin optimization: `$ARGUMENTS`
