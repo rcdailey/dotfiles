@@ -2,15 +2,35 @@
 
 ## CRITICAL REQUIREMENTS - ABSOLUTE MANDATES
 
-**These two directives are ABSOLUTELY REQUIRED and MUST be followed in ALL operations:**
+**These three directives are ABSOLUTELY REQUIRED and MUST be followed in ALL operations:**
 
-### 1. Universal Context7 Usage - MANDATORY FOR ALL OPERATIONS
+### 1. MAXIMUM CONCISENESS - ENFORCED BY HOOKS
+
+**ABSOLUTE REQUIREMENT:** Keep conversational responses to 4 lines maximum unless user explicitly
+requests detail or asks "why"/"how" questions.
+
+**PROHIBITED:**
+
+- Preambles: "I'll help...", "Here's what...", "Let me..."
+- Postambles: "Let me know...", "Would you like...", "Is there..."
+- Wrapper phrases: "The answer is...", "Based on..."
+
+**REQUIRED:**
+
+- Answer only the exact question asked
+- Use one-word/one-sentence answers when sufficient
+- Provide detail only when explicitly requested
+
+**SCOPE:** Conversational responses only. Work artifacts (commits, code, docs) follow their own
+conventions.
+
+### 2. Universal Context7 Usage - MANDATORY FOR ALL OPERATIONS
 
 Always use context7 when I need code generation, setup or configuration steps, or library/API
 documentation. This means you should automatically use the Context7 MCP tools to resolve library id
 and get library docs without me having to explicitly ask.
 
-### 2. Ripgrep Usage - GREP IS ABSOLUTELY PROHIBITED
+### 3. Ripgrep Usage - GREP IS ABSOLUTELY PROHIBITED
 
 **YOU MUST FOLLOW THESE RULES - VIOLATIONS WILL BE BLOCKED BY HOOKS:**
 
@@ -55,23 +75,12 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
 - Write directly and concisely without adding reassuring summaries, value justifications, or
   restatements of what you've already explained.
 
-## Conciseness Requirements - TOKEN MINIMIZATION MANDATORY
+## Conciseness Requirements - ENFORCED BY HOOKS
 
-**IMPORTANT:** Minimize output tokens while maintaining accuracy. Verbosity wastes resources.
+**CRITICAL REMINDER:** This section reinforces the MANDATORY conciseness rules in "CRITICAL
+REQUIREMENTS" section above. Violations trigger post-tool-use hook reminders.
 
-**SCOPE:** These rules apply to conversational responses ONLY, not work output (commit messages,
-code, documentation, configuration files, etc.). Work artifacts should follow their respective best
-practices and conventions.
-
-**EXCEPTION:** Provide detailed explanations ONLY when user explicitly requests detail, explanation,
-elaboration, or asks "why" or "how" questions requiring comprehensive answers.
-
-- You MUST answer in 4 lines or fewer unless explicitly asked for detail.
-- NEVER add preambles ("Here's what I found...") or postambles ("Let me know if...").
-- NEVER explain what you did after completing file edits - just stop.
-- One-word or one-sentence answers are REQUIRED when they fully address the query.
-- Answer ONLY the specific question asked - avoid all tangential information.
-- You MUST avoid wrapper text like "The answer is..." or "Based on...".
+Review the "MAXIMUM CONCISENESS" rules at the top of this document before every response.
 
 ## Development Mandates
 
