@@ -173,13 +173,49 @@ For each issue found:
 
 ### 5. Generate Review Comments
 
-Follow Google's code review best practices for writing comments. Each comment should:
+**Factual Verification - MANDATORY:**
 
-- Explain the problem and why it matters
+Before writing any comment, you MUST verify technical claims using context7 and tavily:
+
+- Research unfamiliar APIs, frameworks, or language features
+- Verify syntax requirements and constraints (e.g., SQL, Terraform, language-specific rules)
+- Confirm best practices for the specific technology
+- Check documentation for behavior you're uncertain about
+- Validate that your suggestion actually works as claimed
+
+**DO NOT** make claims based on assumptions. If you cannot verify something, either research it or
+soften your language to indicate uncertainty ("I think this might...", "This could potentially...").
+
+**Writing Style - CRITICAL:**
+
+Comments must sound humble, approachable, and conversational - like a colleague suggesting ideas
+rather than directing changes. Follow these voice patterns:
+
+**Language patterns to USE:**
+
+- "What do you think about..." instead of "I recommend..."
+- "Would it make sense to..." instead of "You should..."
+- "What if we..." instead of "I suggest we..."
+- "I think [X] might..." instead of "This will..."
+- "This could..." instead of "This will..."
+- Acknowledge uncertainty: "I'm not sure if...", "Maybe we could..."
+- Frame as questions when possible to invite discussion
+
+**Language patterns to AVOID:**
+
+- Demanding or directive language ("must", "should", "needs to")
+- Strong declarative statements ("This will fail", "This causes problems")
+- Imperative verbs ("Fix this", "Change that", "Remove this")
+- Absolute language ("always", "never", "definitely")
+- Formal phrasing ("I recommend", "It is advisable", "One should")
+
+**Tone guidelines:**
+
 - Be conversational and kind (comment on code, not the developer)
-- Provide concrete, actionable guidance
-- Include code examples when helpful
-- Avoid redundant observations about what changed
+- Present observations as collaborative discussion points
+- Use contractions naturally (it's, won't, doesn't)
+- Keep sentences simple and direct
+- Show humility about your suggestions
 
 **Existing Comment Analysis:**
 
@@ -202,15 +238,13 @@ the same concern:
 Create individual review comments with this simplified structure:
 
 ```txt
-## Comment {N}: {Brief Title}
+## Comment {N}: {Brief, conversational title}
 
 **File:** `{path}`
 **Line:** {number}
 
-{Conversational explanation of the issue explaining:
-- What the problem is
-- Why it matters (impact/consequences)
-- Concrete recommendation or suggestion}
+{Direct explanation of what you noticed, written conversationally. Explain the problem and why it
+matters, using humble language. End with a suggestion framed as a question or collaborative idea.}
 
 {Optional: fenced code block with suggested fix if helpful}
 ```
@@ -229,18 +263,16 @@ Create individual review comments with this simplified structure:
 
 Example good comment:
 
-## Comment 1: Inconsistent Validation Between Request Types
+## Comment 1: Inconsistent validation between request types
 
 **File:** `src/Client.Api/Cases/CaseValidators.cs` **Line:** 26
 
 I noticed that `CaseRequestValidator` now validates `ProductCode` as required (line 21), but
 `SequentialCaseRequestValidator` doesn't have the same validation rule. Since both request types
-have the same `InterpretationRequest` property structure, they should have consistent validation.
+have the same `InterpretationRequest` property structure, this could create inconsistent API
+behavior between the two endpoints.
 
-This creates inconsistent API behavior between two similar endpoints and the OpenAPI spec shows both
-endpoints have identical `interpretationRequest` structures.
-
-I recommend adding the same validation rule to `SequentialCaseRequestValidator`:
+What do you think about adding the same validation rule to `SequentialCaseRequestValidator`?
 
 ```csharp
 public class SequentialCaseRequestValidator : AbstractValidator<SequentialCaseRequest>
@@ -255,8 +287,10 @@ public class SequentialCaseRequestValidator : AbstractValidator<SequentialCaseRe
 
 What to avoid:
 
+- Demanding language ("This must be fixed", "You should change this")
+- Strong declarations ("This will fail", "This causes problems")
+- Formal phrasing ("I recommend that...", "It is advisable to...")
 - Separate "Problems", "Recommendation", "Impact" sections (redundant structure)
-- Statements like "This should be fixed before merge" (let severity speak for itself)
 - Restating what the developer already knows (e.g., "now changed from array to object")
 - Multiple bullet lists when a paragraph works better
 
@@ -265,33 +299,41 @@ What to avoid:
 **For files WITHOUT minor issues requested:**
 
 ```markdown
-# PR #{number} Review Comments - Critical and High Priority Issues
-
-Instructions: Navigate to the specified file and line in GitHub's PR review interface, click "Add a comment", and paste the comment text.
+# PR #{number} Review Comments
 
 ---
 
-## Comment 1: {Title}
-{comment content}
+## Comment 1: {Brief, conversational title}
+{comment content using humble, approachable language}
 
 ---
 
-## Comment 2: {Title}
-{comment content}
+## Comment 2: {Brief, conversational title}
+{comment content using humble, approachable language}
 
 ---
 
 ## Summary
 
-**Total Issues:** {count} ({critical} Critical, {high} High Priority)
+**Blockers:**
 
-**Blockers for merge:**
-1. {issue 1}
-2. {issue 2}
-...
+- Comment {N}: {Brief description}
+- Comment {N}: {Brief description}
 
-**Overall Recommendation:** {Request changes|Approve with suggestions|Approve}
+**Should fix before production:**
+
+- Comment {N}: {Brief description}
+- Comment {N}: {Brief description}
+
+**Recommendations:**
+
+- Comment {N}: {Brief description}
+- Comment {N}: {Brief description}
 ```
+
+Note: Use "Blockers" for critical issues that prevent the code from working, "Should fix before
+production" for serious issues that work but have operational problems, and "Recommendations" for
+improvements that aren't urgent.
 
 **For files WITH minor issues requested:**
 
@@ -322,15 +364,23 @@ These issues don't block the merge but could improve code quality:
 **DO:**
 
 - Focus on critical and high-priority issues that block or should block merge
-- Use context7 and tavily liberally to verify assumptions
-- Write in first person with conversational tone
+- Use context7 and tavily to factually verify EVERY technical claim before writing comments
+- Research syntax requirements, API behavior, and best practices for technologies you're reviewing
+- Write with humble, approachable language as if suggesting ideas to a colleague
+- Use conversational tone with contractions (it's, won't, doesn't)
+- Frame suggestions as questions or collaborative ideas ("What do you think about...", "Would it
+  make sense to...")
 - Provide specific file paths and line numbers
-- Include actionable recommendations with code examples
+- Include actionable code examples when helpful
 - Create the markdown file with `.ignored.md` extension in repo root
+- Keep comment titles brief and conversational (lowercase)
 
 **DO NOT:**
 
 - Include preamble or explanations before creating the file
+- Use demanding or directive language ("must", "should", "needs to", "fix this")
+- Use strong declarative statements ("This will fail", "This causes problems")
+- Use formal phrasing ("I recommend that...", "It is advisable to...")
 - Use alarmist language or excessive severity labels
 - Create overly formal or AI-sounding comments
 - Assume knowledge - research unfamiliar concepts
