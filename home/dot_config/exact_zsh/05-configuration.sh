@@ -27,7 +27,7 @@ export PATH="$PATH:$HOME:$HOME/git-scripts"
 # Add Go tools to PATH if go is installed
 if command -v go >/dev/null 2>&1; then
   if [[ -z $GOPATH_CACHED ]]; then
-    GOPATH_CACHED="$(go env GOPATH)"
+    GOPATH_CACHED="$(go env GOPATH 2>/dev/null)" || GOPATH_CACHED="$HOME/go"
     export GOPATH_CACHED
   fi
   export PATH="$GOPATH_CACHED/bin:$PATH"
