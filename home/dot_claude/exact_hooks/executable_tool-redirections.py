@@ -338,26 +338,7 @@ def main() -> None:
                 print(error_msg, file=sys.stderr)
                 sys.exit(2)
 
-    # Process tavily-extract tool - redirect to markitdown
-    elif tool_name == "mcp__tavily__tavily-extract":
-        tool_input = input_data.get("tool_input", {})
-        urls = tool_input.get("urls", [])
-
-        # Check URLs for GitHub references first (higher priority)
-        if urls:
-            for url in urls:
-                for rule in TAVILY_RESTRICTIONS:
-                    if rule.pattern.search(url):
-                        error_msg = f"TAVILY USAGE VIOLATION: {rule.message}"
-                        print(error_msg, file=sys.stderr)
-                        sys.exit(2)
-
-        # Redirect to markitdown for non-GitHub URLs
-        error_msg = "TOOL REDIRECTION: Use 'mcp__markitdown__convert_to_markdown' instead of tavily-extract.\nParameter mapping: urls -> uri (use first URL from urls array)"
-        print(error_msg, file=sys.stderr)
-        sys.exit(2)
-
-    # Process other Tavily MCP tools
+    # Process Tavily MCP tools
     elif tool_name.startswith("mcp__tavily__"):
         tool_input = input_data.get("tool_input", {})
         query = tool_input.get("query", "")

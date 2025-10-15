@@ -142,6 +142,7 @@
       "mcp__octocode__githubViewRepoStructure",
       "mcp__sequential-thinking__sequentialthinking",
       "mcp__tavily__tavily-crawl",
+      "mcp__tavily__tavily-extract",
       "mcp__tavily__tavily-search",
       "mcp__markitdown__convert_to_markdown"
     ],
@@ -230,16 +231,6 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/context7-doc-preference.py"
-          }
-        ]
-      },
-      {
-        "matcher": "mcp__tavily__tavily-search",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/tavily-search-reminder.sh",
-            "timeout": 10
           }
         ]
       }

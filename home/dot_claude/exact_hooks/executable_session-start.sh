@@ -39,8 +39,7 @@ GITHUB OPERATIONS:
 
 TAVILY TOOLS:
 - NEVER set 'include_raw_content=true' (excessive token usage)
-- Use 'mcp__markitdown__convert_to_markdown' for URL extraction (NOT tavily-extract)
-- NEVER use Tavily or MarkItDown for github.com content (use gh/octocode instead)
+- NEVER use Tavily for github.com content (use gh/octocode instead)
 
 These rules are enforced by PreToolUse hooks that will block violations.
 EOF
