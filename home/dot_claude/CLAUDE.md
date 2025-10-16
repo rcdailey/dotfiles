@@ -198,3 +198,10 @@ in ALL operations. Context7 is required for ANY information need, not just libra
 
 - PREFER default values by omission over explicit configuration - minimal configuration improves
   maintainability and clarity of intent.
+
+## Pull Request Requirements
+
+- NEVER include test plans in PR descriptions - target audience is developers who understand testing
+  requirements.
+- AVOID template boilerplate unless required by contributing guidelines.
+- KEEP descriptions high-level and focused on explaining the change for reviewers.
