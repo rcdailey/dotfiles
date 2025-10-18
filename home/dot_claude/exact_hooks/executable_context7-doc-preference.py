@@ -128,25 +128,11 @@ def analyze_context7_results(tool_response: str) -> None:
 
     # Provide guidance if documentation results exist
     if doc_results:
-        print("\n" + "=" * 80)
-        print("IMPORTANT: CONTEXT7 DOCUMENTATION GUIDANCE")
-        print("=" * 80)
-        print("\nFOR YOUR NEXT get-library-docs CALL:")
-        print(f"  USE THIS: {doc_results[0]['id']}")
-        print("\nWHY: This is the official documentation site.")
-        print("     Code repositories contain implementation, not usage guides.")
-
-        if len(doc_results) > 1:
-            print("\nAlternative documentation sources:")
-            for result in doc_results[1:3]:
-                print(f"  - {result['id']}")
-
-        if code_results:
-            print("\nCode repositories (for implementation details only):")
-            for result in code_results[:2]:
-                print(f"  - {result['id']}")
-
-        print("\n" + "=" * 80 + "\n")
+        print(f"   USE: {doc_results[0]['id']} (official documentation)")
+        print()
+        print(
+            f'   REQUIRED PARAMETER: context7CompatibleLibraryID = "{doc_results[0]["id"]}"'
+        )
 
 
 def main():
