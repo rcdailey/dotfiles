@@ -72,7 +72,9 @@ Break changes into logical commits.
 
 ## Message Rules
 
-**MANDATORY**: ALWAYS examine actual diff content before creating commit messages. NEVER make
+**MANDATORY**: Examine actual diff content AND consider project context from CLAUDE.md before
+creating commit messages. Use project context to correctly classify changes as affecting the
+versioned artifact (`fix`/`feat`) vs tooling/infrastructure (`chore`/`ci`/`docs`). NEVER make
 assumptions based on filenames, paths, or diff stats alone.
 
 **Format**: Use conventional commits ONLY if last 3 commits consistently use type prefixes.
@@ -86,6 +88,41 @@ commit will [subject line]"
 Use bullet points, wrap at 72 chars.
 
 **Multi-line syntax**: `git commit -m "subject\n\nbody line 1\nbody line 2"`
+
+## Project Context Inference
+
+**CRITICAL:** Project CLAUDE.md is already loaded in your context. Use this information to inform
+commit type decisions. DO NOT search for or read CLAUDE.md files - operate solely on project
+knowledge already in context.
+
+**Inference Process:**
+
+1. Review CLAUDE.md content for project type indicators (e.g., "dotnet project", ".csproj files",
+   "npm package", "Rust crate")
+2. Identify what constitutes the "primary versioned artifact" vs ancillary tooling
+3. Apply conventional commit semantics correctly:
+   - `fix`/`feat`/`BREAKING CHANGE`: Changes to primary versioned artifact
+   - `chore`: Changes to tooling, configs, dependencies that don't affect artifact
+   - `ci`: CI/CD pipeline changes
+   - `docs`: Documentation-only changes
+   - `test`: Test-only changes
+
+**Examples:**
+
+- Dotnet project with renovate.json5 change → `chore` (config tooling, not library code)
+- Node package with src/*.ts change → `fix` or `feat` (affects published package)
+- Any project with .github/workflows change → `ci` (pipeline tooling)
+
+**Uncertainty Protocol:**
+
+If you cannot confidently determine the project's primary artifact from CLAUDE.md:
+
+1. REFUSE to commit
+2. Report: "Cannot determine project versioning scope from CLAUDE.md"
+3. REQUEST user add project overview section describing:
+   - Primary project type (library, application, tooling)
+   - What gets versioned (npm package, docker image, binary, etc.)
+   - Source code locations vs ancillary configs
 
 ## Pre-commit Hook Handling
 
