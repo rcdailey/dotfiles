@@ -246,7 +246,16 @@
         ]
       }
     ],
-    "UserPromptSubmit": []
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/improve-prompt.py"
+          }
+        ]
+      }
+    ]
   },
   "statusLine": {
     "type": "command",
