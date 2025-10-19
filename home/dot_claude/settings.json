@@ -206,16 +206,6 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/conciseness-reminder.sh",
-            "timeout": 5
-          }
-        ]
-      },
-      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -252,6 +242,11 @@
           {
             "type": "command",
             "command": "python3 ~/.claude/hooks/improve-prompt.py"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/conciseness-reminder.sh",
+            "timeout": 5
           }
         ]
       }
