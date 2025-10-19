@@ -1,11 +1,11 @@
 #!/usr/bin/env zsh
 
 {{ if and (hasKey .chezmoi "kernel") (hasKey .chezmoi.kernel "osrelease") (contains "WSL" .chezmoi.kernel.osrelease) -}}
-cat | clip.exe
+clip.exe
 {{ else if eq .chezmoi.os "darwin" -}}
-cat | pbcopy
+pbcopy
 {{ else if eq .chezmoi.os "linux" -}}
-cat | xclip -selection clipboard
+tee >(xclip -selection clipboard) | xclip -selection primary
 {{ else -}}
 echo "Error: Unsupported platform for clipboard operations" >&2
 return 1
