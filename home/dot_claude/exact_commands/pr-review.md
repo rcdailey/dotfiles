@@ -42,7 +42,7 @@ The markdown file MUST:
 - Structure comments as copy-paste ready for GitHub PR reviews
 - Include file paths and line numbers for each issue
 - Use first-person, conversational tone (avoid AI-sounding language)
-- Reserve fenced code blocks ONLY for actual code suggestions
+- Use GitHub suggestion format (```suggestion) for all code suggestions
 - Focus on actionable, specific feedback
 
 ## Review Process
@@ -246,7 +246,7 @@ Create individual review comments with this simplified structure:
 {Direct explanation of what you noticed, written conversationally. Explain the problem and why it
 matters, using humble language. End with a suggestion framed as a question or collaborative idea.}
 
-{Optional: fenced code block with suggested fix if helpful}
+{Optional: GitHub suggestion block with suggested fix if helpful - use ```suggestion format}
 ```
 
 **For follow-up to existing comment:**
@@ -274,7 +274,7 @@ behavior between the two endpoints.
 
 What do you think about adding the same validation rule to `SequentialCaseRequestValidator`?
 
-```csharp
+```suggestion
 public class SequentialCaseRequestValidator : AbstractValidator<SequentialCaseRequest>
 {
     public SequentialCaseRequestValidator()
@@ -371,7 +371,7 @@ These issues don't block the merge but could improve code quality:
 - Frame suggestions as questions or collaborative ideas ("What do you think about...", "Would it
   make sense to...")
 - Provide specific file paths and line numbers
-- Include actionable code examples when helpful
+- Include actionable code examples when helpful using GitHub suggestion format (```suggestion)
 - Create the markdown file with `.ignored.md` extension in repo root
 - Keep comment titles brief and conversational (lowercase)
 
@@ -386,7 +386,7 @@ These issues don't block the merge but could improve code quality:
 - Assume knowledge - research unfamiliar concepts
 - Include minor issues unless user requested them via natural language
 - Use TodoWrite or task tracking tools
-- Wrap entire comments in code blocks (only use for actual code)
+- Use generic code blocks for suggestions (always use ```suggestion format instead)
 - Use redundant structured sections (Problems/Recommendation/Impact)
 - Add "this should be fixed before merge" statements
 - Restate obvious facts about what changed in the PR
