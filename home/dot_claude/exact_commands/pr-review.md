@@ -173,41 +173,65 @@ For each issue found:
 
 ### 5. Generate Review Comments
 
-**Factual Verification - MANDATORY:**
+**Factual Verification - MANDATORY FOR EVERY COMMENT:**
 
-Before writing any comment, you MUST verify technical claims using context7 and tavily:
+**CRITICAL WORKFLOW:** For EACH review comment you plan to write, you MUST:
 
-- Research unfamiliar APIs, frameworks, or language features
-- Verify syntax requirements and constraints (e.g., SQL, Terraform, language-specific rules)
-- Confirm best practices for the specific technology
-- Check documentation for behavior you're uncertain about
-- Validate that your suggestion actually works as claimed
+1. **STOP before writing** - Identify every technical claim in your planned comment
+2. **Research ALL claims** using context7 and tavily:
+   - Library/framework behavior and API usage patterns
+   - Language syntax requirements and constraints
+   - Tool-specific rules (Terraform, SQL, etc.)
+   - Best practices and recommended patterns for the technology
+   - Security implications and common vulnerabilities
+   - Expected outcomes and failure modes
+3. **Validate suggestions** - Test that your proposed fix/approach actually works
+4. **Document sources** - Note which docs/resources validated your claims
+5. **Only then write** - Compose comment using verified facts, not assumptions
 
-**DO NOT** make claims based on assumptions. If you cannot verify something, either research it or
-soften your language to indicate uncertainty ("I think this might...", "This could potentially...").
+**EVIDENCE REQUIREMENTS:**
+
+- Every "this will cause X" claim needs context7/tavily verification showing it causes X
+- Every "must be Y" statement needs docs showing Y is required
+- Every "best practice is Z" needs sources confirming Z is the standard approach
+- When docs conflict or are unclear, explicitly state uncertainty in the comment
+
+**DO NOT:**
+
+- Make claims based on pattern recognition alone ("I've seen this before")
+- Assume behavior without checking current docs (versions change)
+- Trust memory over fresh research (your training data may be outdated)
+- Write comments without completing verification steps above
+
+**If you cannot verify a claim:** Either research deeper or soften language to indicate uncertainty
+("I'm not certain, but this might...", "Based on similar patterns, this could...").
 
 **Writing Style - CRITICAL:**
 
 Comments must sound humble, approachable, and conversational - like a colleague suggesting ideas
 rather than directing changes. Follow these voice patterns:
 
-**Language patterns to USE:**
+**Language patterns for BUGS/DEFECTS (objective problems):**
 
-- "What do you think about..." instead of "I recommend..."
-- "Would it make sense to..." instead of "You should..."
-- "What if we..." instead of "I suggest we..."
-- "I think [X] might..." instead of "This will..."
-- "This could..." instead of "This will..."
-- Acknowledge uncertainty: "I'm not sure if...", "Maybe we could..."
-- Frame as questions when possible to invite discussion
+- "I think this is a bug because..." or "This looks broken..."
+- "I'd recommend fixing..." or "This should probably be fixed..."
+- "This will cause [specific problem]..." when the outcome is predictable
+- Direct statements about objective issues are appropriate
+
+**Language patterns for STYLE/ARCHITECTURE (subjective choices):**
+
+- "What do you think about..." for alternative approaches
+- "Would it make sense to..." for design suggestions
+- "What if we..." for exploring options
+- "This could..." when suggesting improvements
+- Frame as questions to invite discussion on subjective matters
 
 **Language patterns to AVOID:**
 
-- Demanding or directive language ("must", "should", "needs to")
-- Strong declarative statements ("This will fail", "This causes problems")
-- Imperative verbs ("Fix this", "Change that", "Remove this")
-- Absolute language ("always", "never", "definitely")
-- Formal phrasing ("I recommend", "It is advisable", "One should")
+- Demanding language ("must", "needs to", "fix this immediately")
+- Imperative verbs without context ("Change that", "Remove this")
+- Absolute language without justification ("always", "never", "definitely")
+- Treating bugs like opinions ("What do you think about fixing this crash?")
 
 **Tone guidelines:**
 
@@ -368,8 +392,8 @@ These issues don't block the merge but could improve code quality:
 - Research syntax requirements, API behavior, and best practices for technologies you're reviewing
 - Write with humble, approachable language as if suggesting ideas to a colleague
 - Use conversational tone with contractions (it's, won't, doesn't)
-- Frame suggestions as questions or collaborative ideas ("What do you think about...", "Would it
-  make sense to...")
+- Use direct language for bugs/defects ("I recommend...", "This will fail...") and questions for
+  subjective choices ("What do you think about...", "Would it make sense to...")
 - Provide specific file paths and line numbers
 - Include actionable code examples when helpful using GitHub suggestion format (```suggestion)
 - Create the markdown file with `.ignored.md` extension in repo root
@@ -378,9 +402,9 @@ These issues don't block the merge but could improve code quality:
 **DO NOT:**
 
 - Include preamble or explanations before creating the file
-- Use demanding or directive language ("must", "should", "needs to", "fix this")
-- Use strong declarative statements ("This will fail", "This causes problems")
-- Use formal phrasing ("I recommend that...", "It is advisable to...")
+- Use demanding language without justification ("must fix immediately", "needs to change now")
+- Treat objective bugs as subjective opinions ("What do you think about this null pointer crash?")
+- Use formal phrasing ("It is advisable to...", "One should...")
 - Use alarmist language or excessive severity labels
 - Create overly formal or AI-sounding comments
 - Assume knowledge - research unfamiliar concepts
