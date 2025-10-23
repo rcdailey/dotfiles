@@ -247,6 +247,11 @@
             "type": "command",
             "command": "~/.claude/hooks/conciseness-reminder.sh",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/context7-requirement.sh",
+            "timeout": 5
           }
         ]
       }
