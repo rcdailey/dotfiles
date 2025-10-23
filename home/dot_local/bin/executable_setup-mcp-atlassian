@@ -1,4 +1,7 @@
 #!/usr/bin/env zsh
 
+# Remove existing Atlassian MCP if present
+claude mcp remove atlassian 2>/dev/null || true
+
 claude mcp add -s user atlassian -- \
   npx -y mcp-remote@latest https://mcp.atlassian.com/v1/sse --transport sse-only
