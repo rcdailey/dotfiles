@@ -1,3 +1,4 @@
 #!/usr/bin/env zsh
 
-claude mcp add --scope user --transport sse atlassian https://mcp.atlassian.com/v1/sse
+claude mcp add -s user atlassian -- \
+  npx -y mcp-remote@latest https://mcp.atlassian.com/v1/sse --transport sse-only
