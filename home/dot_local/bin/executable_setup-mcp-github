@@ -1,0 +1,34 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+# Toolset configuration - edit this list to customize enabled toolsets
+TOOLSETS="context,orgs,repos,issues,pull_requests,actions,discussions,actions"
+
+# Get GitHub token from gh auth
+if ! gh auth status &>/dev/null; then
+  echo "Error: gh auth session not available. Run 'gh auth login' first." >&2
+  exit 1
+fi
+
+TOKEN=$(gh auth token)
+if [[ -z "$TOKEN" ]]; then
+  echo "Error: Failed to retrieve token from gh auth" >&2
+  exit 1
+fi
+
+# Remove existing github MCP if present
+if claude mcp get github &>/dev/null; then
+  echo "Removing existing github MCP server..."
+  claude mcp remove github
+fi
+
+# Add github MCP server with remote configuration
+echo "Adding github MCP server with toolsets: $TOOLSETS"
+claude mcp add github https://api.githubcopilot.com/mcp \
+  --scope user \
+  --transport http \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-MCP-Toolsets: $TOOLSETS"
+
+echo "GitHub MCP server configured successfully!"
+echo "Run 'claude mcp get github' to verify configuration"
