@@ -2,7 +2,13 @@
 set -euo pipefail
 
 # Toolset configuration - edit this list to customize enabled toolsets
-TOOLSETS="context,orgs,repos,issues,pull_requests,actions,discussions,actions"
+TOOLSETS="context,repos,issues,pull_requests,actions,discussions"
+
+# Install github-mcp-server via Homebrew if not already installed
+if ! command -v github-mcp-server &>/dev/null; then
+  echo "Installing github-mcp-server via Homebrew..."
+  brew install github-mcp-server
+fi
 
 # Get GitHub token from gh auth
 if ! gh auth status &>/dev/null; then
@@ -22,13 +28,13 @@ if claude mcp get github &>/dev/null; then
   claude mcp remove github
 fi
 
-# Add github MCP server with remote configuration
 echo "Adding github MCP server with toolsets: $TOOLSETS"
-claude mcp add github https://api.githubcopilot.com/mcp \
-  --scope user \
-  --transport http \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "X-MCP-Toolsets: $TOOLSETS"
+
+claude mcp add github -s user \
+  -e GITHUB_PERSONAL_ACCESS_TOKEN="$TOKEN" \
+  -e GITHUB_TOOLSETS="$TOOLSETS" \
+  -- github-mcp-server stdio --dynamic-toolsets
+
 
 echo "GitHub MCP server configured successfully!"
 echo "Run 'claude mcp get github' to verify configuration"
