@@ -164,6 +164,10 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/tool-redirections.py"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/gh-api-readonly.py"
           }
         ]
       },
