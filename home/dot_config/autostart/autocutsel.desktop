@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Autocutsel Clipboard Sync
+Comment=Sync X11 CLIPBOARD and PRIMARY selections
+Exec=sh -c "autocutsel -fork && autocutsel -selection PRIMARY -fork"
+Terminal=false
+Hidden=false
+X-GNOME-Autostart-enabled=true
