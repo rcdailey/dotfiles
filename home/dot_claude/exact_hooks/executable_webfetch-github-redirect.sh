@@ -35,7 +35,7 @@ fi
 # Check if URL is a GitHub repository or raw content URL
 if [[ "$target_url" =~ ^https?://(github\.com|raw\.githubusercontent\.com)/[^/]+/[^/]+(/.*)?$ ]]; then
   echo "Error: Do not use $tool_name against GitHub repositories" >&2
-  echo "Use Octocode tools for advanced search or 'gh' CLI for all GitHub operations." >&2
+  echo "Use native GitHub integration tools instead." >&2
 
   # Exit code 2 blocks tool call and shows stderr to Claude
   exit 2

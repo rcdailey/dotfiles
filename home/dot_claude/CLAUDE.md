@@ -113,40 +113,18 @@ rules. These rules are absolutely required and enforced by hooks.
 
 ### GitHub Integration Requirements
 
-**COMPREHENSIVE TOOL DECISION MATRIX - VIOLATIONS AUTOMATICALLY BLOCKED BY HOOKS:**
+**Use native GitHub integration tools for all GitHub operations.**
 
-**LISTING Operations (Use gh CLI Only):**
+Key principles:
 
-- Issues: `gh issue list`, `gh issue view [number]`
-- Pull Requests: `gh pr list`, `gh pr view [number]`
-- Workflows: `gh workflow list`, `gh run list`, `gh run view [id]`
-- Discussions: `gh api graphql` (for complex queries)
-- Releases: `gh release list`, `gh release view [tag]`
+- NEVER use WebFetch or Tavily tools for github.com repository content
+- NEVER use general web search for GitHub-specific information
+- Choose the most appropriate GitHub tool based on the task requirements (performance, token
+  efficiency, capabilities)
 
-**SEARCHING Operations (Optimization Hierarchy):**
-
-- Code Search: `mcp__octocode__githubSearchCode` (PREFERRED for bulk/advanced)
-- Repository Search: `mcp__octocode__githubSearchRepositories` (PREFERRED for bulk/advanced)
-- Issue Search: `gh search issues`, `gh issue list --search`
-- PR Search: `gh search prs`, `gh pr list --search`
-
-**SINGLE ITEM RETRIEVAL (gh CLI Commands):**
-
-- Single Issue: `gh issue view [number]`
-- Single PR: `gh pr view [number]`, `gh pr diff [number]`
-- File Contents: `mcp__octocode__githubGetFileContent` (PREFERRED)
-- Commits: `gh api repos/{owner}/{repo}/commits/{sha}`
-- Releases: `gh release view [tag]`
-- Workflows: `gh run view [id]`
-
-**NEVER ALLOWED:**
-
-- WebFetch or Tavily for github.com repository content
-- General web search for GitHub-specific information
-- ALL `mcp__github__*` tools (completely replaced by gh CLI and octocode)
-
-**Why This Hierarchy:** Prevents costly token usage, ensures fastest response times, and leverages
-the most capable tools for each operation type. All rules are automatically enforced by hooks.
+**Why these rules exist:** Native GitHub tools prevent excessive token usage, provide faster
+response times, and offer specialized capabilities for repository operations. Hooks automatically
+enforce these constraints.
 
 ## Behavioral Requirements
 

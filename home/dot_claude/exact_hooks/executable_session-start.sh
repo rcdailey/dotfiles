@@ -33,13 +33,13 @@ BASH COMMANDS:
 - NEVER use LS or Search tools (blocked - use rg instead)
 
 GITHUB OPERATIONS:
-- Use 'gh' CLI for listings: gh issue list, gh pr list, gh release list
-- Use 'mcp__octocode__*' tools for code/repo search (NOT mcp__github__*)
+- Use native GitHub integration tools for all operations
 - NEVER use Tavily/WebFetch for github.com repositories
+- NEVER use mcp__github__* tools
 
 TAVILY TOOLS:
 - NEVER set 'include_raw_content=true' (excessive token usage)
-- NEVER use Tavily for github.com content (use gh/octocode instead)
+- NEVER use Tavily for github.com content (use native GitHub tools instead)
 
 These rules are enforced by PreToolUse hooks that will block violations.
 EOF
