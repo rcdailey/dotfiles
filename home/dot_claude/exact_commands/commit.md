@@ -49,9 +49,10 @@ Break changes into logical commits.
   3. Change type: refactoring, features, fixes, cleanup
   4. Dependency order: foundation changes before dependent changes
 - **For each logical group**:
-  1. `git add <files>`
+  1. `git add <files>` (includes deleted files - deletions are staged via `git add`)
   2. `git commit -m "message"`
   - Continue until all changes committed
+- **IMPORTANT**: `git add <file>` works for deletions - it stages the removal to the index
 - Use `git add -p` for splitting changes within files
 - Aim for 2-5 commits maximum
 
