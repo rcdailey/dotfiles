@@ -183,3 +183,51 @@ in ALL operations. Context7 is required for ANY information need, not just libra
   requirements.
 - AVOID template boilerplate unless required by contributing guidelines.
 - KEEP descriptions high-level and focused on explaining the change for reviewers.
+
+## GitHub CLI Quick Reference
+
+**Pull Requests:**
+
+- `gh pr status` - Show PR status
+- `gh pr list [--state {open|closed|merged|all}]` - List PRs (default: open)
+- `gh pr view [<number>|<url>|<branch>]` - View PR details
+- `gh pr checkout <number>` - Checkout PR branch
+- `gh pr create --title <title> --body <body>` - Create PR
+
+**Issues:**
+
+- `gh issue status` - Show issue status
+- `gh issue list [--state {open|closed|all}]` - List issues (default: open)
+- `gh issue view [<number>|<url>] [--comments]` - View issue details/comments
+- `gh issue create --title <title> --body <body>` - Create issue
+- `gh search issues <query>` - Search issues across repositories
+
+**Repositories:**
+
+- `gh repo clone <repository>` - Clone repository
+- `gh repo create <name>` - Create repository
+- `gh repo fork <repository>` - Fork repository
+- `gh repo view <repository>` - View repository
+
+**Discussions (GraphQL only):**
+
+- List: `gh api graphql -f query='query($owner:String!,$repo:String!)
+  {repository(owner:$owner,name:$repo){discussions(first:10)
+  {nodes{number title url}}}}' -F owner=OWNER -F repo=REPO`
+- View: `gh api graphql -f query='query($owner:String!,$repo:String!,$number:Int!)
+  {repository(owner:$owner,name:$repo){discussion(number:$number)
+  {title body comments(first:10){nodes{body author{login}}}}}}'
+  -F owner=OWNER -F repo=REPO -F number=NUM`
+- Search: `gh api graphql -f query='query($q:String!){search(query:$q,type:DISCUSSION,
+  first:10){nodes{...on Discussion{number title url}}}}' -f q="repo:OWNER/REPO QUERY"`
+
+**Workflows:**
+
+- `gh workflow list` - List workflows
+- `gh run list [--workflow <workflow>]` - List workflow runs
+- `gh run view [<run-id>] [--log] [--log-failed]` - View run details/logs
+
+**Help:**
+
+- `gh --version` - Show version
+- `gh <command> [<subcommand>] --help` - Command help
