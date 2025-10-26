@@ -190,9 +190,11 @@ in ALL operations. Context7 is required for ANY information need, not just libra
 
 - `gh pr status` - Show PR status
 - `gh pr list [--state {open|closed|merged|all}]` - List PRs (default: open)
-- `gh pr view [<number>|<url>|<branch>]` - View PR details
+- `gh pr view [<number>|<url>|<branch>] [--comments]` - View PR details/comments
 - `gh pr checkout <number>` - Checkout PR branch
 - `gh pr create --title <title> --body <body>` - Create PR
+- `gh api repos/:owner/:repo/pulls/<number>/comments` - Get inline code review comments
+- `gh api repos/:owner/:repo/issues/<number>/comments` - Get PR conversation thread comments
 
 **Issues:**
 
