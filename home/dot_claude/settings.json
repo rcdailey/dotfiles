@@ -25,6 +25,7 @@
       "Bash(flatpak info:*)",
       "Bash(flatpak list:*)",
       "Bash(flatpak override:*)",
+      "Bash(gh api:*)",
       "Bash(gh auth status:*)",
       "Bash(gh browse:*)",
       "Bash(gh completion:*)",
