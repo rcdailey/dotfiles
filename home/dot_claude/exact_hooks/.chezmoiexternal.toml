@@ -3,6 +3,6 @@
 
 ["improve-prompt.py"]
     type = "file"
-    url = "https://raw.githubusercontent.com/severity1/claude-code-prompt-improver/main/hooks/improve-prompt.py"
+    url = "https://raw.githubusercontent.com/severity1/claude-code-prompt-improver/main/scripts/improve-prompt.py"
     executable = true
     refreshPeriod = "168h"
