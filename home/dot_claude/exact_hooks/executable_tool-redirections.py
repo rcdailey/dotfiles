@@ -318,7 +318,8 @@ def main() -> None:
     if tool_name == "Bash" and command:
         # Skip validation for remote execution and container commands to avoid false positives
         if re.match(
-            r"^\s*(git|ssh|kubectl\s+(exec|run)|docker\s+exec|podman\s+exec)\s", command
+            r"^\s*(git|ssh|kubectl\s+(exec|run|debug)|docker\s+exec|podman\s+exec)\s",
+            command,
         ):
             sys.exit(0)
 
