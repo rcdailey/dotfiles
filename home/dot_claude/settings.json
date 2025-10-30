@@ -136,6 +136,8 @@
       "Bash(zip:*)",
       "mcp__context7__get-library-docs",
       "mcp__context7__resolve-library-id",
+      "mcp__exa__crawling_exa",
+      "mcp__exa__web_search_exa",
       "mcp__github__get_commit",
       "mcp__github__get_discussion_comments",
       "mcp__github__get_discussion",
