@@ -16,7 +16,7 @@ TOOL USAGE REQUIREMENTS (ENFORCED BY HOOKS):
 • Use 'rg' for: text search, file discovery (rg --files -g "pattern")
 • Use 'gh' CLI for: all GitHub operations (listing, viewing, searching)
 • Use mcp__octocode__* for: advanced code/repo search (superior performance)
-• NEVER use: grep, find -name, command chaining, include_raw_content=true, GitHub MCP tools""")
+• NEVER use: grep, find -name, command chaining, GitHub MCP tools""")
 
     except Exception:
         pass  # Silent failure to avoid disrupting workflow

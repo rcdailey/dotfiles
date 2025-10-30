@@ -56,23 +56,6 @@ REDIRECTIONS = [
     ),
 ]
 
-# Tavily MCP restrictions
-TAVILY_RESTRICTIONS = [
-    RedirectionRule(
-        pattern=re.compile(
-            r"(?<!docs\.)(?<!gist\.)github\.com(?!/marketplace)", re.IGNORECASE
-        ),
-        message="BLOCKED: GitHub repository detected. MUST retry this request using GitHub CLI tools (gh) instead.",
-        examples=[
-            "github.com/user/repo",
-            "github.com/org/project",
-            "https://github.com/example",
-            "repository analysis",
-            "code search across repos",
-        ],
-    ),
-]
-
 # GitHub CLI enforcements (replacing GitHub MCP tools)
 GITHUB_CLI_REDIRECTIONS = [
     RedirectionRule(
@@ -196,70 +179,6 @@ def dry_run() -> None:
 
         print()
 
-    # Test Tavily queries and URLs
-    tavily_test_queries = [
-        # Should match GitHub pattern (repositories)
-        "search github.com repositories",
-        "find issues on GitHub.com",
-        "https://github.com/user/repo",
-        "https://github.com/actions/checkout",
-        # Should NOT match (docs.github.com, gist.github.com, and marketplace)
-        "https://docs.github.com/en/actions/how-tos/sharing-automations/reusing-workflows",
-        "https://docs.github.com/en/github/getting-started-with-github",
-        "https://gist.github.com/user/12345",
-        "https://gist.github.com/anonymous/abcdef123456",
-        "gist.github.com/user/snippet",
-        "https://github.com/marketplace/actions/workflow-run-debounce",
-        "github.com/marketplace/category/deployment",
-        "search for python tutorials",
-        "find documentation online",
-        "https://stackoverflow.com/questions",
-    ]
-
-    print("=== Tavily Restrictions ===")
-    for i, rule in enumerate(TAVILY_RESTRICTIONS, 1):
-        print(f"=== Tavily Rule {i}: {rule.pattern.pattern} ===")
-        print(f"Examples: {', '.join(rule.examples)}")
-
-        matches = [query for query in tavily_test_queries if rule.pattern.search(query)]
-        non_matches = [
-            query for query in tavily_test_queries if not rule.pattern.search(query)
-        ]
-
-        if matches:
-            print("MATCHES:")
-            for query in matches:
-                print(f"  {query}")
-
-        if non_matches:
-            print("  No matches:")
-            for query in non_matches:
-                print(f"  {query}")
-
-        print()
-
-    # Test Tavily parameter validation
-    print("=== Tavily Parameter Validation ===")
-    tavily_test_inputs = [
-        # Should be blocked - include_raw_content=true
-        {
-            "tool_name": "mcp__tavily__tavily-search",
-            "tool_input": {"query": "test", "include_raw_content": True},
-        },
-        # Should be allowed - default behavior
-        {"tool_name": "mcp__tavily__tavily-search", "tool_input": {"query": "test"}},
-    ]
-
-    for test_input in tavily_test_inputs:
-        has_raw_content = test_input.get("tool_input", {}).get(
-            "include_raw_content", False
-        )
-        tool_name = test_input["tool_name"]
-        status = "BLOCKED" if has_raw_content else "ALLOWED"
-        print(f"  {tool_name} with include_raw_content={has_raw_content}: {status}")
-
-    print()
-
     # Test command exclusion logic
     print("=== Command Exclusion Testing ===")
     test_exclusion_commands = [
@@ -330,7 +249,7 @@ def main() -> None:
                 print(error_msg, file=sys.stderr)
                 sys.exit(2)
 
-    # Process GitHub MCP tools (now redirected to gh CLI)
+    # Process GitHub MCP tools (now redirected to exa or gh CLI)
     elif tool_name.startswith("mcp__github__"):
         # Check each GitHub CLI redirection pattern
         for rule in GITHUB_CLI_REDIRECTIONS:
@@ -338,35 +257,6 @@ def main() -> None:
                 error_msg = f"GITHUB TOOL VIOLATION: {rule.message}"
                 print(error_msg, file=sys.stderr)
                 sys.exit(2)
-
-    # Process Tavily MCP tools
-    elif tool_name.startswith("mcp__tavily__"):
-        tool_input = input_data.get("tool_input", {})
-        query = tool_input.get("query", "")
-        urls = tool_input.get("urls", [])
-
-        # Check for raw content flag (token-expensive)
-        if tool_input.get("include_raw_content", False):
-            error_msg = "TAVILY USAGE VIOLATION: NEVER use 'include_raw_content=true' - causes excessive token usage. Use default content extraction instead."
-            print(error_msg, file=sys.stderr)
-            sys.exit(2)
-
-        # Check query for GitHub references
-        if query:
-            for rule in TAVILY_RESTRICTIONS:
-                if rule.pattern.search(query):
-                    error_msg = f"TAVILY USAGE VIOLATION: {rule.message}"
-                    print(error_msg, file=sys.stderr)
-                    sys.exit(2)
-
-        # Check URLs for GitHub references
-        if urls:
-            for url in urls:
-                for rule in TAVILY_RESTRICTIONS:
-                    if rule.pattern.search(url):
-                        error_msg = f"TAVILY USAGE VIOLATION: {rule.message}"
-                        print(error_msg, file=sys.stderr)
-                        sys.exit(2)
 
 
 if __name__ == "__main__":

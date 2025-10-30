@@ -1,28 +1,20 @@
 {
-  "markitdown": {
+  "exa": {
     "type": "stdio",
-    "command": "uvx",
-    "args": ["markitdown-mcp"],
-    "env": {}
+    "command": "npx",
+    "args": [
+      "-y",
+      "exa-mcp-server@latest",
+      "enabledTools=[\"web_search_exa\",\"crawling_exa\"]"
+    ],
+    "env": {
+      "EXA_API_KEY": "rbw:exa-api-key"
+    }
   },
   "octocode": {
     "type": "stdio",
     "command": "npx",
     "args": ["-y", "octocode-mcp@latest"],
-    "env": {}
-  },
-  "tavily": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "tavily-mcp@latest"],
-    "env": {
-      "TAVILY_API_KEY": "rbw:tavily-api-key"
-    }
-  },
-  "sequential-thinking": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@latest"],
     "env": {}
   },
   "context7": {

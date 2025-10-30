@@ -117,7 +117,6 @@ rules. These rules are absolutely required and enforced by hooks.
 
 Key principles:
 
-- NEVER use WebFetch or Tavily tools for github.com repository content
 - NEVER use general web search for GitHub-specific information
 - Choose the most appropriate GitHub tool based on the task requirements (performance, token
   efficiency, capabilities)
@@ -146,9 +145,9 @@ enforce these constraints.
 **CRITICAL REMINDER:** Refer to "CRITICAL REQUIREMENTS" section above for mandatory context7 usage
 in ALL operations. Context7 is required for ANY information need, not just libraries.
 
-**PRIORITY 1: General Research (tavily MCP tools):**
+**PRIORITY 1: General Research (exa MCP tools):**
 
-- USE web searching (tavily MCP tools) liberally for factual information on demand. NEVER make
+- USE web searching (exa MCP tools) liberally for factual information on demand. NEVER make
   assumptions when current information is available. Proactively search for:
   - Technical specifications and current best practices
   - Latest versions, compatibility information, and security considerations

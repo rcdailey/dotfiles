@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Grep, Glob, mcp__octocode__githubSearchCode, mcp__octocode__githubSearchRepositories, mcp__octocode__githubViewRepoStructure, mcp__octocode__githubGetFileContent, mcp__context7__resolve-library-id, mcp__context7__get-library-docs, mcp__tavily__tavily-search, mcp__markitdown__convert_to_markdown
+allowed-tools: Read, Grep, Glob, mcp__octocode__githubSearchCode, mcp__octocode__githubSearchRepositories, mcp__octocode__githubViewRepoStructure, mcp__octocode__githubGetFileContent, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 argument-hint: [focus-area or directive]
 description: Initialize session for third-party repository contribution
 ---

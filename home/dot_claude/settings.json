@@ -174,15 +174,10 @@
       "mcp__github__search_pull_requests",
       "mcp__github__search_repositories",
       "mcp__ide__getDiagnostics",
-      "mcp__markitdown__convert_to_markdown",
       "mcp__octocode__githubGetFileContent",
       "mcp__octocode__githubSearchCode",
       "mcp__octocode__githubSearchRepositories",
-      "mcp__octocode__githubViewRepoStructure",
-      "mcp__sequential-thinking__sequentialthinking",
-      "mcp__tavily__tavily-crawl",
-      "mcp__tavily__tavily-extract",
-      "mcp__tavily__tavily-search"
+      "mcp__octocode__githubViewRepoStructure"
     ],
     "deny": ["WebFetch", "WebSearch"],
     "ask": ["Bash(git push:*)"],
@@ -201,24 +196,6 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/gh-api-readonly.py"
-          }
-        ]
-      },
-      {
-        "matcher": "WebFetch",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/webfetch-github-redirect.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "mcp__tavily__*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/tool-redirections.py"
           }
         ]
       },

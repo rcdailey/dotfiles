@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checkout:*), Bash(gh issue view:*), Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git stash:*), Bash(git switch:*), Bash(terraform -chdir:*), Read, Grep, Glob, mcp__context7__resolve-library-id, mcp__context7__get-library-docs, mcp__tavily__tavily-search
+allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checkout:*), Bash(gh issue view:*), Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git stash:*), Bash(git switch:*), Bash(terraform -chdir:*), Read, Grep, Glob, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 argument-hint: [pr-number or commit-range] [include medium/minor issues]
 description: Code Review for PRs
 ---
@@ -105,7 +105,7 @@ Gather relevant information in parallel using multiple tool calls:
 
 ### 2. Research and Analysis
 
-Use context7 and tavily tools proactively to:
+Use context7 and exa tools proactively to:
 
 - Understand unfamiliar technologies, frameworks, or patterns
 - Verify best practices for specific use cases
@@ -178,7 +178,7 @@ For each issue found:
 **CRITICAL WORKFLOW:** For EACH review comment you plan to write, you MUST:
 
 1. **STOP before writing** - Identify every technical claim in your planned comment
-2. **Research ALL claims** using context7 and tavily:
+2. **Research ALL claims** using context7 and exa:
    - Library/framework behavior and API usage patterns
    - Language syntax requirements and constraints
    - Tool-specific rules (Terraform, SQL, etc.)
@@ -191,7 +191,7 @@ For each issue found:
 
 **EVIDENCE REQUIREMENTS:**
 
-- Every "this will cause X" claim needs context7/tavily verification showing it causes X
+- Every "this will cause X" claim needs context7/exa verification showing it causes X
 - Every "must be Y" statement needs docs showing Y is required
 - Every "best practice is Z" needs sources confirming Z is the standard approach
 - When docs conflict or are unclear, explicitly state uncertainty in the comment
@@ -388,7 +388,7 @@ These issues don't block the merge but could improve code quality:
 **DO:**
 
 - Focus on critical and high-priority issues that block or should block merge
-- Use context7 and tavily to factually verify EVERY technical claim before writing comments
+- Use context7 and exa to factually verify EVERY technical claim before writing comments
 - Research syntax requirements, API behavior, and best practices for technologies you're reviewing
 - Write with humble, approachable language as if suggesting ideas to a colleague
 - Use conversational tone with contractions (it's, won't, doesn't)
