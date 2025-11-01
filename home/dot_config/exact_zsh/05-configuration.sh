@@ -87,9 +87,10 @@ alias cmst='chezmoi git -- st'
 
 # Custom functions are autoloaded via .zshenv for all shell types
 
-# mise activation for interactive shells (full activation)
+# mise activation - suppress initial cleanup errors from mise's activation script
+# mise unconditionally tries to unset functions/arrays that don't exist yet
 if command -v mise >/dev/null 2>&1; then
-    eval "$(mise activate zsh)"
+    eval "$(mise activate zsh)" 2>/dev/null
 fi
 
 # Key bindings for history substring search
