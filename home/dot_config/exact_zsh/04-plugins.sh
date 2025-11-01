@@ -34,8 +34,9 @@ zinit ice as"completion" id-as"mise" \
   atload'[[ ! -L "${ZINIT[COMPLETIONS_DIR]}/_mise" ]] && zinit creinstall mise'
 zinit load zdharma-continuum/null
 
-# Task completions - simpler eval approach per official docs
-eval "$(task --completion zsh)"
+# Task completions - deferred until mise tools are available
+zinit ice wait lucid nocompile atload'eval "$(task --completion zsh)"'
+zinit load zdharma-continuum/null
 
 
 # Load Oh-My-Zsh functionality via snippets with turbo mode (can be deferred)
