@@ -1,0 +1,37 @@
+#!/usr/bin/env zsh
+# Run pre-commit against files changed in a git commit range
+# Usage: pcc <range>
+# Examples:
+#   pcc @^!              # Last commit on current branch
+#   pcc HEAD~3           # HEAD~3..HEAD
+#   pcc HEAD~3..HEAD     # Explicit range
+#   pcc main..feature    # Range between branches
+
+local range="$1"
+
+if [[ -z "$range" ]]; then
+    echo "Usage: pcc <range>"
+    echo "Examples:"
+    echo "  pcc @^!              # Last commit"
+    echo "  pcc HEAD~3           # HEAD~3..HEAD"
+    echo "  pcc HEAD~3..HEAD     # Explicit range"
+    echo "  pcc main..feature    # Between branches"
+    return 1
+fi
+
+local from_ref to_ref
+
+# Use git rev-parse to handle range syntax
+if [[ "$range" == *'..'* ]]; then
+    # Explicit range: split and validate both sides
+    from_ref="${range%%..*}"
+    to_ref="${range#*..}"
+    from_ref=$(git rev-parse --verify "$from_ref" 2>/dev/null) || { echo "Invalid ref: $from_ref"; return 1; }
+    to_ref=$(git rev-parse --verify "$to_ref" 2>/dev/null) || { echo "Invalid ref: $to_ref"; return 1; }
+else
+    # Single ref or special syntax: let git rev-parse handle it
+    from_ref=$(git rev-parse --verify "${range}^" 2>/dev/null) || { echo "Invalid ref: ${range}^"; return 1; }
+    to_ref=$(git rev-parse --verify "$range" 2>/dev/null) || { echo "Invalid ref: $range"; return 1; }
+fi
+
+pre-commit run --from-ref "$from_ref" --to-ref "$to_ref"
