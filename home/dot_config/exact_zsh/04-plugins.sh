@@ -39,10 +39,14 @@ zinit ice wait lucid nocompile atload'eval "$(task --completion zsh)"'
 zinit load zdharma-continuum/null
 
 
-# Load Oh-My-Zsh functionality via snippets with turbo mode (can be deferred)
+# Load Oh-My-Zsh functionality via snippets
+# kubectl loaded immediately to ensure 'k' alias is available
+zinit lucid for \
+    "OMZP::kubectl"
+
+# Other OMZ plugins with turbo mode (can be deferred)
 zinit ice wait"2" lucid for \
     "OMZP::git" \
-    "OMZP::kubectl" \
     "OMZP::docker" \
     "OMZP::brew" \
     "OMZP::terraform" \
