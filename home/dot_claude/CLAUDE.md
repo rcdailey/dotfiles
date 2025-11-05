@@ -74,9 +74,28 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
 - Include blank lines around headings and code blocks.
 - Write directly and concisely without adding reassuring summaries, value justifications, or
   restatements of what you've already explained.
-- NEVER use trailing spaces for line breaks in markdown. Use explicit blank lines to separate
-  content or proper list syntax for list-like items. Single newlines without blank lines collapse
-  into paragraphs.
+
+### Markdown Line Break Rules - CRITICAL
+
+**PROHIBITED PATTERN:** Bold labels on consecutive lines without blank lines between them:
+
+```txt
+**Label1**: content
+**Label2**: content
+```
+
+This renders as a single paragraph. **REQUIRED:** Use list syntax OR blank line separation:
+
+```txt
+- **Label1**: content
+- **Label2**: content
+
+OR
+
+**Label1**: content
+
+**Label2**: content
+```
 
 ## Conciseness Requirements - ENFORCED BY HOOKS
 
