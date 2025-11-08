@@ -26,9 +26,10 @@ conventions.
 
 ### 2. Universal Context7 Usage - MANDATORY FOR ALL OPERATIONS
 
-Always use context7 when I need code generation, setup or configuration steps, or library/API
-documentation. This means you should automatically use the Context7 MCP tools to resolve library id
-and get library docs without me having to explicitly ask.
+Always use context7 when I need code generation, tool usage, setup or configuration steps, or
+library/API documentation. This means you should automatically use the Context7 MCP tools to resolve
+library id and get library docs without me having to explicitly ask. Always prefer website docs
+(prefix `/website/`) over other results.
 
 ### 3. Ripgrep Usage - GREP IS ABSOLUTELY PROHIBITED
 
