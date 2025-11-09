@@ -178,6 +178,7 @@
       "mcp__ide__getDiagnostics",
       "mcp__octocode__githubGetFileContent",
       "mcp__octocode__githubSearchCode",
+      "mcp__octocode__githubSearchPullRequests",
       "mcp__octocode__githubSearchRepositories",
       "mcp__octocode__githubViewRepoStructure"
     ],
