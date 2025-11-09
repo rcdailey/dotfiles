@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=Clipboard to Primary Sync
-Comment=One-way sync from CLIPBOARD to PRIMARY selection
-Exec=sh -c "while true; do xsel -bo 2>/dev/null | xsel -pi 2>/dev/null; sleep 0.5; done"
+Name=Primary to Clipboard Sync
+Comment=One-way sync from PRIMARY to CLIPBOARD selection
+Exec=autocutsel -selection PRIMARY
 Terminal=false
 Hidden=false
 X-GNOME-Autostart-enabled=true
