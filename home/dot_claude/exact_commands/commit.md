@@ -78,8 +78,15 @@ assumptions based on filenames, paths, or diff stats alone.
 
 **Format**: Always use conventional commits format.
 
-**Subject**: Imperative mood, capitalize first letter, no period, ≤50 chars. Test: "If applied, this
-commit will [subject line]"
+**Subject**: Imperative mood, lowercase type prefix, capitalize scope/description, no period, ≤50
+chars. Test: "If applied, this commit will [subject line]"
+
+**CRITICAL - Type Capitalization**: Conventional commit types MUST be lowercase. Examples:
+
+- ✓ CORRECT: `feat(api): Add user endpoint`
+- ✗ WRONG: `Feat(api): Add user endpoint`
+- ✓ CORRECT: `fix: Resolve memory leak`
+- ✗ WRONG: `Fix: Resolve memory leak`
 
 **Types**: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert
 
