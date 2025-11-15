@@ -127,6 +127,7 @@
       "Bash(wc:*)",
       "Bash(wget:*)",
       "Bash(which:*)",
+      "Bash(xargs:*)",
       "Bash(xclip:*)",
       "Bash(xmlstarlet:*)",
       "Bash(yamllint:*)",
