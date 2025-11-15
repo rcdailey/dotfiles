@@ -78,8 +78,11 @@ assumptions based on filenames, paths, or diff stats alone.
 
 **Format**: Always use conventional commits format.
 
-**Subject**: Imperative mood, lowercase type prefix, capitalize scope/description, no period, ≤50
-chars. Test: "If applied, this commit will [subject line]"
+**CRITICAL - Line Wrapping**: ALL commit messages MUST be hard-wrapped. Subject line ≤50 chars, body
+lines ≤72 chars. NEVER generate unwrapped text.
+
+**Subject**: Imperative mood, lowercase type prefix, capitalize scope/description, no period. Test:
+"If applied, this commit will [subject line]"
 
 **CRITICAL - Type Capitalization**: Conventional commit types MUST be lowercase. Examples:
 
@@ -91,7 +94,7 @@ chars. Test: "If applied, this commit will [subject line]"
 **Types**: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert
 
 **Body**: Focus on WHY changes were made, not what changed. Explain problem, motivation, context.
-Use bullet points, wrap at 72 chars.
+Use bullet points.
 
 **Multi-line syntax**: `git commit -m "subject\n\nbody line 1\nbody line 2"`
 
