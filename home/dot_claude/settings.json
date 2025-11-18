@@ -183,8 +183,13 @@
       "mcp__octocode__githubSearchRepositories",
       "mcp__octocode__githubViewRepoStructure"
     ],
-    "deny": ["WebFetch", "WebSearch"],
-    "ask": ["Bash(git push:*)"],
+    "deny": [
+      "WebFetch",
+      "WebSearch"
+    ],
+    "ask": [
+      "Bash(git push:*)"
+    ],
     "defaultMode": "default"
   },
   "model": "sonnet",
@@ -282,6 +287,6 @@
   },
   "forceLoginMethod": "claudeai",
   "spinnerTipsEnabled": false,
-  "alwaysThinkingEnabled": false,
+  "alwaysThinkingEnabled": true,
   "enableAllProjectMcpServer": true
 }
