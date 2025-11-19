@@ -33,6 +33,11 @@ if command -v go >/dev/null 2>&1; then
   export PATH="$GOPATH_CACHED/bin:$PATH"
 fi
 
+# .NET tools PATH
+if [ -d "$HOME/.dotnet/tools" ]; then
+  export PATH="$HOME/.dotnet/tools:$PATH"
+fi
+
 # Cross-platform ls replacement with lsd
 if (( $+commands[lsd] )); then
     alias ls='lsd --color=auto --icon=auto --group-directories-first'
