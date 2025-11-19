@@ -257,10 +257,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/improve-prompt.py"
-          },
-          {
-            "type": "command",
             "command": "~/.claude/hooks/conciseness-reminder.sh",
             "timeout": 5
           },
@@ -281,5 +277,8 @@
   "forceLoginMethod": "claudeai",
   "spinnerTipsEnabled": false,
   "alwaysThinkingEnabled": true,
-  "enableAllProjectMcpServer": true
+  "enableAllProjectMcpServer": true,
+  "enabledPlugins": {
+    "prompt-improver@claude-code-marketplace": true
+  }
 }

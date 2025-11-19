@@ -1,8 +1,0 @@
-# Claude Code Prompt Improver
-# From: https://github.com/severity1/claude-code-prompt-improver
-
-["improve-prompt.py"]
-    type = "file"
-    url = "https://raw.githubusercontent.com/severity1/claude-code-prompt-improver/main/scripts/improve-prompt.py"
-    executable = true
-    refreshPeriod = "168h"
