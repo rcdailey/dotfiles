@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-# Show current working directory before each prompt submission
+# Show current working directory to Claude after each Bash command
 set -euo pipefail
 
-echo "CWD: $(pwd)"
+cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "additionalContext": "Current directory: $(pwd)"
+  }
+}
+EOF
