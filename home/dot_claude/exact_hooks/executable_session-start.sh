@@ -32,10 +32,6 @@ BASH COMMANDS:
 - NEVER chain: 'ls | rg', 'find | rg', 'rg | grep'
 - NEVER use LS or Search tools (blocked - use rg instead)
 
-GITHUB OPERATIONS:
-- Use native GitHub integration tools for all operations
-- NEVER use mcp__github__* tools
-
 These rules are enforced by PreToolUse hooks that will block violations.
 EOF
 
