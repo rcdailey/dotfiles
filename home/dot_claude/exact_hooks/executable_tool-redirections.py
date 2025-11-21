@@ -86,6 +86,7 @@ def dry_run() -> None:
         "kubectl exec -n media restore-config -- sh -c \"rg 'api_key|download_dir|complete_dir' /config/sabnzbd.ini || grep -E 'api_key|download_dir|complete_dir' /config/sabnzbd.ini\"",
         "docker exec container grep pattern file",
         "podman exec container find /path -name '*.txt'",
+        "talosctl -n 192.168.1.59 ls /sys/class/net/ | rg -v 'lo|cilium|veth|cali'",
         "rg files | head -10",
         "sops set file.yaml key value",
         "find /usr/local -type f",
@@ -119,6 +120,7 @@ def dry_run() -> None:
         "kubectl exec -n media restore-config -- sh -c \"rg 'api_key|download_dir|complete_dir' /config/sabnzbd.ini || grep -E 'api_key|download_dir|complete_dir' /config/sabnzbd.ini\"",
         "docker exec container grep pattern file",
         "podman exec container find /path -name '*.txt'",
+        "talosctl -n 192.168.1.59 ls /sys/class/net/ | rg -v 'lo|cilium|veth|cali'",
         "ssh user@host 'grep logs'",
         "git commit -m 'find the right solution'",
         "grep pattern file.txt",  # Should be blocked
@@ -127,7 +129,10 @@ def dry_run() -> None:
 
     for cmd in test_exclusion_commands:
         is_excluded = bool(
-            re.match(r"^\s*(git|ssh|kubectl\s+exec|docker\s+exec|podman\s+exec)\s", cmd)
+            re.match(
+                r"^\s*(git|ssh|kubectl\s+(exec|run|debug)|docker\s+exec|podman\s+exec|talosctl)\s",
+                cmd,
+            )
         )
         would_match = any(rule.pattern.search(cmd) for rule in REDIRECTIONS)
         status = (
@@ -170,7 +175,7 @@ def main() -> None:
     if tool_name == "Bash" and command:
         # Skip validation for remote execution and container commands to avoid false positives
         if re.match(
-            r"^\s*(git|ssh|kubectl\s+(exec|run|debug)|docker\s+exec|podman\s+exec)\s",
+            r"^\s*(git|ssh|kubectl\s+(exec|run|debug)|docker\s+exec|podman\s+exec|talosctl)\s",
             command,
         ):
             sys.exit(0)
