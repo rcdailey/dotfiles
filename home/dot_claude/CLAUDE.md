@@ -252,6 +252,9 @@ in ALL operations. Context7 is required for ANY information need, not just libra
 
 ## GitHub CLI Quick Reference
 
+This reference MUST be followed for ALL `gh` CLI invocations that are covered by this reference!
+Absolutely no exceptions!
+
 **Pull Requests:**
 
 - `gh pr status` - Show PR status
