@@ -228,11 +228,11 @@
     "command": "npx -y ccstatusline@latest",
     "padding": 0
   },
+  "enabledPlugins": {
+    "prompt-improver@claude-code-marketplace": true
+  },
   "forceLoginMethod": "claudeai",
   "spinnerTipsEnabled": false,
   "alwaysThinkingEnabled": true,
-  "enableAllProjectMcpServer": true,
-  "enabledPlugins": {
-    "prompt-improver@claude-code-marketplace": true
-  }
+  "enableAllProjectMcpServer": true
 }
