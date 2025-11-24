@@ -78,8 +78,20 @@ assumptions based on filenames, paths, or diff stats alone.
 
 **Format**: Always use conventional commits format.
 
-**CRITICAL - Line Wrapping**: ALL commit messages MUST be hard-wrapped. Subject line ≤50 chars, body
-lines ≤72 chars. NEVER generate unwrapped text.
+**CRITICAL - Line Wrapping**: Hard-wrap by inserting newlines (not visual soft-wrap).
+
+- **Subject**: 50 chars (guideline), 72 max (GitHub truncates beyond)
+- **Body**: Fill lines up to 72 chars, breaking at the LAST word boundary before exceeding 72. Do
+  not wrap early - maximize line usage while staying under the limit.
+- **Exceptions**: URLs, paths, technical identifiers can exceed 72 to avoid mid-string breaks
+
+**Example** (lines filled close to 72, breaking at last word boundary):
+
+```txt
+This commit refactors the authentication middleware to properly handle
+edge cases when tokens expire during request processing, ensuring users
+receive appropriate error messages instead of generic 500 errors.
+```
 
 **Subject**: Imperative mood, lowercase type prefix, capitalize scope/description, no period. Test:
 "If applied, this commit will [subject line]"
