@@ -22,8 +22,7 @@
 input=$(cat)
 
 # Output static session directives (shown to Claude as system message)
-cat <<'EOF'
-
+cat <<EOF
 SESSION DIRECTIVES - CRITICAL TOOL USAGE RULES:
 
 BASH COMMANDS:
@@ -33,6 +32,8 @@ BASH COMMANDS:
 - NEVER use LS or Search tools (blocked - use rg instead)
 
 These rules are enforced by PreToolUse hooks that will block violations.
+
+CRITICAL: Session Start Directory: $(pwd)
 EOF
 
 # Always exit 0 for prompt hooks

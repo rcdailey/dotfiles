@@ -2,9 +2,9 @@
 
 ## CRITICAL REQUIREMENTS - ABSOLUTE MANDATES
 
-**These three directives are ABSOLUTELY REQUIRED and MUST be followed in ALL operations:**
+**These four directives are ABSOLUTELY REQUIRED and MUST be followed in ALL operations:**
 
-### 1. MAXIMUM CONCISENESS - ENFORCED BY HOOKS
+### MAXIMUM CONCISENESS - ENFORCED BY HOOKS
 
 **ABSOLUTE REQUIREMENT:** Keep conversational responses to 4 lines maximum unless user explicitly
 requests detail or asks "why"/"how" questions.
@@ -24,14 +24,14 @@ requests detail or asks "why"/"how" questions.
 **SCOPE:** Conversational responses only. Work artifacts (commits, code, docs) follow their own
 conventions.
 
-### 2. Universal Context7 Usage - MANDATORY FOR ALL OPERATIONS
+### Universal Context7 Usage - MANDATORY FOR ALL OPERATIONS
 
 Always use context7 when I need code generation, tool usage, setup or configuration steps, or
 library/API documentation. This means you should automatically use the Context7 MCP tools to resolve
 library id and get library docs without me having to explicitly ask. Always prefer website docs
 (prefix `/website/`) over other results.
 
-### 3. Ripgrep Usage - GREP IS ABSOLUTELY PROHIBITED
+### Ripgrep Usage - GREP IS ABSOLUTELY PROHIBITED
 
 **YOU MUST FOLLOW THESE RULES - VIOLATIONS WILL BE BLOCKED BY HOOKS:**
 
@@ -53,6 +53,10 @@ operation.
 
 **Why these rules exist:** `rg` is faster, more feature-rich, and eliminates the need for command
 chaining. Violations indicate a fundamental misunderstanding of available tooling.
+
+### @ Path Resolution
+
+`@path` is ALWAYS relative to session start directory (from `<env>`), NOT current directory.
 
 ## General
 
@@ -76,27 +80,11 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
 - Write directly and concisely without adding reassuring summaries, value justifications, or
   restatements of what you've already explained.
 
-### Markdown Line Break Rules - CRITICAL
+## Markdown Requirements
 
-**PROHIBITED PATTERN:** Bold labels on consecutive lines without blank lines between them:
-
-```txt
-**Label1**: content
-**Label2**: content
-```
-
-This renders as a single paragraph. **REQUIRED:** Use list syntax OR blank line separation:
-
-```txt
-- **Label1**: content
-- **Label2**: content
-
-OR
-
-**Label1**: content
-
-**Label2**: content
-```
+- Markdown headings should NEVER be numbered.
+- NEVER put sentences starting with bold labels on consecutive lines without blank lines between
+  them OR use list syntax. In markdown, adjacent text is treated as a single paragraph.
 
 ## Conciseness Requirements - ENFORCED BY HOOKS
 
