@@ -1,0 +1,19 @@
+# [mcp_servers.exa]
+# type = "stdio"
+# command = "npx"
+# args = ["-y", "exa-mcp-server@latest", "enabledTools=[\"web_search_exa\",\"crawling_exa\"]"]
+
+# [mcp_servers.exa.env]
+# EXA_API_KEY = "rbw:exa-api-key"
+
+[mcp_servers.octocode]
+type = "stdio"
+command = "npx"
+args = ["-y", "octocode-mcp@latest"]
+
+[mcp_servers.context7]
+type = "http"
+url = "https://mcp.context7.com/mcp"
+
+[mcp_servers.context7.http_headers]
+CONTEXT7_API_KEY = "rbw:context7-api-key"

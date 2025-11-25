@@ -1,0 +1,283 @@
+#!/usr/bin/env python3
+"""Codex MCP Server Management Script (TOML)
+
+Merges versioned MCP server definitions from ~/.codex/mcp-servers.toml
+into ~/.codex/config.toml. Existing servers are replaced, new ones are
+added, unrelated config is preserved, and rbw: secrets are resolved
+before writing.
+"""
+
+from __future__ import annotations
+
+import re
+import shutil
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict
+
+
+def sanitize_project_keys(text: str) -> str:
+    """Quote bare project keys containing slashes (Codex sometimes emits these)."""
+    pattern = re.compile(r'^\[projects\.([^"\]\r\n]+)\]$', flags=re.MULTILINE)
+
+    def repl(match: re.Match[str]) -> str:
+        key = match.group(1)
+        if "/" in key or " " in key:
+            return f'[projects."{toml_escape(key)}"]'
+        return match.group(0)
+
+    return pattern.sub(repl, text)
+
+
+def load_toml(path: Path) -> Dict[str, Any]:
+    """Load TOML using stdlib tomllib (Py3.11+) or fallback to tomli, with sanitize fallback."""
+    try:
+        import tomllib  # type: ignore
+    except ModuleNotFoundError:  # pragma: no cover - older Python
+        try:
+            import tomli as tomllib  # type: ignore
+        except ModuleNotFoundError:
+            print(
+                "Error: Python 3.11+ (tomllib) or the tomli package is required.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+    try:
+        return tomllib.loads(path.read_text())
+    except Exception as exc:
+        sanitized_text = sanitize_project_keys(path.read_text())
+        try:
+            return tomllib.loads(sanitized_text)
+        except Exception as exc2:
+            print(f"Error: Failed to load TOML from {path}: {exc}", file=sys.stderr)
+            print(f"Error after sanitizing project keys: {exc2}", file=sys.stderr)
+            sys.exit(1)
+
+
+def resolve_env_var(value: str) -> str:
+    """Resolve rbw:secret-name into its value; passthrough literals."""
+    if not isinstance(value, str) or not value.startswith("rbw:"):
+        return value
+
+    secret_name = value[4:]
+    try:
+        result = subprocess.run(
+            ["rbw", "get", secret_name], capture_output=True, text=True, check=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as exc:
+        print(f"Error: Failed to get {secret_name} from rbw: {exc}", file=sys.stderr)
+        print("Hint: run `rbw unlock` first.", file=sys.stderr)
+        sys.exit(1)
+
+
+def normalize_server(server: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize legacy keys to current Codex schema."""
+    normalized = dict(server)
+    # If legacy "headers" provided for HTTP, map to http_headers
+    if "headers" in normalized and "http_headers" not in normalized:
+        hdrs = normalized.pop("headers")
+        normalized["http_headers"] = hdrs
+    return normalized
+
+
+def resolve_server_secrets(server: Dict[str, Any]) -> Dict[str, Any]:
+    """Resolve secrets only where static values are expected."""
+    server = normalize_server(server)
+    resolved = {}
+    for key, value in server.items():
+        if key == "env" and isinstance(value, dict):
+            resolved[key] = {k: resolve_env_var(v) for k, v in value.items()}
+        elif key == "http_headers" and isinstance(value, dict):
+            resolved[key] = {k: resolve_env_var(v) for k, v in value.items()}
+        else:
+            # Do not resolve env_vars, env_http_headers, bearer_token_env_var, enabled_tools, etc.
+            resolved[key] = value
+    return resolved
+
+
+def create_backup(config_path: Path) -> Path:
+    """Create a dated backup of ~/.codex/config.toml."""
+    stamp = datetime.now().strftime("%Y-%m-%d")
+    backup = config_path.parent / f"config.{stamp}.toml"
+    if backup.exists():
+        stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        backup = config_path.parent / f"config.{stamp}.toml"
+
+    try:
+        backup.write_text(config_path.read_text())
+        print(f"Created backup: {backup}")
+        return backup
+    except Exception as exc:
+        print(f"Error: Failed to create backup: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+def toml_escape(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\t", "\\t")
+        .replace("\n", "\\n")
+    )
+
+
+def format_key(key: str) -> str:
+    """Quote keys that contain characters outside bare-key set."""
+    if key.replace("_", "").replace("-", "").isalnum():
+        return key
+    return f'"{toml_escape(key)}"'
+
+
+def format_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return repr(value)
+    if isinstance(value, str):
+        return f'"{toml_escape(value)}"'
+    if isinstance(value, list):
+        return "[" + ", ".join(format_value(v) for v in value) + "]"
+    raise TypeError(f"Unsupported value type for TOML serialization: {type(value)}")
+
+
+INLINE_DICT_KEYS = {
+    "env",
+    "env_vars",
+    "http_headers",
+    "env_http_headers",
+}
+
+
+def format_inline_dict(dct: Dict[str, Any]) -> str:
+    parts = []
+    for k, v in dct.items():
+        if isinstance(v, dict):
+            raise TypeError(
+                "Nested dicts are not supported in inline dict serialization"
+            )
+        parts.append(f"{format_key(k)} = {format_value(v)}")
+    return "{ " + ", ".join(parts) + " }"
+
+
+def dump_toml(data: Dict[str, Any]) -> str:
+    """Minimal TOML writer supporting nested tables and quoted keys."""
+    lines: list[str] = []
+
+    def join_path(path: list[str]) -> str:
+        return ".".join(format_key(p) for p in path)
+
+    def emit_table(path: list[str], table: Dict[str, Any]) -> None:
+        scalars: list[tuple[str, Any]] = []
+        subtables: list[tuple[str, Dict[str, Any]]] = []
+        for k, v in table.items():
+            if isinstance(v, dict) and k not in INLINE_DICT_KEYS:
+                subtables.append((k, v))
+            else:
+                scalars.append((k, v))
+
+        write_header = bool(path) and bool(scalars)
+        if write_header:
+            if lines:
+                lines.append("")
+            lines.append(f"[{join_path(path)}]")
+
+        for key, val in scalars:
+            if isinstance(val, dict):
+                lines.append(f"{format_key(key)} = {format_inline_dict(val)}")
+            else:
+                lines.append(f"{format_key(key)} = {format_value(val)}")
+
+        for key, sub in subtables:
+            emit_table(path + [key], sub)
+
+    scalars_root: dict[str, Any] = {}
+    tables_root: dict[str, Dict[str, Any]] = {}
+
+    for k, v in data.items():
+        if isinstance(v, dict):
+            tables_root[k] = v
+        else:
+            scalars_root[k] = v
+
+    emit_table([], {**scalars_root, **tables_root})
+    return "\n".join(lines) + "\n"
+
+
+def merge_servers(
+    config: Dict[str, Any], servers: Dict[str, Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Merge servers into config under mcp_servers, replacing by name."""
+    merged = dict(config)
+    existing = merged.setdefault("mcp_servers", {})
+    updated_names = []
+
+    for name, server in servers.items():
+        is_new = name not in existing
+        existing[name] = resolve_server_secrets(server)
+        updated_names.append(name)
+        action = "Adding" if is_new else "Updating"
+        print(f"{action} MCP server: {name}")
+
+    return merged
+
+
+def maybe_verify() -> None:
+    """If codex CLI is available, list MCP servers for user visibility."""
+    if shutil.which("codex") is None:
+        return
+    try:
+        print("\nVerification (codex mcp list):")
+        subprocess.run(["codex", "mcp", "list"], check=False)
+    except Exception as exc:
+        print(f"Warning: codex verification skipped: {exc}", file=sys.stderr)
+
+
+def main() -> None:
+    home = Path.home()
+    codex_dir = home / ".codex"
+    source_path = codex_dir / "mcp-servers.toml"
+    config_path = codex_dir / "config.toml"
+
+    if not source_path.exists():
+        print(f"Error: MCP servers file not found at {source_path}", file=sys.stderr)
+        sys.exit(1)
+    if not config_path.exists():
+        print(f"Error: Codex config not found at {config_path}", file=sys.stderr)
+        sys.exit(1)
+
+    servers = load_toml(source_path).get("mcp_servers", {})
+    if not isinstance(servers, dict) or not servers:
+        print("Error: No mcp_servers entries found in source file.", file=sys.stderr)
+        sys.exit(1)
+
+    config = load_toml(config_path)
+    create_backup(config_path)
+
+    merged = merge_servers(config, servers)
+
+    try:
+        config_path.write_text(dump_toml(merged))
+        print(f"\nUpdated {config_path}")
+        print(f"Total MCP servers configured: {len(merged.get('mcp_servers', {}))}")
+    except Exception as exc:
+        print(f"Error: Failed to write Codex config: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    # list unmanaged/system-specific servers
+    managed = set(servers.keys())
+    existing = set(merged.get("mcp_servers", {}).keys())
+    unmanaged = existing - managed
+    if unmanaged:
+        print(f"System-specific servers (not managed): {', '.join(sorted(unmanaged))}")
+
+    maybe_verify()
+
+
+if __name__ == "__main__":
+    main()
