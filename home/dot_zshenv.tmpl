@@ -17,7 +17,8 @@ export HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
 # Set up Homebrew environment for all shell sessions
 # This is critical for zinit plugin compilation which runs in non-login shells
 if [ -n "$HOMEBREW_PREFIX" ] && [ -f "$HOMEBREW_PREFIX/bin/brew" ]; then
-    eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
+    # Pass shell name to avoid sandboxed /bin/ps lookup in Homebrew's shellenv
+    eval "$($HOMEBREW_PREFIX/bin/brew shellenv zsh)"
 fi
 
 # Core shell behavior (needed by all shell types)
