@@ -11,12 +11,6 @@
       "EXA_API_KEY": "rbw:exa-api-key"
     }
   },
-  "octocode": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "octocode-mcp@latest"],
-    "env": {}
-  },
   "context7": {
     "type": "http",
     "url": "https://mcp.context7.com/mcp",

@@ -1,0 +1,15 @@
+{
+  "name": "local",
+  "owner": {
+    "name": "Robert"
+  },
+  "description": "Local plugin marketplace for personal plugins",
+  "plugins": [
+    {
+      "name": "octocode",
+      "source": "./octocode",
+      "description": "GitHub code research agent powered by Octocode MCP",
+      "version": "1.0.0"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "octocode",
+  "version": "1.0.0",
+  "description": "GitHub code research agent powered by Octocode MCP for searching repositories, code patterns, and pull requests"
+}

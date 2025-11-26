@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Remote marketplace
+MARKETPLACE="severity1/claude-code-marketplace"
+PLUGIN="prompt-improver@claude-code-marketplace"
+
+# Local marketplace
+LOCAL_MARKETPLACE="$HOME/.claude/plugins/local"
+LOCAL_PLUGIN="octocode@local"
+
+# Add remote marketplace if not present
+if ! claude plugin marketplace list 2>/dev/null | rg -q "$MARKETPLACE"; then
+    echo "Adding marketplace: $MARKETPLACE"
+    claude plugin marketplace add "$MARKETPLACE"
+fi
+
+# Add local marketplace if not present
+if ! claude plugin marketplace list 2>/dev/null | rg -q "$LOCAL_MARKETPLACE"; then
+    echo "Adding local marketplace: $LOCAL_MARKETPLACE"
+    claude plugin marketplace add "$LOCAL_MARKETPLACE"
+fi
+
+# Install plugins (claude handles already-installed case)
+echo "Installing plugin: $PLUGIN"
+claude plugin install "$PLUGIN"
+
+echo "Installing plugin: $LOCAL_PLUGIN"
+claude plugin install "$LOCAL_PLUGIN"
+
+echo "Restart Claude Code to activate plugins"

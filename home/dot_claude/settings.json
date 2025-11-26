@@ -45,7 +45,6 @@
       "Bash(gh repo view:*)",
       "Bash(gh run download:*)",
       "Bash(gh run list:*)",
-      "Bash(gh run list:*)",
       "Bash(gh run view:*)",
       "Bash(gh search:*)",
       "Bash(gh ssh-key list:*)",
@@ -132,12 +131,7 @@
       "mcp__context7__resolve-library-id",
       "mcp__exa__crawling_exa",
       "mcp__exa__web_search_exa",
-      "mcp__ide__getDiagnostics",
-      "mcp__octocode__githubGetFileContent",
-      "mcp__octocode__githubSearchCode",
-      "mcp__octocode__githubSearchPullRequests",
-      "mcp__octocode__githubSearchRepositories",
-      "mcp__octocode__githubViewRepoStructure"
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [
       "WebFetch",
@@ -148,7 +142,6 @@
     ],
     "defaultMode": "default"
   },
-  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -224,7 +217,8 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "prompt-improver@claude-code-marketplace": true
+    "prompt-improver@claude-code-marketplace": true,
+    "octocode": true
   },
   "forceLoginMethod": "claudeai",
   "spinnerTipsEnabled": false,
