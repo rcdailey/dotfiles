@@ -73,6 +73,9 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
   elements in your responses. Text-only responses are required for communication, but PRESERVE
   existing symbols/emojis in code you edit.
 - Do not liberally use bold formatting when creating bullet point lists.
+- **NEVER use tables in conversational responses.** Tables render poorly in terminal environments
+  with limited width. Use bullet lists, numbered lists, or prose instead. This applies to ALL
+  responses - there are no exceptions for "clarity" or "comparison" purposes.
 - Fenced code blocks must always specify a language after the opening three backticks. If no
   language is needed, use `txt` as the language.
 - Keep line length ≤ 100 characters where practical.
