@@ -44,7 +44,7 @@ customCommands:
     title: "Commit instructions (optional - leave empty for staged changes only):"
     key: CommitArgs
     initialValue: ""
-  command: claude -p {{printf "/commit %s" .Form.CommitArgs | quote}}
+  command: claude --strict-mcp-config -p {{printf "/commit %s" .Form.CommitArgs | quote}}
   loadingText: Claude is committing...
 - key: f
   command: git merge --ff-only {{.SelectedLocalBranch.Name}}
