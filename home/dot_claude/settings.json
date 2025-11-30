@@ -132,19 +132,16 @@
       "Bash(zip:*)",
       "mcp__context7__get-library-docs",
       "mcp__context7__resolve-library-id",
-      "mcp__exa__crawling_exa",
-      "mcp__exa__web_search_exa",
       "mcp__ide__getDiagnostics",
+      "WebFetch",
+      "WebSearch",
       "mcp__octocode__githubGetFileContent",
       "mcp__octocode__githubSearchCode",
       "mcp__octocode__githubSearchPullRequests",
       "mcp__octocode__githubSearchRepositories",
       "mcp__octocode__githubViewRepoStructure"
     ],
-    "deny": [
-      "WebFetch",
-      "WebSearch"
-    ],
+    "deny": [],
     "ask": [
       "Bash(git push:*)"
     ],

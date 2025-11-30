@@ -203,10 +203,10 @@ enforce these constraints.
 **CRITICAL REMINDER:** Refer to "CRITICAL REQUIREMENTS" section above for mandatory context7 usage
 in ALL operations. Context7 is required for ANY information need, not just libraries.
 
-**PRIORITY 1: General Research (exa MCP tools):**
+**PRIORITY 1: General Research (web search/fetch):**
 
-- USE web searching (exa MCP tools) liberally for factual information on demand. NEVER make
-  assumptions when current information is available. Proactively search for:
+- USE web search liberally for factual information on demand. NEVER make assumptions when current
+  information is available. Proactively search for:
   - Technical specifications and current best practices
   - Latest versions, compatibility information, and security considerations
   - Verification of claims or statements when accuracy is important

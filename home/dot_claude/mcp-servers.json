@@ -1,16 +1,4 @@
 {
-  "exa": {
-    "type": "stdio",
-    "command": "npx",
-    "args": [
-      "-y",
-      "exa-mcp-server@latest",
-      "enabledTools=[\"web_search_exa\",\"crawling_exa\"]"
-    ],
-    "env": {
-      "EXA_API_KEY": "rbw:exa-api-key"
-    }
-  },
   "octocode": {
     "type": "stdio",
     "command": "npx",
