@@ -53,16 +53,6 @@
       "Bash(gh workflow list:*)",
       "Bash(gh workflow validate:*)",
       "Bash(gh workflow view:*)",
-      "Bash(git add:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git ls-tree:*)",
-      "Bash(git mv:*)",
-      "Bash(git reflog:*)",
-      "Bash(git rev-parse:*)",
-      "Bash(git rm:*)",
-      "Bash(git show:*)",
-      "Bash(git status:*)",
       "Bash(head:*)",
       "Bash(json5:*)",
       "Bash(ls:*)",
@@ -133,13 +123,13 @@
       "mcp__context7__get-library-docs",
       "mcp__context7__resolve-library-id",
       "mcp__ide__getDiagnostics",
-      "WebFetch",
-      "WebSearch",
       "mcp__octocode__githubGetFileContent",
       "mcp__octocode__githubSearchCode",
       "mcp__octocode__githubSearchPullRequests",
       "mcp__octocode__githubSearchRepositories",
-      "mcp__octocode__githubViewRepoStructure"
+      "mcp__octocode__githubViewRepoStructure",
+      "WebFetch",
+      "WebSearch"
     ],
     "deny": [],
     "ask": [
@@ -177,6 +167,17 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/tool-redirections.py"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/permission-git.py"
           }
         ]
       }
