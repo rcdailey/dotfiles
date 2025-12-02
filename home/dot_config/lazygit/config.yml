@@ -13,6 +13,10 @@ keybinding:
   universal:
     prevPage: <pgup>
     nextPage: <pgdown>
+    scrollLeft: "<"
+    scrollRight: ">"
+    gotoTop: "<disabled>"  # conflicts with scrollLeft
+    gotoBottom: "<disabled>"  # conflicts with scrollRight
     scrollUpMain: ","
     scrollDownMain: "."
     nextItem-alt: "<disabled>"
