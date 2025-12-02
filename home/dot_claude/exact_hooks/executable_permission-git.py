@@ -25,10 +25,12 @@ if data.get("tool_name") != "Bash":
 
 command = data.get("tool_input", {}).get("command", "")
 
-# Match: git -C <path> <subcommand> OR git <subcommand>
-match = re.match(r"git\s+(?:-C\s+(?:['\"].*?['\"]|\S+)\s+)?(\S+)", command)
+# Find ALL git subcommands in the command (handles chained commands like && or ;)
+GIT_PATTERN = re.compile(r"git\s+(?:-C\s+(?:['\"].*?['\"]|\S+)\s+)?(\S+)")
+matches = GIT_PATTERN.findall(command)
 
-if match and match[1] in ALLOWED_SUBCOMMANDS:
+# Only auto-allow if ALL git subcommands are in the allowed list
+if matches and all(subcmd in ALLOWED_SUBCOMMANDS for subcmd in matches):
     print(
         json.dumps(
             {
