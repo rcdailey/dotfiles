@@ -22,7 +22,7 @@ class RedirectionRule(NamedTuple):
 # Tool redirection rules
 REDIRECTIONS = [
     RedirectionRule(
-        pattern=re.compile(r"\bgrep\b"),
+        pattern=re.compile(r"(?<!-)\bgrep\b"),
         message="Use 'rg' instead of 'grep' for better performance and features",
         examples=["grep pattern file.txt", "ps aux | grep process"],
     ),
@@ -32,7 +32,7 @@ REDIRECTIONS = [
         examples=["find /path -name '*.txt'", "find . -name 'test*'"],
     ),
     RedirectionRule(
-        pattern=re.compile(r"\|.*\bgrep\b"),
+        pattern=re.compile(r"\|.*(?<!-)\bgrep\b"),
         message="Avoid chaining grep commands - use 'rg' with multiple patterns or combined regex",
         examples=["rg files | grep -v '/obj/'", "cat file | grep pattern"],
     ),
@@ -80,6 +80,8 @@ def dry_run() -> None:
         "rg --files | grep filter",
         "sops --set file.yaml key value",
         # Should NOT match any patterns (excluded commands)
+        'git log --oneline --grep="IRIXCORE-202" -5',
+        'cd /path && git log --grep="X"',
         "git commit -m 'find the right solution'",
         "ssh user@host 'grep logs'",
         "kubectl exec -n media restore-config -- grep -E 'api_key|download_dir|complete_dir' /config/sabnzbd.ini",
