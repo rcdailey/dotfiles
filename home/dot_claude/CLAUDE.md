@@ -73,15 +73,15 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
   elements in your responses. Text-only responses are required for communication, but PRESERVE
   existing symbols/emojis in code you edit.
 - Do not liberally use bold formatting when creating bullet point lists.
-- **NEVER use tables in conversational responses.** Tables render poorly in terminal environments
-  with limited width. Use bullet lists, numbered lists, or prose instead. This applies to ALL
-  responses - there are no exceptions for "clarity" or "comparison" purposes.
 - Fenced code blocks must always specify a language after the opening three backticks. If no
   language is needed, use `txt` as the language.
 - Keep line length ≤ 100 characters where practical.
 - Include blank lines around headings and code blocks.
 - Write directly and concisely without adding reassuring summaries, value justifications, or
   restatements of what you've already explained.
+- NEVER use markdown tables when responding directly in the conversation (text output to the CLI
+  terminal). Use bullet lists or prose instead. This rule does NOT apply to file contents written
+  via the Write or Edit tools - tables in documentation files are acceptable.
 
 ## Markdown Requirements
 
@@ -249,8 +249,8 @@ Absolutely no exceptions!
 **Pull Requests:**
 
 - `gh pr status` - Show PR status
-- `gh pr list [--state {open|closed|merged|all}]` - List PRs (default: open)
-- `gh pr view [<number>|<url>|<branch>] [--comments]` - View PR details/comments
+- `gh pr list [--state {open|closed|merged|all}]` - List PRs (default: open) - `gh pr view
+  [<number>|<url>|<branch>] [--comments]` - View PR details/comments
 - `gh pr checkout <number>` - Checkout PR branch
 - `gh pr create --title <title> --body <body>` - Create PR
 - `gh api repos/:owner/:repo/pulls/<number>/comments` - Get inline code review comments
@@ -259,8 +259,8 @@ Absolutely no exceptions!
 **Issues:**
 
 - `gh issue status` - Show issue status
-- `gh issue list [--state {open|closed|all}]` - List issues (default: open)
-- `gh issue view [<number>|<url>] [--comments]` - View issue details/comments
+- `gh issue list [--state {open|closed|all}]` - List issues (default: open) - `gh issue view
+  [<number>|<url>] [--comments]` - View issue details/comments
 - `gh issue create --title <title> --body <body>` - Create issue
 - `gh search issues <query>` - Search issues across repositories
 
@@ -274,12 +274,11 @@ Absolutely no exceptions!
 **Discussions (GraphQL only):**
 
 - List: `gh api graphql -f query='query($owner:String!,$repo:String!)
-  {repository(owner:$owner,name:$repo){discussions(first:10)
-  {nodes{number title url}}}}' -F owner=OWNER -F repo=REPO`
+  {repository(owner:$owner,name:$repo){discussions(first:10) {nodes{number title url}}}}' -F
+  owner=OWNER -F repo=REPO`
 - View: `gh api graphql -f query='query($owner:String!,$repo:String!,$number:Int!)
-  {repository(owner:$owner,name:$repo){discussion(number:$number)
-  {title body comments(first:10){nodes{body author{login}}}}}}'
-  -F owner=OWNER -F repo=REPO -F number=NUM`
+  {repository(owner:$owner,name:$repo){discussion(number:$number) {title body
+  comments(first:10){nodes{body author{login}}}}}}' -F owner=OWNER -F repo=REPO -F number=NUM`
 - Search: `gh api graphql -f query='query($q:String!){search(query:$q,type:DISCUSSION,
   first:10){nodes{...on Discussion{number title url}}}}' -f q="repo:OWNER/REPO QUERY"`
 

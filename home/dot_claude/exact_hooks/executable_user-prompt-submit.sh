@@ -8,6 +8,7 @@ input=$(cat)
 
 # Always show conciseness reminder
 echo "REMINDER: Keep conversational responses to 4 lines maximum. No preambles/postambles/wrapper phrases."
+echo "NEVER use markdown tables in conversational responses - use bullet lists instead."
 
 # Context7 check (only if mentioned in prompt)
 if echo "$input" | rg -qi "context7"; then
