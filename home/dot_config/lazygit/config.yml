@@ -60,6 +60,11 @@ customCommands:
   context: remoteBranches
   description: Fast-forward merge selected remote branch to current branch
   output: log
+- key: f
+  command: git merge --ff-only {{.SelectedCommit.Hash}}
+  context: subCommits
+  description: Fast-forward merge current branch to selected commit
+  output: log
 - key: x
   command: git format-patch -1 {{.SelectedCommit.Hash}}
   context: commits,subCommits
