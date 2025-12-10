@@ -2,6 +2,7 @@ font-family = FiraCode Nerd Font
 font-size = 10
 theme = Dracula+
 confirm-close-surface = false
+copy-on-select = clipboard
 window-padding-balance = true
 window-padding-color = extend
 keybind = shift+enter=text:\n
