@@ -5,3 +5,15 @@ confirm-close-surface = false
 window-padding-balance = true
 window-padding-color = extend
 keybind = shift+enter=text:\n
+keybind = ctrl+shift+comma=reload_config
+keybind = ctrl+shift+e=new_split:down
+keybind = ctrl+shift+o=new_split:right
+keybind = ctrl+shift+t=new_tab
+keybind = ctrl+shift+w=close_surface
+keybind = ctrl+shift+n=new_window
+keybind = ctrl+shift+left=goto_split:left
+keybind = ctrl+shift+right=goto_split:right
+keybind = ctrl+shift+up=goto_split:up
+keybind = ctrl+shift+down=goto_split:down
+keybind = ctrl+page_up=previous_tab
+keybind = ctrl+page_down=next_tab
