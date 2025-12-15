@@ -19,9 +19,12 @@ zinit load "Aloxaf/fzf-tab"
 
 # Load other plugins with turbo mode for performance (widget-wrapping plugins)
 # These can be safely deferred as they don't have strict timing requirements
-zinit ice wait lucid for \
-    "zsh-users/zsh-autosuggestions" \
-    "zsh-users/zsh-syntax-highlighting"
+# IMPORTANT: history-substring-search bindings must be set AFTER autosuggestions loads
+# to prevent autosuggestions from overwriting them (see GitHub issue #678)
+zinit ice wait lucid atload'bindkey "$terminfo[kcuu1]" history-substring-search-up; bindkey "$terminfo[kcud1]" history-substring-search-down'
+zinit light zsh-users/zsh-autosuggestions
+zinit ice wait lucid
+zinit light zsh-users/zsh-syntax-highlighting
 
 # Enable fzf-tab after loading
 enable-fzf-tab

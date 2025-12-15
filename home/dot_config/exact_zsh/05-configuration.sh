@@ -98,9 +98,8 @@ if command -v mise >/dev/null 2>&1; then
     eval "$(mise activate zsh)" 2>/dev/null
 fi
 
-# Key bindings for history substring search
-bindkey '^[[A' history-substring-search-up
-bindkey '^[[B' history-substring-search-down
+# History substring search bindings moved to 04-plugins.sh atload hook
+# to ensure they're set AFTER zsh-autosuggestions loads (prevents overwrite)
 
 # Key bindings for HOME and END keys
 bindkey '^[[H' beginning-of-line  # Standard ANSI HOME
