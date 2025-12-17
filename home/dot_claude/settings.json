@@ -221,6 +221,5 @@
   },
   "forceLoginMethod": "claudeai",
   "spinnerTipsEnabled": false,
-  "alwaysThinkingEnabled": true,
   "enableAllProjectMcpServer": true
 }
