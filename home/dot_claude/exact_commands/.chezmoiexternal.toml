@@ -12,29 +12,9 @@
 ###########################################
 ## DEV COMMANDS
 ###########################################
-["ccs/ultra-think.md"]
-    type = "file"
-    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/ultra-think.md"
-    refreshPeriod = "18h"
-
 ["ccs/fix-issue.md"]
     type = "file"
     url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/fix-issue.md"
-    refreshPeriod = "18h"
-
-["ccs/refactor-code.md"]
-    type = "file"
-    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/refactor-code.md"
-    refreshPeriod = "18h"
-
-["ccs/prime.md"]
-    type = "file"
-    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/prime.md"
-    refreshPeriod = "18h"
-
-["ccs/explain-code.md"]
-    type = "file"
-    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/explain-code.md"
     refreshPeriod = "18h"
 
 ["ccs/debug-error.md"]
@@ -42,41 +22,10 @@
     url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/dev/debug-error.md"
     refreshPeriod = "18h"
 
-["ccs/fix-pr.md"]
-    type = "file"
-    url = "https://github.com/metabase/metabase/raw/refs/heads/master/.claude/commands/fix-pr.md"
-    refreshPeriod = "18h"
-
-###########################################
-## SETUP COMMANDS
-###########################################
-["ccs/setup-linting.md"]
-    type = "file"
-    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/setup/setup-linting.md"
-    refreshPeriod = "18h"
-
 ###########################################
 ## TEAM COMMANDS
 ###########################################
-["ccs/session-learning-capture.md"]
-    type = "file"
-    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/team/session-learning-capture.md"
-    refreshPeriod = "18h"
-
 ["ccs/memory-spring-cleaning.md"]
     type = "file"
     url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/team/memory-spring-cleaning.md"
-    refreshPeriod = "18h"
-
-["ccs/architecture-review.md"]
-    type = "file"
-    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/team/architecture-review.md"
-    refreshPeriod = "18h"
-
-###########################################
-## TEST COMMANDS
-###########################################
-["ccs/write-tests.md"]
-    type = "file"
-    url = "https://github.com/qdhenry/Claude-Command-Suite/raw/refs/heads/main/.claude/commands/test/write-tests.md"
     refreshPeriod = "18h"
