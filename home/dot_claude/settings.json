@@ -129,7 +129,10 @@
     "ask": [
       "Bash(git push:*)"
     ],
-    "defaultMode": "default"
+    "defaultMode": "default",
+    "additionalDirectories": [
+      "/tmp"
+    ]
   },
   "hooks": {
     "PreToolUse": [
