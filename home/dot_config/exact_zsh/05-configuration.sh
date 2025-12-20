@@ -38,6 +38,11 @@ if [ -d "$HOME/.dotnet/tools" ]; then
   export PATH="$HOME/.dotnet/tools:$PATH"
 fi
 
+# Kitty terminal (installed via official installer to ~/.local/kitty.app)
+if [ -d "$HOME/.local/kitty.app/bin" ]; then
+  export PATH="$HOME/.local/kitty.app/bin:$PATH"
+fi
+
 # Cross-platform ls replacement with lsd
 if (( $+commands[lsd] )); then
     alias ls='lsd --color=auto --icon=auto --group-directories-first'
