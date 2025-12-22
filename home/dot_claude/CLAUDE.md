@@ -2,9 +2,9 @@
 
 ## CRITICAL REQUIREMENTS - ABSOLUTE MANDATES
 
-**These four directives are ABSOLUTELY REQUIRED and MUST be followed in ALL operations:**
+**The following directives are ABSOLUTELY REQUIRED and MUST be followed in ALL operations:**
 
-### MAXIMUM CONCISENESS - ENFORCED BY HOOKS
+### MAXIMUM CONCISENESS
 
 **ABSOLUTE REQUIREMENT:** Keep conversational responses to 4 lines maximum unless user explicitly
 requests detail or asks "why"/"how" questions.
@@ -33,7 +33,7 @@ library id and get library docs without me having to explicitly ask. Always pref
 
 ### Ripgrep Usage - GREP IS ABSOLUTELY PROHIBITED
 
-**YOU MUST FOLLOW THESE RULES - VIOLATIONS WILL BE BLOCKED BY HOOKS:**
+**YOU MUST FOLLOW THESE RULES:**
 
 **NEVER ACCEPTABLE COMMANDS:**
 
@@ -88,13 +88,6 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
 - Markdown headings should NEVER be numbered.
 - NEVER put sentences starting with bold labels on consecutive lines without blank lines between
   them OR use list syntax. In markdown, adjacent text is treated as a single paragraph.
-
-## Conciseness Requirements - ENFORCED BY HOOKS
-
-**CRITICAL REMINDER:** This section reinforces the MANDATORY conciseness rules in "CRITICAL
-REQUIREMENTS" section above. Violations trigger post-tool-use hook reminders.
-
-Review the "MAXIMUM CONCISENESS" rules at the top of this document before every response.
 
 ## Development Mandates
 
@@ -164,21 +157,17 @@ Review the "MAXIMUM CONCISENESS" rules at the top of this document before every 
 ### Search and File Operations
 
 **CRITICAL REMINDER:** Refer to "CRITICAL REQUIREMENTS" section above for mandatory ripgrep usage
-rules. These rules are absolutely required and enforced by hooks.
+rules.
 
 ### GitHub Integration Requirements
 
-**Use native GitHub integration tools for all GitHub operations.**
+**Use the `gh` CLI for all GitHub operations.**
 
-Key principles:
+- NEVER use WebFetch or WebSearch for GitHub repository content, issues, PRs, or discussions
+- Use `gh` CLI commands (see "GitHub CLI Quick Reference" section below)
+- Use MCP GitHub tools (octocode) for code search and repository exploration
 
-- NEVER use general web search for GitHub-specific information
-- Choose the most appropriate GitHub tool based on the task requirements (performance, token
-  efficiency, capabilities)
-
-**Why these rules exist:** Native GitHub tools prevent excessive token usage, provide faster
-response times, and offer specialized capabilities for repository operations. Hooks automatically
-enforce these constraints.
+**Why:** Native tools are faster, more reliable, and avoid token waste from HTML parsing.
 
 ## Behavioral Requirements
 
@@ -187,8 +176,6 @@ enforce these constraints.
 1. Reference the "Search and File Operations" section above
 2. Verify your command follows the required patterns
 3. If unsure, use List, Glob, or Grep tools instead of Bash
-
-**CRITICAL:** Your hooks will block violations, but you should follow these rules proactively.
 
 ### Planning Tools
 
@@ -200,7 +187,7 @@ enforce these constraints.
 **CRITICAL REMINDER:** Refer to "CRITICAL REQUIREMENTS" section above for mandatory context7 usage
 in ALL operations. Context7 is required for ANY information need, not just libraries.
 
-**PRIORITY 1: General Research (web search/fetch):**
+**General Research (web search/fetch):**
 
 - USE web search liberally for factual information on demand. NEVER make assumptions when current
   information is available. Proactively search for:
