@@ -148,8 +148,8 @@ Review the "MAXIMUM CONCISENESS" rules at the top of this document before every 
 
 ## Code Quality Requirements
 
-- ALWAYS write self-documenting code and avoid verbose code comments to improve code base
-  maintainability. Comments are code, too, and they have a cost.
+- Comments must earn their place by reducing cognitive load. Add when purpose isn't clear from code;
+  omit when restating the obvious. Prefer self-documenting naming over explanatory comments.
 - ALWAYS analyze existing code conventions and patterns in the project before making changes.
 
 ## Tool Usage Requirements
