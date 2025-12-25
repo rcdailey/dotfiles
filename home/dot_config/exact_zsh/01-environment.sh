@@ -33,6 +33,9 @@ export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
 
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 
+# Claude Code - enable on-demand MCP tool loading
+export ENABLE_EXPERIMENTAL_MCP_CLI=true
+
 # Homebrew - disable new casks/formula messages and analytics
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_BOOTSNAP=1
