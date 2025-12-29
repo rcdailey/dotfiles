@@ -50,6 +50,7 @@ customCommands:
     initialValue: ""
   command: claude --strict-mcp-config -p {{printf "/commit %s" .Form.CommitArgs | quote}}
   loadingText: Claude is committing...
+  output: terminal
 - key: f
   command: git merge --ff-only {{.SelectedLocalBranch.Name}}
   context: localBranches
