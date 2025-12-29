@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Grep, Glob, mcp__octocode__githubSearchCode, mcp__octocode__githubSearchRepositories, mcp__octocode__githubViewRepoStructure, mcp__octocode__githubGetFileContent, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
+allowed-tools: Read, Grep, Glob, mcp__octocode__githubSearchCode, mcp__octocode__githubSearchRepositories, mcp__octocode__githubViewRepoStructure, mcp__octocode__githubGetFileContent, mcp__context7__resolve-library-id, mcp__context7__query-docs
 argument-hint: [focus-area or directive]
 description: Initialize session for third-party repository contribution
 ---
@@ -108,8 +108,8 @@ identified:
 
 For each major library, framework, or tool discovered in Phase 1:
 
-- Use context7 resolve-library-id to find the proper library ID
-- Use context7 get-library-docs to obtain authoritative documentation
+- Use context7 resolve-library-id to find the proper library ID (requires query and libraryName)
+- Use context7 query-docs to obtain authoritative documentation
 - Focus on best practices, coding conventions, and contribution guidelines specific to each tool
 
 ### 8. Technology Stack Research

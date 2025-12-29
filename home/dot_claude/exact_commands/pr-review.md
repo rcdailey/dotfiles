@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checkout:*), Bash(gh issue view:*), Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git stash:*), Bash(git switch:*), Bash(terraform -chdir:*), Read, Grep, Glob, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
+allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checkout:*), Bash(gh issue view:*), Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git stash:*), Bash(git switch:*), Bash(terraform -chdir:*), Read, Grep, Glob, mcp__context7__resolve-library-id, mcp__context7__query-docs
 argument-hint: [pr-number or commit-range] [include medium/minor issues]
 description: Code Review for PRs
 ---
