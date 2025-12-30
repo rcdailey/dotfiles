@@ -80,7 +80,8 @@ assumptions based on filenames, paths, or diff stats alone.
 
 **CRITICAL - Line Wrapping**: Hard-wrap by inserting newlines (not visual soft-wrap).
 
-- **Subject**: 50 chars (guideline), 72 max (GitHub truncates beyond)
+- **Subject HARD LIMIT**: 72 characters maximum. NEVER exceed this. Count characters before
+  committing. If over 50 characters, move details to the body instead.
 - **Body**: Fill lines up to 72 chars, breaking at the LAST word boundary before exceeding 72. Do
   not wrap early - maximize line usage while staying under the limit.
 - **Exceptions**: URLs, paths, technical identifiers can exceed 72 to avoid mid-string breaks
