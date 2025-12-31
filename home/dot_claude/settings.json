@@ -148,24 +148,6 @@
             "command": "~/.claude/hooks/gh-api-readonly.py"
           }
         ]
-      },
-      {
-        "matcher": "LS",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/tool-redirections.py"
-          }
-        ]
-      },
-      {
-        "matcher": "Search",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/tool-redirections.py"
-          }
-        ]
       }
     ],
     "PermissionRequest": [

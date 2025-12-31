@@ -161,18 +161,6 @@ def main() -> None:
     tool_name = input_data.get("tool_name", "")
     command = input_data.get("tool_input", {}).get("command", "")
 
-    # Block LS tool - require rg instead
-    if tool_name == "LS":
-        error_msg = "TOOL USAGE VIOLATION: Use 'rg --files' or 'rg --files -g pattern' instead of LS tool for file listing"
-        print(error_msg, file=sys.stderr)
-        sys.exit(2)
-
-    # Block Search tool - require rg instead
-    if tool_name == "Search":
-        error_msg = 'TOOL USAGE VIOLATION: Use \'rg\' instead of Search tool for content searching\nExamples: rg "pattern", rg -i "pattern" (case insensitive), rg "pattern" --type js (file type), rg -A3 -B3 "pattern" (with context)'
-        print(error_msg, file=sys.stderr)
-        sys.exit(2)
-
     # Process Bash commands
     if tool_name == "Bash" and command:
         # Skip validation for remote execution and container commands to avoid false positives
