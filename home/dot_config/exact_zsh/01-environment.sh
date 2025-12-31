@@ -1,6 +1,9 @@
 # Performance monitoring: Uncomment to profile startup time
 # zmodload zsh/zprof  # Enable at top of .zshrc, then add 'zprof' at bottom
 
+# Prevent duplicate entries in path arrays (idempotent for re-sourcing)
+typeset -U path fpath cdpath manpath
+
 # Environment variables and exports (console-output safe for instant prompt)
 # Note: Core variables (EDITOR, TERM, HISTFILE, etc.) are now in .zshenv
 

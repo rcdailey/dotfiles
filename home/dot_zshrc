@@ -9,6 +9,15 @@ if [[ -n "$CLAUDECODE" ]] || [[ ! -t 0 ]]; then
     return 0
 fi
 
+# Guard against re-sourcing: source ~/.zshrc causes plugin/state corruption
+# Use 'reload' alias or 'exec zsh' for a clean shell restart
+if [[ -n "$__ZSHRC_LOADED" ]]; then
+    print -P "%F{red}Error:%f source ~/.zshrc is not supported (causes shell corruption)." >&2
+    print -P "Use %F{green}reload%f or %F{green}exec zsh%f instead." >&2
+    return 1
+fi
+__ZSHRC_LOADED=1
+
 # Enable Powerlevel10k instant prompt. MUST be at the very top after pre-setup.
 # Disable instant prompt in VS Code to fix prompt rendering
 if [[ "$TERM_PROGRAM" != "vscode" ]] && [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then

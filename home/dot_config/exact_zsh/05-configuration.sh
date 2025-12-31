@@ -72,6 +72,7 @@ export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
 # Terminal utilities
 alias cls="clear && clear"
+alias reload='exec zsh'
 alias keygen-ed25519="ssh-keygen -t ed25519 -a 100 -P ''"
 
 # Platform-specific aliases (Windows/WSL)
