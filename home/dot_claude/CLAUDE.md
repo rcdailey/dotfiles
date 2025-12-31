@@ -2,12 +2,10 @@
 
 ## CRITICAL REQUIREMENTS - ABSOLUTE MANDATES
 
-**The following directives are ABSOLUTELY REQUIRED and MUST be followed in ALL operations:**
+### Maximum Conciseness
 
-### MAXIMUM CONCISENESS
-
-**ABSOLUTE REQUIREMENT:** Keep conversational responses to 4 lines maximum unless user explicitly
-requests detail or asks "why"/"how" questions.
+Keep conversational responses to 4 lines maximum unless user explicitly requests detail or asks
+"why"/"how" questions.
 
 **PROHIBITED:**
 
@@ -32,15 +30,13 @@ library/API documentation. This means you should automatically use the Context7 
 
 ### Ripgrep Usage - GREP IS ABSOLUTELY PROHIBITED
 
-**YOU MUST FOLLOW THESE RULES:**
-
 **NEVER ACCEPTABLE COMMANDS:**
 
 - NEVER: `grep` (use `rg` instead)
 - NEVER: `find -name` (use `rg --files -g "pattern"` instead)
 - NEVER: `ls | rg`, `find | rg`, `rg | grep` (use single `rg` command)
 
-**REQUIRED PATTERNS - THESE ARE THE ONLY ACCEPTABLE APPROACHES:**
+**REQUIRED PATTERNS:**
 
 - File discovery: `rg --files -g "pattern"`
 - Text search: `rg "pattern1|pattern2"`
@@ -49,13 +45,6 @@ library/API documentation. This means you should automatically use the Context7 
 
 **IMPORTANT:** These rules exist in your active memory. Check this section before ANY file
 operation.
-
-**Why these rules exist:** `rg` is faster, more feature-rich, and eliminates the need for command
-chaining. Violations indicate a fundamental misunderstanding of available tooling.
-
-### @ Path Resolution
-
-`@path` is ALWAYS relative to session start directory (from `<env>`), NOT current directory.
 
 ## General
 
@@ -78,7 +67,7 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
 - Include blank lines around headings and code blocks.
 - Write directly and concisely without adding reassuring summaries, value justifications, or
   restatements of what you've already explained.
-- NEVER use markdown tables when responding directly in the conversation (text output to the CLI
+- NEVER use table structures when responding directly in the conversation (text output to the CLI
   terminal). Use bullet lists or prose instead. This rule does NOT apply to file contents written
   via the Write or Edit tools - tables in documentation files are acceptable.
 
@@ -90,11 +79,12 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
 
 ## Development Mandates
 
-- APPLY the KISS principle (Keep It Simple, Stupid) - prioritize simplicity over complexity.
 - ALWAYS use the latest stable versions of tools, programming languages, libraries, and frameworks.
 - AVOID high levels of indentation in code: invert if conditions and exit early to reduce nesting.
 - When editing or creating YAML code, NEVER unnecessarily quote values UNLESS it is required to
   disambiguate characters or force specific types.
+- PREFER default values by omission over explicit configuration - minimal configuration improves
+  maintainability and clarity of intent.
 
 ## Architecture & Design Philosophy
 
@@ -142,39 +132,32 @@ chaining. Violations indicate a fundamental misunderstanding of available toolin
 
 - Comments must earn their place by reducing cognitive load. Add when purpose isn't clear from code;
   omit when restating the obvious. Prefer self-documenting naming over explanatory comments.
-- ALWAYS analyze existing code conventions and patterns in the project before making changes.
+- ALWAYS analyze and follow existing code conventions and patterns in the project before making
+  changes.
 
 ## Tool Usage Requirements
 
 ### Shell and Command-Line Tools
 
-- USE Zsh for all shell operations and script execution - leveraging Zinit plugin manager for
-  optimal performance and automation.
+- Default shell is zsh
 - ALWAYS use `#!/usr/bin/env <interpreter>` for script shebangs (e.g., `#!/usr/bin/env zsh`,
-  `#!/usr/bin/env python3`, `#!/usr/bin/env bash`) for portability across systems.
+  `#!/usr/bin/env python3`, `#!/usr/bin/env bash`) for portability across systems
+- **CRITICAL**: When using the Bash tool to execute commands, NEVER break commands into multiple
+  lines with `\`. Keep all commands as a single line.
 
 ### Search and File Operations
-
-**CRITICAL REMINDER:** Refer to "CRITICAL REQUIREMENTS" section above for mandatory ripgrep usage
-rules.
 
 ### GitHub Integration Requirements
 
 **Use the `gh` CLI for all GitHub operations.**
 
-- NEVER use WebFetch or WebSearch for GitHub repository content, issues, PRs, or discussions
+- NEVER use Web Fetch or Search tools for GitHub repository content, issues, PRs, or discussions
 - Use `gh` CLI commands (see "GitHub CLI Quick Reference" section below)
 - Use MCP GitHub tools (octocode) for code search and repository exploration
 
 **Why:** Native tools are faster, more reliable, and avoid token waste from HTML parsing.
 
 ## Behavioral Requirements
-
-**IMPORTANT:** Before using ANY command-line tools:
-
-1. Reference the "Search and File Operations" section above
-2. Verify your command follows the required patterns
-3. If unsure, use List, Glob, or Grep tools instead of Bash
 
 ### Planning Tools
 
@@ -183,13 +166,10 @@ rules.
 
 ## Research and Information Gathering
 
-**CRITICAL REMINDER:** Refer to "CRITICAL REQUIREMENTS" section above for mandatory context7 usage
-in ALL operations. Context7 is required for ANY information need, not just libraries.
-
 **General Research (web search/fetch):**
 
-- USE web search liberally for factual information on demand. NEVER make assumptions when current
-  information is available. Proactively search for:
+- USE web search and context7 liberally for factual information on demand. NEVER make assumptions
+  when current information is available. Proactively search for:
   - Technical specifications and current best practices
   - Latest versions, compatibility information, and security considerations
   - Verification of claims or statements when accuracy is important
@@ -206,11 +186,6 @@ in ALL operations. Context7 is required for ANY information need, not just libra
   architecture emerge through dialogue and iteration, not top-down pronouncements.
 - CHALLENGE assumptions, incorrect statements, or suboptimal approaches directly. Push back with
   evidence when user opinions conflict with best practices - never automatically defer.
-
-## Configuration Principles
-
-- PREFER default values by omission over explicit configuration - minimal configuration improves
-  maintainability and clarity of intent.
 
 ## Pull Request Requirements
 
