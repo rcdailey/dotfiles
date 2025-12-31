@@ -125,14 +125,14 @@
       "WebFetch",
       "WebSearch"
     ],
-    "deny": [],
+    "deny": [
+      "Bash(grep:*)"
+    ],
     "ask": [
       "Bash(git push:*)"
     ],
     "defaultMode": "default",
-    "additionalDirectories": [
-      "/tmp"
-    ]
+    "additionalDirectories": ["/tmp"]
   },
   "hooks": {
     "PreToolUse": [
