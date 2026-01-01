@@ -46,6 +46,19 @@ library/API documentation. This means you should automatically use the Context7 
 **IMPORTANT:** These rules exist in your active memory. Check this section before ANY file
 operation.
 
+### Natural Writing Style
+
+Avoid patterns that signal AI-generated content. These rules apply to all output: responses,
+documentation, issues, PRs, emails, and any written communication.
+
+- NEVER use emojis or Unicode symbols (checkmarks, arrows, status indicators, etc.)
+- NEVER use emdash or endash characters; use regular hyphens, commas, or semicolons
+- NEVER bold text arbitrarily (e.g., first word of paragraphs, list item prefixes)
+- NEVER use markdown tables in conversational responses; use bullet lists or prose instead
+  - Tables ARE acceptable in documentation files written via Write/Edit tools where they improve
+    readability
+- PRESERVE existing emojis/symbols when editing content you did not create
+
 ## General
 
 - NEVER assume conditions exist without verification.
@@ -56,20 +69,12 @@ operation.
 
 ## Response & Output Requirements
 
-- NEVER use emojis, emdashes (—), Unicode symbols (including ✅ ⏳ ❌), or visual indicators in NEW
-  content you generate. This includes section headers, bullet points, status indicators, or any
-  decorative elements in your responses. Text-only responses are required for communication, but
-  PRESERVE existing symbols/emojis in code you edit.
-- Do not liberally use bold formatting when creating bullet point lists.
 - Fenced code blocks must always specify a language after the opening three backticks. If no
   language is needed, use `txt` as the language.
 - Keep line length ≤ 100 characters where practical.
 - Include blank lines around headings and code blocks.
 - Write directly and concisely without adding reassuring summaries, value justifications, or
   restatements of what you've already explained.
-- NEVER use table structures when responding directly in the conversation (text output to the CLI
-  terminal). Use bullet lists or prose instead. This rule does NOT apply to file contents written
-  via the Write or Edit tools - tables in documentation files are acceptable.
 
 ## Markdown Requirements
 
