@@ -49,7 +49,7 @@ if (( $+commands[lsd] )); then
     alias ll='lsd -la --color=auto --icon=auto --group-directories-first --header'
 else
     alias ls='ls -hF'
-    alias ll='ls -la'
+    ll() { echo "Notice: lsd not installed. Install with: brew install lsd" >&2; command ls -la "$@"; }
 fi
 
 # Essential tool aliases
