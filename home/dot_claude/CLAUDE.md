@@ -168,6 +168,7 @@ documentation, issues, PRs, emails, and any written communication.
 
 - When using planning tools, ONLY build plans for actionable implementation tasks.
 - COMPLETE all necessary research BEFORE using planning tools - research is NOT part of planning.
+- NEVER exit plan mode unless the user explicitly instructs you to.
 
 ## Research and Information Gathering
 
