@@ -1,11 +1,6 @@
 # Homebrew environment setup moved to .zshenv for all shell sessions
-
+# mise shims activation moved to .zshenv for all shell types
 # PATH modifications moved to 05-configuration.sh for all interactive shells
 
 # Added by Toolbox App
 export PATH="$PATH:~/.local/share/JetBrains/Toolbox/scripts"
-
-# mise activation for non-interactive login shells (shims only)
-if command -v mise >/dev/null 2>&1; then
-    eval "$(mise activate zsh --shims)"
-fi

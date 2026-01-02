@@ -47,3 +47,9 @@ if [[ -d "$XDG_CONFIG_HOME/zsh/functions" ]]; then
   fpath=("$XDG_CONFIG_HOME/zsh/functions" $fpath)
   autoload -Uz $XDG_CONFIG_HOME/zsh/functions/*(:t)
 fi
+
+# mise shims for all shell types (interactive and non-interactive, login and non-login)
+# Full activation in 05-configuration.sh replaces shims PATH for interactive shells
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate zsh --shims)"
+fi
