@@ -1,0 +1,12 @@
+#!/bin/sh
+# Wrapper to launch PDF-XChange Editor with proper Unix-to-Windows path conversion
+
+export WINEDEBUG=-all
+PDFXCHANGE="$HOME/.wine/drive_c/Program Files/Tracker Software/PDF Editor/PDFXEdit.exe"
+
+if [ -n "$1" ]; then
+    winpath=$(winepath -w "$1")
+    wine "$PDFXCHANGE" "$winpath"
+else
+    wine "$PDFXCHANGE"
+fi
