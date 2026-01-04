@@ -1,3 +1,9 @@
 # Desktop environment integration for GUI applications
 # This file is sourced by display managers (GDM, LightDM) for desktop sessions
-# Ensures GUI apps inherit global package environment
+# Also sourced by bash login shells (including Claude Code's bash -l)
+# Ensures GUI apps and non-interactive login shells inherit tool environment
+
+# mise shims for login shells (bash -l, display managers, etc.)
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate bash --shims)"
+fi
