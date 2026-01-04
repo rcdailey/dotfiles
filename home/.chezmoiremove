@@ -2,3 +2,5 @@
 
 .local/bin/setup-github-mcp
 .local/bin/setup-octocode-mcp
+.local/bin/setup-mcp-all
+.claude/mcp-servers.json

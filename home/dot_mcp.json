@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "octocode": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "octocode-mcp@latest"],
+      "env": {}
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+      }
+    }
+  }
+}

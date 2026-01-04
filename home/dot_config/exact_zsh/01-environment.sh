@@ -49,5 +49,13 @@ export HOMEBREW_NO_ENV_HINTS=1
 export HOMEBREW_NO_UPDATE_REPORT_FORMULAE=1
 export HOMEBREW_NO_UPDATE_REPORT_CASKS=1
 
-# Auto-load Bitwarden session if available
-[[ -f "$HOME/.bitwarden-session" ]] && source "$HOME/.bitwarden-session"
+# Secrets from rbw (Bitwarden)
+load_secrets() {
+  export CONTEXT7_API_KEY="$(rbw get context7-api-key 2>/dev/null)"
+}
+
+if ! rbw unlocked 2>/dev/null; then
+  print -P "%F{yellow}rbw locked - run 'load_secrets' after unlocking%f"
+fi
+
+load_secrets

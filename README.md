@@ -10,43 +10,33 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --ssh rcdailey/dotfiles
 
 This installs chezmoi, clones the repo, and applies all configurations automatically.
 
-## Features
+## Environment Secrets
 
-- **Automated Installation**: Scripts handle Homebrew, mise, and shell setup
-- **Age Encryption**: Secure handling of sensitive files
-- **Modern Zsh**: Zinit plugin manager with Powerlevel10k theme
-- **Tool Management**: mise for development tools, minimal Homebrew
-- **Claude Code Integration**: Custom hooks and commands
-- **Git Utilities**: 20+ custom git scripts and extensive aliases
+MCP servers and other tools require secrets stored in Bitwarden, accessed via rbw.
 
-## Key Tools
-
-- **chezmoi**: Dotfile management with templating
-- **mise**: Development tool version management
-- **Zinit**: Fast zsh plugin manager
-- **age**: Modern file encryption
-- **Claude Code**: AI-powered development assistant
-
-## Daily Commands
+Install rbw (Fedora):
 
 ```bash
-# chezmoi management
-chezmoi status         # Check for changes
-chezmoi diff          # Preview changes
-chezmoi apply         # Apply changes
-chezmoi update        # Pull and apply
-
-# Tool updates
-brew upgrade          # Update system packages
-mise upgrade          # Update development tools
-zinit update --all    # Update zsh plugins
+sudo dnf install rbw
 ```
 
-## Configuration
+Configure with your Bitwarden email:
 
-- Uses `.chezmoiroot` set to `home/` directory
-- Age encryption for sensitive files (SSH keys, etc.)
-- Cross-platform support (macOS, Linux, Windows)
-- Environment separation (work/personal/other)
+```bash
+rbw config set email <email>
+```
 
-For detailed information, see `CLAUDE.md` and individual configuration files.
+Log in and unlock the vault:
+
+```bash
+rbw login
+```
+
+Export secrets to the current shell:
+
+```bash
+load_secrets
+```
+
+New terminals will show a warning if rbw is locked. Run `load_secrets` after unlocking to reload
+secrets without restarting the shell.
