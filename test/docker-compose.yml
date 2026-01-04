@@ -1,0 +1,13 @@
+services:
+  fedora:
+    image: fedora:43
+    environment:
+      - DOTFILES_TEST=1
+      - DOTFILES_SKIP_SSH=1
+      - DOTFILES_SKIP_AGE=1
+    volumes:
+      - ../install.sh:/install.sh:ro
+    working_dir: /root
+    stdin_open: true
+    tty: true
+    command: bash /install.sh

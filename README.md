@@ -5,17 +5,17 @@ Modern dotfiles managed by chezmoi with automated setup, age encryption, and cro
 ## Quick Start
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --ssh rcdailey/dotfiles
+curl -fsSL https://raw.githubusercontent.com/rcdailey/dotfiles/master/install.sh | bash
 ```
 
-This installs chezmoi, clones the repo, and applies all configurations automatically.
+This installs everything: chezmoi, zsh, mise, fonts, Claude Code, and more. Reboot when complete.
 
 ## Features
 
-- **Automated Installation**: Scripts handle Homebrew, mise, and shell setup
+- **Automated Installation**: Bootstrap script handles all dependencies
 - **Age Encryption**: Secure handling of sensitive files
 - **Modern Zsh**: Zinit plugin manager with Powerlevel10k theme
-- **Tool Management**: mise for development tools, minimal Homebrew
+- **Tool Management**: mise for development tools
 - **Claude Code Integration**: Custom hooks and commands
 - **Git Utilities**: 20+ custom git scripts and extensive aliases
 
@@ -37,7 +37,6 @@ chezmoi apply         # Apply changes
 chezmoi update        # Pull and apply
 
 # Tool updates
-brew upgrade          # Update system packages
 mise upgrade          # Update development tools
 zinit update --all    # Update zsh plugins
 ```
