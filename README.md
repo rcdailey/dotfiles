@@ -2,7 +2,35 @@
 
 Modern dotfiles managed by chezmoi with automated setup, age encryption, and cross-platform support.
 
-## Quick Start
+## Setup
+
+### Prerequisites
+
+Generate an SSH key and add it to GitHub:
+
+```bash
+ssh-keygen -t ed25519 && cat ~/.ssh/id_ed25519.pub
+```
+
+Add the public key at <https://github.com/settings/ssh/new>
+
+Install zsh and set as default shell (Fedora):
+
+```bash
+sudo dnf install -y zsh && chsh -s $(which zsh)
+```
+
+Then reboot:
+
+```bash
+sudo reboot
+```
+
+> [!WARNING]
+>
+> A full reboot is required. Logout alone may not update `$SHELL`.
+
+### Installation
 
 ```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --ssh rcdailey/dotfiles
@@ -10,7 +38,9 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --ssh rcdailey/dotfiles
 
 This installs chezmoi, clones the repo, and applies all configurations automatically.
 
-## Environment Secrets
+## Configuration
+
+### Environment Secrets
 
 MCP servers and other tools require secrets stored in Bitwarden, accessed via rbw.
 
