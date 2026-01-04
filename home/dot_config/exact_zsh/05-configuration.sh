@@ -44,12 +44,13 @@ if [ -d "$HOME/.local/kitty.app/bin" ]; then
 fi
 
 # Cross-platform ls replacement with lsd
+unalias ls ll 2>/dev/null
 if (( $+commands[lsd] )); then
     alias ls='lsd --color=auto --icon=auto --group-directories-first'
     alias ll='lsd -la --color=auto --icon=auto --group-directories-first --header'
 else
     alias ls='ls -hF'
-    ll() { echo "Notice: lsd not installed. Install with: brew install lsd" >&2; command ls -la "$@"; }
+    alias ll='ls -lahF'
 fi
 
 # Essential tool aliases
