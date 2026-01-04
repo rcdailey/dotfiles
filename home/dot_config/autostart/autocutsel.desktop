@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Primary to Clipboard Sync
-Comment=One-way sync from PRIMARY to CLIPBOARD selection
-Exec=autocutsel -selection PRIMARY
-Terminal=false
-Hidden=false
-X-GNOME-Autostart-enabled=true

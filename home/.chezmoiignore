@@ -38,6 +38,4 @@ AppData/**
 .local/bin/setup-xremap
 .config/xremap/**
 .config/systemd/user/xremap.service
-.config/autostart/autocutsel.desktop
-.chezmoiscripts/run_onchange_after_install-autocutsel.sh
 {{ end }}
