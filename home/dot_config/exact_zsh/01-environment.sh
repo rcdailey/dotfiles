@@ -45,11 +45,11 @@ export HOMEBREW_NO_UPDATE_REPORT_CASKS=1
 
 # Secrets from rbw (Bitwarden)
 load_secrets() {
-  export CONTEXT7_API_KEY="$(rbw get context7-api-key 2>/dev/null)"
+  export CONTEXT7_API_KEY="$(rbw get context7-api-key)"
 }
 
-if ! rbw unlocked 2>/dev/null; then
-  print -P "%F{yellow}rbw locked - run 'load_secrets' after unlocking%f"
+if rbw unlock 2>/dev/null; then
+  load_secrets
+else
+  print -P "%F{yellow}rbw locked - run 'rbw unlock && load_secrets' to load secrets%f"
 fi
-
-load_secrets
