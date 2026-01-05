@@ -7,28 +7,10 @@ Host router 192.168.1.1 unifi
     PubkeyAcceptedKeyTypes +ssh-rsa
     IdentityFile ~/.ssh/keys/router_udmp
 
-Host nami 192.168.1.50
-    User robert
-    IdentityFile ~/.ssh/keys/nami
-
 Host mare 192.168.1.52
     User robert
     IdentityFile ~/.ssh/keys/mare
 
-Host lucy 192.168.1.53
-    User robert
-    IdentityFile ~/.ssh/keys/lucy
-
-Host ha
-    HostName 192.168.1.55
-    Port 13022
-    User root
-    IdentityFile ~/.ssh/keys/home_assistant
-
 Host nezuko 192.168.1.58
     User root
     IdentityFile ~/.ssh/keys/nezuko
-
-Host marin 192.168.1.59
-    User robert
-    IdentityFile ~/.ssh/keys/marin
