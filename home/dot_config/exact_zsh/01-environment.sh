@@ -36,12 +36,6 @@ export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
 
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 
-# Claude Code MCP optimization features
-# DO NOT ENABLE BOTH AT ONCE.
-# See: https://github.com/anthropics/claude-code/issues/12836
-export ENABLE_EXPERIMENTAL_MCP_CLI=false
-export ENABLE_TOOL_SEARCH=true
-
 # Homebrew - disable new casks/formula messages and analytics
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_BOOTSNAP=1
