@@ -1,14 +1,26 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "autoupdate": true,
+  "keybinds": {
+    "messages_previous": "alt+up",
+    "messages_next": "alt+down",
+    "session_timeline": "alt+z",
+    "session_child_cycle": "alt+right",
+    "session_child_cycle_reverse": "alt+left"
+  },
   "plugin": ["@plannotator/opencode@latest"],
   "share": "manual",
+  "formatter": {
+    "shfmt": { "disabled": true }
+  },
   "permission": {
     "*": "allow",
     "bash": {
       "*": "allow",
       "grep *": "deny",
-      "git push *": "ask"
+      "git push *": "ask",
+      "git commit *": "ask",
+      "git add *": "ask"
     },
     "read": {
       "*": "allow",

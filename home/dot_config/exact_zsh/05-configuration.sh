@@ -62,6 +62,7 @@ fi
 alias c="docker compose"
 alias cm="chezmoi"
 alias lg="lazygit"
+alias oc="opencode"
 alias tf="terraform"
 alias pc="pre-commit"
 alias pcr="pre-commit run"

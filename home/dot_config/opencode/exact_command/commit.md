@@ -57,6 +57,8 @@ Break changes into logical commits.
 
 ## Argument Parsing
 
+Parse `$ARGUMENTS` and execute corresponding workflow:
+
 - **No arguments**: Staged workflow (NO git add commands)
 - **"all"**: All workflow
 - **"make multiple commits"** or **"multiple commits"**: Multi-commit workflow
