@@ -41,15 +41,15 @@ customCommands:
   description: Diff against the selected commit
   output: terminal
 - key: C
-  description: Claude Code commit with instructions
+  description: OpenCode commit with instructions
   context: files
   prompts:
   - type: input
     title: "Commit instructions (optional - leave empty for staged changes only):"
     key: CommitArgs
     initialValue: ""
-  command: claude --strict-mcp-config -p {{printf "/commit %s" .Form.CommitArgs | quote}}
-  loadingText: Claude is committing...
+  command: opencode run {{printf "/commit %s" .Form.CommitArgs | quote}}
+  loadingText: OpenCode is committing...
   output: terminal
 - key: f
   command: git merge --ff-only {{.SelectedLocalBranch.Name}}
