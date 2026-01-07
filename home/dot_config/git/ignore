@@ -13,4 +13,4 @@ CLAUDE.local.md
 
 # Ignore repo-level mise configuration by default. Most of the time these are for local tooling
 # management, not really for team sharing. For exceptions to this, we can use `git add -f`.
-mise.toml
+*.local.toml
