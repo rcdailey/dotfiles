@@ -43,6 +43,11 @@ if [ -d "$HOME/.local/kitty.app/bin" ]; then
   export PATH="$HOME/.local/kitty.app/bin:$PATH"
 fi
 
+# opencode CLI
+if [ -d "$HOME/.opencode/bin" ]; then
+  export PATH="$HOME/.opencode/bin:$PATH"
+fi
+
 # Cross-platform ls replacement with lsd
 unalias ls ll 2>/dev/null
 if (( $+commands[lsd] )); then
