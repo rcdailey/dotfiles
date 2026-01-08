@@ -27,7 +27,7 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 
 **Scripts:**
 
-- `home/git-scripts/` - Git subcommands (git-* naming convention)
+- `home/git-scripts/` - Git helper scripts and subcommands
 
 **Chezmoi internals:**
 
@@ -35,15 +35,8 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 - `home/.chezmoitemplates/` - Reusable template snippets
 - `.chezmoiexternal.toml` - External file dependencies
 
-**Claude Code (`home/dot_claude/`):**
-
-- `settings.json` - Permissions, env vars, bash command allowlists
-- `mcp-servers.json` - MCP server configs
-- `exact_commands/` - Custom slash commands
-- `exact_hooks/` - Tool enforcement hooks
-
-**Tool configs (`home/dot_config/`):** k9s, mise, lazygit, kitty, ghostty, ripgrep, xremap,
-systemd/user
+**Tool configs (`home/dot_config/`):** git, ghostty, helmfile, k9s, kitty, lazygit, mise, opencode,
+powershell, ripgrep, systemd, xremap, etc.
 
 ## Conventions
 
