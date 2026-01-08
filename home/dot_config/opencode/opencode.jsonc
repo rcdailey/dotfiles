@@ -49,10 +49,6 @@
     "octocode": {
       "type": "local",
       "command": ["npx", "-y", "octocode-mcp@latest"]
-    },
-    "gh_grep": {
-      "type": "remote",
-      "url": "https://mcp.grep.app"
     }
   }
 }
