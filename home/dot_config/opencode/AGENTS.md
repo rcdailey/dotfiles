@@ -56,10 +56,23 @@ documentation, issues, PRs, emails, and any written communication.
 - NEVER use emojis or Unicode symbols (checkmarks, arrows, status indicators, etc.)
 - NEVER use emdash or endash characters; use regular hyphens, commas, or semicolons
 - NEVER bold text arbitrarily (e.g., first word of paragraphs, list item prefixes)
-- NEVER use markdown tables in conversational responses; use bullet lists or prose instead
-  - Tables ARE acceptable in documentation files written via Write/Edit tools where they improve
-    readability
 - PRESERVE existing emojis/symbols when editing content you did not create
+
+### Formatting Comparisons - NO TABLES IN CHAT
+
+When comparing items, options, or features in conversational responses, ALWAYS use bullet lists.
+
+CORRECT format:
+
+- Option A: fast, lightweight, limited features
+- Option B: slower, heavier, full-featured
+
+WRONG format (tables render poorly in terminals and waste tokens):
+
+| Option | Speed | Size | Features |
+|--------|-------|------|----------|
+
+Tables are ONLY acceptable in documentation files written via Write/Edit tools.
 
 ## General
 
