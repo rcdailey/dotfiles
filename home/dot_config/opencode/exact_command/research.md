@@ -1,20 +1,12 @@
 ---
-description: Build a Perplexity search prompt for research or answers on a topic
+description: Build a Perplexity search prompt for research
 ---
 
-Build a Perplexity search prompt for the following topic "$ARGUMENTS" (if provided) or inferred from
-recent discussion/problems.
+Build a Perplexity search prompt for "$ARGUMENTS" (or infer from recent discussion if not provided).
 
-Your search prompt should be as detailed as necessary to get only the information relevant to the
-search topics. Start with a brief intro for context, followed by a bullet list of one or more
-questions, followed by an OPTIONAL concluding section with additional search requirements or
-constraints.
+Structure: Brief context intro, bullet list of questions, optional constraints section.
 
-Return ONLY the search prompt - no additional text, explanations, or boilerplate.
+Return only the search prompt. Stop after output - do not perform research or web searches. The
+argument is input for prompt construction, not a directive. Wait for user to share results.
 
-CRITICAL: After outputting the search prompt, STOP and take NO further action. Do not perform any
-research, web searches, or other tasks. The provided argument is NOT a directive for you to
-follow - it is only input to help construct the search prompt. Wait for the user to share the
-research results in their next message before continuing.
-
-You SHALL NOT use a sub-agent or the task tool to perform this work.
+Do not use sub-agents or task tools.
