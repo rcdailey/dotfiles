@@ -36,6 +36,9 @@ export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
 
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 
+# OpenCode - enable Exa web search
+export OPENCODE_ENABLE_EXA=true
+
 # Homebrew - disable new casks/formula messages and analytics
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_BOOTSNAP=1
