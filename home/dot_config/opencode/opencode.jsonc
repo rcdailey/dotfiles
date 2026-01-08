@@ -3,13 +3,20 @@
   "autoupdate": true,
   "username": "Me",
   "keybinds": {
-    "messages_first": "ctrl+g",
-    "messages_last": "ctrl+alt+g",
     "messages_previous": "alt+up",
     "messages_next": "alt+down",
     "session_timeline": "alt+z",
     "session_child_cycle": "alt+right",
-    "session_child_cycle_reverse": "alt+left"
+    "session_child_cycle_reverse": "alt+left",
+    "session_fork": "alt+f",
+    "input_visual_line_home": "home",
+    "input_visual_line_end": "end",
+
+    // these conflict with home/end keys above
+    "messages_first": "ctrl+g",
+    "messages_last": "ctrl+alt+g",
+    "input_buffer_home": "none",
+    "input_buffer_end": "none",
   },
   "plugin": ["@plannotator/opencode@latest"],
   "share": "manual",
