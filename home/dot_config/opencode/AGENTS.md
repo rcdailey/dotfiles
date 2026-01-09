@@ -53,3 +53,4 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh` CLI for operations against github repositories (instead of web fetch/search tools).
 - Use octocode for code search and discovery.
+- Load `git-commit` skill before any commit operation.
