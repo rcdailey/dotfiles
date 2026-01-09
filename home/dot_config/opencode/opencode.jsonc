@@ -15,9 +15,9 @@
     "messages_first": "ctrl+g",
     "messages_last": "ctrl+alt+g",
     "input_buffer_home": "none",
-    "input_buffer_end": "none",
+    "input_buffer_end": "none"
   },
-  "plugin": ["@plannotator/opencode@latest"],
+  "plugin": ["@plannotator/opencode@latest", "opencode-anthropic-auth@0.0.7"],
   "share": "manual",
   "formatter": {
     "shfmt": { "disabled": true }
