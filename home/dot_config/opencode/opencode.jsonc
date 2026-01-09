@@ -10,6 +10,7 @@
     "session_fork": "alt+f",
     "input_visual_line_home": "home",
     "input_visual_line_end": "end",
+    "model_list": "alt+m",
 
     // these conflict with home/end keys above
     "messages_first": "ctrl+g",
