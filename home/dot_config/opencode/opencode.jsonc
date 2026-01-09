@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "autoupdate": true,
+  "autoupdate": false,
   "keybinds": {
     "messages_previous": "alt+up",
     "messages_next": "alt+down",
