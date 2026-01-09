@@ -21,7 +21,7 @@
   "plugin": [
     "@plannotator/opencode@latest",
     "opencode-anthropic-auth@latest",
-    "oh-my-opencode@latest"
+    // "oh-my-opencode@latest",
   ],
   "share": "manual",
   "formatter": {
