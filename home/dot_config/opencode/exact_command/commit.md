@@ -2,8 +2,10 @@
 description: Create git commits with conventional commit format
 ---
 
-Load the `git-commit` skill, then execute a commit workflow based on $ARGUMENTS. Output only the
-final commit message(s).
+Load the `git-commit` skill, then execute a commit workflow based on arguments below. Output only
+the final commit message(s).
+
+Arguments: "$ARGUMENTS"
 
 ## Workflow
 
