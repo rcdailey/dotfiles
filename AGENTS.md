@@ -35,8 +35,10 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 - `home/.chezmoitemplates/` - Reusable template snippets
 - `.chezmoiexternal.toml` - External file dependencies
 
-**Tool configs (`home/dot_config/`):** git, ghostty, helmfile, k9s, kitty, lazygit, mise, opencode,
+**Tool configs (`home/dot_config/`):** git, helmfile, k9s, kitty, lazygit, mise, opencode,
 powershell, ripgrep, systemd, xremap, etc.
+
+**Terminal:** kitty (all platforms) - `home/dot_config/kitty/`
 
 ## Conventions
 
