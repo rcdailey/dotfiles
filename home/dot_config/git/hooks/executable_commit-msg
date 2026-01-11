@@ -1,0 +1,20 @@
+#!/bin/sh
+# Global commit-msg hook
+# Runs commitlint and chains to local hooks
+
+COMMIT_MSG_FILE="$1"
+
+# Run commitlint with global config
+if command -v commitlint >/dev/null 2>&1; then
+    commitlint --config ~/.config/commitlint/commitlint.config.mjs --edit "$COMMIT_MSG_FILE"
+    RESULT=$?
+    if [ $RESULT -ne 0 ]; then
+        exit $RESULT
+    fi
+fi
+
+# Chain to local commit-msg hook if it exists
+LOCAL_HOOK="$(git rev-parse --git-dir 2>/dev/null)/hooks/commit-msg"
+if [ -x "$LOCAL_HOOK" ]; then
+    "$LOCAL_HOOK" "$@"
+fi

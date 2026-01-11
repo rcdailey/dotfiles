@@ -1,0 +1,9 @@
+#!/bin/sh
+# Global pre-commit hook
+# Chains to local hooks (for pre-commit tool compatibility)
+
+# Chain to local pre-commit hook if it exists
+LOCAL_HOOK="$(git rev-parse --git-dir 2>/dev/null)/hooks/pre-commit"
+if [ -x "$LOCAL_HOOK" ]; then
+    "$LOCAL_HOOK" "$@"
+fi

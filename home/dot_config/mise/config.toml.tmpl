@@ -1,5 +1,4 @@
 [tools]
-node = "latest"
 python = "3.13"
 powershell = "latest"
 slsa-verifier = "latest"
@@ -37,6 +36,11 @@ sd = "latest"
 markdownlint-cli2 = "latest"
 just = "latest"
 
+# Node and NPM packages
+node = "latest"
+"npm:@commitlint/cli" = "latest"
+"npm:@commitlint/config-conventional" = "latest"
+
 # Don't use this because it doesn't update frequently enough
 # Use: curl -fsSL https://opencode.ai/install | bash
 # opencode = "latest"
@@ -49,6 +53,7 @@ experimental = true
 env_file = ".env"
 
 [env]
+_.source = ["~/.config/mise/scripts/node-path.sh"]
 
 [hooks]
 cd = "mise current 2>/dev/null | head -5 || true"
