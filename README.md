@@ -20,6 +20,19 @@ Install zsh and set as default shell (Fedora):
 sudo dnf install -y zsh && chsh -s $(which zsh)
 ```
 
+Install Fira Code font for kitty terminal:
+
+```bash
+brew install font-fira-code  # macOS
+```
+
+```bash
+sudo dnf install fira-code-fonts  # Fedora
+```
+
+kitty uses Fira Code with `postscript_name` syntax for reliable cross-platform font matching. Icons
+are provided by kitty's bundled Symbols Nerd Font fallback.
+
 Then reboot:
 
 ```bash
