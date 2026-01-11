@@ -1,6 +1,28 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "autoupdate": false,
+  "share": "manual",
+  "compaction": { "auto": false },
+  "formatter": {
+    "shfmt": { "disabled": true }
+  },
+  "plugin": [
+    "@plannotator/opencode@latest",
+    "opencode-anthropic-auth@latest",
+  ],
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
+      }
+    },
+    "octocode": {
+      "type": "local",
+      "command": ["npx", "-y", "octocode-mcp@latest"]
+    }
+  },
   "keybinds": {
     "messages_previous": "alt+up",
     "messages_next": "alt+down",
@@ -17,14 +39,6 @@
     "messages_last": "ctrl+alt+g",
     "input_buffer_home": "none",
     "input_buffer_end": "none"
-  },
-  "plugin": [
-    "@plannotator/opencode@latest",
-    "opencode-anthropic-auth@latest",
-  ],
-  "share": "manual",
-  "formatter": {
-    "shfmt": { "disabled": true }
   },
   "permission": {
     "*": "allow",
@@ -115,17 +129,4 @@
       "*.env.example": "allow",
     }
   },
-  "mcp": {
-    "context7": {
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp",
-      "headers": {
-        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
-      }
-    },
-    "octocode": {
-      "type": "local",
-      "command": ["npx", "-y", "octocode-mcp@latest"]
-    }
-  }
 }
