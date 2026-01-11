@@ -21,7 +21,6 @@
   "plugin": [
     "@plannotator/opencode@latest",
     "opencode-anthropic-auth@latest",
-    // "oh-my-opencode@latest",
   ],
   "share": "manual",
   "formatter": {
@@ -31,72 +30,89 @@
     "*": "allow",
     "bash": {
       "*": "allow",
-      "grep *": "deny",
-      "git push *": "ask",
-      // "git commit *": "ask",
-      // "git add *": "ask",
+      "grep*": "deny", // prefer ripgrep
+
+      // git (destructive)
+      "git push*": "ask",
+      "git reset --hard*": "ask",
+      "git clean*": "ask",
+      "git branch -D*": "ask",
+      "git stash drop*": "ask",
+      "git stash clear*": "ask",
+      // "git commit*": "ask",
+      // "git add*": "ask",
+
+      // file operations
+      "rm -r*": "ask",
+
+      // system
+      "sudo*": "ask",
+      "kill*": "ask",
+      "pkill*": "ask",
+      "shutdown*": "ask",
+      "reboot*": "ask",
 
       // gh pr
-      "gh pr create *": "ask",
-      "gh pr merge *": "ask",
-      "gh pr close *": "ask",
-      "gh pr reopen *": "ask",
-      "gh pr comment *": "ask",
-      "gh pr edit *": "ask",
-      "gh pr review *": "ask",
-      "gh pr ready *": "ask",
+      "gh pr create*": "ask",
+      "gh pr merge*": "ask",
+      "gh pr close*": "ask",
+      "gh pr reopen*": "ask",
+      "gh pr comment*": "ask",
+      "gh pr edit*": "ask",
+      "gh pr review*": "ask",
+      "gh pr ready*": "ask",
 
       // gh issue
-      "gh issue create *": "ask",
-      "gh issue close *": "ask",
-      "gh issue reopen *": "ask",
-      "gh issue delete *": "ask",
-      "gh issue edit *": "ask",
-      "gh issue comment *": "ask",
-      "gh issue transfer *": "ask",
+      "gh issue create*": "ask",
+      "gh issue close*": "ask",
+      "gh issue reopen*": "ask",
+      "gh issue delete*": "ask",
+      "gh issue edit*": "ask",
+      "gh issue comment*": "ask",
+      "gh issue transfer*": "ask",
 
       // gh release
-      "gh release create *": "ask",
-      "gh release delete *": "ask",
-      "gh release edit *": "ask",
-      "gh release upload *": "ask",
+      "gh release create*": "ask",
+      "gh release delete*": "ask",
+      "gh release edit*": "ask",
+      "gh release upload*": "ask",
 
       // gh repo
-      "gh repo create *": "ask",
-      "gh repo delete *": "ask",
-      "gh repo fork *": "ask",
-      "gh repo archive *": "ask",
-      "gh repo rename *": "ask",
-      "gh repo edit *": "ask",
+      "gh repo create*": "ask",
+      "gh repo delete*": "ask",
+      "gh repo fork*": "ask",
+      "gh repo archive*": "ask",
+      "gh repo rename*": "ask",
+      "gh repo edit*": "ask",
 
       // gh workflow/run
-      "gh workflow run *": "ask",
-      "gh run cancel *": "ask",
-      "gh run rerun *": "ask",
+      "gh workflow run*": "ask",
+      "gh run cancel*": "ask",
+      "gh run rerun*": "ask",
 
       // gh label/secret/variable
-      "gh label create *": "ask",
-      "gh label delete *": "ask",
-      "gh secret set *": "ask",
-      "gh secret delete *": "ask",
-      "gh variable set *": "ask",
-      "gh variable delete *": "ask",
+      "gh label create*": "ask",
+      "gh label delete*": "ask",
+      "gh secret set*": "ask",
+      "gh secret delete*": "ask",
+      "gh variable set*": "ask",
+      "gh variable delete*": "ask",
 
       // gh api (write methods)
-      "gh api * --method POST *": "ask",
-      "gh api * --method PUT *": "ask",
-      "gh api * --method PATCH *": "ask",
-      "gh api * --method DELETE *": "ask",
-      "gh api * -X POST *": "ask",
-      "gh api * -X PUT *": "ask",
-      "gh api * -X PATCH *": "ask",
-      "gh api * -X DELETE *": "ask"
+      "gh api* --method POST*": "ask",
+      "gh api* --method PUT*": "ask",
+      "gh api* --method PATCH*": "ask",
+      "gh api* --method DELETE*": "ask",
+      "gh api* -X POST*": "ask",
+      "gh api* -X PUT*": "ask",
+      "gh api* -X PATCH*": "ask",
+      "gh api* -X DELETE*": "ask",
     },
     "read": {
       "*": "allow",
       "*.env": "deny",
       "*.env.*": "deny",
-      "*.env.example": "allow"
+      "*.env.example": "allow",
     }
   },
   "mcp": {
