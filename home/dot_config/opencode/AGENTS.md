@@ -23,6 +23,8 @@
 - Investigate systematically rather than concluding from single data points.
 - Don't provide time estimates.
 - Fenced code blocks require a language specifier (use `txt` if none applies).
+- Code blocks should be copy-paste ready; avoid mixing mutually exclusive contexts (e.g.,
+  OS-specific commands) and chain dependent commands with `&&`.
 - Keep lines ≤ 100 chars. Blank lines around headings and code blocks.
 - Write directly without reassuring summaries or restatements.
 - Don't number markdown headings. Don't rely on trailing whitespace for line breaks (it gets
