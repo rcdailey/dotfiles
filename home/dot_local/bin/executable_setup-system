@@ -1,118 +1,295 @@
 #!/usr/bin/env bash
-# System setup helper - complete system setup without Task dependency
-# Runs all setup steps sequentially, skipping already completed steps
+# System setup helper - automated system configuration after chezmoi apply
+# Supports: macOS, Fedora
+# Idempotent: safe to run multiple times
 
-set -e
+set -euo pipefail
 
-echo "Running complete system setup..."
+# Terminal colors
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly NC='\033[0m'
 
-# Step 1: Install Homebrew
-echo "Setting up Homebrew..."
-if command -v brew >/dev/null 2>&1; then
-    echo "Homebrew already installed: $(brew --version | head -n1)"
-else
-    echo "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+log_info() {
+  echo -e "${BLUE}==>${NC} $*"
+}
 
-    # Bootstrap: Use deterministic paths to source Homebrew initially
-    if [[ "$(uname -s)" == "Darwin" ]]; then
-        if [[ "$(uname -m)" == "arm64" ]]; then
-            eval "$(/opt/homebrew/bin/brew shellenv)"
-        else
-            eval "$(/usr/local/bin/brew shellenv)"
-        fi
+log_success() {
+  echo -e "${GREEN}==>${NC} $*"
+}
+
+log_warn() {
+  echo -e "${YELLOW}WARNING:${NC} $*" >&2
+}
+
+log_error() {
+  echo -e "${RED}ERROR:${NC} $*" >&2
+}
+
+die() {
+  log_error "$*"
+  exit 1
+}
+
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+detect_platform() {
+  case "$(uname -s)" in
+  Darwin)
+    echo "macos"
+    ;;
+  Linux)
+    if [[ -f /etc/fedora-release ]]; then
+      echo "fedora"
     else
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+      die "Unsupported Linux distribution. This script supports Fedora only."
     fi
+    ;;
+  *)
+    die "Unsupported platform. This script supports macOS and Fedora only."
+    ;;
+  esac
+}
 
-    if command -v brew >/dev/null 2>&1; then
-        echo "Homebrew installed successfully: $(brew --version | head -n1)"
-    else
-        echo "ERROR: Homebrew installation failed" >&2
-        exit 1
+setup_homebrew() {
+  log_info "Setting up Homebrew..."
+
+  if command_exists brew; then
+    log_success "Homebrew already installed: $(brew --version | head -n1)"
+    eval "$(brew shellenv)"
+    return 0
+  fi
+
+  log_info "Installing Homebrew..."
+  if ! /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
+    die "Homebrew installation failed"
+  fi
+
+  # Bootstrap Homebrew into current shell
+  case "$(uname -m)" in
+  arm64)
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    ;;
+  *)
+    eval "$(/usr/local/bin/brew shellenv)"
+    ;;
+  esac
+
+  if command_exists brew; then
+    log_success "Homebrew installed: $(brew --version | head -n1)"
+  else
+    die "Homebrew installation completed but brew command not found"
+  fi
+}
+
+install_system_packages() {
+  local platform="$1"
+
+  log_info "Installing system packages..."
+
+  case "$platform" in
+  macos)
+    eval "$(brew shellenv)"
+    local packages=()
+    for pkg in zsh rbw; do
+      brew list "$pkg" &>/dev/null || packages+=("$pkg")
+    done
+    [[ ${#packages[@]} -gt 0 ]] && brew install "${packages[@]}"
+
+    local casks=()
+    for cask in kitty font-fira-code; do
+      brew list --cask "$cask" &>/dev/null || casks+=("$cask")
+    done
+    [[ ${#casks[@]} -gt 0 ]] && brew install --cask "${casks[@]}"
+    ;;
+  fedora)
+    sudo dnf install -y zsh rbw kitty fira-code-fonts || die "dnf package installation failed"
+    ;;
+  esac
+
+  log_success "System packages installed"
+}
+
+configure_rbw() {
+  log_info "Configuring rbw (Bitwarden CLI)..."
+
+  if ! command_exists rbw; then
+    die "rbw not found - package installation may have failed"
+  fi
+
+  local current_email
+  current_email="$(rbw config show 2>/dev/null | grep -o '"email": *"[^"]*"' | cut -d'"' -f4)"
+
+  if [[ -n "$current_email" ]]; then
+    log_success "rbw already configured with email: $current_email"
+    return 0
+  fi
+
+  local bitwarden_email
+  read -rp "Enter your Bitwarden email: " bitwarden_email
+
+  if [[ -z "$bitwarden_email" ]]; then
+    log_warn "No email provided, skipping rbw configuration"
+    return 0
+  fi
+
+  if ! rbw config set email "$bitwarden_email"; then
+    die "Failed to configure rbw with email: $bitwarden_email"
+  fi
+
+  log_success "rbw configured with email: $bitwarden_email"
+}
+
+install_opencode() {
+  log_info "Installing OpenCode..."
+
+  if command_exists opencode; then
+    log_success "OpenCode already installed: $(opencode --version 2>/dev/null || echo 'version unknown')"
+    return 0
+  fi
+
+  log_info "Installing OpenCode via official installer..."
+  if ! curl -fsSL https://opencode.ai/install | bash; then
+    die "OpenCode installation failed"
+  fi
+
+  # Refresh PATH to pick up newly installed opencode
+  export PATH="$HOME/.local/bin:$PATH"
+
+  if command_exists opencode; then
+    log_success "OpenCode installed: $(opencode --version 2>/dev/null || echo 'installed successfully')"
+  else
+    die "OpenCode installation completed but command not found"
+  fi
+}
+
+install_mise() {
+  local platform="$1"
+
+  log_info "Installing mise..."
+
+  if command_exists mise && mise --version | grep -q "^mise [0-9]"; then
+    log_success "mise already installed: $(mise --version)"
+    return 0
+  fi
+
+  case "$platform" in
+  macos)
+    eval "$(brew shellenv)"
+    if ! brew list mise &>/dev/null; then
+      brew install mise || die "mise installation failed"
     fi
-fi
-
-# Step 2: Install Homebrew packages
-echo "Installing Homebrew packages..."
-eval "$(brew shellenv)"
-export HOMEBREW_BUNDLE_FILE="$HOME/Brewfile"
-brew bundle
-
-# Step 3: Install mise via official installer
-echo "Installing mise..."
-if command -v mise >/dev/null 2>&1 && mise --version | grep -q "^mise [0-9]"; then
-    echo "mise already installed: $(mise --version)"
-else
-    echo "Installing mise via official installer..."
-    curl -fsSL https://mise.run | sh
-
-    # Add mise to PATH for this session
+    ;;
+  fedora)
+    log_info "Installing mise via official installer..."
+    if ! curl -fsSL https://mise.run | sh; then
+      die "mise installation failed"
+    fi
     export PATH="$HOME/.local/bin:$PATH"
+    ;;
+  esac
 
-    if command -v mise >/dev/null 2>&1; then
-        echo "mise installed successfully: $(mise --version)"
-    else
-        echo "ERROR: mise installation failed" >&2
-        exit 1
+  if command_exists mise; then
+    log_success "mise installed: $(mise --version)"
+  else
+    die "mise installation completed but command not found"
+  fi
+}
+
+install_dev_tools() {
+  log_info "Installing development tools..."
+
+  if ! command_exists mise; then
+    die "mise not available - installation may have failed"
+  fi
+
+  eval "$(mise env -s bash)" 2>/dev/null || true
+  eval "$(mise activate bash)" 2>/dev/null || true
+
+  mise prune --yes || log_warn "mise prune failed, continuing anyway"
+
+  if ! mise install; then
+    die "Development tools installation failed"
+  fi
+
+  log_info "Upgrading mise tools to latest versions..."
+  mise upgrade --yes || log_warn "mise upgrade failed, continuing anyway"
+
+  log_success "Development tools installed"
+}
+
+setup_zsh_shell() {
+  local platform="$1"
+
+  log_info "Setting up zsh as default shell..."
+
+  local zsh_path
+  case "$platform" in
+  macos)
+    zsh_path="$(brew --prefix)/bin/zsh"
+    ;;
+  fedora)
+    zsh_path="/usr/bin/zsh"
+    ;;
+  esac
+
+  if [[ ! -x "$zsh_path" ]]; then
+    die "zsh not found at $zsh_path"
+  fi
+
+  # Check if already default (handle symlinks)
+  local current_shell
+  current_shell="$(readlink -f "$SHELL" 2>/dev/null || echo "$SHELL")"
+  local target_shell
+  target_shell="$(readlink -f "$zsh_path" 2>/dev/null || echo "$zsh_path")"
+
+  if [[ "$current_shell" == "$target_shell" ]]; then
+    log_success "zsh is already the default shell"
+    return 0
+  fi
+
+  # Add to /etc/shells if needed
+  if ! grep -qx "$zsh_path" /etc/shells 2>/dev/null; then
+    log_info "Adding zsh to /etc/shells (requires sudo)..."
+    if ! echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null; then
+      die "Failed to add zsh to /etc/shells"
     fi
-fi
+  fi
 
-# Step 4: Install development tools via mise
-echo "Installing development tools..."
-if command -v mise >/dev/null 2>&1; then
-    eval "$(mise env -s bash)" 2>/dev/null || true
-    eval "$(mise activate bash)" 2>/dev/null || true
-    # Remove unused tool versions first
-    mise prune --yes
-    # mise install is idempotent - only installs missing/outdated tools
-    mise install
-    echo "Development tools installed successfully!"
-else
-    echo "ERROR: mise not available - check Homebrew installation" >&2
-    exit 1
-fi
+  log_info "Changing default shell to zsh (may require password)..."
+  if ! chsh -s "$zsh_path"; then
+    die "Failed to change default shell to zsh"
+  fi
 
-# Step 5: Set up zsh as default shell
-echo "Setting up zsh..."
-ZSH_PATH="$(brew --prefix zsh)/bin/zsh"
+  log_success "Default shell changed to zsh"
+}
 
-# Check if current shell is already a homebrew zsh (handle symlinks)
-if [[ "$SHELL" == "$ZSH_PATH" ]] || [[ "$(readlink -f "$SHELL" 2>/dev/null || echo "$SHELL")" == "$(readlink -f "$ZSH_PATH" 2>/dev/null || echo "$ZSH_PATH")" ]]; then
-    echo "zsh is already the default shell (current: $SHELL)"
-else
-    if [[ -x "$ZSH_PATH" ]]; then
-        echo "Found homebrew zsh at: $ZSH_PATH"
-        echo "Version: $($ZSH_PATH --version)"
-    else
-        echo "Homebrew zsh not found, falling back to system zsh"
-        ZSH_PATH="$(which zsh)"
-        echo "Using system zsh at: $ZSH_PATH"
-    fi
+main() {
+  log_info "Running system setup..."
 
-    # Check if zsh is already in /etc/shells
-    if ! grep -q "^$ZSH_PATH$" /etc/shells 2>/dev/null; then
-        echo ""
-        echo "Adding zsh to /etc/shells (requires sudo password)..."
-        if echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null; then
-            echo "Successfully added zsh to /etc/shells"
-        else
-            echo "Failed to add zsh to /etc/shells. You may need to run:"
-            echo "  echo '$ZSH_PATH' | sudo tee -a /etc/shells"
-            exit 1
-        fi
-    fi
+  local platform
+  platform="$(detect_platform)"
+  log_info "Platform: $platform"
 
-    echo ""
-    echo "Changing default shell to zsh (may require password)..."
-    if chsh -s "$ZSH_PATH"; then
-        echo "Zsh setup complete! Restart terminal for changes to take effect."
-    else
-        echo "Failed to change shell. You may need to run:"
-        echo "  chsh -s '$ZSH_PATH'"
-        exit 1
-    fi
-fi
+  if [[ "$platform" == "macos" ]]; then
+    setup_homebrew
+  fi
 
-echo ""
-echo "System setup complete!"
+  install_system_packages "$platform"
+  configure_rbw
+  install_opencode
+  install_mise "$platform"
+  install_dev_tools
+  setup_zsh_shell "$platform"
+
+  echo ""
+  log_success "System setup complete!"
+  echo ""
+  echo "Next step: Run 'sudo reboot' to activate zsh and complete setup."
+}
+
+main "$@"

@@ -65,3 +65,11 @@ Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
 2. Preview: `chezmoi diff`
 3. Test: `chezmoi apply --dry-run`
 4. Apply: `chezmoi apply`
+
+## Constraints
+
+### Git Operations
+
+NEVER run git mutations (add/commit/reset/push/rebase/merge) without explicit user
+approval. ASK before running these commands unless the user's request clearly
+authorizes them (e.g., "commit this" or "push to remote").
