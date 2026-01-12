@@ -1,9 +1,9 @@
 ---
 name: gh-api
-description: GitHub API calls for discussions and PR comments (non-standard gh CLI patterns)
+description: GitHub API calls for discussions and draft PRs (non-standard gh CLI patterns)
 ---
 
-## Pull Requests
+## Draft Pull Requests
 
 ### Create a draft PR
 
@@ -47,102 +47,10 @@ gh api repos/:owner/:repo/pulls --jq '.[] | select(.draft) | {number, title}'
 gh api repos/:owner/:repo/pulls -f state=open --jq '.[] | select(.user.login=="USERNAME") | {number, title, draft}'
 ```
 
-## PR Review Comments
-
-Inline code review comments on the diff (not conversation thread comments).
-
-### List comments on a PR
-
-```sh
-gh api repos/:owner/:repo/pulls/<number>/comments
-```
-
-### Get a specific comment
-
-```sh
-gh api repos/:owner/:repo/pulls/comments/<comment_id>
-```
-
-### Create a single-line comment
-
-```sh
-gh api --method POST repos/:owner/:repo/pulls/<number>/comments -f body="Comment text" -f commit_id="<sha>" -f path="path/to/file.txt" -F line=42 -f side="RIGHT"
-```
-
-- `side`: `RIGHT` for additions/context, `LEFT` for deletions
-- `commit_id`: Use HEAD commit of PR branch
-
-### Create a multi-line comment
-
-```sh
-gh api --method POST repos/:owner/:repo/pulls/<number>/comments -f body="Comment spanning lines 10-15" -f commit_id="<sha>" -f path="path/to/file.txt" -F start_line=10 -f start_side="RIGHT" -F line=15 -f side="RIGHT"
-```
-
-### Update a comment (edit body only)
-
-```sh
-gh api --method PATCH repos/:owner/:repo/pulls/comments/<comment_id> -f body="Updated comment text"
-```
-
-Note: Cannot change line position. To move a comment, delete and recreate.
-
-### Delete a comment
-
-```sh
-gh api --method DELETE repos/:owner/:repo/pulls/comments/<comment_id>
-```
-
-### Reply to a comment thread
-
-```sh
-gh api --method POST repos/:owner/:repo/pulls/<number>/comments/<comment_id>/replies -f body="Reply text"
-```
-
-Only works on top-level comments, not replies to replies.
-
-## PR Reviews (Batch Comments)
-
-Create a review with multiple comments at once.
-
-### Create a pending (draft) review
-
-Omit `event` to create a PENDING review that isn't submitted:
-
-```sh
-gh api --method POST repos/:owner/:repo/pulls/<number>/reviews -f body="Review summary" -f 'comments=[{"path":"file1.txt","line":10,"body":"First comment"},{"path":"file2.txt","line":20,"body":"Second comment"}]'
-```
-
-### Submit a pending review
-
-```sh
-gh api --method POST repos/:owner/:repo/pulls/<number>/reviews/<review_id>/events -f event="COMMENT"
-```
-
-Events: `COMMENT`, `APPROVE`, `REQUEST_CHANGES`
-
-### Create and submit review in one call
-
-```sh
-gh api --method POST repos/:owner/:repo/pulls/<number>/reviews -f body="Looks good!" -f event="APPROVE" -f 'comments=[{"path":"file.txt","line":5,"body":"Nice change"}]'
-```
-
-### List reviews on a PR
-
-```sh
-gh api repos/:owner/:repo/pulls/<number>/reviews
-```
-
-### Delete a pending review
-
-Only works for PENDING (unsubmitted) reviews:
-
-```sh
-gh api --method DELETE repos/:owner/:repo/pulls/<number>/reviews/<review_id>
-```
-
 ## PR Conversation Comments
 
-Comments on the PR timeline (not on specific lines of code).
+Comments on the PR timeline (not on specific lines of code). For inline review comments, use the
+`gh-pr-review` skill instead.
 
 ### List conversation comments
 
