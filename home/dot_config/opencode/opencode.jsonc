@@ -66,7 +66,7 @@
       "shutdown*": "ask",
       "reboot*": "ask",
 
-      // gh pr
+      // github cli
       "gh pr create*": "ask",
       "gh pr merge*": "ask",
       "gh pr close*": "ask",
@@ -75,8 +75,6 @@
       "gh pr edit*": "ask",
       "gh pr review*": "ask",
       "gh pr ready*": "ask",
-
-      // gh issue
       "gh issue create*": "ask",
       "gh issue close*": "ask",
       "gh issue reopen*": "ask",
@@ -84,35 +82,25 @@
       "gh issue edit*": "ask",
       "gh issue comment*": "ask",
       "gh issue transfer*": "ask",
-
-      // gh release
       "gh release create*": "ask",
       "gh release delete*": "ask",
       "gh release edit*": "ask",
       "gh release upload*": "ask",
-
-      // gh repo
       "gh repo create*": "ask",
       "gh repo delete*": "ask",
       "gh repo fork*": "ask",
       "gh repo archive*": "ask",
       "gh repo rename*": "ask",
       "gh repo edit*": "ask",
-
-      // gh workflow/run
       "gh workflow run*": "ask",
       "gh run cancel*": "ask",
       "gh run rerun*": "ask",
-
-      // gh label/secret/variable
       "gh label create*": "ask",
       "gh label delete*": "ask",
       "gh secret set*": "ask",
       "gh secret delete*": "ask",
       "gh variable set*": "ask",
       "gh variable delete*": "ask",
-
-      // gh api (write methods)
       "gh api* --method POST*": "ask",
       "gh api* --method PUT*": "ask",
       "gh api* --method PATCH*": "ask",
