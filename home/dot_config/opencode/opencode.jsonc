@@ -109,6 +109,9 @@
       "gh api* -X PUT*": "ask",
       "gh api* -X PATCH*": "ask",
       "gh api* -X DELETE*": "ask",
+
+      // Unofficial Extensions
+      "gh pr-review*": "ask",
     },
     "read": {
       "*": "allow",
