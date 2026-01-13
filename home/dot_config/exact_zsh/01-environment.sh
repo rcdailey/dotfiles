@@ -7,6 +7,9 @@ typeset -U path fpath cdpath manpath
 # Environment variables and exports (console-output safe for instant prompt)
 # Note: Core variables (EDITOR, TERM, HISTFILE, etc.) are now in .zshenv
 
+# GPG/pinentry TTY (use $TTY variable, not $(tty) command which fails during P10k instant prompt)
+export GPG_TTY=$TTY
+
 # Tool-specific paging (interactive shell context)
 export LESS="-RSic~ -x2"
 export DELTA_PAGER="less"
@@ -45,14 +48,3 @@ export HOMEBREW_BOOTSNAP=1
 export HOMEBREW_NO_ENV_HINTS=1
 export HOMEBREW_NO_UPDATE_REPORT_FORMULAE=1
 export HOMEBREW_NO_UPDATE_REPORT_CASKS=1
-
-# Secrets from rbw (Bitwarden)
-load_secrets() {
-  export CONTEXT7_API_KEY="$(rbw get context7-api-key)"
-}
-
-if rbw unlock 2>/dev/null; then
-  load_secrets
-else
-  print -P "%F{yellow}Secrets not loaded. Run 'rbw unlock && load_secrets' when ready.%f"
-fi

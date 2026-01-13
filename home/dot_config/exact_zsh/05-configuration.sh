@@ -112,6 +112,27 @@ if command -v mise >/dev/null 2>&1; then
     eval "$(mise activate zsh)" 2>/dev/null
 fi
 
+# rbw (Bitwarden) secrets
+# Defer unlock to first prompt (TTY not available during P10k instant prompt)
+load_secrets() {
+  export CONTEXT7_API_KEY="$(rbw get context7-api-key)"
+}
+
+_rbw_unlock_once() {
+  add-zsh-hook -d precmd _rbw_unlock_once
+  unfunction _rbw_unlock_once
+  # Redirect stdin from $TTY because P10k instant prompt redirects stdin during early shell init.
+  # Without this, pinentry fails with "Inappropriate ioctl for device" since it can't access the TTY.
+  # GPG_TTY alone isn't enough - pinentry needs stdin connected to the actual terminal device.
+  if rbw unlock < $TTY 2>/dev/null; then
+    load_secrets
+  else
+    print -P "%F{yellow}Secrets not loaded. Run 'rbw unlock && load_secrets' when ready.%f"
+  fi
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _rbw_unlock_once
+
 # History substring search bindings moved to 04-plugins.sh atload hook
 # to ensure they're set AFTER zsh-autosuggestions loads (prevents overwrite)
 
