@@ -54,5 +54,5 @@ load_secrets() {
 if rbw unlock 2>/dev/null; then
   load_secrets
 else
-  print -P "%F{yellow}rbw locked - run 'rbw unlock && load_secrets' to load secrets%f"
+  print -P "%F{yellow}Secrets not loaded. Run 'rbw unlock && load_secrets' when ready.%f"
 fi
