@@ -1,5 +1,5 @@
 k9s:
-  defaultView: "events"
+  # defaultView: "events"
   ui:
     logoless: true
   logger:
