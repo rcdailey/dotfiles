@@ -116,6 +116,7 @@ fi
 # Defer unlock to first prompt (TTY not available during P10k instant prompt)
 load_secrets() {
   export CONTEXT7_API_KEY="$(rbw get context7-api-key)"
+  export BRAVE_API_KEY="$(rbw get brave-api-key)"
 }
 
 _rbw_unlock_once() {

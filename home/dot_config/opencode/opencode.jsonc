@@ -26,6 +26,14 @@
     "octocode": {
       "type": "local",
       "command": ["npx", "-y", "octocode-mcp@latest"]
+    },
+    "brave": {
+      "type": "local",
+      "command": ["npx", "-y", "@brave/brave-search-mcp-server@latest"],
+      "environment": {
+        "BRAVE_API_KEY": "{env:BRAVE_API_KEY}",
+        "BRAVE_MCP_ENABLED_TOOLS": "brave_web_search"
+      }
     }
   },
   "keybinds": {
