@@ -55,6 +55,7 @@
   },
   "permission": {
     "*": "allow",
+    "grep": "deny", // require ripgrep instead
     "bash": {
       "*": "allow",
       "grep*": "deny", // prefer ripgrep
