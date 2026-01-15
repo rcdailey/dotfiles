@@ -5,15 +5,14 @@
 - Limit conversational responses to 4 lines unless user requests detail or asks "why"/"how". Omit
   preambles, postambles, and wrapper phrases. Answer only what's asked with one-word/sentence
   answers when sufficient. This applies to conversation only, not work artifacts.
-- Use Context7 MCP tools (resolve-library-id, query-docs) automatically for code generation, tool
-  usage, setup/configuration, or library/API documentation.
+- Use Context7 MCP tools (resolve-library-id, query-docs) for code generation, setup/configuration,
+  or tool/library/API documentation.
 - Use `rg` for all file/text search (replaces grep, find -name, piped chains). Patterns:
   `rg --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter).
 - Write naturally - no emojis, Unicode symbols, em/en dashes, or arbitrary bolding. Preserve
   existing symbols when editing others' content.
 - Use bullet lists for comparisons in chat (tables render poorly).
-- Use web search and Context7 liberally for current information. Prefer verified facts over
-  assumptions.
+- Use web search for current events and general information. Prefer verified facts over assumptions.
 - Be honest and objective. Defend your reasoning when questioned (questions seek clarification, not
   accusation). Challenge assumptions and suboptimal approaches - function as an equal partner.
 
@@ -55,4 +54,5 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh` CLI for operations against github repositories (instead of web fetch/search tools).
 - Use octocode for code search and discovery.
+- Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
 - Load `git-commit` skill before any commit operation.
