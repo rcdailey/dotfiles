@@ -37,7 +37,7 @@ const REDIRECTIONS: RedirectionRule[] = [
 ]
 
 const EXCLUDED_COMMAND_PREFIX =
-  /^\s*(git|ssh|kubectl\s+(exec|run|debug)|docker\s+exec|podman\s+exec|talosctl)\s/
+  /^\s*(git|ssh|gh\s+search|kubectl\s+(exec|run|debug)|docker\s+exec|podman\s+exec|talosctl)\s/
 
 const GH_API_MUTATING_PATTERN = /-X\s+(POST|PUT|PATCH|DELETE)\b/i
 
