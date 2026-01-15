@@ -4,11 +4,16 @@
   "share": "manual",
   "compaction": { "auto": false },
   "formatter": {
-    "shfmt": { "disabled": true }
+    "shfmt": { "disabled": true },
+    "markdownlint-cli2": {
+      "command": ["markdownlint-cli2", "--fix", "$FILE"],
+      "extensions": [".md"]
+    }
   },
   "plugin": [
     "@plannotator/opencode@latest",
     "opencode-anthropic-auth@latest",
+    "@franlol/opencode-md-table-formatter@latest",
   ],
   "mcp": {
     "context7": {
