@@ -128,10 +128,7 @@
       "gh pr-review*": "ask",
     },
     "read": {
-      "*": "allow",
-      "*.env": "deny",
-      "*.env.*": "deny",
-      "*.env.example": "allow",
+      "*": "allow"
     }
   },
 }
