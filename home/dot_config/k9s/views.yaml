@@ -8,8 +8,8 @@ views:
     - STATUS
     - READY
     - "%MEM/L"
-    - CPU
     - MEM
+    - CPU
     - AGE
     - RESTARTS
     - NAMESPACE
