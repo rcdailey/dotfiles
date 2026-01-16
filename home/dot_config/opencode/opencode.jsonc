@@ -14,6 +14,7 @@
     "@plannotator/opencode@latest",
     "opencode-anthropic-auth@latest",
     "@franlol/opencode-md-table-formatter@latest",
+    "@tarquinen/opencode-dcp@latest" // keep last to avoid interfering with auth flows
   ],
   "mcp": {
     "context7": {
