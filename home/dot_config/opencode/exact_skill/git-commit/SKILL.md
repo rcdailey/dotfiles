@@ -43,7 +43,8 @@ Skip body when ALL apply:
 - Separate from subject with blank line
 - Explain WHY: motivation, tradeoffs, alternatives considered
 - Hard-wrap at 72 characters
-- Use multiple `-m` flags: `git commit -m "subject" -m "body"`
+- Use exactly two `-m` flags: one for subject, one for entire body
+- For multi-line body, use `$'...\n...'` syntax: `git commit -m "subject" -m $'line one\nline two'`
 
 ## Type Selection
 
