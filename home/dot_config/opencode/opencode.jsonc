@@ -13,13 +13,14 @@
   "plugin": [
     "@plannotator/opencode@latest",
     "opencode-anthropic-auth@latest",
-    "@franlol/opencode-md-table-formatter@latest",
-    "@tarquinen/opencode-dcp@latest" // keep last to avoid interfering with auth flows
+    // "@franlol/opencode-md-table-formatter@latest",
+    // "@tarquinen/opencode-dcp@latest" // super bad to use this with anthropic -- causes $$$
   ],
   "mcp": {
     "context7": {
       "type": "remote",
       "url": "https://mcp.context7.com/mcp",
+      "oauth": false,
       "headers": {
         "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
       }
