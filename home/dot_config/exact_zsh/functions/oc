@@ -1,0 +1,13 @@
+#!/usr/bin/env zsh
+# Launch opencode with secrets loaded just-in-time
+# Avoids global env exposure and pinentry race conditions during shell init
+
+if ! rbw unlock 2>/dev/null; then
+  print -P "%F{red}rbw unlock failed%f"
+  return 1
+fi
+
+CONTEXT7_API_KEY="$(rbw get context7-api-key)" \
+BRAVE_API_KEY="$(rbw get brave-api-key)" \
+OPENCODE_ENABLE_EXA=false \
+opencode "$@"

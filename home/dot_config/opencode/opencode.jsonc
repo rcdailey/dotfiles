@@ -33,8 +33,7 @@
       "type": "local",
       "command": ["npx", "-y", "@brave/brave-search-mcp-server@latest"],
       "environment": {
-        "BRAVE_API_KEY": "{env:BRAVE_API_KEY}",
-        "BRAVE_MCP_ENABLED_TOOLS": "brave_web_search"
+        "BRAVE_API_KEY": "{env:BRAVE_API_KEY}"
       }
     }
   },
@@ -58,6 +57,17 @@
   "permission": {
     "*": "allow",
     "grep": "deny", // require ripgrep instead
+
+    // brave MCP
+    "*_brave_video_search": "deny",
+    "*_brave_image_search": "deny",
+    "*_brave_news_search": "deny",
+    "*_brave_local_search": "deny",
+    "*_brave_summarizer": "deny",
+
+    // octocode MCP
+    "*_packageSearch": "deny",
+
     "bash": {
       "*": "allow",
       "grep*": "deny", // prefer ripgrep

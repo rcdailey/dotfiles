@@ -39,9 +39,6 @@ export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
 
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 
-# OpenCode - disable Exa web search (timeouts, rate limits). Brave MCP replaces it.
-export OPENCODE_ENABLE_EXA=false
-
 # Homebrew - disable new casks/formula messages and analytics
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_BOOTSNAP=1
