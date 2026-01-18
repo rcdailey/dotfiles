@@ -56,3 +56,4 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Use octocode for code search and discovery.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
 - Load `git-commit` skill before any commit operation.
+- Load `csharp-coding` skill before writing or modifying C# code.

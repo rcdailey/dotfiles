@@ -7,14 +7,8 @@ description: C# 14 and .NET 10 coding patterns, idioms, and conventions
 
 Patterns and idioms for writing modern C# code.
 
-<overview>
-
-This skill covers C# 14 language features, .NET 10 conventions, and idiomatic C# development.
-Load this skill before writing or modifying C# code.
-
-</overview>
-
-<context name="language-features">
+This skill covers C# 14 language features, .NET 10 conventions, and idiomatic C# development. Load
+this skill before writing or modifying C# code.
 
 ## Required Language Features
 
@@ -36,10 +30,6 @@ Load this skill before writing or modifying C# code.
 - Lambda modifiers without types: `(text, out result) => int.TryParse(text, out result)`
 
 Migration: Use new syntax for new code; opportunistically refactor existing code when revisiting.
-
-</context>
-
-<context name="idioms">
 
 ## Required Idioms
 
@@ -68,7 +58,8 @@ Mark runtime-used members (deserialization, reflection, DI):
 - `[UsedImplicitly]` - type instantiated implicitly (DI, empty marker records)
 - `[UsedImplicitly(ImplicitUseKindFlags.Assign)]` - properties set via deserialization
 - `[UsedImplicitly(..., ImplicitUseTargetFlags.WithMembers)]` - applies to type AND all members
-- Common for DTOs: `[UsedImplicitly(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.WithMembers)]`
+- Common for DTOs: `[UsedImplicitly(ImplicitUseKindFlags.Assign,
+  ImplicitUseTargetFlags.WithMembers)]`
 
 ### Warning Suppression
 
@@ -99,6 +90,63 @@ Mark runtime-used members (deserialization, reflection, DI):
 ### Local Functions
 
 - Local functions go after `return`/`continue` statements
-- Add explicit `return;` or `continue;` if needed to separate main logic from local function definitions
+- Add explicit `return;` or `continue;` if needed to separate main logic from local function defs
 
-</context>
+## Design Principles
+
+### Quality Gates
+
+- Zero warnings/analysis issues - treat warnings as errors
+- All code must pass static analysis before commit
+
+### Abstraction
+
+- Prefer polymorphism over enums when modeling behavior or extensibility
+- Propose enum vs polymorphism tradeoffs for discussion rather than defaulting to enums
+- Every abstraction must justify its existence with concrete current needs
+
+### Dependency Injection
+
+- MUST use DI for all dependencies; NEVER manually `new` service objects in production code
+- Concrete implementations get injected; tests can substitute
+- Search existing registrations before adding new ones
+
+## Comment Guidelines
+
+Comments must earn their place by reducing cognitive load. When to comment:
+
+- LINQ chains (3+ operations): Brief comment stating transformation goal
+- Conditional blocks with non-obvious purpose: One-line comment (e.g., `// Explicit: user
+  specified`)
+- Private methods: Block comment if name + parameters don't make purpose self-evident
+- Early returns/continues: Include reason if not obvious from context
+- Complex algorithms: Comment explaining approach at top, not line-by-line
+- General: Any code where a reader would pause and wonder "why?" or "what's happening here?"
+
+NEVER:
+
+- XML doc comments (unless public API library)
+- Commented-out code
+- Restating what code literally does
+
+## Tooling
+
+### Formatting
+
+- CSharpier is the ONLY formatting tool
+- NEVER use `dotnet format` or other formatters
+- Run pre-commit hooks on all changed files
+
+### dotnet CLI
+
+- Use dotnet CLI for: adding/removing packages, adding projects to solution
+- Central package management via `Directory.Packages.props` - specify versions there, not in csproj
+- Avoid `--no-build` or `--no-restore` flags; `dotnet test` handles restore + build automatically
+- Minimal verbosity for build/test: `dotnet build -v m --no-incremental`, `dotnet test -v m`
+- For verbose debugging, pipe to file: `dotnet test -v d 2>&1 > /tmp/test.log` then search with `rg`
+
+### Project Structure
+
+- SLNX format preferred over traditional SLN
+- One Autofac/DI module per library to keep registration modular
+- Dotnet tools configured in `.config/dotnet-tools.json`
