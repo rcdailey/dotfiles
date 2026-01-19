@@ -1,33 +1,148 @@
 ---
 name: agents-authoring
-description: Best practices for writing AGENTS.md and skill files based on research from GitHub, Anthropic, and industry patterns
+description: Best practices for writing AGENTS.md, agent configs, and skill files based on industry research
 ---
 
 # AGENTS.md and Skill Authoring
 
-Load this skill when creating or updating AGENTS.md files or OpenCode skills.
+Load this skill when creating or updating AGENTS.md files, OpenCode agents, or skills.
 
 ## Research Foundation
 
-This guidance is based on:
+This guidance synthesizes:
 
+- [agents.md](https://agents.md) - Open standard used by 60k+ projects, stewarded by Agentic AI
+  Foundation under Linux Foundation
 - GitHub's analysis of 2,500+ repositories with agents.md files
 - Anthropic's context engineering documentation
 - OpenAI Codex custom instructions guide
 - Devin AI's good vs bad instructions documentation
+- Builder.io's AGENTS.md best practices guide
 
-## Six Core Areas (GitHub Research)
+## Core Concept
 
-Effective agent instructions cover these areas:
+AGENTS.md is a "README for agents" - a dedicated, predictable place for AI coding agent context.
+Supported by: OpenAI Codex, Google Jules, Cursor, VS Code, GitHub Copilot, Devin, Windsurf,
+OpenCode, Aider, and many others.
 
-| Area                 | Purpose                    | Example                           |
-|----------------------|----------------------------|-----------------------------------|
-| Commands First       | Executable strings early   | `npm test`, `make build`          |
-| Real Code Examples   | Snippets over descriptions | Show actual patterns, not prose   |
-| Hard Boundaries      | What agent must never do   | "NEVER commit secrets"            |
-| Tech Stack Specifics | Precise about technologies | "Python 3.12 with FastAPI"        |
-| Project Structure    | Where agent reads/writes   | Directory patterns, file purposes |
-| Testing/Verification | How agent verifies work    | Commands to validate changes      |
+## Essential Sections
+
+Every AGENTS.md should cover:
+
+### 1. Dos and Don'ts (Constraints)
+
+Be nitpicky. Clear guidelines prevent repeated mistakes.
+
+````markdown
+### Do
+- use TypeScript strict mode
+- use functional components with hooks
+- default to small, focused diffs
+
+### Don't
+- do not hard code colors - use design tokens
+- do not add dependencies without approval
+````
+
+### 2. File-Scoped Commands
+
+Prefer file-specific commands over project-wide. Faster feedback, fewer wasted cycles.
+
+````markdown
+### Commands
+# Type check single file (seconds, not minutes)
+npm run tsc --noEmit path/to/file.tsx
+
+# Lint single file
+npm run eslint --fix path/to/file.tsx
+
+# Test single file
+npm run vitest run path/to/file.test.tsx
+
+# Full build only when explicitly requested
+npm run build
+````
+
+### 3. Safety and Permissions
+
+Explicit allow/ask lists prevent surprises.
+
+````markdown
+### Permissions
+Allowed without asking:
+- read files, list directories
+- type check, lint, format single files
+- run single unit tests
+
+Ask first:
+- package installs
+- git push
+- deleting files
+- full build or E2E suites
+````
+
+### 4. Project Structure Hints
+
+A tiny index saves exploration time every session.
+
+````markdown
+### Structure
+- routes: `src/App.tsx`
+- components: `src/components/`
+- design tokens: `src/lib/theme/tokens.ts`
+- API client: `src/api/client.ts`
+````
+
+### 5. Good/Bad Example Pointers
+
+Point to real files. Examples beat abstractions.
+
+````markdown
+### Examples
+Copy these patterns:
+- forms: `src/components/UserForm.tsx`
+- data fetching: `src/hooks/useProjects.ts`
+
+Avoid these (legacy):
+- class components like `src/legacy/Admin.tsx`
+````
+
+### 6. When Stuck Guidance
+
+Escape hatch for uncertainty.
+
+````markdown
+### When stuck
+- ask a clarifying question
+- propose a short plan
+- open a draft PR with notes
+- do not push large speculative changes
+````
+
+### 7. PR/Commit Checklist
+
+Define "ready" explicitly.
+
+````markdown
+### PR checklist
+- lint, type check, tests: all green
+- diff is small and focused
+- brief summary of what changed and why
+````
+
+## Nested AGENTS.md for Monorepos
+
+Place AGENTS.md in subdirectories for package-specific rules. Agent reads closest file to edited
+code. Root file provides defaults; nested files override.
+
+```txt
+/root
+  AGENTS.md           # Project-wide defaults
+  /packages/legacy
+    AGENTS.md         # React 17 rules for this package
+  /packages/new-app
+    AGENTS.md         # React 18 rules for this package
+```
 
 ## Anthropic Context Engineering Principles
 
@@ -49,36 +164,17 @@ Effective agent instructions cover these areas:
 - Group related rules together
 - Use consistent formatting
 
-## Token Efficiency Patterns
-
-### Do
-
-- Use `path:line` pointers over large code pastes
-- Reference existing files as templates ("see src/api/users.ts for pattern")
-- Point to `--help` for script usage instead of embedding examples
-- Use retrieval on-demand (skills) vs pre-loading everything
-- Consolidate related rules into single locations
-
-### Don't
-
-- Repeat the same rule in multiple sections
-- Embed large code examples that could be referenced
-- Include queryable/discoverable information (API docs, man pages)
-- Pre-load information needed only for specific operations
-
 ## Rule Writing Guidelines
 
 ### Format: Constraint + Consequence
 
 Bad: "Don't commit directly to main"
 
-Good: "NEVER commit directly to main - use feature branches and PRs for review"
+Good: "NEVER commit directly to main - use feature branches and PRs"
 
 ### Prefer Positive Over Negative
 
-When possible, say what TO do, not just what NOT to do:
-
-Bad: "NEVER use var in JavaScript"
+Bad: "NEVER use var"
 
 Good: "Use `const` by default, `let` when reassignment needed (NEVER `var`)"
 
@@ -90,75 +186,91 @@ Good: "All async functions MUST have try/catch - unhandled rejections crash the 
 
 ### Use Examples Over Adjectives
 
-Bad: "Write concise, professional commit messages"
+Bad: "Write concise commit messages"
 
-Good: "Examples: `fix(auth): handle expired tokens`, `feat(api): add user search endpoint`"
+Good: "Format: `fix(auth): handle expired tokens`, `feat(api): add search endpoint`"
 
-## Antipatterns to Avoid
+## Antipatterns
 
-| Antipattern                       | Problem                       | Fix                            |
-|-----------------------------------|-------------------------------|--------------------------------|
-| Verbose explanations              | Wastes tokens                 | Terse rule + consequence       |
-| Repeated rules                    | Inconsistency risk            | Single authoritative location  |
-| Vague adjectives                  | Subjective interpretation     | Concrete criteria or examples  |
-| Embedded discoverable info        | Stale, bloated                | Point to source (--help, docs) |
-| Prohibitions without alternatives | Agent doesn't know what TO do | Include the correct approach   |
-| Over-engineered modes/workflows   | Complexity without benefit    | Simple, direct instructions    |
+| Antipattern                       | Problem                   | Fix                           |
+|-----------------------------------|---------------------------|-------------------------------|
+| Verbose explanations              | Wastes tokens             | Terse rule + consequence      |
+| Repeated rules                    | Inconsistency risk        | Single authoritative location |
+| Vague adjectives                  | Subjective interpretation | Concrete criteria or examples |
+| Embedded discoverable info        | Stale, bloated            | Point to source (--help)      |
+| Prohibitions without alternatives | No guidance on what TO do | Include correct approach      |
+| Project-wide commands only        | Slow feedback loops       | File-scoped commands          |
 
-## AGENTS.md Structure Template
+## OpenCode Agent Structure
 
-```markdown
-# Project Name
+OpenCode agents use markdown files with YAML frontmatter:
 
-Brief description. Repository location.
+````markdown
+---
+description: Brief description of agent purpose
+mode: subagent
+permission:
+  skill:
+    "*": deny
+    specific-skill: allow
+---
 
-## Reference Sources
+# Agent Name
 
-Links to authoritative patterns, documentation, reference implementations.
+Brief intro. Pointer to load relevant skill.
+
+## Workflow
+
+Mandatory steps before starting work.
+
+## Domain Ownership
+
+Paths this agent is responsible for.
 
 ## Constraints
 
-Hard boundaries grouped by domain. Format: rule + consequence.
+NEVER/MUST rules with consequences.
 
-### Domain 1 (e.g., Code Quality)
+## Verification
 
-- NEVER/MUST rules with consequences
+Commands to validate work.
 
-### Domain 2 (e.g., Security)
+## When Stuck
 
-- NEVER/MUST rules with consequences
+Escape hatch for uncertainty.
+````
 
-## Commands
+### Agent vs Skill Separation
 
-Executable commands early in file. Terse, copy-pasteable.
+**Agent (always loaded):**
 
-## Project Structure
+- Workflow/prerequisites (mandatory steps)
+- Domain ownership (which paths)
+- Hard constraints (NEVER rules)
+- Verification commands
+- Pointer to skill
 
-Directory patterns, file purposes. Pattern-based, not exhaustive lists.
+**Skill (loaded on demand):**
 
-## Conventions
+- Code examples and patterns
+- Step-by-step procedures
+- File templates
+- Debugging guides
+- Comprehensive reference
 
-Naming, formatting, style guidelines. Consolidated, not scattered.
+### Decision Heuristic
 
-## Environment
+Ask: "Is this needed in every conversation with this agent?"
 
-Infrastructure facts that don't change often (versions, services, endpoints).
+- Yes -> Put in agent
+- No, only for specific operations -> Put in skill
 
-## Skills
-
-Pointers to on-demand skills for detailed patterns.
-
-## Commits
-
-Commit message format, type selection guidance.
-```
-
-## Skill Structure (OpenCode)
+## OpenCode Skill Structure
 
 ### Location
 
-- Project: `.opencode/skill/{name}/SKILL.md`
-- Global: `~/.config/opencode/skill/{name}/SKILL.md`
+- Project: `.opencode/skills/{name}/SKILL.md`
+- Global: `~/.config/opencode/skills/{name}/SKILL.md`
 
 ### Frontmatter (Required)
 
@@ -173,42 +285,15 @@ description: 1-1024 chars describing when to use this skill
 
 - 1-64 characters
 - Lowercase alphanumeric with single hyphen separators
-- No leading/trailing hyphens
-- No consecutive hyphens
+- No leading/trailing hyphens, no consecutive hyphens
 - Must match directory name
 
 ### Body Content
 
-- Start with "Load this skill when..." guidance
-- Include complete, copy-pasteable examples
+- Start with purpose statement
+- Include copy-pasteable examples
 - Show pattern variations
-- Include checklists for complex operations
 - Document common mistakes
-
-## When to Use Skills vs AGENTS.md
-
-### Put in AGENTS.md (always loaded)
-
-- Critical constraints that prevent breakage
-- Commands needed in most conversations
-- Project structure patterns
-- Environment/infrastructure facts
-- Pointers to skills
-
-### Put in Skills (loaded on demand)
-
-- Detailed file templates
-- Step-by-step procedures
-- Pattern variations
-- Domain-specific knowledge
-- Comprehensive examples
-
-### Decision Heuristic
-
-Ask: "Is this needed in every conversation?"
-
-- Yes -> AGENTS.md
-- No, only for specific operations -> Skill
 
 ## Good vs Bad Instructions (Devin Research)
 
@@ -218,10 +303,9 @@ Ask: "Is this needed in every conversation?"
 - Reference existing code as templates
 - Include clear success criteria
 - Define verification steps
-- Specify data sources
 
-Example: "Create endpoint `/users/stats` returning JSON with user count. Reference `/orders/stats`
-in `statsController.js` for response structure. Add tests to `StatsController.test.js`."
+Example: "Create endpoint `/users/stats` returning JSON. Reference `/orders/stats` in
+`statsController.js` for structure. Add tests to `StatsController.test.js`."
 
 ### Bad Instructions
 
@@ -229,44 +313,32 @@ in `statsController.js` for response structure. Add tests to `StatsController.te
 - No specific components mentioned
 - Unclear validation criteria
 - Open-ended scope
-- Missing context
 
 Example: "Add a user stats endpoint." (No format, source, tests, or reference)
 
-## Maintenance Guidelines
+## Maintenance
 
-### When to Update AGENTS.md
+### When to Update
 
-- New hard constraints discovered
-- Infrastructure/environment changes
-- Command changes
-- Structure changes
-
-### When to Update Skills
-
-- New patterns established
-- Existing patterns proven outdated
-- Common mistakes discovered
-- Better examples found
+- AGENTS.md: New constraints, infrastructure changes, command changes
+- Skills: New patterns, better examples, common mistakes discovered
 
 ### Update Process
 
 1. Identify what changed and why
 2. Update the authoritative location (not duplicates)
 3. Verify no contradictions introduced
-4. Run markdownlint to validate formatting
-5. Commit with clear description of what changed
+4. Validate formatting (markdownlint)
 
 ## Validation Checklist
 
-Before finalizing AGENTS.md or skill changes:
+Before finalizing changes:
 
-- [ ] No duplicate rules across sections
+- [ ] No duplicate rules across agent and skill
 - [ ] Each constraint has a consequence
-- [ ] Commands are copy-pasteable
-- [ ] Examples are from actual codebase (not invented)
-- [ ] Skills are referenced where detailed patterns live
+- [ ] Commands are copy-pasteable and file-scoped where possible
+- [ ] Examples reference real files (not invented)
+- [ ] Skills referenced where detailed patterns live
+- [ ] "When stuck" guidance included
 - [ ] Line length <= 100 characters
-- [ ] No duplicate headings
 - [ ] Code blocks have language specifiers
-- [ ] Passes markdownlint
