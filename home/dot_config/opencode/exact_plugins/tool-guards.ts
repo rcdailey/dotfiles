@@ -39,8 +39,6 @@ const REDIRECTIONS: RedirectionRule[] = [
 const EXCLUDED_COMMAND_PREFIX =
   /^\s*(git|ssh|gh\s+search|kubectl\s+(exec|run|debug)|docker\s+exec|podman\s+exec|talosctl)\s/
 
-const GH_API_MUTATING_PATTERN = /-X\s+(POST|PUT|PATCH|DELETE)\b/i
-
 export const ToolGuards: Plugin = async () => {
   return {
     "tool.execute.before": async (input, output) => {
@@ -56,17 +54,6 @@ export const ToolGuards: Plugin = async () => {
       for (const rule of REDIRECTIONS) {
         if (rule.pattern.test(command)) {
           throw new Error(`TOOL USAGE VIOLATION: ${rule.message}`)
-        }
-      }
-
-      // Check gh api readonly
-      if (/\bgh\s+api\b/.test(command)) {
-        if (GH_API_MUTATING_PATTERN.test(command)) {
-          throw new Error(
-            "GH API VIOLATION: Mutating operations not allowed. " +
-              "gh api with -X POST/PUT/PATCH/DELETE is blocked. " +
-              "Only read-only operations (GET or no -X flag) are permitted."
-          )
         }
       }
     },
