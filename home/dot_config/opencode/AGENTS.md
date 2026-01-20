@@ -55,5 +55,14 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Use `gh` CLI for operations against github repositories (instead of web fetch/search tools).
 - Use octocode for code search and discovery.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
-- Load `git-commit` skill before any commit operation.
-- Load `csharp-coding` skill before writing or modifying C# code.
+
+## Skills
+
+Mandatory skill usage scenarios. Load the below skills BEFORE listed behavior or actions:
+
+- `agents-authoring`: working on AGENTS.md, skills, or agents
+- `csharp-coding`: writing or modifying C# code
+- `gh-api`: when using `gh api` commands
+- `gh-gist`: creating or editing GitHub Gists
+- `gh-pr-review`: reviewing pull requests on GitHub
+- `git-commit`: any commit operation
