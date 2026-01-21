@@ -47,6 +47,8 @@
     "input_visual_line_home": "home",
     "input_visual_line_end": "end",
     "model_list": "alt+m",
+    "messages_copy": "alt+c",
+    "messages_undo": "alt+u",
 
     // these conflict with home/end keys above
     "messages_first": "ctrl+g",
