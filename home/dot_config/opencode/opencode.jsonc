@@ -49,6 +49,7 @@
     "model_list": "alt+m",
     "messages_copy": "alt+c",
     "messages_undo": "alt+u",
+    "session_list": "alt+l",
 
     // these conflict with home/end keys above
     "messages_first": "ctrl+g",
