@@ -7,6 +7,9 @@
 # Exclude .git directory from searches (still ignores other VCS-ignored content)
 --glob=!.git/*
 
+# Follow symbolic links
+--follow
+
 # Smart case matching: case-insensitive unless pattern contains uppercase
 --smart-case
 
