@@ -73,7 +73,7 @@
 
     "bash": {
       "*": "allow",
-      "grep*": "deny", // prefer ripgrep
+      // grep redirection handled by tool-guards plugin (allows kubectl exec, git, etc)
 
       // git (destructive)
       "*git push*": "ask",
