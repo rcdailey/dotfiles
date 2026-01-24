@@ -48,8 +48,7 @@ customCommands:
   - type: input
     title: "Commit instructions (optional - leave empty for staged changes only):"
     key: CommitArgs
-    initialValue: ""
-  command: opencode run {{printf "/commit %s" .Form.CommitArgs | quote}}
+  command: opencode run --agent commit {{if .Form.CommitArgs}}{{.Form.CommitArgs | quote}}{{else}}"staged"{{end}}
   loadingText: OpenCode is committing...
   output: terminal
 - key: f

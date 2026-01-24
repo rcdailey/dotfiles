@@ -65,4 +65,9 @@ Mandatory skill usage scenarios. Load the below skills BEFORE listed behavior or
 - `gh-api`: when using `gh api` commands
 - `gh-gist`: creating or editing GitHub Gists
 - `gh-pr-review`: reviewing pull requests on GitHub
-- `git-commit`: any commit operation
+
+## Agents
+
+MUST use agents autonomously and without explicit prompt from user for appropriate operations.
+
+- `commit`: For any and all commit-related requests with git
