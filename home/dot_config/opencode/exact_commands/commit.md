@@ -9,7 +9,7 @@ Arguments: "$ARGUMENTS"
 
 ## Workflow
 
-Parse $ARGUMENTS to select workflow:
+Use the above arguments to select workflow:
 
 - **No arguments**: Commit staged changes only. Run `git diff --cached`. Do not run git add.
 - **"all"**: Run `git add -A`, then `git diff --cached`, then commit.
