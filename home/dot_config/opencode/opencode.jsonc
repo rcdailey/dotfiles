@@ -14,7 +14,7 @@
     "@plannotator/opencode@latest",
     "opencode-anthropic-auth@latest",
     "@franlol/opencode-md-table-formatter@latest",
-    // "@tarquinen/opencode-dcp@latest" // super bad to use this with anthropic -- causes $$$
+    "@tarquinen/opencode-dcp@latest"
   ],
   "mcp": {
     "context7": {
