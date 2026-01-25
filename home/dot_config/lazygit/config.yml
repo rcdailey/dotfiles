@@ -22,6 +22,7 @@ keybinding:
     scrollDownMain: "."
     nextItem-alt: "<disabled>"
     prevItem-alt: "<disabled>"
+    openRecentRepos: "`"
   commits:
     amendToCommit: a
     resetCommitAuthor: A
@@ -34,6 +35,7 @@ keybinding:
     amendLastCommit: a
     toggleStagedAll: s
     stashAllChanges: "<disabled>"
+    toggleTreeView: "<disabled>"
 
 customCommands:
 - key: D
