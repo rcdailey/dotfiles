@@ -3,11 +3,13 @@ description: Git commit agent for non-interactive use (lazygit, scripts)
 mode: all
 permission:
   "*": deny
+  read: allow
   bash:
     "*": deny
     "cd *": allow
     "echo *": allow
     "git *": allow
+    "cat *": allow
 ---
 
 Generate conventional commits. Execute with minimal output - only show final commit message(s).
