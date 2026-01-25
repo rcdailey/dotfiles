@@ -3,6 +3,7 @@
   "autoupdate": false,
   "share": "manual",
   "compaction": { "auto": false },
+  "model": "anthropic/claude-opus-4-5",
   "formatter": {
     "shfmt": { "disabled": true },
     "markdownlint-cli2": {
