@@ -5,6 +5,8 @@ permission:
   "*": deny
   bash:
     "*": deny
+    "cd *": allow
+    "echo *": allow
     "git *": allow
 ---
 
