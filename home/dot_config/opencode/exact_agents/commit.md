@@ -8,8 +8,13 @@ permission:
     "*": deny
     "cd *": allow
     "echo *": allow
-    "git *": allow
     "cat *": allow
+    "git add*": allow
+    "git commit*": allow
+    "git diff*": allow
+    "git reset*": allow
+    "git status*": allow
+    "git update-index*": allow
 ---
 
 Generate conventional commits. Execute with minimal output - only show final commit message(s).
@@ -46,6 +51,7 @@ Break changes into logical commits (2-5 max).
 ## Constraints
 
 - NEVER run `git add` in staged workflow
+- NEVER push - delegate to calling agent if needed
 - NEVER ask clarifying questions - decide from the diff
 - NEVER manually fix code or bypass hooks
 - NEVER run commands after successful commit (no `git log`, `git show`, etc.) - stop immediately
