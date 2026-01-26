@@ -11,6 +11,9 @@
   `rg --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter).
 - Write naturally - no emojis, Unicode symbols, em/en dashes, or arbitrary bolding. Preserve
   existing symbols when editing others' content.
+- Vary punctuation naturally. Avoid defaulting to hyphens/dashes for joining clauses or
+  parenthetical content. Use periods for independent thoughts, semicolons for closely related
+  clauses, parentheses for de-emphasized asides, and dashes only for emphatic interruptions.
 - When you respond, do not use tables, they are hard to read.
 - Use web search for current events and general information. Prefer verified facts over assumptions.
 - Be honest and objective. Defend your reasoning when questioned (questions seek clarification, not
