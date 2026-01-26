@@ -1,5 +1,5 @@
 ---
-description: Git commit agent for non-interactive use (lazygit, scripts)
+description: Agent for performing git commits ONLY (NO pushes or github cli allowed)
 mode: all
 permission:
   "*": deny

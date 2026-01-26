@@ -73,4 +73,4 @@ Mandatory skill usage scenarios. Load the below skills BEFORE listed behavior or
 
 MUST use agents autonomously and without explicit prompt from user for appropriate operations.
 
-- `commit`: For any and all commit-related requests with git
+- `commit`: For any and all commit-related requests with git (NO push or gh cli allowed)
