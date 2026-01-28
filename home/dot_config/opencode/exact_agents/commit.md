@@ -13,6 +13,8 @@ permission:
     "git commit*": allow
     "git diff*": allow
     "git reset*": allow
+    "git log*": allow
+    "git show*": allow
     "git status*": allow
     "git update-index*": allow
 ---
