@@ -1,9 +1,7 @@
 #!/bin/sh
 # Global pre-commit hook
-# Chains to local hooks (for pre-commit tool compatibility)
+# Runs pre-commit directly when config exists (bypasses core.hooksPath conflict)
 
-# Chain to local pre-commit hook if it exists
-LOCAL_HOOK="$(git rev-parse --git-dir 2>/dev/null)/hooks/pre-commit"
-if [ -x "$LOCAL_HOOK" ]; then
-    "$LOCAL_HOOK" "$@"
+if [ -f .pre-commit-config.yaml ] && command -v pre-commit >/dev/null 2>&1; then
+    exec pre-commit run --hook-stage pre-commit
 fi
