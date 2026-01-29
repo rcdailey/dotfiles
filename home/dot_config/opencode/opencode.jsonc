@@ -51,6 +51,7 @@
     "messages_copy": "alt+c",
     "messages_undo": "alt+u",
     "session_list": "alt+l",
+    "session_new": "alt+n",
 
     // these conflict with home/end keys above
     "messages_first": "ctrl+g",
