@@ -240,6 +240,41 @@ Commands to validate work.
 Escape hatch for uncertainty.
 ````
 
+### Frontmatter Model Options
+
+Known frontmatter fields: `name`, `model`, `prompt`, `description`, `temperature`, `top_p`, `mode`,
+`hidden`, `color`, `steps`, `maxSteps`, `options`, `permission`, `disable`, `tools`.
+
+Unknown fields pass through directly as model options. Use this for provider-specific features like
+extended thinking or reasoning effort.
+
+Anthropic thinking:
+
+```yaml
+---
+description: Agent with extended thinking
+mode: subagent
+model: anthropic/claude-opus-4-5
+thinking:
+  type: enabled
+  budgetTokens: 16000
+---
+```
+
+OpenAI reasoning:
+
+```yaml
+---
+description: Agent with reasoning
+mode: subagent
+model: openai/gpt-5
+reasoningEffort: high
+---
+```
+
+This works identically in JSON config under `agent.<name>`. No variant is applied by default;
+you must explicitly configure thinking/reasoning options if desired.
+
 ### Agent vs Skill Separation
 
 **Agent (always loaded):**
