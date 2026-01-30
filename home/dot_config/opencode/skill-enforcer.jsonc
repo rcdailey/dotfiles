@@ -1,0 +1,21 @@
+{
+  // Skill name -> file glob patterns
+  // When editing files matching these patterns, the skill must be loaded first
+
+  "csharp-coding": [
+    "*.cs",
+    "*.csproj",
+    "*.props",
+    "*.targets"
+  ],
+
+  "agents-authoring": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "SKILL.md",
+    "**/agents/**/*.md",
+    "**/skills/**/*.md",
+    "**/exact_agents/**/*.md",
+    "**/exact_skills/**/*.md"
+  ]
+}

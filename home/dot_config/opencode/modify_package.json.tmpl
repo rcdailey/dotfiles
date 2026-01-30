@@ -1,0 +1,12 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $stdin := .chezmoi.stdin | default "" -}}
+{{- $data := dict "private" true "dependencies" (dict) -}}
+{{- if ne $stdin "" -}}
+{{-   $data = fromJson $stdin -}}
+{{- end -}}
+{{- if not $data.dependencies -}}
+{{-   $_ := set $data "dependencies" (dict) -}}
+{{- end -}}
+{{- $_ := set $data.dependencies "minimatch" "*" -}}
+{{- $_ := set $data.dependencies "jsonc-parser" "*" -}}
+{{- $data | toPrettyJson -}}

@@ -37,8 +37,9 @@ sd = "latest"
 markdownlint-cli2 = "latest"
 just = "latest"
 
-# Node and NPM packages
+# Node, Bun, and NPM packages
 node = "latest"
+bun = "latest"
 "npm:@commitlint/cli" = "latest"
 "npm:@commitlint/config-conventional" = "latest"
 
