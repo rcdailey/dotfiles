@@ -1,13 +1,17 @@
 #!/usr/bin/env zsh
 # Launch opencode with secrets loaded just-in-time
-# Avoids global env exposure and pinentry race conditions during shell init
+# Caches secrets in session variables after first fetch
 
-if ! rbw unlock 2>/dev/null; then
-  print -P "%F{red}rbw unlock failed%f"
-  return 1
+if [[ -z $_OC_CONTEXT7_KEY ]]; then
+  if ! rbw unlock 2>/dev/null; then
+    print -P "%F{red}rbw unlock failed%f"
+    return 1
+  fi
+  _OC_CONTEXT7_KEY=$(rbw get context7-api-key)
+  _OC_BRAVE_KEY=$(rbw get brave-api-key)
 fi
 
-CONTEXT7_API_KEY="$(rbw get context7-api-key)" \
-BRAVE_API_KEY="$(rbw get brave-api-key)" \
+CONTEXT7_API_KEY=$_OC_CONTEXT7_KEY \
+BRAVE_API_KEY=$_OC_BRAVE_KEY \
 OPENCODE_ENABLE_EXA=false \
 opencode "$@"
