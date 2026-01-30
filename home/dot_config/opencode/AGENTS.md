@@ -61,13 +61,14 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 
 ## Skills
 
-Mandatory skill usage scenarios. Load the below skills BEFORE listed behavior or actions:
+You MUST load the relevant skill BEFORE performing the listed actions. Failure to load a skill when
+the trigger condition is met violates this directive.
 
-- `agents-authoring`: working on AGENTS.md, skills, or agents
-- `csharp-coding`: writing or modifying C# code
-- `gh-api`: when using `gh api` commands
-- `gh-gist`: creating or editing GitHub Gists
-- `gh-pr-review`: reviewing pull requests on GitHub
+- `agents-authoring`: REQUIRED when working on AGENTS.md, skills, or agents
+- `csharp-coding`: REQUIRED when writing or modifying C# code
+- `gh-api`: REQUIRED when using `gh api` commands
+- `gh-gist`: REQUIRED when creating or editing GitHub Gists
+- `gh-pr-review`: REQUIRED when reviewing pull requests on GitHub
 
 ## Agents
 

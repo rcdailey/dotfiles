@@ -166,17 +166,36 @@ code. Root file provides defaults; nested files override.
 
 ## Rule Writing Guidelines
 
+### RFC 2119 Style for Maximum Compliance
+
+Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY) for directives. LLMs parse these as strict
+requirement levels. This produces measurably higher compliance rates than softer phrasing.
+
+**Keyword semantics:**
+
+- **MUST / REQUIRED / SHALL**: Absolute requirement. No exceptions.
+- **MUST NOT / SHALL NOT**: Absolute prohibition. No exceptions.
+- **SHOULD / RECOMMENDED**: Strong preference. Valid exceptions exist but require justification.
+- **SHOULD NOT / NOT RECOMMENDED**: Strong discouragement. Valid exceptions require justification.
+- **MAY / OPTIONAL**: Truly discretionary.
+
+**Application:**
+
+- Use MUST/MUST NOT for safety, correctness, and non-negotiable constraints
+- Use SHOULD/SHOULD NOT for best practices where context may warrant deviation
+- Use MAY sparingly; if something is truly optional, consider omitting it entirely
+
 ### Format: Constraint + Consequence
 
 Bad: "Don't commit directly to main"
 
-Good: "NEVER commit directly to main - use feature branches and PRs"
+Good: "MUST NOT commit directly to main - use feature branches and PRs"
 
 ### Prefer Positive Over Negative
 
-Bad: "NEVER use var"
+Bad: "MUST NOT use var"
 
-Good: "Use `const` by default, `let` when reassignment needed (NEVER `var`)"
+Good: "MUST use `const` by default, `let` when reassignment needed (NEVER `var`)"
 
 ### Be Specific, Not Vague
 
