@@ -7,8 +7,6 @@
   answers when sufficient. This applies to conversation only, not work artifacts.
 - Use Context7 MCP tools (resolve-library-id, query-docs) for code generation, setup/configuration,
   or tool/library/API documentation.
-- Use `rg` for all file/text search (replaces grep, find -name, piped chains). Patterns:
-  `rg --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter).
 - Write naturally - no emojis, Unicode symbols, em/en dashes, or arbitrary bolding. Preserve
   existing symbols when editing others' content.
 - Vary punctuation naturally. Avoid defaulting to hyphens/dashes for joining clauses or
@@ -54,6 +52,9 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 
 ## Tools
 
+- MUST use `rg` (ripgrep) for ALL file and text search. NEVER use `grep`, `find -name`, `awk`,
+  `sed` for searching, or piped chains combining these. Patterns: `rg --files -g "pattern"` (find
+  files), `rg "pattern"` (search text), `--glob "!**/exclude/**"` (exclusions).
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh` CLI for operations against github repositories (instead of web fetch/search tools).
 - Use octocode for code search and discovery.
