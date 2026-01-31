@@ -1,5 +1,6 @@
 ---
 description: Agent for performing git commits ONLY (NO pushes or github cli allowed)
+model: anthropic/claude-sonnet-4-5
 mode: all
 permission:
   "*": deny
