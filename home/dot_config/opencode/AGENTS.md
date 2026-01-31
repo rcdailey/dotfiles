@@ -52,9 +52,9 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 
 ## Tools
 
-- MUST use `rg` (ripgrep) for ALL file and text search. NEVER use `grep`, `find -name`, `awk`,
-  `sed` for searching, or piped chains combining these. Patterns: `rg --files -g "pattern"` (find
-  files), `rg "pattern"` (search text), `--glob "!**/exclude/**"` (exclusions).
+- ALWAYS use `rg` (ripgrep) for file and text search; it is installed, faster, and respects
+  .gitignore. NEVER use `grep`, `find -name`, `awk`, `sed`, or piped search chains. Patterns:
+  `rg --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter).
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh` CLI for operations against github repositories (instead of web fetch/search tools).
 - Use octocode for code search and discovery.
