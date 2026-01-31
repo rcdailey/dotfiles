@@ -19,7 +19,11 @@ this skill before writing or modifying C# code.
   - For type inference, prefer `[new T { }, new T { }]` over casts
   - Use `T[] x = [...]` only when simpler forms fail
 - Records for DTOs, `init` setters
-- Pattern matching: `is not null`, switch expressions
+- Pattern matching: `is not null`, switch expressions, property patterns
+  - Property patterns: `obj is Type { Prop: value }` over `obj is Type t && t.Prop == value`
+  - Recursive/nested: `obj is Type { Outer: { Inner: value } }`
+  - Extended property pattern: `obj is { Outer.Inner: value }` (C# 10)
+  - Empty property pattern: `{ } name` matches non-null and binds (e.g., `is Type { Prop: { } x }`)
 - Spread operator for collections: `[..first, ..second]`
 
 ## C# 14 Features (.NET 10)
