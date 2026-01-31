@@ -20,6 +20,10 @@ AddKeysToAgent yes
 IgnoreUnknown UseKeychain
 UseKeychain yes
 
+# Override TERM to ensure compatibility with remote systems
+# Prevents errors when local terminal (kitty, tmux-256color) lacks remote terminfo
+SetEnv TERM=xterm-256color
+
 # Load additional SSH configurations from modular config files
 # Allows organizing host-specific settings into separate, manageable files
 Include config.d/*.ssh
