@@ -42,11 +42,11 @@
       "type": "local",
       "command": ["npx", "-y", "octocode-mcp@latest"]
     },
-    "brave": {
+    "searxng": {
       "type": "local",
-      "command": ["npx", "-y", "@brave/brave-search-mcp-server@latest"],
+      "command": ["npx", "-y", "mcp-searxng@latest"],
       "environment": {
-        "BRAVE_API_KEY": "{env:BRAVE_API_KEY}"
+        "SEARXNG_URL": "https://search.dailey.app"
       }
     }
   },
@@ -75,12 +75,9 @@
     "*": "allow",
     "grep": "deny", // require ripgrep instead
 
-    // brave MCP
-    "*_brave_video_search": "deny",
-    "*_brave_image_search": "deny",
-    "*_brave_news_search": "deny",
-    "*_brave_local_search": "deny",
-    "*_brave_summarizer": "deny",
+    // replaced by searxng
+    "webfetch": "deny",
+    "websearch": "deny",
 
     // octocode MCP
     "*_packageSearch": "deny",
