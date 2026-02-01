@@ -1,0 +1,17 @@
+{
+  "local": {
+    "enabled": false
+  },
+  "tools": {
+    "enabled": [
+      "githubSearchCode",
+      "githubGetFileContent",
+      "githubViewRepoStructure",
+      "githubSearchRepositories"
+    ]
+  },
+  "telemetry": {
+    "enabled": false,
+    "logging": false
+  }
+}
