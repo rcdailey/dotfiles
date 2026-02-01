@@ -50,6 +50,9 @@
       }
     }
   },
+  "tui": {
+    "diff_style": "stacked"
+  },
   "keybinds": {
     "session_parent": "alt+up",
     "session_child_cycle": "alt+right",
