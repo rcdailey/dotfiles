@@ -2,6 +2,9 @@
 # Global pre-commit hook
 # Runs pre-commit directly when config exists (bypasses core.hooksPath conflict)
 
+# Ensure mise shims are in PATH for correct tool versions
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+
 if [ -f .pre-commit-config.yaml ] && command -v pre-commit >/dev/null 2>&1; then
     exec pre-commit run --hook-stage pre-commit
 fi
