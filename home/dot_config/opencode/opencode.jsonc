@@ -51,11 +51,10 @@
     }
   },
   "keybinds": {
-    "messages_previous": "alt+up",
-    "messages_next": "alt+down",
-    "session_timeline": "alt+z",
+    "session_parent": "alt+up",
     "session_child_cycle": "alt+right",
     "session_child_cycle_reverse": "alt+left",
+    "session_timeline": "alt+z",
     "session_fork": "alt+f",
     "input_visual_line_home": "home",
     "input_visual_line_end": "end",
