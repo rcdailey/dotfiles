@@ -9,6 +9,7 @@ git:
 
 gui:
   mouseEvents: false
+  mainPanelSplitMode: vertical
 
 keybinding:
   universal:
