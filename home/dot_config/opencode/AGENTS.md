@@ -64,7 +64,9 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 You MUST load the relevant skill BEFORE performing the listed actions. Failure to load a skill when
 the trigger condition is met violates this directive.
 
-- `agents-authoring`: REQUIRED when working on AGENTS.md, skills, or agents
+- `agents-authoring`: REQUIRED when working on AGENTS.md files
+- `skill-authoring`: REQUIRED when creating or modifying SKILL.md files
+- `subagent-authoring`: REQUIRED when creating or modifying custom agents
 - `csharp-coding`: REQUIRED when writing or modifying C# code
 - `gh-api`: REQUIRED when using `gh api` commands
 - `gh-gist`: REQUIRED when creating or editing GitHub Gists

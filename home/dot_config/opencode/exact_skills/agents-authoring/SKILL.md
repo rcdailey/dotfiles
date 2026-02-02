@@ -1,11 +1,11 @@
 ---
 name: agents-authoring
-description: Best practices for writing AGENTS.md, agent configs, and skill files based on industry research
+description: Best practices for writing AGENTS.md files based on industry research
 ---
 
-# AGENTS.md and Skill Authoring
+# AGENTS.md Authoring
 
-Load this skill when creating or updating AGENTS.md files, OpenCode agents, or skills.
+Load this skill when creating or updating AGENTS.md files.
 
 ## Research Foundation
 
@@ -220,135 +220,6 @@ Good: "Format: `fix(auth): handle expired tokens`, `feat(api): add search endpoi
 | Prohibitions without alternatives | No guidance on what TO do | Include correct approach      |
 | Project-wide commands only        | Slow feedback loops       | File-scoped commands          |
 
-## OpenCode Agent Structure
-
-OpenCode agents use markdown files with YAML frontmatter:
-
-````markdown
----
-description: Brief description of agent purpose
-mode: subagent
-permission:
-  skill:
-    "*": deny
-    specific-skill: allow
----
-
-# Agent Name
-
-Brief intro. Pointer to load relevant skill.
-
-## Workflow
-
-Mandatory steps before starting work.
-
-## Domain Ownership
-
-Paths this agent is responsible for.
-
-## Constraints
-
-NEVER/MUST rules with consequences.
-
-## Verification
-
-Commands to validate work.
-
-## When Stuck
-
-Escape hatch for uncertainty.
-````
-
-### Frontmatter Model Options
-
-Known frontmatter fields: `name`, `model`, `prompt`, `description`, `temperature`, `top_p`, `mode`,
-`hidden`, `color`, `steps`, `maxSteps`, `options`, `permission`, `disable`, `tools`.
-
-Unknown fields pass through directly as model options. Use this for provider-specific features like
-extended thinking or reasoning effort.
-
-Anthropic thinking:
-
-```yaml
----
-description: Agent with extended thinking
-mode: subagent
-model: anthropic/claude-opus-4-5
-thinking:
-  type: enabled
-  budgetTokens: 16000
----
-```
-
-OpenAI reasoning:
-
-```yaml
----
-description: Agent with reasoning
-mode: subagent
-model: openai/gpt-5
-reasoningEffort: high
----
-```
-
-This works identically in JSON config under `agent.<name>`. No variant is applied by default;
-you must explicitly configure thinking/reasoning options if desired.
-
-### Agent vs Skill Separation
-
-**Agent (always loaded):**
-
-- Workflow/prerequisites (mandatory steps)
-- Domain ownership (which paths)
-- Hard constraints (NEVER rules)
-- Verification commands
-- Pointer to skill
-
-**Skill (loaded on demand):**
-
-- Code examples and patterns
-- Step-by-step procedures
-- File templates
-- Debugging guides
-- Comprehensive reference
-
-### Decision Heuristic
-
-Ask: "Is this needed in every conversation with this agent?"
-
-- Yes -> Put in agent
-- No, only for specific operations -> Put in skill
-
-## OpenCode Skill Structure
-
-### Location
-
-- Project: `.opencode/skills/{name}/SKILL.md`
-- Global: `~/.config/opencode/skills/{name}/SKILL.md`
-
-### Frontmatter (Required)
-
-```yaml
----
-name: skill-name
-description: 1-1024 chars describing when to use this skill
----
-```
-
-### Name Rules
-
-- 1-64 characters
-- Lowercase alphanumeric with single hyphen separators
-- No leading/trailing hyphens, no consecutive hyphens
-- Must match directory name
-
-### Body Content
-
-- Start with purpose statement
-- Include copy-pasteable examples
-- Show pattern variations
-- Document common mistakes
-
 ## Good vs Bad Instructions (Devin Research)
 
 ### Good Instructions
@@ -372,12 +243,14 @@ Example: "Add a user stats endpoint." (No format, source, tests, or reference)
 
 ## Maintenance
 
-### When to Update
+Update AGENTS.md when:
 
-- AGENTS.md: New constraints, infrastructure changes, command changes
-- Skills: New patterns, better examples, common mistakes discovered
+- New constraints or coding standards are adopted
+- Infrastructure or tooling changes
+- Command syntax changes
+- Project structure evolves
 
-### Update Process
+Process:
 
 1. Identify what changed and why
 2. Update the authoritative location (not duplicates)
@@ -388,11 +261,9 @@ Example: "Add a user stats endpoint." (No format, source, tests, or reference)
 
 Before finalizing changes:
 
-- [ ] No duplicate rules across agent and skill
 - [ ] Each constraint has a consequence
 - [ ] Commands are copy-pasteable and file-scoped where possible
 - [ ] Examples reference real files (not invented)
-- [ ] Skills referenced where detailed patterns live
 - [ ] "When stuck" guidance included
 - [ ] Line length <= 100 characters
 - [ ] Code blocks have language specifiers
