@@ -1,7 +1,5 @@
 import type { Plugin } from "@opencode-ai/plugin"
 
-const DEFAULT_MAX_WIDTH = 80
-
 export const TableToList: Plugin = async () => {
   return {
     "experimental.text.complete": async (
@@ -9,7 +7,7 @@ export const TableToList: Plugin = async () => {
       output: { text: string }
     ) => {
       try {
-        output.text = transformWideTables(output.text, DEFAULT_MAX_WIDTH)
+        output.text = transformTables(output.text)
       } catch (error) {
         output.text =
           output.text +
@@ -26,7 +24,7 @@ interface TableRow {
   isSeparator: boolean
 }
 
-function transformWideTables(text: string, maxWidth: number): string {
+function transformTables(text: string): string {
   const lines = text.split("\n")
   const result: string[] = []
   let i = 0
@@ -45,13 +43,7 @@ function transformWideTables(text: string, maxWidth: number): string {
 
       const parsed = parseTable(tableLines)
       if (parsed && parsed.dataRows.length > 0) {
-        const tableWidth = getMaxLineWidth(tableLines)
-
-        if (tableWidth > maxWidth) {
-          result.push(...convertToList(parsed.headers, parsed.dataRows))
-        } else {
-          result.push(...tableLines)
-        }
+        result.push(...convertToList(parsed.headers, parsed.dataRows))
       } else {
         result.push(...tableLines)
       }
@@ -114,10 +106,6 @@ function parseTable(
   })
 
   return { headers, dataRows: normalizedRows }
-}
-
-function getMaxLineWidth(lines: string[]): number {
-  return Math.max(...lines.map((line) => line.length))
 }
 
 function convertToList(headers: string[], dataRows: string[][]): string[] {
