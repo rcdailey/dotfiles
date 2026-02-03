@@ -1,12 +1,4 @@
 #!/usr/bin/env zsh
-# Launch opencode with secrets loaded just-in-time
-# Caches secrets in session variables after first fetch
+# Launch opencode with non-default settings
 
-# repeat this block once per secret env opencode needs
-if [[ -z $_OC_CONTEXT7_KEY ]]; then
-  _OC_CONTEXT7_KEY=$(rbw get context7-api-key)
-fi
-
-CONTEXT7_API_KEY=$_OC_CONTEXT7_KEY \
-OPENCODE_ENABLE_EXA=false \
-opencode "$@"
+OPENCODE_ENABLE_EXA=false opencode "$@"

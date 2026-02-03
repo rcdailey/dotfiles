@@ -30,24 +30,13 @@
     // "@tarquinen/opencode-dcp@latest" // super bad to use this with anthropic -- causes $$$
   ],
   "mcp": {
-    "context7": {
+    "toolhive": {
       "type": "remote",
-      "url": "https://mcp.context7.com/mcp",
-      "oauth": false,
-      "headers": {
-        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
-      }
+      "url": "https://mcp.dailey.app/mcp"
     },
     "octocode": {
       "type": "local",
       "command": ["npx", "-y", "octocode-mcp@latest"]
-    },
-    "searxng": {
-      "type": "local",
-      "command": ["npx", "-y", "mcp-searxng@latest"],
-      "environment": {
-        "SEARXNG_URL": "https://search.dailey.app"
-      }
     }
   },
   "tui": {
