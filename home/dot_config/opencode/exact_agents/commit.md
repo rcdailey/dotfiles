@@ -28,11 +28,10 @@ Parse input and execute corresponding workflow:
 
 ### Staged (default, no arguments)
 
-Commit only staged changes. NEVER run `git add`.
+Commit only staged changes.
 
-1. `git diff --cached`
+1. `git diff --cached` (fail if nothing staged; do NOT stage for user)
 2. `git commit`
-3. Fail if nothing staged
 
 ### All (`all`)
 
@@ -46,18 +45,44 @@ Stage and commit everything.
 
 Break changes into logical commits (2-5 max).
 
-1. `git reset && git add -N . && git diff && git reset`
-2. Group by: file type > directory > change type > dependency order
-3. For each group: `git add <files>` then `git commit`
-4. Use `git add -p` for splitting within files
+**Planning phase:**
+
+1. `git add -N . && git diff && git reset` to see all changes
+2. Plan groups by: directory > file type > change type > dependency order
+3. List files for each commit before starting
+
+**Execution phase (for each group):**
+
+1. `git add <files>` to stage only that group's files
+2. `git status --short` to verify ONLY intended files are staged (MANDATORY)
+3. `git commit` with properly wrapped message
+4. If commitlint fails: fix message and retry (do NOT reset)
+5. Use `git add -p` for splitting changes within files; if exited early, `git reset` to clear and
+   restart
+
+**Critical rules:**
+
+- NEVER use `git reset --soft HEAD~N` after any commit succeeds; this squashes groupings
+- ALWAYS verify staging with `git status --short` before each commit
+- Pre-commit hooks stash/restore unstaged files; verify staging is clean after hooks run
+- If a commit fails (commitlint, hooks), the commit doesn't exist; fix the issue and retry the same
+  `git add && git commit` sequence
+
+**Recovery from commitlint failures:**
+
+Commitlint failure means the commit was rejected (not created). Do NOT reset previous commits.
+Simply fix the message (usually line length) and re-run `git commit` with the same staged files.
 
 ## Constraints
 
-- NEVER run `git add` in staged workflow
-- NEVER push - delegate to calling agent if needed
-- NEVER ask clarifying questions - decide from the diff
+- NEVER push; delegate to calling agent if needed
+- NEVER use `--amend` unless user explicitly requests it
+- NEVER use `--no-verify` or `--no-gpg-sign`; hooks exist for a reason
+- NEVER use `--allow-empty` unless user explicitly requests it
+- NEVER ask clarifying questions; decide from the diff
 - NEVER manually fix code or bypass hooks
-- NEVER run commands after successful commit (no `git log`, `git show`, etc.) - stop immediately
+- NEVER run commands after successful commit (no `git log`, `git show`, etc.); stop immediately
+- If user provides explicit commit message, use it verbatim (still enforce 72-char subject limit)
 - Examine actual diff content to determine type, not filenames
 
 ## Conventional Commits
@@ -119,3 +144,11 @@ If project type unclear, commit with best judgment based on diff content.
 - No changes: Report and exit
 - Detached HEAD: Warn, suggest branch
 - Merge conflicts: Stop immediately
+
+## When Stuck
+
+- Ambiguous scope: Commit the smaller, safer subset; note uncertainty in message body
+- Unclear type: Default to `chore` for config/tooling, `fix` for behavior changes
+- Mixed concerns in one file: Use `git add -p` to split; if too tangled, commit together with
+  explanatory body
+- Report blockers to calling agent rather than guessing
