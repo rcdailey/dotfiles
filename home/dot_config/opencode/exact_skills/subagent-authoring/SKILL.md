@@ -25,7 +25,7 @@ Place in `.opencode/agents/<name>.md` or `~/.config/opencode/agents/<name>.md`:
 ---
 description: Reviews code for best practices and potential issues
 mode: subagent
-model: anthropic/claude-sonnet-4-20250514
+model: anthropic/claude-sonnet-4-5
 tools:
   write: false
   edit: false
@@ -44,7 +44,7 @@ Define in `opencode.json`:
     "code-reviewer": {
       "description": "Reviews code for best practices and potential issues",
       "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-20250514",
+      "model": "anthropic/claude-sonnet-4-5",
       "prompt": "You are a code reviewer. Focus on security, performance, and maintainability.",
       "tools": {
         "write": false,
@@ -137,7 +137,7 @@ User-facing agents selectable in the TUI. Use for main workflows.
   "agent": {
     "build": {
       "mode": "primary",
-      "model": "anthropic/claude-sonnet-4-20250514"
+      "model": "anthropic/claude-sonnet-4-5"
     }
   }
 }
