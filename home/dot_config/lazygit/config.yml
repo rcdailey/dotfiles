@@ -3,6 +3,9 @@ promptToReturnFromSubprocess: false
 disableStartupPopups: true
 notARepository: skip
 
+refresher:
+  refreshInterval: 2
+
 git:
   pagers:
   - pager: delta --dark --paging=never
