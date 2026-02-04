@@ -13,6 +13,7 @@ gui:
 
 keybinding:
   universal:
+    refresh: "<f5>"
     prevPage: <pgup>
     nextPage: <pgdown>
     scrollLeft: "<"
