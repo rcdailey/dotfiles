@@ -24,7 +24,10 @@ Generate conventional commits. Execute with minimal output - only show final com
 
 ## Workflows
 
-Parse input and execute corresponding workflow:
+Parse input and execute corresponding workflow.
+
+When user specifies non-conventional format (e.g., DCO sign-off, Chris Beams style), check `git log
+--oneline -5` FIRST to verify repo conventions before attempting the commit.
 
 ### Staged (default, no arguments)
 
@@ -73,11 +76,24 @@ Break changes into logical commits (2-5 max).
 Commitlint failure means the commit was rejected (not created). Do NOT reset previous commits.
 Simply fix the message (usually line length) and re-run `git commit` with the same staged files.
 
+## Tool Constraints
+
+Bash access is restricted to git commands and basic file reads:
+
+- NO pipes (`|`), redirects, or command chaining with external tools
+- NO `rg`, `grep`, `find`, `awk`, `sed`, `head`, `tail`
+- YES: `git log`, `git show`, `git diff`, `git status`, `git add`, `git commit`, `git reset`
+- YES: `cat <filepath>` for reading specific files
+
+When filtering output, use git's built-in formatting (e.g., `git log --format=...`, `git diff
+--stat`) rather than piping to external tools.
+
 ## Constraints
 
 - NEVER push; delegate to calling agent if needed
 - NEVER use `--amend` unless user explicitly requests it
-- NEVER use `--no-verify` or `--no-gpg-sign`; hooks exist for a reason
+- NEVER use `--no-verify` or `--no-gpg-sign` unless global hooks conflict with upstream repo
+  conventions (last resort; see "External Hook Conflicts")
 - NEVER use `--allow-empty` unless user explicitly requests it
 - NEVER ask clarifying questions; decide from the diff
 - NEVER manually fix code or bypass hooks
@@ -138,6 +154,16 @@ If project type unclear, commit with best judgment based on diff content.
 - Commitlint rejection: Read error, fix violation, retry
 - Pre-commit auto-fixes: `git update-index --again`, retry commit
 - Validation error: Stop and report (never bypass)
+
+### External Hook Conflicts
+
+When commitlint rejects a message but the repo doesn't use conventional commits:
+
+1. Check `git log --oneline -5` to see actual commit format in use
+2. Look for `.commitlintrc*`, `commitlint.config.*`, `.husky/` in repo
+3. If absent, the hook is likely global (from dotfiles) not repo-owned
+4. When global hooks conflict with upstream conventions, `--no-verify` is acceptable as last resort
+5. Document reasoning when bypassing: "commitlint is external; repo uses [format] per git history"
 
 ## Error Handling
 
