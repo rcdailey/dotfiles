@@ -7,6 +7,7 @@ refresher:
   refreshInterval: 2
 
 git:
+  autoRefresh: true
   pagers:
   - pager: delta --dark --paging=never
 
