@@ -145,7 +145,29 @@ Skip when ALL apply:
 - Multiple `-m` flags automatically add blank lines between them: `git commit -m "subject" -m "body"`
 - For multi-paragraph bodies: `git commit -m "subject" -m "paragraph one" -m "paragraph two"`
 - DO NOT use `-m ""` to create blank lines (confuses some commitlint parsers)
-- DO NOT use `-m` once per line, this creates double-spaced commit messages.
+- DO NOT use `-m` once per line; this creates double-spaced commit messages
+
+**Correct:**
+
+```sh
+git commit -m "ci: add terraform deployment workflow for dev environment" -m "Phase 3: adds automated Terraform deployment to dev.
+
+- Add _deploy.yml workflow with JFrog OIDC and Okta auth
+- Update main.tf to use base64decode for OKTA_PRIVATE_KEY
+- Add OKTA_PRIVATE_KEY variable definition to vars.tf"
+```
+
+**Wrong (creates double-spaced output):**
+
+```sh
+git commit -m "ci: add terraform deployment workflow" \
+  -m "Phase 3: adds automated Terraform deployment." \
+  -m "- Add _deploy.yml workflow" \
+  -m "- Update main.tf for base64decode"
+```
+
+Each `-m` becomes a separate paragraph. Use one `-m` for subject and one for the entire body with
+embedded newlines.
 
 ## Conventional Commit Type Selection
 
