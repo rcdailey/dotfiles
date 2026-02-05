@@ -1,0 +1,7 @@
+# git-hunks - Git staging workflow helper
+# https://github.com/rockorager/git-hunks
+["git-hunks"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/rockorager/git-hunks/main/git-hunks"
+    executable = true
+    refreshPeriod = "168h"

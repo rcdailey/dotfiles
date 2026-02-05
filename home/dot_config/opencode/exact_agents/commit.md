@@ -14,6 +14,7 @@ permission:
     "echo *": allow
     "cat *": allow
     "git add*": allow
+    "git hunks*": allow
     "git commit*": allow
     "git diff*": allow
     "git reset*": allow
@@ -63,8 +64,7 @@ Break changes into logical commits (2-5 max).
 2. `git status --short` to verify ONLY intended files are staged (MANDATORY)
 3. `git commit` with properly wrapped message
 4. If commitlint fails: fix message and retry (do NOT reset)
-5. Use `git add -p` for splitting changes within files; if exited early, `git reset` to clear and
-   restart
+5. Use `git hunks` for splitting changes within files (see workflow below)
 
 **Critical rules:**
 
@@ -79,13 +79,37 @@ Break changes into logical commits (2-5 max).
 Commitlint failure means the commit was rejected (not created). Do NOT reset previous commits.
 Simply fix the message (usually line length) and re-run `git commit` with the same staged files.
 
+### Selective Hunk Staging with git hunks
+
+Use `git hunks` when a file contains changes belonging to different commits.
+
+```sh
+git hunks list                    # Show unstaged hunks with stable IDs
+git hunks list --staged           # Show staged hunks
+git hunks add '<id>' ['<id>'...]  # Stage specific hunks by ID
+```
+
+Hunk ID format: `file:@-old,len+new,len` (derived from diff `@@` headers). IDs remain stable as
+other hunks are staged, unlike line-based approaches.
+
+**Workflow:**
+
+1. `git hunks list` to see all unstaged hunks
+2. Identify which hunks belong to the current commit
+3. `git hunks add 'file:@-10,5+10,7'` to stage specific hunks
+4. `git status --short` to verify staging
+5. `git commit`
+
+Quote hunk IDs in shell to prevent glob expansion of `@` and `+` characters.
+
 ## Tool Constraints
 
 Bash access is restricted to git commands and basic file reads:
 
 - NO pipes (`|`), redirects, or command chaining with external tools
 - NO `rg`, `grep`, `find`, `awk`, `sed`, `head`, `tail`
-- YES: `git log`, `git show`, `git diff`, `git status`, `git add`, `git commit`, `git reset`
+- YES: `git log`, `git show`, `git diff`, `git status`, `git add`, `git commit`, `git reset`,
+  `git hunks`
 - YES: `cat <filepath>` for reading specific files
 
 When filtering output, use git's built-in formatting (e.g., `git log --format=...`, `git diff
@@ -182,6 +206,6 @@ When commitlint rejects a message but the repo doesn't use conventional commits:
 
 - Ambiguous scope: Commit the smaller, safer subset; note uncertainty in message body
 - Unclear type: Default to `chore` for config/tooling, `fix` for behavior changes
-- Mixed concerns in one file: Use `git add -p` to split; if too tangled, commit together with
+- Mixed concerns in one file: Use `git hunks` to split; if too tangled, commit together with
   explanatory body
 - Report blockers to calling agent rather than guessing
