@@ -118,10 +118,24 @@ Quote hunk IDs in shell to prevent glob expansion of `@` and `+` characters.
 
 ### Subject Line
 
-- 72 char HARD LIMIT (enforced by commitlint)
-- Imperative mood, lowercase type, no trailing period
+- 50 char soft limit, 72 char hard limit (the 50/72 rule)
+- Imperative mood, lowercase type, no trailing period. Test: "If applied, this commit will *your
+  subject line here*"
 - Describe what the change accomplishes, not what you did
 - Do NOT: use past tense, restate the diff, write generic messages ("fix bug")
+
+**Good subjects:**
+
+- `fix(auth): prevent token refresh race condition`
+- `feat(api): add pagination to user list`
+- `refactor: extract validation into shared module`
+
+**Bad subjects:**
+
+- `fix bug` (too vague)
+- `updated the user service to fix the login issue` (past tense, too long, no type)
+- `feat(auth): add JWT token refresh with automatic retry logic to handle expired sessions` (exceeds
+  72 chars)
 
 ### When to Include Body
 
@@ -138,11 +152,19 @@ Skip when ALL apply:
 - Subject fully captures intent
 - Diff is self-explanatory
 
+### Body Content
+
+- Explain the "why" and "what", not the "how" (the diff shows how)
+- Provide context future maintainers will need to understand the change
+- Use bullet points for multiple related changes
+- Reference issue numbers when applicable (e.g., `Fixes #123`, `Closes #456`)
+
 ### Body Format
 
 - Hard-wrap at 72 chars (break at last word boundary before exceeding)
 - Bullet points for multiple points
-- Multiple `-m` flags automatically add blank lines between them: `git commit -m "subject" -m "body"`
+- Multiple `-m` flags automatically add blank lines between them: `git commit -m "subject" -m
+  "body"`
 - For multi-paragraph bodies: `git commit -m "subject" -m "paragraph one" -m "paragraph two"`
 - DO NOT use `-m ""` to create blank lines (confuses some commitlint parsers)
 - DO NOT use `-m` once per line; this creates double-spaced commit messages
@@ -178,6 +200,11 @@ Utilize project context which should contain classification details:
 - CI/CD pipelines -> ci
 - Documentation -> docs
 - Tests only -> test
+- Performance improvements (algorithmic, caching, query optimization) -> perf
+
+**refactor vs style:** `refactor` changes code structure or logic without altering behavior (extract
+function, rename variable, simplify conditional). `style` is purely cosmetic with no semantic change
+(whitespace, formatting, missing semicolons).
 
 If project type unclear, commit with best judgment based on diff content.
 
@@ -196,8 +223,23 @@ When commitlint rejects a message but the repo doesn't use conventional commits:
 4. When global hooks conflict with upstream conventions, `--no-verify` is acceptable as last resort
 5. Document reasoning when bypassing: "commitlint is external; repo uses [format] per git history"
 
+**When `--no-verify` is acceptable:**
+
+- Global hooks (not repo-owned) conflict with the repo's established conventions
+- Hook is broken or misconfigured and blocking legitimate commits
+- NEVER to skip failing linters or tests that the repo intentionally configured
+
 ## Error Handling
 
 - No changes: Report and exit
 - Detached HEAD: Warn, suggest branch
 - Merge conflicts: Stop immediately
+
+### Recovery During Multi-Commit Workflows
+
+- Commit rejected mid-sequence: Fix the issue and retry the same commit; previous successful commits
+  remain intact. NEVER reset earlier commits to start over.
+- Pre-commit hook auto-fixes files: Run `git update-index --again` to restage the auto-fixed files,
+  then retry the commit.
+- Hook failure with unclear cause: Report the full error output to the calling agent rather than
+  guessing at a fix.
