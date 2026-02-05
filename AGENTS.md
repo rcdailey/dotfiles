@@ -50,6 +50,11 @@ directory matches exactly (removes unmanaged files)
 
 **Platform exclusion:** Prefer `.chezmoiignore` patterns over template conditionals.
 
+**File removal:** When removing files from directories not prefixed with `exact_`, add patterns to
+`.chezmoiremove` in the same source directory as the removed files. Paths are target names relative
+to that directory (e.g., `config.d/file.ssh` not `private_config.d/private_file.ssh`). This keeps
+removal rules discoverable and ensures chezmoi removes the target files on apply.
+
 ## Shell Init Order (Critical)
 
 Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
