@@ -103,7 +103,9 @@ When filtering output, use git's built-in formatting (e.g., `git log --format=..
 
 ## Conventional Commits
 
-Format: `type(scope): Description`
+Format: `type(scope): description`
+
+Breaking changes: `type(scope)!: description` (the `!` goes AFTER the scope, before the colon)
 
 Types: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert
 
@@ -135,7 +137,9 @@ Skip when ALL apply:
 - Explain WHY: motivation, tradeoffs, alternatives considered
 - Hard-wrap at 72 chars (break at last word boundary before exceeding)
 - Bullet points for multiple points
-- Two `-m` flags: `git commit -m "subject" -m $'line one\nline two'`
+- Multiple `-m` flags automatically add blank lines between them: `git commit -m "subject" -m "body"`
+- For multi-paragraph bodies: `git commit -m "subject" -m "paragraph one" -m "paragraph two"`
+- Do NOT use `-m ""` to create blank lines (confuses some commitlint parsers)
 
 ## Type Selection
 
