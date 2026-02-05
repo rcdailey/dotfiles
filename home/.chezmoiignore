@@ -2,10 +2,7 @@
 .gitkeep
 .gitconfig.local
 
-# Exclude files when env is not set to personal
-{{ if ne .env "personal" }}
-.ssh/config.d/personal.ssh
-{{ end }}
+
 
 # Run the appropriate scripts based on OS
 {{ if eq .chezmoi.os "windows" }}

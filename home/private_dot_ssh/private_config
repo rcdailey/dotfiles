@@ -1,4 +1,3 @@
-
 # Send keep-alive messages every 2 minutes to prevent connection timeouts
 # Helps maintain long-running SSH sessions and prevents firewall disconnections
 ServerAliveInterval 120
@@ -9,16 +8,6 @@ ServerAliveInterval 120
 # Automatically request a pseudo-terminal for interactive sessions
 # Ensures proper terminal handling for commands that need TTY access
 RequestTTY auto
-
-# Automatically add SSH keys to the agent when they're used
-# Eliminates the need to manually run ssh-add after each reboot
-AddKeysToAgent yes
-
-# Store SSH key passphrases in the system keychain (macOS/Windows)
-# Provides secure, persistent storage without repeatedly entering passphrases
-# IgnoreUnknown prevents errors on systems that don't support this feature
-IgnoreUnknown UseKeychain
-UseKeychain yes
 
 # Override TERM to ensure compatibility with remote systems
 # Prevents errors when local terminal (kitty, tmux-256color) lacks remote terminfo

@@ -3,14 +3,11 @@ Host router 192.168.1.1 unifi
     User root
     # Needed because :pera:
     # https://community.ui.com/questions/Fix-for-ssh-authentication-failure-no-matching-host-key-type-found-Their-offer-ssh-rsa/81151760-ce61-428b-9de5-9cbf434be5db#answer/4f41e316-f228-469e-a9dd-553f62f527b2
-    HostKeyAlgorithms +ssh-rsa
-    PubkeyAcceptedKeyTypes +ssh-rsa
-    IdentityFile ~/.ssh/keys/router_udmp
+    # HostKeyAlgorithms +ssh-rsa
+    # PubkeyAcceptedKeyTypes +ssh-rsa
 
 Host mare 192.168.1.52
     User robert
-    IdentityFile ~/.ssh/keys/mare
 
 Host nezuko 192.168.1.58
     User root
-    IdentityFile ~/.ssh/keys/nezuko
