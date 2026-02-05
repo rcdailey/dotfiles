@@ -10,6 +10,9 @@ typeset -U path fpath cdpath manpath
 # GPG/pinentry TTY (use $TTY variable, not $(tty) command which fails during P10k instant prompt)
 export GPG_TTY=$TTY
 
+# rbw SSH Agent (cross-platform Bitwarden CLI)
+export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/rbw/ssh-agent-socket"
+
 # Tool-specific paging (interactive shell context)
 export LESS="-RSic~ -x2"
 export DELTA_PAGER="less"

@@ -6,6 +6,9 @@ export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_STATE_HOME="$HOME/.local/state"
+{{- if eq .chezmoi.os "darwin" }}
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$TMPDIR}"
+{{- end }}
 
 # Homebrew prefix path (platform-specific)
 {{- if eq .chezmoi.os "darwin" }}
