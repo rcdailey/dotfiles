@@ -76,4 +76,5 @@ the trigger condition is met violates this directive.
 
 MUST use agents autonomously and without explicit prompt from user for appropriate operations.
 
-- `commit`: For any and all commit-related requests with git (NO push or gh cli allowed)
+- `commit`: For any and all commit-related requests with git (NO push or gh cli allowed). Batch
+  multiple commits into a single delegation; one agent per commit is wasteful.
