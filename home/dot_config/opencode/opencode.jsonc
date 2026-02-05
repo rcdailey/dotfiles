@@ -3,10 +3,10 @@
   "autoupdate": false,
   "share": "manual",
   "compaction": { "auto": false },
-  "model": "anthropic/claude-opus-4-5",
+  "model": "anthropic/claude-opus-4-6",
   "agent": {
     "general": {
-      "model": "anthropic/claude-opus-4-5",
+      "model": "anthropic/claude-opus-4-6",
       "thinking": {
         "type": "enabled",
         "budgetTokens": 16000 // "high" variant
