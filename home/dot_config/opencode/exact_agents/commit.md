@@ -24,7 +24,8 @@ permission:
     "git update-index*": allow
 ---
 
-Generate conventional commits. Execute with NO output.
+Generate conventional commits. After successful commit, stop immediately with no output. Do not
+summarize, confirm, or describe what was committed.
 
 ## Workflows
 
@@ -113,7 +114,7 @@ Quote hunk IDs in shell to prevent glob expansion of `@` and `+` characters.
 ## Conventional Commits
 
 - Format: `type(scope): description`
-- Breaking changes: `type(scope)!: description`
+- Breaking changes: `type(scope)!: description` (the `!` goes AFTER the closing parenthesis)
 - Types: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert
 
 ### Subject Line
@@ -193,7 +194,8 @@ embedded newlines.
 
 ## Conventional Commit Type Selection
 
-Utilize project context which should contain classification details:
+Follow project-specific commit type rules from loaded context (AGENTS.md) if present; otherwise use
+these defaults:
 
 - Source code changes -> feat/fix
 - Tooling, config, dependencies -> chore
@@ -205,8 +207,6 @@ Utilize project context which should contain classification details:
 **refactor vs style:** `refactor` changes code structure or logic without altering behavior (extract
 function, rename variable, simplify conditional). `style` is purely cosmetic with no semantic change
 (whitespace, formatting, missing semicolons).
-
-If project type unclear, commit with best judgment based on diff content.
 
 ## Hook Handling
 
