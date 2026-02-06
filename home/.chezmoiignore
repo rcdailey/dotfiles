@@ -15,6 +15,12 @@
 {{ if ne .chezmoi.os "darwin" }}
 .config/iterm2/**
 .config/karabiner/**
+Library/**
+{{ end }}
+
+# rbw reads from ~/Library/Application Support/ on macOS, not XDG
+{{ if eq .chezmoi.os "darwin" }}
+.config/rbw/**
 {{ end }}
 
 # Use the appropriate powershell profile based on OS

@@ -4,10 +4,16 @@
 
 COMMIT_MSG_FILE="$1"
 
-# Run commitlint (cosmiconfig global strategy resolves repo-local config
-# first, falling back to ~/.config/commitlint/config.mjs)
+# Run commitlint with explicit config path. Cosmiconfig's global strategy
+# uses env-paths which resolves to ~/Library/Preferences/ on macOS instead
+# of ~/.config/, so auto-discovery fails to find the XDG config.
 if command -v commitlint >/dev/null 2>&1; then
-    commitlint --edit "$COMMIT_MSG_FILE"
+    COMMITLINT_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/commitlint/config.mjs"
+    if [ -f "$COMMITLINT_CONFIG" ]; then
+        commitlint --config "$COMMITLINT_CONFIG" --edit "$COMMIT_MSG_FILE"
+    else
+        commitlint --edit "$COMMIT_MSG_FILE"
+    fi
     RESULT=$?
     if [ $RESULT -ne 0 ]; then
         exit $RESULT

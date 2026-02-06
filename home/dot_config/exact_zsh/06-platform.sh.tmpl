@@ -5,6 +5,9 @@
 # macOS-specific configurations
 ####################################################################
 
+# rbw SSH Agent (directories crate uses DARWIN_USER_TEMP_DIR, not XDG)
+export SSH_AUTH_SOCK="$(getconf DARWIN_USER_TEMP_DIR)rbw-$(id -u)/ssh-agent-socket"
+
 # Enable color support
 export CLICOLOR=1
 export LSCOLORS=ExFxBxDxCxegedabagacad
@@ -20,6 +23,9 @@ export DOCKER_DATA_PATH="/Volumes/docker"
 ####################################################################
 # Linux-specific configurations
 ####################################################################
+
+# rbw SSH Agent
+export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/rbw/ssh-agent-socket"
 
 # Enable color support for ls
 if [ -x /usr/bin/dircolors ]; then
