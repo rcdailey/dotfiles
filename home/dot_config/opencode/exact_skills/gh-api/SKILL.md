@@ -1,6 +1,6 @@
 ---
 name: gh-api
-description: GitHub API calls for discussions and draft PRs (non-standard gh CLI patterns)
+description: Use when using gh api for discussions or draft PRs
 ---
 
 ## Draft Pull Requests

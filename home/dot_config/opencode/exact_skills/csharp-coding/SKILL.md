@@ -1,6 +1,6 @@
 ---
 name: csharp-coding
-description: C# 14 and .NET 10 coding patterns, idioms, and conventions
+description: Use when writing or modifying C# code
 ---
 
 # C# Coding Skill

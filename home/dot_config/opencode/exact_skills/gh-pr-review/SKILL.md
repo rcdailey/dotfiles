@@ -1,6 +1,6 @@
 ---
 name: gh-pr-review
-description: GitHub PR review operations (inline comments, pending reviews, thread resolution)
+description: Use when reviewing pull requests on GitHub
 ---
 
 ## Critical Rules

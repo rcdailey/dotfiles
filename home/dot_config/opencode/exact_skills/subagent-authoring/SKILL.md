@@ -1,6 +1,6 @@
 ---
 name: subagent-authoring
-description: Best practices for creating and configuring OpenCode custom agents
+description: Use when creating or modifying custom agent definitions
 ---
 
 # Subagent Authoring

@@ -1,6 +1,6 @@
 ---
 name: agents-authoring
-description: Best practices for writing AGENTS.md files based on industry research
+description: Use when creating or updating AGENTS.md files
 ---
 
 # AGENTS.md Authoring

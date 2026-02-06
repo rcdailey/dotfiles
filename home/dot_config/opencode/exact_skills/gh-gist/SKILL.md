@@ -1,6 +1,6 @@
 ---
 name: gh-gist
-description: Local-first workflow for iterative document building with GitHub gists
+description: Use when creating or updating GitHub gists for document sharing
 ---
 
 ## What I do
