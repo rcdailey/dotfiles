@@ -66,12 +66,12 @@ OpenCode searches these paths (first match wins):
 **Project-local** (walks up to git worktree root):
 
 - `.opencode/skills/<name>/SKILL.md`
-- `.claude/skills/<name>/SKILL.md`
+- `.agents/skills/<name>/SKILL.md`
 
 **Global**:
 
 - `~/.config/opencode/skills/<name>/SKILL.md`
-- `~/.claude/skills/<name>/SKILL.md`
+- `~/.agents/skills/<name>/SKILL.md`
 
 The skill name MUST match the directory name.
 
@@ -231,6 +231,8 @@ When: Deterministic operations better handled by code than token generation.
 - [ ] Frontmatter has required `name` and `description` fields
 - [ ] Name matches directory name exactly
 - [ ] Name follows naming rules (lowercase, hyphens only)
+- [ ] Name is unique across all discovery locations
+- [ ] `SKILL.md` filename is uppercase
 - [ ] Description starts with "Use when" and states triggering conditions only
 - [ ] Description does NOT summarize the skill's workflow or content
 - [ ] Body starts with clear purpose statement

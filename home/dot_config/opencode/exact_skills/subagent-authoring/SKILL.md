@@ -59,13 +59,13 @@ Define in `opencode.json`:
 
 ### Core Fields
 
-| Field         | Type   | Description                                      |
-|---------------|--------|--------------------------------------------------|
-| `name`        | string | Agent identifier (defaults to filename)          |
-| `description` | string | Brief description shown in UI                    |
-| `mode`        | string | `primary`, `subagent`, or `all`                  |
-| `model`       | string | Provider/model identifier                        |
-| `prompt`      | string | System prompt (or `{file:./path.txt}`)           |
+| Field         | Type   | Description                                       |
+|---------------|--------|---------------------------------------------------|
+| `name`        | string | Agent identifier (defaults to filename)           |
+| `description` | string | Brief description shown in UI (required)          |
+| `mode`        | string | `primary`, `subagent`, or `all` (defaults to all) |
+| `model`       | string | Provider/model identifier                         |
+| `prompt`      | string | System prompt (or `{file:./path.txt}`)            |
 
 ### Tool Permissions
 
@@ -74,31 +74,46 @@ tools:
   write: true
   edit: true
   bash: true
+  skill: true
 ```
 
 Set to `false` to disable specific capabilities. Read-only agents should disable write, edit, and
-bash.
+bash. Use wildcards for MCP tools (e.g., `mymcp_*: false`).
 
-### Skill Permissions
+### Permissions
 
-Control which skills the agent can load:
+Control tool-level and skill-level permissions per agent. Values: `allow`, `deny`, `ask`.
 
 ```yaml
 permission:
+  edit: deny
+  bash:
+    "*": ask
+    "git diff": allow
+    "git log*": allow
+  webfetch: deny
   skill:
-    "*": deny
-    specific-skill: allow
+    "*": "allow"
+    "internal-*": "deny"
+  task:
+    "*": "deny"
+    "my-subagent-*": "allow"
 ```
+
+Bash and task permissions support glob patterns. Last matching rule wins.
 
 ### Behavior Options
 
-| Field      | Type    | Description                              |
-|------------|---------|------------------------------------------|
-| `hidden`   | boolean | Hide from @ autocomplete menu            |
-| `maxSteps` | integer | Maximum tool call iterations             |
-| `steps`    | array   | Predefined workflow steps                |
+| Field         | Type    | Description                                        |
+|---------------|---------|----------------------------------------------------|
+| `hidden`      | boolean | Hide from @ autocomplete menu (subagent only)      |
+| `steps`       | integer | Max agentic iterations before forced text response |
+| `disable`     | boolean | Set `true` to disable the agent                    |
+| `temperature` | number  | LLM randomness (0.0-1.0)                           |
+| `top_p`       | number  | Response diversity (0.0-1.0)                       |
+| `color`       | string  | Hex color or theme name for UI appearance          |
 
-### Model-Specific Options
+### Provider Passthrough Options
 
 Unknown frontmatter fields pass through as model options. Use for provider-specific features.
 
@@ -108,21 +123,22 @@ Unknown frontmatter fields pass through as model options. Use for provider-speci
 ---
 description: Agent with extended thinking
 mode: subagent
-model: anthropic/claude-opus-4-5
+model: anthropic/claude-opus-4-6
 thinking:
   type: enabled
   budgetTokens: 16000
 ---
 ```
 
-**OpenAI reasoning effort:**
+**OpenAI reasoning:**
 
 ```yaml
 ---
 description: Agent with reasoning
 mode: subagent
-model: openai/o3
+model: openai/gpt-5
 reasoningEffort: high
+textVerbosity: low
 ---
 ```
 

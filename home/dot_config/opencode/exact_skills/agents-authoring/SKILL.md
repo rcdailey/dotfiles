@@ -130,10 +130,29 @@ Define "ready" explicitly.
 - brief summary of what changed and why
 ````
 
+## Alternative: Instructions in opencode.json
+
+Instead of (or alongside) AGENTS.md, rules can be loaded via the `instructions` field in
+`opencode.json`. Supports globs and remote URLs.
+
+```json
+{
+  "instructions": [
+    "CONTRIBUTING.md",
+    "docs/guidelines.md",
+    "packages/*/AGENTS.md",
+    "https://raw.githubusercontent.com/my-org/shared-rules/main/style.md"
+  ]
+}
+```
+
+All instruction files are combined with AGENTS.md content.
+
 ## Nested AGENTS.md for Monorepos
 
-Place AGENTS.md in subdirectories for package-specific rules. Agent reads closest file to edited
-code. Root file provides defaults; nested files override.
+Place AGENTS.md in subdirectories for package-specific rules. OpenCode traverses up from the current
+working directory to the git worktree root, loading any AGENTS.md files it finds. Closer files take
+precedence over those further up the tree.
 
 ```txt
 /root
@@ -143,6 +162,8 @@ code. Root file provides defaults; nested files override.
   /packages/new-app
     AGENTS.md         # React 18 rules for this package
 ```
+
+Global rules in `~/.config/opencode/AGENTS.md` apply across all sessions.
 
 ## Anthropic Context Engineering Principles
 
