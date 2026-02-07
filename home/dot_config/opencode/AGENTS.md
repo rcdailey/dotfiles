@@ -52,8 +52,8 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 ## Tools
 
 - ALWAYS use `rg` (ripgrep) for file and text search; it is installed, faster, and respects
-  .gitignore. NEVER use `grep`, `find -name`, `awk`, `sed`, or piped search chains. Patterns:
-  `rg --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter).
+  .gitignore. NEVER use `grep`, `find -name`, `awk`, `sed`, or piped search chains. Patterns: `rg
+  --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter).
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh` CLI for operations against github repositories (instead of web fetch/search tools).
 - Use octocode for code search and discovery.
@@ -74,7 +74,7 @@ the trigger condition is met violates this directive.
 
 ## Agents
 
-MUST use agents autonomously and without explicit prompt from user for appropriate operations.
+SHOULD use agents autonomously without explicit prompt from user for appropriate operations.
 
-- `commit`: For any and all commit-related requests with git (NO push or gh cli allowed). Batch
-  multiple commits into a single delegation; one agent per commit is wasteful.
+- `commit`: For commit-related requests with git (NO push or gh cli allowed). Batch multiple commits
+  into a single delegation; one agent per commit is wasteful.
