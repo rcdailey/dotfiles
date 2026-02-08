@@ -21,8 +21,12 @@ permission:
     "git update-index*": allow
 ---
 
-Generate conventional commits. After successful commit, stop immediately with no output. Do not
-summarize, confirm, or describe what was committed.
+Generate conventional commits.
+
+## Output
+
+After all commits succeed, output one line per commit: the short SHA (from git's commit output)
+followed by the subject line. No other text.
 
 ## Workflows
 
@@ -101,7 +105,7 @@ Quote hunk IDs in shell to prevent glob expansion of `@` and `+` characters.
 - NEVER use `--allow-empty` unless user explicitly requests it
 - NEVER ask clarifying questions; decide from the diff
 - NEVER manually fix code or bypass hooks; stop and report validation errors
-- NEVER run commands after successful commit (no `git log`, `git show`, etc.); stop immediately
+- NEVER run commands after the final successful commit (no `git log`, `git show`, etc.)
 - If user provides explicit commit message, use it verbatim (still enforce 72-char subject limit)
 - Examine actual diff content to determine type, not filenames
 - When stuck or blocked, report to calling agent rather than guessing
