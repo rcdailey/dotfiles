@@ -10,6 +10,10 @@ permission:
     "cd *": allow
     "echo *": allow
     "cat *": allow
+    "head *": allow
+    "tail *": allow
+    "wc *": allow
+    "rg *": allow
     "git add*": allow
     "git hunks*": allow
     "git commit*": allow
