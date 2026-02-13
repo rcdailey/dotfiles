@@ -51,9 +51,10 @@ Migration: Use new syntax for new code; opportunistically refactor existing code
 
 ### JSON Serialization
 
-- System.Text.Json: Use `JsonSerializerOptions` for convention/style settings applied uniformly
-- Reserve attributes (`[JsonPropertyName]`, etc.) for special cases only
+- Configure naming policy, converters, and style via `JsonSerializerOptions` (or source-generated
+  `JsonSerializerContext`) so conventions apply uniformly
 - Check for existing options configuration before creating new instances
+- Reserve per-property attributes (`[JsonPropertyName]`, etc.) for exceptions to the convention
 
 ### UsedImplicitly Attribute
 
@@ -146,7 +147,7 @@ NEVER:
 - Use dotnet CLI for: adding/removing packages, adding projects to solution
 - Central package management via `Directory.Packages.props` - specify versions there, not in csproj
 - Avoid `--no-build` or `--no-restore` flags; `dotnet test` handles restore + build automatically
-- Minimal verbosity for build/test: `dotnet build -v m --no-incremental`, `dotnet test -v m`
+- Quiet verbosity for build/test: `dotnet build -v q`, `dotnet test -v q`
 - For verbose debugging, pipe to file: `dotnet test -v d 2>&1 > /tmp/test.log` then search with `rg`
 
 ### Project Structure
@@ -154,3 +155,5 @@ NEVER:
 - SLNX format preferred over traditional SLN
 - One Autofac/DI module per library to keep registration modular
 - Dotnet tools configured in `.config/dotnet-tools.json`
+- Keep source files flat in their project directory; create subdirectories only when file count
+  makes navigation difficult
