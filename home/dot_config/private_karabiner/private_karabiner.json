@@ -19,13 +19,21 @@
                                 "from": {
                                     "key_code": "return_or_enter",
                                     "modifiers": {
-                                        "mandatory": ["shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
-                                    { "key_code": "backslash" },
-                                    { "key_code": "return_or_enter" }
+                                    {
+                                        "key_code": "backslash"
+                                    },
+                                    {
+                                        "key_code": "return_or_enter"
+                                    }
                                 ],
                                 "type": "basic"
                             }
@@ -37,14 +45,22 @@
                             {
                                 "from": {
                                     "modifiers": {
-                                        "mandatory": ["left_control"],
-                                        "optional": ["caps_lock"]
+                                        "mandatory": [
+                                            "left_control"
+                                        ],
+                                        "optional": [
+                                            "caps_lock"
+                                        ]
                                     },
                                     "pointing_button": "button1"
                                 },
                                 "to": [
-                                    { "pointing_button": "button1" },
-                                    { "key_code": "left_control" }
+                                    {
+                                        "pointing_button": "button1"
+                                    },
+                                    {
+                                        "key_code": "left_control"
+                                    }
                                 ],
                                 "type": "basic"
                             }
@@ -64,6 +80,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -78,21 +95,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "insert",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "c",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -113,6 +138,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -127,21 +153,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "insert",
                                     "modifiers": {
-                                        "mandatory": ["shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "v",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -162,6 +196,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -176,21 +211,31 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "home",
                                     "modifiers": {
-                                        "mandatory": ["control", "shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control",
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "up_arrow",
-                                        "modifiers": ["command", "shift"]
+                                        "modifiers": [
+                                            "command",
+                                            "shift"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -211,6 +256,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -225,21 +271,30 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "home",
                                     "modifiers": {
-                                        "mandatory": ["shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "left_arrow",
-                                        "modifiers": ["command", "shift"]
+                                        "modifiers": [
+                                            "command",
+                                            "shift"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -260,6 +315,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -274,21 +330,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "home",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "up_arrow",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -309,6 +373,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -323,18 +388,26 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "home",
-                                    "modifiers": { "optional": ["any"] }
+                                    "modifiers": {
+                                        "optional": [
+                                            "any"
+                                        ]
+                                    }
                                 },
                                 "to": [
                                     {
                                         "key_code": "left_arrow",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -355,6 +428,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -369,21 +443,31 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "end",
                                     "modifiers": {
-                                        "mandatory": ["control", "shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control",
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "down_arrow",
-                                        "modifiers": ["command", "shift"]
+                                        "modifiers": [
+                                            "command",
+                                            "shift"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -404,6 +488,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -418,21 +503,30 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "end",
                                     "modifiers": {
-                                        "mandatory": ["shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "right_arrow",
-                                        "modifiers": ["command", "shift"]
+                                        "modifiers": [
+                                            "command",
+                                            "shift"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -453,6 +547,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -467,21 +562,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "end",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "down_arrow",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -502,6 +605,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -516,18 +620,26 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "end",
-                                    "modifiers": { "optional": ["any"] }
+                                    "modifiers": {
+                                        "optional": [
+                                            "any"
+                                        ]
+                                    }
                                 },
                                 "to": [
                                     {
                                         "key_code": "right_arrow",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -548,6 +660,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -562,21 +675,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "left_arrow",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "left_arrow",
-                                        "modifiers": ["option"]
+                                        "modifiers": [
+                                            "option"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -597,6 +718,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -611,21 +733,31 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "left_arrow",
                                     "modifiers": {
-                                        "mandatory": ["control", "shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control",
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "left_arrow",
-                                        "modifiers": ["option", "shift"]
+                                        "modifiers": [
+                                            "option",
+                                            "shift"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -646,6 +778,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -660,21 +793,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "right_arrow",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "right_arrow",
-                                        "modifiers": ["option"]
+                                        "modifiers": [
+                                            "option"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -695,6 +836,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -709,21 +851,31 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "right_arrow",
                                     "modifiers": {
-                                        "mandatory": ["control", "shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control",
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "right_arrow",
-                                        "modifiers": ["option", "shift"]
+                                        "modifiers": [
+                                            "option",
+                                            "shift"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -744,6 +896,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -758,21 +911,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "delete_or_backspace",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "delete_or_backspace",
-                                        "modifiers": ["option"]
+                                        "modifiers": [
+                                            "option"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -793,6 +954,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -807,21 +969,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "delete_forward",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "delete_forward",
-                                        "modifiers": ["option"]
+                                        "modifiers": [
+                                            "option"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -842,6 +1012,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -856,21 +1027,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "return_or_enter",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "return_or_enter",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -891,6 +1070,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -905,21 +1085,31 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "return_or_enter",
                                     "modifiers": {
-                                        "mandatory": ["control", "shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control",
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "return_or_enter",
-                                        "modifiers": ["command", "shift"]
+                                        "modifiers": [
+                                            "command",
+                                            "shift"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -940,6 +1130,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -954,21 +1145,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "a",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "a",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -989,6 +1188,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1003,21 +1203,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "b",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "b",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1038,6 +1246,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1052,21 +1261,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "c",
                                     "modifiers": {
-                                        "mandatory": ["left_control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "left_control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "c",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1087,6 +1304,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1101,21 +1319,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "f",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "f",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1136,6 +1362,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1150,21 +1377,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "i",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "i",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1185,6 +1420,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1199,21 +1435,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "n",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "n",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1234,6 +1478,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1248,21 +1493,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "o",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "o",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1283,6 +1536,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1297,21 +1551,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "p",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "p",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1332,6 +1594,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1346,21 +1609,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "r",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "r",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1381,6 +1652,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1395,21 +1667,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "s",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "s",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1430,6 +1710,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1444,21 +1725,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "t",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "t",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1479,6 +1768,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1493,21 +1783,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "u",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "u",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1528,6 +1826,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1542,21 +1841,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "v",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "v",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1577,6 +1884,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1591,21 +1899,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "w",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "w",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1626,6 +1942,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1640,21 +1957,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "x",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "x",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1675,6 +2000,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1689,21 +2015,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "y",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "y",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1724,6 +2058,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1738,21 +2073,29 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "z",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "z",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1774,6 +2117,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1788,18 +2132,27 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "f1",
-                                    "modifiers": { "optional": ["any"] }
+                                    "modifiers": {
+                                        "optional": [
+                                            "any"
+                                        ]
+                                    }
                                 },
                                 "to": [
                                     {
                                         "key_code": "slash",
-                                        "modifiers": ["command", "shift"]
+                                        "modifiers": [
+                                            "command",
+                                            "shift"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1820,6 +2173,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1834,18 +2188,26 @@
                                             "^com\\.github\\.wez\\.wezterm$",
                                             "^com\\.mitchellh\\.ghostty$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "f3",
-                                    "modifiers": { "optional": ["any"] }
+                                    "modifiers": {
+                                        "optional": [
+                                            "any"
+                                        ]
+                                    }
                                 },
                                 "to": [
                                     {
                                         "key_code": "g",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1856,9 +2218,19 @@
                         "description": "Win [Open Spotlight] [Always]",
                         "manipulators": [
                             {
-                                "from": { "key_code": "left_command" },
-                                "to": [{ "key_code": "left_command" }],
-                                "to_if_alone": [{ "apple_vendor_keyboard_key_code": "spotlight" }],
+                                "from": {
+                                    "key_code": "left_command"
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "left_command"
+                                    }
+                                ],
+                                "to_if_alone": [
+                                    {
+                                        "apple_vendor_keyboard_key_code": "spotlight"
+                                    }
+                                ],
                                 "type": "basic"
                             }
                         ]
@@ -1870,14 +2242,22 @@
                                 "from": {
                                     "key_code": "l",
                                     "modifiers": {
-                                        "mandatory": ["control", "option"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control",
+                                            "option"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "q",
-                                        "modifiers": ["control", "command"]
+                                        "modifiers": [
+                                            "control",
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1891,14 +2271,22 @@
                                 "from": {
                                     "key_code": "l",
                                     "modifiers": {
-                                        "mandatory": ["control", "option"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control",
+                                            "option"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "power",
-                                        "modifiers": ["control", "shift"]
+                                        "modifiers": [
+                                            "control",
+                                            "shift"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1919,6 +2307,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1926,21 +2315,29 @@
                                             "^com\\.citrix\\.XenAppViewer$",
                                             "^com\\.microsoft\\.rdc\\.macos$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "insert",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "c",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -1961,6 +2358,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -1968,21 +2366,29 @@
                                             "^com\\.citrix\\.XenAppViewer$",
                                             "^com\\.microsoft\\.rdc\\.macos$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "insert",
                                     "modifiers": {
-                                        "mandatory": ["shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "v",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -2003,6 +2409,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -2010,21 +2417,29 @@
                                             "^com\\.citrix\\.XenAppViewer$",
                                             "^com\\.microsoft\\.rdc\\.macos$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "slash",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "slash",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -2045,6 +2460,7 @@
                                             "^org\\.gnu\\.Emacs$",
                                             "^com\\.jetbrains",
                                             "^com\\.microsoft\\.VSCode$",
+                                            "^dev\\.zed\\.Zed$",
                                             "^com\\.vscodium$",
                                             "^com\\.sublimetext\\.3$",
                                             "^net\\.kovidgoyal\\.kitty$",
@@ -2052,21 +2468,29 @@
                                             "^com\\.citrix\\.XenAppViewer$",
                                             "^com\\.microsoft\\.rdc\\.macos$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "f4",
                                     "modifiers": {
-                                        "mandatory": ["option"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "option"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "q",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -2094,14 +2518,21 @@
                                 "from": {
                                     "key_code": "c",
                                     "modifiers": {
-                                        "mandatory": ["control", "shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control",
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "c",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -2129,14 +2560,21 @@
                                 "from": {
                                     "key_code": "v",
                                     "modifiers": {
-                                        "mandatory": ["control", "shift"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control",
+                                            "shift"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "v",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -2163,14 +2601,20 @@
                                 "from": {
                                     "key_code": "h",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "y",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -2197,14 +2641,20 @@
                                 "from": {
                                     "key_code": "l",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "l",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -2227,14 +2677,20 @@
                                 "from": {
                                     "key_code": "f4",
                                     "modifiers": {
-                                        "mandatory": ["control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "w",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -2256,12 +2712,18 @@
                                 ],
                                 "from": {
                                     "key_code": "f5",
-                                    "modifiers": { "optional": ["any"] }
+                                    "modifiers": {
+                                        "optional": [
+                                            "any"
+                                        ]
+                                    }
                                 },
                                 "to": [
                                     {
                                         "key_code": "r",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -2279,23 +2741,32 @@
                                             "^com\\.parallels\\.desktop\\.console$",
                                             "^org\\.vmware\\.fusion$",
                                             "^com\\.citrix\\.XenAppViewer$",
-                                            "^com\\.microsoft\\.rdc\\.macos$"
+                                            "^com\\.microsoft\\.rdc\\.macos$",
+                                            "^dev\\.zed\\.Zed$"
                                         ],
-                                        "file_paths": ["Chrome Remote Desktop\\.app"],
+                                        "file_paths": [
+                                            "Chrome Remote Desktop\\.app"
+                                        ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
                                 "from": {
                                     "key_code": "tab",
                                     "modifiers": {
-                                        "mandatory": ["option"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "option"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
                                 "to": [
                                     {
                                         "key_code": "tab",
-                                        "modifiers": ["command"]
+                                        "modifiers": [
+                                            "command"
+                                        ]
                                     }
                                 ],
                                 "type": "basic"
@@ -2314,22 +2785,38 @@
                     }
                 },
                 {
-                    "identifiers": { "is_keyboard": true },
+                    "identifiers": {
+                        "is_keyboard": true
+                    },
                     "simple_modifications": [
                         {
-                            "from": { "apple_vendor_top_case_key_code": "keyboard_fn" },
-                            "to": [{ "key_code": "left_control" }]
+                            "from": {
+                                "apple_vendor_top_case_key_code": "keyboard_fn"
+                            },
+                            "to": [
+                                {
+                                    "key_code": "left_control"
+                                }
+                            ]
                         },
                         {
-                            "from": { "key_code": "left_control" },
-                            "to": [{ "apple_vendor_top_case_key_code": "keyboard_fn" }]
+                            "from": {
+                                "key_code": "left_control"
+                            },
+                            "to": [
+                                {
+                                    "apple_vendor_top_case_key_code": "keyboard_fn"
+                                }
+                            ]
                         }
                     ]
                 }
             ],
             "name": "Default profile",
             "selected": true,
-            "virtual_hid_keyboard": { "keyboard_type_v2": "ansi" }
+            "virtual_hid_keyboard": {
+                "keyboard_type_v2": "ansi"
+            }
         }
     ]
 }

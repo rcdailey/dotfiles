@@ -1,0 +1,109 @@
+// Zed keymap - migrated from VS Code (Visual Assist X style)
+//
+// Karabiner is configured to EXCLUDE Zed, so all Ctrl keypresses
+// arrive as ctrl- (not cmd-). This keymap uses ctrl- throughout
+// for cross-platform consistency with Linux.
+//
+// Option = alt on macOS.
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      // Standard operations (ctrl- overrides for macOS)
+      "ctrl-s": "workspace::Save",
+      "ctrl-shift-s": "workspace::SaveAll",
+      "ctrl-z": "editor::Undo",
+      "ctrl-y": "editor::Redo",
+      "ctrl-shift-p": "command_palette::Toggle",
+      "ctrl-shift-f": "pane::DeploySearch",
+      "ctrl-w": "pane::CloseActiveItem",
+      "ctrl-n": "workspace::NewFile",
+      "ctrl-o": "workspace::Open",
+      "ctrl-b": "workspace::ToggleLeftDock",
+      // Navigate back/forward
+      "alt-left": "pane::GoBack",
+      "alt-right": "pane::GoForward",
+      // Toggle terminal
+      "ctrl-j": "terminal_panel::ToggleFocus",
+      // Run task
+      "ctrl-t": "task::Spawn",
+      // Rerun last task
+      "f7": "task::Rerun",
+      // Recent editors
+      "ctrl-alt-r": "tab_switcher::Toggle",
+      // Replace in files
+      "ctrl-shift-h": ["pane::DeploySearch", { "replace_enabled": true }],
+      // Focus next/prev pane
+      "ctrl-shift-j": "workspace::ActivateNextPane",
+      "ctrl-shift-k": "workspace::ActivatePreviousPane"
+    }
+  },
+  {
+    "context": "Editor && !menu",
+    "bindings": {
+      // Standard operations (ctrl- overrides for macOS)
+      "ctrl-c": "editor::Copy",
+      "ctrl-x": "editor::Cut",
+      "ctrl-v": "editor::Paste",
+      "ctrl-a": "editor::SelectAll",
+      "ctrl-f": "buffer_search::Deploy",
+      "ctrl-p": "file_finder::Toggle",
+      "ctrl-g": "go_to_line::Toggle",
+      "ctrl-shift-p": "command_palette::Toggle",
+      "ctrl-/": ["editor::ToggleComments", { "advance_downwards": false }],
+      // Go to symbol in file
+      "alt-m": "outline::Toggle",
+      // File finder (alternate)
+      "shift-alt-o": "file_finder::Toggle",
+      // Project-wide symbols
+      "shift-alt-s": "project_symbols::Toggle",
+      // Rename symbol
+      "shift-alt-r": "editor::Rename",
+      // Go to definition
+      "alt-g": "editor::GoToDefinition",
+      // Find all references
+      "shift-alt-f": "editor::FindAllReferences",
+      // Quick fix
+      "alt-enter": "editor::ToggleCodeActions",
+      // Toggle comment
+      "f4": ["editor::ToggleComments", { "advance_downwards": false }],
+      // Duplicate line
+      "ctrl-d": "editor::DuplicateLineDown",
+      // Add selection to next/prev match
+      "ctrl-shift-.": ["editor::SelectNext", { "replace_newest": false }],
+      "ctrl-shift-,": ["editor::SelectPrevious", { "replace_newest": false }],
+      // Format document
+      "ctrl-k ctrl-d": "editor::Format",
+      // Format selection
+      "ctrl-k ctrl-f": "editor::FormatSelections",
+      // Navigate diagnostics
+      "alt-pagedown": "editor::GoToDiagnostic",
+      "alt-pageup": "editor::GoToPreviousDiagnostic",
+      // Next/prev search result
+      "shift-alt-.": "search::SelectNextMatch",
+      "shift-alt-;": "search::SelectPreviousMatch",
+      // Column select
+      "shift-alt-up": ["editor::AddSelectionAbove", { "skip_soft_wrap": true }],
+      "shift-alt-down": ["editor::AddSelectionBelow", { "skip_soft_wrap": true }],
+      "shift-alt-left": "editor::SelectSmallerSyntaxNode",
+      "shift-alt-right": "editor::SelectLargerSyntaxNode",
+      // Find and replace
+      "ctrl-h": "buffer_search::DeployReplace"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "ctrl-j": "terminal_panel::ToggleFocus",
+      "ctrl-c": "terminal::Copy",
+      "ctrl-v": "terminal::Paste",
+      "ctrl-a": "terminal::SelectAll"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == insert",
+    "bindings": {
+      // "j k": "vim::NormalBefore"
+    }
+  }
+]
