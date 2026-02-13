@@ -56,7 +56,7 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
   --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter).
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh` CLI for operations against github repositories (instead of web fetch/search tools).
-- Use octocode for code search and discovery.
+- Use ghgrep for code search and discovery.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
 
 ## Skills
