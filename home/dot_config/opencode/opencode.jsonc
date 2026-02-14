@@ -55,6 +55,7 @@
     "messages_undo": "alt+u",
     "session_list": "alt+l",
     "session_new": "alt+n",
+    "display_thinking": "alt+t",
 
     // these conflict with home/end keys above
     "messages_first": "ctrl+g",
