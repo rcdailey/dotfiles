@@ -17,6 +17,8 @@ permission:
     "git add*": allow
     "git hunks*": allow
     "git commit*": allow
+    "git commit *--amend*": deny
+    "git commit *--allow-empty*": deny
     "git diff*": allow
     "git reset*": allow
     "git log*": allow
