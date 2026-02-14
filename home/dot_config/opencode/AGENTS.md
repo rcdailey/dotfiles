@@ -62,6 +62,9 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Use `gh` CLI for operations against github repositories (instead of web fetch/search tools).
 - Use ghgrep for code search and discovery.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
+- MUST use Edit for modifying existing files; NEVER use Write to replace a file that needs targeted
+  changes. Write is only appropriate when creating new files or completely overhauling existing ones.
+  Edit is faster, more token-efficient, and avoids silently dropping content.
 
 ## Skills
 
