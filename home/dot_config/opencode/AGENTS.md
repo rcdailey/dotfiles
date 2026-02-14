@@ -59,12 +59,16 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
   .gitignore. NEVER use `grep`, `find -name`, `awk`, `sed`, or piped search chains. Patterns: `rg
   --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter).
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
-- Use `gh` CLI for operations against github repositories (instead of web fetch/search tools).
+- Use `gh-scout` for all remote GitHub repository exploration. MUST use `gh-scout` instead of raw
+  `gh api` or `gh` subcommands for: orientation (metadata, structure, languages, contributors), file
+  browsing, code search, commits, blame, PRs, issues, releases, and comparisons. NEVER use raw `gh
+  api` or `gh` CLI for these operations; `gh-scout` handles all API interaction internally.
+- Use `gh` CLI directly only for mutations (creating PRs, pushing, repo settings) and auth.
 - Use ghgrep for code search and discovery.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
 - MUST use Edit for modifying existing files; NEVER use Write to replace a file that needs targeted
-  changes. Write is only appropriate when creating new files or completely overhauling existing ones.
-  Edit is faster, more token-efficient, and avoids silently dropping content.
+  changes. Write is only appropriate when creating new files or completely overhauling existing
+  ones. Edit is faster, more token-efficient, and avoids silently dropping content.
 
 ## Skills
 
@@ -75,9 +79,14 @@ the trigger condition is met violates this directive.
 - `skill-authoring`: REQUIRED when creating or modifying SKILL.md files
 - `subagent-authoring`: REQUIRED when creating or modifying custom agents
 - `csharp-coding`: REQUIRED when writing or modifying C# code
-- `gh-api`: REQUIRED when using `gh api` commands
+- `gh-api`: REQUIRED when managing draft PRs, posting PR comments, or querying Discussions
 - `gh-gist`: REQUIRED when creating or editing GitHub Gists
 - `gh-pr-review`: REQUIRED when reviewing pull requests on GitHub
+- `exploring-github`: REQUIRED when exploring remote GitHub repositories. This includes: browsing
+  repo contents or file trees, reading remote files, searching code in repos, inspecting
+  issues/PRs/commits/releases, comparing refs or tags, viewing blame, analyzing contributors or
+  languages, or answering any question that requires examining a remote repository. Load this skill
+  and use `gh-scout` for all such operations.
 
 ## Agents
 

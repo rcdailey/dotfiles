@@ -1,6 +1,6 @@
 ---
 name: gh-api
-description: Use when using gh api for discussions or draft PRs
+description: Use when managing draft PRs, posting PR comments, or querying GitHub Discussions
 ---
 
 ## Draft Pull Requests

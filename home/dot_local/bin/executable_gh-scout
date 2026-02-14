@@ -1,0 +1,669 @@
+#!/usr/bin/env python3
+"""gh-scout - explore GitHub repositories from the command line."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import shutil
+import subprocess
+import sys
+import textwrap
+from collections import Counter
+from typing import Any, NoReturn
+
+VERSION = "3.0.0"
+MAX_ORIENT_FILES = 8
+MAX_ORIENT_FILE_LINES = 150
+
+KEY_FILE_PATTERNS = [
+    re.compile(r"^README(\.md|\.rst|\.txt)?$"),
+    re.compile(r"^package\.json$"),
+    re.compile(r"^Cargo\.toml$"),
+    re.compile(r"^go\.mod$"),
+    re.compile(r"^pyproject\.toml$"),
+    re.compile(r"^pom\.xml$"),
+    re.compile(r"^build\.gradle(\.kts)?$"),
+    re.compile(r"^composer\.json$"),
+    re.compile(r"^Gemfile$"),
+    re.compile(r"^mix\.exs$"),
+    re.compile(r"^deno\.jsonc?$"),
+    re.compile(r"^Makefile$"),
+    re.compile(r"^Dockerfile$"),
+    re.compile(r"^docker-compose\.ya?ml$"),
+]
+
+
+class GhError(Exception):
+    pass
+
+
+def die(message: str) -> NoReturn:
+    print(f"error: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def check_deps() -> None:
+    if not shutil.which("gh"):
+        die("gh CLI not found")
+    result = subprocess.run(["gh", "auth", "status"], capture_output=True)
+    if result.returncode != 0:
+        die("gh not authenticated; run 'gh auth login'")
+
+
+def run_gh(*args: str) -> str:
+    result = subprocess.run(["gh", *args], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise GhError(result.stderr.strip())
+    return result.stdout
+
+
+def gh_api(endpoint: str, *, params: dict[str, str] | None = None) -> Any:
+    cmd = ["api", endpoint, "--method", "GET"]
+    for k, v in (params or {}).items():
+        cmd.extend(["-f", f"{k}={v}"])
+    return json.loads(run_gh(*cmd))
+
+
+def gh_api_raw(endpoint: str, *, params: dict[str, str] | None = None) -> str:
+    cmd = [
+        "api", endpoint, "--method", "GET",
+        "-H", "Accept: application/vnd.github.v3.raw",
+    ]
+    for k, v in (params or {}).items():
+        cmd.extend(["-f", f"{k}={v}"])
+    return run_gh(*cmd)
+
+
+def gh_graphql(query: str, **variables: str) -> Any:
+    cmd = ["api", "graphql", "-f", f"query={query}"]
+    for k, v in variables.items():
+        cmd.extend(["-F", f"{k}={v}"])
+    return json.loads(run_gh(*cmd))
+
+
+def get_default_branch(repo: str) -> str:
+    data = json.loads(run_gh("repo", "view", repo, "--json", "defaultBranchRef"))
+    return data["defaultBranchRef"]["name"]
+
+
+def resolve_ref(repo: str, ref: str | None) -> str:
+    return ref if ref else get_default_branch(repo)
+
+
+def _trunc(text: str, width: int = 120) -> str:
+    return text[:width] + "..." if len(text) > width else text
+
+
+# --- Commands ---
+
+
+def cmd_orient(args: argparse.Namespace) -> None:
+    repo = args.repo
+    metadata = json.loads(run_gh(
+        "repo", "view", repo, "--json",
+        "name,description,defaultBranchRef,stargazerCount,forkCount,"
+        "languages,homepageUrl,isPrivate,diskUsage",
+    ))
+    default_branch = metadata["defaultBranchRef"]["name"]
+    ref = args.ref or default_branch
+
+    print("=== METADATA ===")
+    languages = ", ".join(
+        lang["node"]["name"] for lang in metadata.get("languages", [])
+    )
+    for label, value in [
+        ("name", metadata["name"]),
+        ("description", metadata.get("description") or "none"),
+        ("default branch", default_branch),
+        ("stars", metadata["stargazerCount"]),
+        ("forks", metadata["forkCount"]),
+        ("languages", languages),
+        ("homepage", metadata.get("homepageUrl") or "none"),
+        ("private", str(metadata["isPrivate"]).lower()),
+        ("disk usage", f"{metadata['diskUsage']} KB"),
+        ("ref", ref),
+    ]:
+        print(f"{label}: {value}")
+
+    tree_data = gh_api(
+        f"repos/{repo}/git/trees/{ref}", params={"recursive": "1"}
+    )
+    truncated = tree_data.get("truncated", False)
+    blob_paths = [
+        item["path"] for item in tree_data["tree"] if item["type"] == "blob"
+    ]
+
+    print()
+    note = ", truncated" if truncated else ""
+    print(f"=== STRUCTURE ({len(blob_paths)} files{note}) ===")
+
+    buckets: dict[str, list[str | None]] = {}
+    for path in blob_paths:
+        parts = path.split("/")
+        match len(parts):
+            case 1:
+                bucket = "./"
+            case 2:
+                bucket = f"{parts[0]}/"
+            case _:
+                bucket = f"{parts[0]}/{parts[1]}/"
+        filename = parts[-1]
+        ext = f".{filename.rsplit('.', 1)[1]}" if "." in filename else None
+        buckets.setdefault(bucket, []).append(ext)
+
+    rows = []
+    for bucket in sorted(buckets):
+        extensions = buckets[bucket]
+        ext_counts = Counter(e for e in extensions if e is not None)
+        top_exts = " ".join(e for e, _ in ext_counts.most_common(5))
+        rows.append((bucket, len(extensions), top_exts))
+
+    if rows:
+        col1 = max(len(r[0]) for r in rows[:100])
+        col2 = max(len(f"{r[1]} files") for r in rows[:100])
+        for directory, count, exts in rows[:100]:
+            print(f"{directory:<{col1}}  {f'{count} files':<{col2}}  {exts}")
+
+    lang_data = gh_api(f"repos/{repo}/languages")
+    lang_total = sum(lang_data.values()) or 1
+    if lang_data:
+        print()
+        print("=== LANGUAGES ===")
+        for lang, bytes_ in lang_data.items():
+            print(f"{lang}: {bytes_ / lang_total * 100:.1f}%")
+
+    try:
+        contribs = gh_api(
+            f"repos/{repo}/contributors", params={"per_page": "10"}
+        )
+        if contribs:
+            print()
+            print("=== CONTRIBUTORS (top 10) ===")
+            for c in contribs:
+                print(f"@{c['login']} {c['contributions']} commits")
+    except GhError:
+        pass
+
+    found = 0
+    for pattern in KEY_FILE_PATTERNS:
+        if found >= MAX_ORIENT_FILES:
+            break
+        match_path = next((p for p in blob_paths if pattern.match(p)), None)
+        if not match_path:
+            continue
+        try:
+            content = gh_api_raw(
+                f"repos/{repo}/contents/{match_path}", params={"ref": ref}
+            )
+        except GhError:
+            continue
+        lines = content.splitlines()[:MAX_ORIENT_FILE_LINES]
+        print(f"\n=== FILE: {match_path} ===")
+        print("\n".join(lines))
+        found += 1
+
+
+
+def cmd_ls(args: argparse.Namespace) -> None:
+    params: dict[str, str] = {}
+    if args.ref:
+        params["ref"] = args.ref
+    data = gh_api(
+        f"repos/{args.repo}/contents/{args.path or ''}",
+        params=params,
+    )
+    items = data if isinstance(data, list) else [data]
+    for i in sorted(items, key=lambda x: (x["type"] != "dir", x["name"])):
+        suffix = "/" if i["type"] == "dir" else f"  {i['size']}B"
+        print(f"{i['name']}{suffix}")
+
+
+def cmd_read(args: argparse.Namespace) -> None:
+    limit = args.limit or 500
+    params: dict[str, str] = {}
+    if args.ref:
+        params["ref"] = args.ref
+    content = gh_api_raw(
+        f"repos/{args.repo}/contents/{args.path}", params=params
+    )
+    lines = content.splitlines(keepends=True)[:limit]
+    sys.stdout.write("".join(lines))
+
+
+def cmd_tree(args: argparse.Namespace) -> None:
+    limit = args.limit or 200
+    ref = resolve_ref(args.repo, args.ref)
+    data = gh_api(
+        f"repos/{args.repo}/git/trees/{ref}", params={"recursive": "1"}
+    )
+    paths = [item["path"] for item in data["tree"] if item["type"] == "blob"]
+    for path in paths[:limit]:
+        print(path)
+
+
+def cmd_search(args: argparse.Namespace) -> None:
+    limit = args.limit or 20
+    cmd = [
+        "search", "code", args.query,
+        "--limit", str(limit),
+        "--json", "path,repository,textMatches",
+    ]
+    if args.search_repo:
+        cmd.extend(["--repo", args.search_repo])
+    data = json.loads(run_gh(*cmd))
+    for i, item in enumerate(data):
+        repo = item["repository"]["nameWithOwner"]
+        header = item["path"] if args.search_repo else f"{repo}:{item['path']}"
+        if i > 0:
+            print()
+        print(header)
+        fragments = [m["fragment"] for m in item.get("textMatches", [])]
+        for j, fragment in enumerate(fragments):
+            if j > 0:
+                print("---")
+            for line in fragment.splitlines():
+                print(f"| {line}")
+
+
+def cmd_commits(args: argparse.Namespace) -> None:
+    limit = args.limit or 20
+    params: dict[str, str] = {"per_page": str(limit)}
+    if args.ref:
+        params["sha"] = args.ref
+    if args.path:
+        params["path"] = args.path
+    if args.author:
+        params["author"] = args.author
+    data = gh_api(f"repos/{args.repo}/commits", params=params)
+    for c in data:
+        sha = c["sha"][:8]
+        date = c["commit"]["author"]["date"][:10]
+        author = c["commit"]["author"]["name"]
+        msg = c["commit"]["message"].split("\n", 1)[0]
+        print(f"{sha} {date} {author}: {_trunc(msg)}")
+
+
+def cmd_blame(args: argparse.Namespace) -> None:
+    ref = resolve_ref(args.repo, args.ref)
+    owner, name = args.repo.split("/", 1)
+    data = gh_graphql(
+        textwrap.dedent("""\
+            query($owner:String!,$repo:String!,$ref:String!,$path:String!) {
+              repository(owner:$owner,name:$repo) {
+                object(expression:$ref) {
+                  ... on Commit {
+                    blame(path:$path) { ranges {
+                      startingLine endingLine
+                      commit {
+                        abbreviatedOid message
+                        author { name date }
+                      }
+                    }}
+                  }
+                }
+              }
+            }"""),
+        owner=owner,
+        repo=name,
+        ref=ref,
+        path=args.path,
+    )
+    for r in data["data"]["repository"]["object"]["blame"]["ranges"]:
+        c = r["commit"]
+        msg = c["message"].split("\n", 1)[0]
+        print(
+            f"L{r['startingLine']}-{r['endingLine']} "
+            f"{c['abbreviatedOid']} {c['author']['name']} "
+            f"({c['author']['date']}): {msg}"
+        )
+
+
+def cmd_compare(args: argparse.Namespace) -> None:
+    data = gh_api(f"repos/{args.repo}/compare/{args.base}...{args.head}")
+    print(f"ahead: {data['ahead_by']}, behind: {data['behind_by']}, "
+          f"total commits: {data['total_commits']}")
+    if data["commits"]:
+        print("\n=== COMMITS ===")
+        for c in data["commits"]:
+            sha = c["sha"][:8]
+            msg = c["commit"]["message"].split("\n", 1)[0]
+            print(f"{sha} {_trunc(msg)}")
+    if data.get("files"):
+        print("\n=== FILES ===")
+        for f in data["files"]:
+            print(f"{f['status']:<12} +{f['additions']}-{f['deletions']} "
+                  f"{f['filename']}")
+
+
+def cmd_issues(args: argparse.Namespace) -> None:
+    if args.number:
+        _issue_detail(args.repo, args.number)
+    else:
+        _issue_list(args)
+
+
+def _issue_list(args: argparse.Namespace) -> None:
+    limit = args.limit or 20
+    state = args.state or "open"
+    cmd = [
+        "issue", "list", "-R", args.repo,
+        "--state", state,
+        "--limit", str(limit),
+        "--json", "number,title,state,author,labels,createdAt",
+    ]
+    if args.search:
+        cmd.extend(["--search", args.search])
+    data = json.loads(run_gh(*cmd))
+    for i in data:
+        labels = " ".join(f"[{l['name']}]" for l in i.get("labels", []))
+        author = i.get("author", {}).get("login", "?")
+        date = i["createdAt"][:10]
+        print(f"#{i['number']} {i['state']} {date} @{author} "
+              f"{_trunc(i['title'], 80)} {labels}".rstrip())
+
+
+def _issue_detail(repo: str, number: int) -> None:
+    data = json.loads(run_gh(
+        "issue", "view", str(number), "-R", repo,
+        "--json",
+        "number,title,state,body,author,labels,assignees,comments,"
+        "createdAt,closedAt",
+    ))
+    labels = ", ".join(l["name"] for l in data.get("labels", []))
+    assignees = ", ".join(
+        f"@{a['login']}" for a in data.get("assignees", [])
+    )
+    author = data.get("author", {}).get("login", "?")
+    for label, value in [
+        ("title", data["title"]),
+        ("state", data["state"]),
+        ("author", f"@{author}"),
+        ("created", data["createdAt"][:10]),
+        ("closed", (data.get("closedAt") or "")[:10] or "none"),
+        ("labels", labels or "none"),
+        ("assignees", assignees or "none"),
+    ]:
+        print(f"{label}: {value}")
+    body = (data.get("body") or "").strip()
+    if body:
+        print(f"\n=== BODY ===\n{body}")
+    comments = data.get("comments", [])
+    if comments:
+        print(f"\n=== COMMENTS ({len(comments)}) ===")
+        for c in comments:
+            c_author = c.get("author", {}).get("login", "?")
+            c_date = c.get("createdAt", "")[:10]
+            print(f"\n@{c_author} ({c_date}):")
+            print((c.get("body") or "").strip())
+
+
+def cmd_prs(args: argparse.Namespace) -> None:
+    if args.number:
+        _pr_detail(args.repo, args.number)
+    else:
+        _pr_list(args)
+
+
+def _pr_list(args: argparse.Namespace) -> None:
+    limit = args.limit or 20
+    state = args.state or "open"
+    cmd = [
+        "pr", "list", "-R", args.repo,
+        "--state", state,
+        "--limit", str(limit),
+        "--json",
+        "number,title,state,author,baseRefName,"
+        "headRefName,createdAt,mergedAt",
+    ]
+    if args.search:
+        cmd.extend(["--search", args.search])
+    data = json.loads(run_gh(*cmd))
+    for pr in data:
+        author = pr.get("author", {}).get("login", "?")
+        date = (pr.get("mergedAt") or pr["createdAt"])[:10]
+        branches = f"{pr['headRefName']}->{pr['baseRefName']}"
+        print(f"#{pr['number']} {pr['state']} {date} @{author} "
+              f"{branches} {_trunc(pr['title'], 80)}")
+
+
+def _pr_detail(repo: str, number: int) -> None:
+    data = json.loads(run_gh(
+        "pr", "view", str(number), "-R", repo,
+        "--json",
+        "number,title,state,body,author,labels,assignees,comments,"
+        "reviews,additions,deletions,changedFiles,baseRefName,"
+        "headRefName,mergedAt,mergedBy",
+    ))
+    labels = ", ".join(l["name"] for l in data.get("labels", []))
+    assignees = ", ".join(
+        f"@{a['login']}" for a in data.get("assignees", [])
+    )
+    author = data.get("author", {}).get("login", "?")
+    merged_by = data.get("mergedBy", {})
+    merged_info = (
+        f"@{merged_by['login']} on {(data.get('mergedAt') or '')[:10]}"
+        if merged_by else "none"
+    )
+    for label, value in [
+        ("title", data["title"]),
+        ("state", data["state"]),
+        ("author", f"@{author}"),
+        ("branches", f"{data['headRefName']}->{data['baseRefName']}"),
+        ("changes", f"+{data['additions']}-{data['deletions']} "
+                    f"across {data['changedFiles']} files"),
+        ("labels", labels or "none"),
+        ("assignees", assignees or "none"),
+        ("merged by", merged_info),
+    ]:
+        print(f"{label}: {value}")
+    body = (data.get("body") or "").strip()
+    if body:
+        print(f"\n=== BODY ===\n{body}")
+    reviews = data.get("reviews", [])
+    if reviews:
+        print(f"\n=== REVIEWS ({len(reviews)}) ===")
+        for r in reviews:
+            r_author = r.get("author", {}).get("login", "?")
+            r_state = r.get("state", "?")
+            print(f"@{r_author}: {r_state}")
+            r_body = (r.get("body") or "").strip()
+            if r_body:
+                print(r_body)
+    comments = data.get("comments", [])
+    if comments:
+        print(f"\n=== COMMENTS ({len(comments)}) ===")
+        for c in comments:
+            c_author = c.get("author", {}).get("login", "?")
+            c_date = c.get("createdAt", "")[:10]
+            print(f"\n@{c_author} ({c_date}):")
+            print((c.get("body") or "").strip())
+
+
+def cmd_releases(args: argparse.Namespace) -> None:
+    if args.tag:
+        _release_detail(args.repo, args.tag)
+    else:
+        _release_list(args.repo, args.limit or 20)
+
+
+def _release_list(repo: str, limit: int) -> None:
+    data = json.loads(run_gh(
+        "release", "list", "-R", repo,
+        "--limit", str(limit),
+        "--json", "tagName,name,publishedAt,isPrerelease,isDraft,isLatest",
+    ))
+    for r in data:
+        date = (r.get("publishedAt") or "")[:10]
+        flags = []
+        if r.get("isLatest"):
+            flags.append("latest")
+        if r.get("isPrerelease"):
+            flags.append("prerelease")
+        if r.get("isDraft"):
+            flags.append("draft")
+        flag_str = f" ({', '.join(flags)})" if flags else ""
+        name = (
+            f" - {r['name']}"
+            if r.get("name") and r["name"] != r["tagName"] else ""
+        )
+        print(f"{r['tagName']}{name} {date}{flag_str}")
+
+
+def _release_detail(repo: str, tag: str) -> None:
+    data = json.loads(run_gh(
+        "release", "view", tag, "-R", repo,
+        "--json",
+        "tagName,name,body,publishedAt,author,assets,isPrerelease,isDraft",
+    ))
+    author = data.get("author", {}).get("login", "?")
+    flags = []
+    if data.get("isPrerelease"):
+        flags.append("prerelease")
+    if data.get("isDraft"):
+        flags.append("draft")
+    for label, value in [
+        ("tag", data["tagName"]),
+        ("name", data.get("name") or data["tagName"]),
+        ("author", f"@{author}"),
+        ("published", (data.get("publishedAt") or "")[:10]),
+        ("flags", ", ".join(flags) if flags else "none"),
+    ]:
+        print(f"{label}: {value}")
+    body = (data.get("body") or "").strip()
+    if body:
+        print(f"\n=== BODY ===\n{body}")
+    assets = data.get("assets", [])
+    if assets:
+        print(f"\n=== ASSETS ({len(assets)}) ===")
+        for a in assets:
+            size = a.get("size", 0)
+            size_str = (
+                f"{size / 1048576:.1f}MB" if size >= 1048576
+                else f"{size / 1024:.0f}KB" if size >= 1024
+                else f"{size}B"
+            )
+            print(f"{a['name']}  {size_str}")
+
+
+
+
+
+# --- CLI ---
+
+
+def _add_ref(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--ref", help="branch, tag, or SHA")
+
+
+def _add_limit(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--limit", type=int, help="max results")
+
+
+def _add_state(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--state", choices=["open", "closed", "all"], help="filter state"
+    )
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="gh-scout",
+        description="Explore GitHub repositories from the command line",
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"gh-scout {VERSION}"
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p = sub.add_parser("orient", help="overview: metadata, tree, key files")
+    p.add_argument("repo")
+    _add_ref(p)
+    p.set_defaults(func=cmd_orient)
+
+    p = sub.add_parser("ls", help="list directory contents")
+    p.add_argument("repo")
+    p.add_argument("path", nargs="?", default="")
+    _add_ref(p)
+    p.set_defaults(func=cmd_ls)
+
+    p = sub.add_parser("read", help="read file contents")
+    p.add_argument("repo")
+    p.add_argument("path")
+    _add_ref(p)
+    _add_limit(p)
+    p.set_defaults(func=cmd_read)
+
+    p = sub.add_parser("tree", help="recursive file tree")
+    p.add_argument("repo")
+    _add_ref(p)
+    _add_limit(p)
+    p.set_defaults(func=cmd_tree)
+
+    p = sub.add_parser("code-search", help="search code across GitHub")
+    p.add_argument("query")
+    p.add_argument("--repo", dest="search_repo", help="scope to a repo")
+    _add_limit(p)
+    p.set_defaults(func=cmd_search)
+
+    p = sub.add_parser("commits", help="list commits")
+    p.add_argument("repo")
+    _add_ref(p)
+    p.add_argument("--author", help="filter by author")
+    p.add_argument("--path", help="filter by path")
+    _add_limit(p)
+    p.set_defaults(func=cmd_commits)
+
+    p = sub.add_parser("blame", help="blame a file")
+    p.add_argument("repo")
+    p.add_argument("path")
+    _add_ref(p)
+    p.set_defaults(func=cmd_blame)
+
+    p = sub.add_parser("compare", help="compare two refs")
+    p.add_argument("repo")
+    p.add_argument("base")
+    p.add_argument("head")
+    p.set_defaults(func=cmd_compare)
+
+    p = sub.add_parser("issues", help="list issues or show detail")
+    p.add_argument("repo")
+    p.add_argument("number", nargs="?", type=int, help="show detail for this issue")
+    p.add_argument("--search", help="search query")
+    _add_state(p)
+    _add_limit(p)
+    p.set_defaults(func=cmd_issues)
+
+    p = sub.add_parser("prs", help="list PRs or show detail")
+    p.add_argument("repo")
+    p.add_argument("number", nargs="?", type=int, help="show detail for this PR")
+    p.add_argument("--search", help="search query")
+    _add_state(p)
+    _add_limit(p)
+    p.set_defaults(func=cmd_prs)
+
+    p = sub.add_parser("releases", help="list releases or show detail")
+    p.add_argument("repo")
+    p.add_argument("tag", nargs="?", help="show detail for this tag")
+    _add_limit(p)
+    p.set_defaults(func=cmd_releases)
+
+    return parser
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    check_deps()
+    try:
+        args.func(args)
+    except GhError as exc:
+        die(str(exc))
+    except KeyboardInterrupt:
+        sys.exit(130)
+    except BrokenPipeError:
+        sys.stderr.close()
+
+
+if __name__ == "__main__":
+    main()
