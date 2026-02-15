@@ -5,6 +5,9 @@ description: Use when creating or modifying SKILL.md files
 
 # Skill Authoring
 
+This skill documents our conventions, not exhaustive OpenCode capabilities. Omissions are
+intentional.
+
 ## What Skills Are
 
 Skills are on-demand context modules that agents load via progressive disclosure. They provide
@@ -61,17 +64,13 @@ relevant skills get fully loaded per session.
 
 ## File Location and Discovery
 
-OpenCode searches these paths (first match wins):
-
 **Project-local** (walks up to git worktree root):
 
 - `.opencode/skills/<name>/SKILL.md`
-- `.agents/skills/<name>/SKILL.md`
 
 **Global**:
 
 - `~/.config/opencode/skills/<name>/SKILL.md`
-- `~/.agents/skills/<name>/SKILL.md`
 
 The skill name MUST match the directory name.
 

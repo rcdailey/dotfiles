@@ -110,6 +110,8 @@ Quote hunk IDs in shell to prevent glob expansion of `@` and `+` characters.
   conventions (last resort; see "External Hook Conflicts")
 - NEVER use `--allow-empty` unless user explicitly requests it
 - NEVER ask clarifying questions; decide from the diff
+- NEVER question or second-guess staged content or user-provided commit messages; commit exactly
+  what is staged with the message given
 - NEVER manually fix code or bypass hooks; stop and report validation errors
 - NEVER run commands after the final successful commit (no `git log`, `git show`, etc.)
 - If user provides explicit commit message, use it verbatim (still enforce 72-char subject limit)
@@ -147,18 +149,11 @@ Quote hunk IDs in shell to prevent glob expansion of `@` and `+` characters.
 
 ### When to Include Body
 
-Include when ANY apply:
+Default to no body. Most commits need only a good subject line. Include a body only when ANY apply:
 
-- feat/fix type (explain motivation and tradeoffs, not just what changed)
-- Non-obvious root cause or design decision
-- Change affects 5+ files or 100+ lines
-- Breaking changes or migration needed
-
-Skip when ALL apply:
-
-- Mechanical change (rename, formatting, dependency bump)
-- Subject fully captures intent
-- Diff is self-explanatory
+- Non-obvious root cause or design decision that the subject cannot convey
+- Breaking changes or migration steps
+- Change affects 5+ files or 100+ lines and the subject alone is ambiguous
 
 ### Body Content
 
@@ -170,24 +165,21 @@ Skip when ALL apply:
 ### Body Format
 
 - Hard-wrap at 72 chars (break at last word boundary before exceeding)
-- Bullet points for multiple points
-- Multiple `-m` flags automatically add blank lines between them: `git commit -m "subject" -m
-  "body"`
-- For multi-paragraph bodies: `git commit -m "subject" -m "paragraph one" -m "paragraph two"`
+- Prefer no body over a badly wrapped body. If wrapping is difficult, the body is probably
+  unnecessary.
+- Use one `-m` for subject and one `-m` for the entire body
+- Embed newlines with `$'...\n...'` syntax for hard-wrapping within a single `-m`
 - DO NOT use `-m ""` to create blank lines (confuses some commitlint parsers)
-- DO NOT use `-m` once per line; this creates double-spaced commit messages
+- DO NOT use one `-m` per line; each `-m` becomes a separate paragraph, creating double-spaced
+  output
 
-**Correct:**
+**Correct (embedded newlines for wrapping):**
 
 ```sh
-git commit -m "ci: add terraform deployment workflow for dev environment" -m "Phase 3: adds automated Terraform deployment to dev.
-
-- Add _deploy.yml workflow with JFrog OIDC and Okta auth
-- Update main.tf to use base64decode for OKTA_PRIVATE_KEY
-- Add OKTA_PRIVATE_KEY variable definition to vars.tf"
+git commit -m "ci: add terraform deployment workflow" -m $'Phase 3: adds automated deployment.\n\n- Add _deploy.yml with JFrog OIDC and Okta auth\n- Update main.tf to use base64decode for OKTA_PRIVATE_KEY\n- Add OKTA_PRIVATE_KEY variable definition to vars.tf'
 ```
 
-**Wrong (creates double-spaced output):**
+**Wrong (one -m per line creates double-spaced output):**
 
 ```sh
 git commit -m "ci: add terraform deployment workflow" \
@@ -195,9 +187,6 @@ git commit -m "ci: add terraform deployment workflow" \
   -m "- Add _deploy.yml workflow" \
   -m "- Update main.tf for base64decode"
 ```
-
-Each `-m` becomes a separate paragraph. Use one `-m` for subject and one for the entire body with
-embedded newlines.
 
 ## Conventional Commit Type Selection
 

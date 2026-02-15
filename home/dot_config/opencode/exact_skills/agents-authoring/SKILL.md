@@ -5,7 +5,8 @@ description: Use when creating or updating AGENTS.md files
 
 # AGENTS.md Authoring
 
-Load this skill when creating or updating AGENTS.md files.
+Load this skill when creating or updating AGENTS.md files. This skill documents our conventions, not
+exhaustive OpenCode capabilities. Omissions are intentional.
 
 ## Research Foundation
 

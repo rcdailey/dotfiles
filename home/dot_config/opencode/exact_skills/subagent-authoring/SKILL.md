@@ -5,7 +5,8 @@ description: Use when creating or modifying custom agent definitions
 
 # Subagent Authoring
 
-Load this skill when creating or modifying custom OpenCode agents.
+Load this skill when creating or modifying custom OpenCode agents. This skill documents our
+conventions, not exhaustive OpenCode capabilities. Omissions are intentional.
 
 ## What Agents Are
 
@@ -19,7 +20,7 @@ Agents can be defined in two ways:
 
 ### Markdown Files
 
-Place in `.opencode/agents/<name>.md` or `~/.config/opencode/agents/<name>.md`:
+Place in `.opencode/agents/<name>.md` (project) or `~/.config/opencode/agents/<name>.md` (global):
 
 ```markdown
 ---
@@ -65,20 +66,21 @@ Define in `opencode.json`:
 | `description` | string | Brief description shown in UI (required)          |
 | `mode`        | string | `primary`, `subagent`, or `all` (defaults to all) |
 | `model`       | string | Provider/model identifier                         |
-| `prompt`      | string | System prompt (or `{file:./path.txt}`)            |
+| `variant`     | string | Reasoning variant for this agent's model          |
+| `prompt`      | string | System prompt (or `@./path.txt` to include file)  |
 
-### Tool Permissions
+### Tool Permissions (deprecated)
+
+The `tools` field is deprecated; use `permission` instead. Legacy `tools` entries are converted to
+permissions internally.
 
 ```yaml
+# Deprecated
 tools:
-  write: true
-  edit: true
-  bash: true
-  skill: true
+  write: false
+  edit: false
+  bash: false
 ```
-
-Set to `false` to disable specific capabilities. Read-only agents should disable write, edit, and
-bash. Use wildcards for MCP tools (e.g., `mymcp_*: false`).
 
 ### Permissions
 
@@ -107,40 +109,64 @@ Bash and task permissions support glob patterns. Last matching rule wins.
 | Field         | Type    | Description                                        |
 |---------------|---------|----------------------------------------------------|
 | `hidden`      | boolean | Hide from @ autocomplete menu (subagent only)      |
-| `steps`       | integer | Max agentic iterations before forced text response |
+| `steps`       | integer | Max agentic iterations (`maxSteps` is deprecated)  |
 | `disable`     | boolean | Set `true` to disable the agent                    |
 | `temperature` | number  | LLM randomness (0.0-1.0)                           |
 | `top_p`       | number  | Response diversity (0.0-1.0)                       |
-| `color`       | string  | Hex color or theme name for UI appearance          |
+| `color`       | string  | `#hex` or theme name (primary, accent, error, etc) |
+
+### Reasoning Variants
+
+Use the `variant` field to select a pre-defined reasoning configuration for the agent's model.
+Available variants are model-specific:
+
+| Provider/Model          | Variants                                  |
+|-------------------------|-------------------------------------------|
+| Anthropic Opus 4.6      | `low`, `medium`, `high`, `max` (adaptive) |
+| Anthropic (other)       | `high`, `max` (fixed token budget)        |
+| OpenAI GPT-5 family     | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
+| Google Gemini 3         | `low`, `high`                             |
+
+```yaml
+---
+description: Deep reasoning agent
+mode: subagent
+model: anthropic/claude-opus-4-6
+variant: medium
+---
+```
+
+```json
+{
+  "agent": {
+    "thinker": {
+      "model": "anthropic/claude-opus-4-6",
+      "variant": "high"
+    }
+  }
+}
+```
+
+Variant takes highest priority in the options merge chain, overriding any provider passthrough
+fields.
 
 ### Provider Passthrough Options
 
-Unknown frontmatter fields pass through as model options. Use for provider-specific features.
-
-**Anthropic extended thinking:**
+Unknown frontmatter fields pass through as model `options`. Use for provider-specific features when
+variants don't cover your needs (e.g., custom token budgets).
 
 ```yaml
 ---
-description: Agent with extended thinking
+description: Agent with custom thinking budget
 mode: subagent
-model: anthropic/claude-opus-4-6
+model: anthropic/claude-sonnet-4-5
 thinking:
   type: enabled
-  budgetTokens: 16000
+  budgetTokens: 8000
 ---
 ```
 
-**OpenAI reasoning:**
-
-```yaml
----
-description: Agent with reasoning
-mode: subagent
-model: openai/gpt-5
-reasoningEffort: high
-textVerbosity: low
----
-```
+Prefer `variant` over manual passthrough when a matching variant exists.
 
 ## Agent Modes
 
