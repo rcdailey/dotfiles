@@ -7,10 +7,7 @@
   "agent": {
     "general": {
       "model": "anthropic/claude-opus-4-6",
-      "thinking": {
-        "type": "enabled",
-        "budgetTokens": 16000 // "high" variant
-      }
+      "variant": "low"
     },
     "explore": {
       "model": "anthropic/claude-haiku-4-5"
