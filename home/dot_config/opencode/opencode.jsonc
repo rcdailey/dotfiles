@@ -33,10 +33,6 @@
     "toolhive": {
       "type": "remote",
       "url": "https://mcp.dailey.app/mcp"
-    },
-    "ghgrep": {
-      "type": "remote",
-      "url": "https://mcp.grep.app"
     }
   },
   "tui": {
