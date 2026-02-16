@@ -142,13 +142,12 @@ def cmd_orient(args: argparse.Namespace) -> None:
     buckets: dict[str, list[str | None]] = {}
     for path in blob_paths:
         parts = path.split("/")
-        match len(parts):
-            case 1:
-                bucket = "./"
-            case 2:
-                bucket = f"{parts[0]}/"
-            case _:
-                bucket = f"{parts[0]}/{parts[1]}/"
+        if len(parts) == 1:
+            bucket = "./"
+        elif len(parts) == 2:
+            bucket = f"{parts[0]}/"
+        else:
+            bucket = f"{parts[0]}/{parts[1]}/"
         filename = parts[-1]
         ext = f".{filename.rsplit('.', 1)[1]}" if "." in filename else None
         buckets.setdefault(bucket, []).append(ext)
@@ -643,7 +642,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("repo")
     p.add_argument("number", nargs="?", type=int, help="show detail for this PR")
     p.add_argument("--search", help="search query")
-    _add_state(p)
+    p.add_argument(
+        "--state", choices=["open", "closed", "merged", "all"],
+        help="filter state",
+    )
     _add_limit(p)
     p.set_defaults(func=cmd_prs)
 

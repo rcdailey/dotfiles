@@ -29,8 +29,8 @@ gh-scout tree     REPO [--limit N]              # recursive file listing
 gh-scout commits  REPO [--author X] [--path P]  # commit history
 gh-scout blame    REPO PATH                     # line-by-line attribution
 gh-scout compare  REPO BASE HEAD               # diff between two refs
-gh-scout issues   REPO [NUMBER] [--state S]     # list or detail
-gh-scout prs      REPO [NUMBER] [--state S]     # list or detail
+gh-scout issues   REPO [NUMBER] [--state S]     # list or detail (open/closed/all)
+gh-scout prs      REPO [NUMBER] [--state S]     # list or detail (open/closed/merged/all)
 gh-scout releases REPO [TAG]                    # list or detail
 ```
 
