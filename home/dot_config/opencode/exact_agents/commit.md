@@ -1,5 +1,6 @@
 ---
-description: Agent for performing git commits ONLY (NO pushes or github cli allowed)
+description: >
+  Dedicated agent for git commit operations (Not able to push, amend commits, or use github CLI)
 mode: all
 model: anthropic/claude-haiku-4-5
 permission:
