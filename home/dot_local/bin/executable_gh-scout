@@ -250,12 +250,13 @@ def cmd_search(args: argparse.Namespace) -> None:
         "--limit", str(limit),
         "--json", "path,repository,textMatches",
     ]
-    if args.search_repo:
-        cmd.extend(["--repo", args.search_repo])
+    for r in (args.search_repos or []):
+        cmd.extend(["--repo", r])
     data = json.loads(run_gh(*cmd))
+    scoped = bool(args.search_repos and len(args.search_repos) == 1)
     for i, item in enumerate(data):
         repo = item["repository"]["nameWithOwner"]
-        header = item["path"] if args.search_repo else f"{repo}:{item['path']}"
+        header = item["path"] if scoped else f"{repo}:{item['path']}"
         if i > 0:
             print()
         print(header)
@@ -603,7 +604,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("code-search", help="search code across GitHub")
     p.add_argument("query")
-    p.add_argument("--repo", dest="search_repo", help="scope to a repo")
+    p.add_argument(
+        "--repo", dest="search_repos", action="append",
+        metavar="OWNER/REPO", help="scope to repo(s); repeatable",
+    )
     _add_limit(p)
     p.set_defaults(func=cmd_search)
 

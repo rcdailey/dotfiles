@@ -16,18 +16,31 @@ command reference.
 
 Requires `gh` (authenticated) on PATH. If missing, the script fails early with a clear message.
 
-## Subcommands
+## Cheat Sheet
 
-All output is plain text (no JSON). List/detail commands are consolidated: pass an identifier (issue
-number, PR number, release tag) to get detail; omit it to list.
+All output is plain text. Most commands follow `gh-scout COMMAND REPO [args]`. List/detail commands
+are consolidated: pass an identifier to get detail; omit it to list.
 
-- `orient` -- metadata, languages, contributors, file tree, key files (README, etc.)
-- `ls`, `read`, `tree` -- browse and read files
-- `code-search` -- search code across GitHub or scoped to a repo
-- `commits`, `blame`, `compare` -- history and attribution
-- `issues` -- list or detail (`issues REPO` vs `issues REPO 42`)
-- `prs` -- list or detail (`prs REPO` vs `prs REPO 42`)
-- `releases` -- list or detail (`releases REPO` vs `releases REPO v1.0`)
+```txt
+gh-scout orient   REPO                          # metadata, tree, key files
+gh-scout ls       REPO [PATH]                   # list directory
+gh-scout read     REPO PATH [--limit N]         # read file contents
+gh-scout tree     REPO [--limit N]              # recursive file listing
+gh-scout commits  REPO [--author X] [--path P]  # commit history
+gh-scout blame    REPO PATH                     # line-by-line attribution
+gh-scout compare  REPO BASE HEAD               # diff between two refs
+gh-scout issues   REPO [NUMBER] [--state S]     # list or detail
+gh-scout prs      REPO [NUMBER] [--state S]     # list or detail
+gh-scout releases REPO [TAG]                    # list or detail
+```
+
+`code-search` is the exception; repo is not positional (it searches all of GitHub by default):
+
+```txt
+gh-scout code-search QUERY [--repo OWNER/REPO]  # --repo is repeatable
+```
+
+Most commands also accept `--ref REF` (branch/tag/SHA) and `--limit N`.
 
 ## Exploration Strategy
 

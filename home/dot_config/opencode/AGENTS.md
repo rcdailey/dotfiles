@@ -64,7 +64,6 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
   browsing, code search, commits, blame, PRs, issues, releases, and comparisons. NEVER use raw `gh
   api` or `gh` CLI for these operations; `gh-scout` handles all API interaction internally.
 - Use `gh` CLI directly only for mutations (creating PRs, pushing, repo settings) and auth.
-- Use ghgrep for code search and discovery.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
 - MUST use Edit for modifying existing files; NEVER use Write to replace a file that needs targeted
   changes. Write is only appropriate when creating new files or completely overhauling existing
