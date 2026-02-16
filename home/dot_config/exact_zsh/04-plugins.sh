@@ -41,10 +41,6 @@ zinit load zdharma-continuum/null
 zinit ice wait lucid nocompile atload'eval "$(task --completion zsh)"'
 zinit load zdharma-continuum/null
 
-# Just completions - use bash completions via bashcompinit (zsh module completion is broken upstream)
-# See: https://github.com/casey/just/issues/2912
-zinit ice wait lucid nocompile atload'eval "$(just --completions bash)"'
-zinit load zdharma-continuum/null
 
 
 # Load Oh-My-Zsh functionality via snippets
