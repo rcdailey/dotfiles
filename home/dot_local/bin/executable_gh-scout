@@ -242,6 +242,18 @@ def cmd_tree(args: argparse.Namespace) -> None:
         print(path)
 
 
+def _resolve_repo(repo: str) -> str:
+    """Resolve a repo to its canonical owner/name (follows renames)."""
+    try:
+        data = json.loads(run_gh("repo", "view", repo, "--json", "nameWithOwner"))
+        canonical = data["nameWithOwner"]
+        if canonical.lower() != repo.lower():
+            print(f"warning: {repo} -> {canonical} (repo renamed)", file=sys.stderr)
+        return canonical
+    except GhError:
+        return repo
+
+
 def cmd_search(args: argparse.Namespace) -> None:
     limit = args.limit or 20
     cmd = [
@@ -250,7 +262,7 @@ def cmd_search(args: argparse.Namespace) -> None:
         "--json", "path,repository,textMatches",
     ]
     for r in (args.search_repos or []):
-        cmd.extend(["--repo", r])
+        cmd.extend(["--repo", _resolve_repo(r)])
     data = json.loads(run_gh(*cmd))
     scoped = bool(args.search_repos and len(args.search_repos) == 1)
     for i, item in enumerate(data):
