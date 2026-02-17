@@ -6,8 +6,8 @@
   "model": "anthropic/claude-opus-4-6",
   "agent": {
     "general": {
-      "model": "anthropic/claude-opus-4-6",
-      "variant": "low"
+      "model": "anthropic/claude-sonnet-4-6",
+      "variant": "high"
     },
     "explore": {
       "model": "anthropic/claude-haiku-4-5"
