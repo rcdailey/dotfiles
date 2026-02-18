@@ -21,7 +21,8 @@ permission:
     "git commit *--amend*": deny
     "git commit *--allow-empty*": deny
     "git diff*": allow
-    "git reset*": allow
+    "git reset": allow
+    "git reset *": deny
     "git log*": allow
     "git show*": allow
     "git status*": allow
@@ -207,7 +208,10 @@ function, rename variable, simplify conditional). `style` is purely cosmetic wit
 
 ## Hook Handling
 
-- Commitlint rejection: Read error, fix violation, retry
+A rejected commit (hook failure) does NOT create a commit. The staging area is preserved. NEVER use
+`git reset` after a hook rejection; just fix the issue and retry `git commit`.
+
+- Commitlint rejection: Read error, fix message, retry `git commit`
 - Pre-commit auto-fixes: `git update-index --again`, retry commit
 
 ### External Hook Conflicts
@@ -232,10 +236,11 @@ When commitlint rejects a message but the repo doesn't use conventional commits:
 - Detached HEAD: Warn, suggest branch
 - Merge conflicts: Stop immediately
 
-### Recovery During Multi-Commit Workflows
+### Recovery
 
-- Commit rejected mid-sequence: Fix the issue and retry the same commit; previous successful commits
-  remain intact. NEVER reset earlier commits to start over.
+- Commit rejected by hook: Fix the issue and retry the same `git commit`. The staging area is
+  intact; NEVER use `git reset` to "undo" a rejected commit (it doesn't exist). In multi-commit
+  workflows, previous successful commits remain intact.
 - Pre-commit hook auto-fixes files: Run `git update-index --again` to restage the auto-fixed files,
   then retry the commit.
 - Hook failure with unclear cause: Report the full error output to the calling agent rather than
