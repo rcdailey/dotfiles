@@ -24,12 +24,14 @@ permission:
     "git commit *--amend*": deny
     "git commit *--allow-empty*": deny
     "git diff*": allow
-    "git reset": allow
-    "git reset *": deny
     "git log*": allow
     "git show*": allow
     "git status*": allow
     "git update-index*": allow
+
+    # Allow resetting staged changes but not commits
+    "git reset": allow
+    "git reset HEAD": allow
 ---
 
 Generate conventional commits.
@@ -189,14 +191,22 @@ Include a body when ANY of these apply:
 ### Issue Keys
 
 When the caller provides issue keys (GitHub issues, Jira tickets, or other tracker references), they
-MUST appear in the commit message. Placement rules:
+MUST appear in the commit message. Issue keys go in the body/trailers, not the subject line. If no
+issue keys are provided by the caller, do not fabricate them.
 
-- Single issue: include as a trailer (e.g., `Fixes #123`, `Closes PROJ-456`)
-- Multiple issues: list each as a separate trailer line
-- If the commit does not fully resolve the issue, use `Refs` instead of `Fixes`/`Closes`
-- Issue keys go in the body/trailers, not the subject line
+**GitHub issues** use closing keywords recognized by GitHub. The supported keywords are: `close`,
+`closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves`, `resolved`. Syntax depends on
+issue location:
 
-If no issue keys are provided by the caller, do not fabricate them.
+- Same repository: `KEYWORD #ISSUE-NUMBER` (e.g., `Closes #10`)
+- Different repository: `KEYWORD OWNER/REPOSITORY#ISSUE-NUMBER` (e.g., `Fixes octo-org/repo#100`)
+- Multiple issues: use full syntax for each (e.g., `Resolves #10, resolves #123`)
+- Keywords are case-insensitive and may be followed by a colon (e.g., `Closes: #10`)
+- If the commit does not fully resolve the issue, reference it without a closing keyword (e.g.,
+  `Refs #42` or `See #42`) so GitHub links without auto-closing
+
+**Jira and other trackers**: include the ticket key as provided by the caller (e.g., `PROJ-456`).
+Follow the tracker's conventions for linking and resolution keywords if known.
 
 ### Body Content
 
