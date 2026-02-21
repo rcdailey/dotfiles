@@ -126,6 +126,10 @@ Comments must earn their place by reducing cognitive load. When to comment:
 - Private methods: Block comment if name + parameters don't make purpose self-evident
 - Early returns/continues: Include reason if not obvious from context
 - Complex algorithms: Comment explaining approach at top, not line-by-line
+- Null-suppression operator (`!`): Every use MUST have an inline comment explaining why null is
+  impossible at that point (e.g., `// non-null: validated above`, `// non-null: dict always
+  contains key after init`). The comment documents the runtime guarantee so reviewers can verify
+  it and future maintainers can detect if the invariant breaks.
 - General: Any code where a reader would pause and wonder "why?" or "what's happening here?"
 
 NEVER:
