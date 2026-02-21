@@ -92,4 +92,7 @@ the trigger condition is met violates this directive.
 SHOULD use agents autonomously without explicit prompt from user for appropriate operations.
 
 - `commit`: For commit-related requests with git (NO push or gh cli allowed). Batch multiple commits
-  into a single delegation; one agent per commit is wasteful.
+  into a single delegation; one agent per commit is wasteful. Callers MUST describe what changed and
+  why (context the agent needs to write a good message), and MUST include any issue keys (GitHub,
+  Jira, etc.) for the commit. Callers MUST NOT prescribe exact commit messages; the agent decides
+  messaging based on its own inspection of the diff.
