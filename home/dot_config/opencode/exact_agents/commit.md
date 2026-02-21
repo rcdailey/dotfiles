@@ -9,6 +9,7 @@ model: anthropic/claude-sonnet-4-6
 permission:
   "*": deny
   read: allow
+  external_directory: allow
   bash:
     "*": deny
     "cd *": allow
