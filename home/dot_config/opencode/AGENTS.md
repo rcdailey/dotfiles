@@ -39,8 +39,6 @@
 - Match existing codebase patterns rather than introducing new ones. When inconsistencies exist,
   unify them rather than adding a third approach.
 - Keep PR descriptions high-level, focused on the change. Skip test plans and template boilerplate.
-- Truncate verbose command output (builds, logs, test runs) by width and line count to preserve
-  context tokens. Pattern: `<command> 2>&1 | cut -c1-<width> | tail -<lines>`.
 - Prefer structured output (JSON + jq) over table/text for CLI tools that support it (aws, gh,
   kubectl, docker). Structured output is parseable, filterable, and scriptable.
 
