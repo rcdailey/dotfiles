@@ -7,10 +7,12 @@
   "agent": {
     "general": {
       "model": "anthropic/claude-sonnet-4-6",
-      "variant": "high"
+      "variant": "high",
+      "tools": { "question": false }
     },
     "explore": {
-      "model": "anthropic/claude-haiku-4-5"
+      "model": "anthropic/claude-haiku-4-5",
+      "tools": { "question": false }
     }
   },
   "formatter": {
