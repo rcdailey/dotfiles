@@ -13,7 +13,6 @@ import textwrap
 from collections import Counter
 from typing import Any, NoReturn
 
-VERSION = "3.0.0"
 MAX_ORIENT_FILES = 8
 MAX_ORIENT_FILE_LINES = 150
 
@@ -214,20 +213,37 @@ def cmd_ls(args: argparse.Namespace) -> None:
         params=params,
     )
     items = data if isinstance(data, list) else [data]
-    for i in sorted(items, key=lambda x: (x["type"] != "dir", x["name"])):
+    sorted_items = sorted(items, key=lambda x: (x["type"] != "dir", x["name"]))
+    if args.limit:
+        sorted_items = sorted_items[:args.limit]
+    for i in sorted_items:
         suffix = "/" if i["type"] == "dir" else f"  {i['size']}B"
         print(f"{i['name']}{suffix}")
 
 
 def cmd_read(args: argparse.Namespace) -> None:
     limit = args.limit or 500
+    offset = args.offset or 0
     params: dict[str, str] = {}
     if args.ref:
         params["ref"] = args.ref
+    try:
+        raw = gh_api(
+            f"repos/{args.repo}/contents/{args.path}", params=params
+        )
+    except GhError:
+        raw = None
+    if isinstance(raw, list):
+        items = sorted(raw, key=lambda x: (x["type"] != "dir", x["name"]))
+        for i in items:
+            suffix = "/" if i["type"] == "dir" else f"  {i['size']}B"
+            print(f"{i['name']}{suffix}")
+        return
     content = gh_api_raw(
         f"repos/{args.repo}/contents/{args.path}", params=params
     )
-    lines = content.splitlines(keepends=True)[:limit]
+    lines = content.splitlines(keepends=True)
+    lines = lines[offset:][:limit]
     sys.stdout.write("".join(lines))
 
 
@@ -584,9 +600,6 @@ def build_parser() -> argparse.ArgumentParser:
         prog="gh-scout",
         description="Explore GitHub repositories from the command line",
     )
-    parser.add_argument(
-        "-v", "--version", action="version", version=f"gh-scout {VERSION}"
-    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("orient", help="overview: metadata, tree, key files")
@@ -598,11 +611,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("repo")
     p.add_argument("path", nargs="?", default="")
     _add_ref(p)
+    _add_limit(p)
     p.set_defaults(func=cmd_ls)
 
     p = sub.add_parser("read", help="read file contents")
     p.add_argument("repo")
     p.add_argument("path")
+    p.add_argument("--offset", type=int, help="skip first N lines (0-indexed)")
     _add_ref(p)
     _add_limit(p)
     p.set_defaults(func=cmd_read)

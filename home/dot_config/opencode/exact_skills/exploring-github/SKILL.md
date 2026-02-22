@@ -22,16 +22,16 @@ All output is plain text. Most commands follow `gh-scout COMMAND REPO [args]`. L
 are consolidated: pass an identifier to get detail; omit it to list.
 
 ```txt
-gh-scout orient   REPO                          # metadata, tree, key files
-gh-scout ls       REPO [PATH]                   # list directory
-gh-scout read     REPO PATH [--limit N]         # read file contents
-gh-scout tree     REPO [--limit N]              # recursive file listing
-gh-scout commits  REPO [--author X] [--path P]  # commit history
-gh-scout blame    REPO PATH                     # line-by-line attribution
-gh-scout compare  REPO BASE HEAD               # diff between two refs
-gh-scout issues   REPO [NUMBER] [--state S]     # list or detail (open/closed/all)
-gh-scout prs      REPO [NUMBER] [--state S]     # list or detail (open/closed/merged/all)
-gh-scout releases REPO [TAG]                    # list or detail
+gh-scout orient   REPO                              # metadata, tree, key files
+gh-scout ls       REPO [PATH] [--limit N]           # list directory
+gh-scout read     REPO PATH [--limit N] [--offset N] # read file contents
+gh-scout tree     REPO [--limit N]                   # recursive file listing
+gh-scout commits  REPO [--author X] [--path P]       # commit history
+gh-scout blame    REPO PATH                          # line-by-line attribution
+gh-scout compare  REPO BASE HEAD                     # diff between two refs
+gh-scout issues   REPO [NUMBER] [--state S]          # list or detail (open/closed/all)
+gh-scout prs      REPO [NUMBER] [--state S]          # list or detail (open/closed/merged/all)
+gh-scout releases REPO [TAG]                         # list or detail
 ```
 
 `code-search` is the exception; repo is not positional (it searches all of GitHub by default):
@@ -72,6 +72,18 @@ Pause and ask the user when:
 - The question is ambiguous enough that multiple exploration paths seem equally valid
 - The tree is very large (truncated) and you are unsure which area to focus on
 - You have read 15+ files without finding what you need
+
+## Tips
+
+- `read` on a directory path auto-detects and prints a listing (like `ls`). No need to check
+  whether a path is a file or directory first.
+- For large files, use `--offset` to paginate. Read lines 0-499 first (`--limit 500`), then
+  continue with `--offset 500 --limit 500`. Avoid piping through `head`; use `--limit` instead.
+- `code-search` uses the GitHub code search API, which does NOT support regex. Queries like
+  `"foo\|bar"` or `"foo.*bar"` will not work as expected. Run separate searches for each term
+  or use GitHub qualifier syntax (`foo OR bar`).
+- Do not pipe gh-scout output through `grep` or `head`. Use built-in flags (`--limit`, `--offset`,
+  `--search`, `--state`) to filter results at the source.
 
 ## Error Handling
 
