@@ -1,9 +1,9 @@
 ---
 description: >
   Dedicated agent for git commit operations (Not able to push, amend commits, or use github CLI).
-  Callers MUST describe what to commit and provide context (why the change was made), and MUST
-  include any issue keys (GitHub, Jira, etc.). Callers MUST NOT dictate exact commit messages;
-  this agent determines messaging from its own diff inspection.
+  Callers provide high-level task context (what feature/fix/refactor and why), workflow hint if
+  applicable, and any issue keys. Callers MUST NOT run git inspection commands before delegating,
+  describe the diff, or dictate commit messages; this agent handles all inspection internally.
 mode: all
 model: anthropic/claude-sonnet-4-6
 permission:

@@ -90,7 +90,9 @@ the trigger condition is met violates this directive.
 SHOULD use agents autonomously without explicit prompt from user for appropriate operations.
 
 - `commit`: For commit-related requests with git (NO push or gh cli allowed). Batch multiple commits
-  into a single delegation; one agent per commit is wasteful. Callers MUST describe what changed and
-  why (context the agent needs to write a good message), and MUST include any issue keys (GitHub,
-  Jira, etc.) for the commit. Callers MUST NOT prescribe exact commit messages; the agent decides
-  messaging based on its own inspection of the diff.
+  into a single delegation; one agent per commit is wasteful. Callers MUST NOT run git inspection
+  commands (diff, status, log, show) before delegating; the subagent performs all inspection
+  internally. Pass only: (1) high-level task context (what feature/fix/refactor you were working on
+  and why), (2) workflow hint if not default (e.g., "all" or "multiple commits"), and (3) any issue
+  keys (GitHub, Jira, etc.). Callers MUST NOT prescribe exact commit messages or describe the diff;
+  the agent determines everything from its own inspection.
