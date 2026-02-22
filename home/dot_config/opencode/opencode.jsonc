@@ -60,9 +60,9 @@
     "*": "allow",
     "grep": "deny", // require ripgrep instead
 
-    // replaced by searxng
-    "webfetch": "deny",
+    // searxng replaces websearch only; webfetch is built-in
     "websearch": "deny",
+    "*_web_url_read": "deny",
 
     // octocode MCP
     "*_packageSearch": "deny",
