@@ -184,23 +184,27 @@ def cmd_orient(args: argparse.Namespace) -> None:
     except GhError:
         pass
 
-    found = 0
-    for pattern in KEY_FILE_PATTERNS:
-        if found >= MAX_ORIENT_FILES:
-            break
-        match_path = next((p for p in blob_paths if pattern.match(p)), None)
-        if not match_path:
-            continue
-        try:
-            content = gh_api_raw(
-                f"repos/{repo}/contents/{match_path}", params={"ref": ref}
+    if not args.brief:
+        found = 0
+        for pattern in KEY_FILE_PATTERNS:
+            if found >= MAX_ORIENT_FILES:
+                break
+            match_path = next(
+                (p for p in blob_paths if pattern.match(p)), None
             )
-        except GhError:
-            continue
-        lines = content.splitlines()[:MAX_ORIENT_FILE_LINES]
-        print(f"\n=== FILE: {match_path} ===")
-        print("\n".join(lines))
-        found += 1
+            if not match_path:
+                continue
+            try:
+                content = gh_api_raw(
+                    f"repos/{repo}/contents/{match_path}",
+                    params={"ref": ref},
+                )
+            except GhError:
+                continue
+            lines = content.splitlines()[:MAX_ORIENT_FILE_LINES]
+            print(f"\n=== FILE: {match_path} ===")
+            print("\n".join(lines))
+            found += 1
 
 
 
@@ -539,6 +543,43 @@ def _release_list(repo: str, limit: int) -> None:
         print(f"{r['tagName']}{name} {date}{flag_str}")
 
 
+def cmd_repo_search(args: argparse.Namespace) -> None:
+    limit = args.limit or 20
+    cmd = [
+        "search", "repos", args.query,
+        "--limit", str(limit),
+        "--json", "fullName,stargazersCount,language,description,"
+                  "updatedAt,isArchived",
+    ]
+    if args.language:
+        cmd.extend(["--language", args.language])
+    if args.sort:
+        cmd.extend(["--sort", args.sort])
+    if args.stars:
+        cmd.extend(["--stars", args.stars])
+    if args.topic:
+        for t in args.topic:
+            cmd.extend(["--topic", t])
+    if args.updated:
+        cmd.extend(["--updated", args.updated])
+    if args.owner:
+        for o in args.owner:
+            cmd.extend(["--owner", o])
+    data = json.loads(run_gh(*cmd))
+    if not data:
+        print("no results")
+        return
+    col1 = max(len(r["fullName"]) for r in data)
+    for r in data:
+        stars = f"{r['stargazersCount']:>6}*"
+        lang = (r.get("language") or "?")[:12]
+        updated = (r.get("updatedAt") or "")[:10]
+        archived = " [archived]" if r.get("isArchived") else ""
+        desc = _trunc(r.get("description") or "", 80)
+        print(f"{r['fullName']:<{col1}}  {stars}  {lang:<12}  "
+              f"{updated}{archived}  {desc}")
+
+
 def _release_detail(repo: str, tag: str) -> None:
     data = json.loads(run_gh(
         "release", "view", tag, "-R", repo,
@@ -604,6 +645,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("orient", help="overview: metadata, tree, key files")
     p.add_argument("repo")
+    p.add_argument(
+        "--brief", action="store_true",
+        help="metadata + structure only; skip key file contents",
+    )
     _add_ref(p)
     p.set_defaults(func=cmd_orient)
 
@@ -636,6 +681,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_limit(p)
     p.set_defaults(func=cmd_search)
+
+    p = sub.add_parser("repo-search", help="search repositories on GitHub")
+    p.add_argument("query")
+    p.add_argument("--language", help="filter by language")
+    p.add_argument("--sort", choices=["stars", "forks", "updated"],
+                   help="sort order")
+    p.add_argument("--stars", help="star count filter (e.g. >=500)")
+    p.add_argument("--topic", action="append", help="filter by topic; repeatable")
+    p.add_argument("--owner", action="append", help="filter by owner; repeatable")
+    p.add_argument("--updated", help="last updated filter (e.g. >=2025-01-01)")
+    _add_limit(p)
+    p.set_defaults(func=cmd_repo_search)
 
     p = sub.add_parser("commits", help="list commits")
     p.add_argument("repo")
