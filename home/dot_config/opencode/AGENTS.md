@@ -78,6 +78,7 @@ the trigger condition is met violates this directive.
 - `csharp-coding`: REQUIRED when writing or modifying C# code
 - `gh-api`: REQUIRED when managing draft PRs, posting PR comments, or querying Discussions
 - `gh-gist`: REQUIRED when creating or editing GitHub Gists
+- `git-hunks`: REQUIRED when staging individual hunks or partial file changes
 - `gh-pr-review`: REQUIRED when reviewing pull requests on GitHub
 - `exploring-github`: REQUIRED when exploring remote GitHub repositories. This includes: browsing
   repo contents or file trees, reading remote files, searching code in repos, inspecting

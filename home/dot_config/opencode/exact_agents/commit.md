@@ -99,7 +99,7 @@ Break changes into logical commits (2-5 max).
 **Execution phase (for each group):**
 
 1. `git add <files|directories>` to stage only that group's files/directories. If a file needs to be
-   partially committed, use `git hunks` for splitting changes within files (see workflow below)
+   partially committed, use `git hunks` (load the `git-hunks` skill for usage)
 1. `git status -sb` to verify ONLY intended files are staged
 1. `git diff --cached` to review the staged diff and compose an appropriate message
 1. `git commit` with properly wrapped message
@@ -111,29 +111,6 @@ Break changes into logical commits (2-5 max).
 - Pre-commit hooks stash/restore unstaged files; verify staging is clean after hooks run
 - If a commit fails (commitlint, hooks), the commit doesn't exist; fix the issue and retry the same
   `git add && git commit` sequence
-
-### Selective Hunk Staging with git hunks
-
-Use `git hunks` when a file contains changes belonging to different commits.
-
-```sh
-git hunks list                    # Show unstaged hunks with stable IDs
-git hunks list --staged           # Show staged hunks
-git hunks add '<id>' ['<id>'...]  # Stage specific hunks by ID
-```
-
-Hunk ID format: `file:@-old,len+new,len` (derived from diff `@@` headers). IDs remain stable as
-other hunks are staged, unlike line-based approaches.
-
-**Workflow:**
-
-1. `git hunks list` to see all unstaged hunks
-2. Identify which hunks belong to the current commit
-3. `git hunks add 'file:@-10,5+10,7'` to stage specific hunks
-4. `git status -sb` to verify staging
-5. `git commit`
-
-Quote hunk IDs in shell to prevent glob expansion of `@` and `+` characters.
 
 ## Constraints
 
