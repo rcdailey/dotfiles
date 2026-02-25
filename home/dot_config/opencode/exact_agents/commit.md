@@ -35,7 +35,9 @@ permission:
     "git reset HEAD": allow
 ---
 
-Generate conventional commits.
+Generate conventional commits. Always use conventional commit format regardless of what the repo's
+git history shows. The `git log` step in the research phase is for understanding change context and
+scope, not for adopting the repo's message format.
 
 ## Output
 
@@ -115,8 +117,8 @@ Break changes into logical commits (2-5 max).
 ## Constraints
 
 - NEVER use `--amend` unless user explicitly requests it
-- NEVER use `--no-verify` or `--no-gpg-sign` unless global hooks conflict with upstream repo
-  conventions (last resort; see "External Hook Conflicts")
+- NEVER use `--no-verify` or `--no-gpg-sign` unless hooks are broken/misconfigured (not a message
+  format issue); see "External Hook Conflicts"
 - NEVER use `--allow-empty` unless user explicitly requests it
 - NEVER ask clarifying questions; decide from the diff
 - NEVER question or second-guess staged content; commit exactly what is staged
@@ -245,18 +247,19 @@ A rejected commit (hook failure) does NOT create a commit. The staging area is p
 
 ### External Hook Conflicts
 
-When commitlint rejects a message but the repo doesn't use conventional commits:
+When a repo-owned commitlint config enforces a format that conflicts with conventional commits (e.g.,
+custom types, different header length rules, or a non-conventional format):
 
-1. Check `git log --oneline -5` to see actual commit format in use
-2. Look for `.commitlintrc*`, `commitlint.config.*`, `.husky/` in repo
-3. If absent, the hook is likely global (from dotfiles) not repo-owned
-4. When global hooks conflict with upstream conventions, `--no-verify` is acceptable as last resort
-5. Document reasoning when bypassing: "commitlint is external; repo uses [format] per git history"
+1. Look for `.commitlintrc*`, `commitlint.config.*`, `.husky/` in repo
+2. If present and the rules conflict with conventional commit format, adapt the message to satisfy
+   the repo-owned config (it takes precedence)
+3. If absent, the commitlint hook is global (from dotfiles); always fix the message to pass rather
+   than bypassing
 
 **When `--no-verify` is acceptable:**
 
-- Global hooks (not repo-owned) conflict with the repo's established conventions
-- Hook is broken or misconfigured and blocking legitimate commits
+- Hook is broken or misconfigured and blocking legitimate commits (not a message format issue)
+- NEVER to skip commitlint when the fix is to write a conforming message
 - NEVER to skip failing linters or tests that the repo intentionally configured
 
 ## Error Handling
