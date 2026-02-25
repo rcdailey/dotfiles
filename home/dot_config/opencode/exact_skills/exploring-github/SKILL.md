@@ -2,8 +2,9 @@
 name: exploring-github
 description: >-
   Use when exploring remote GitHub repositories, browsing repo contents,
-  reading remote files, searching code, inspecting issues/PRs/commits/releases,
-  comparing refs or tags, or viewing blame
+  reading remote files, searching code, inspecting
+  issues/PRs/discussions/commits/releases, comparing refs or tags, or viewing
+  blame
 ---
 
 # Exploring GitHub
@@ -29,9 +30,10 @@ gh-scout tree        REPO [--limit N]                   # recursive file listing
 gh-scout commits     REPO [--author X] [--path P]       # commit history
 gh-scout blame       REPO PATH                          # line-by-line attribution
 gh-scout compare     REPO BASE HEAD                     # diff between two refs
-gh-scout issues      REPO [NUMBER] [--state S] [--search Q] # list or detail
-gh-scout prs         REPO [NUMBER] [--state S] [--search Q] # list or detail
-gh-scout releases    REPO [TAG]                         # list or detail
+gh-scout issues      REPO [NUMBER] [--state S] [--search Q]  # list or detail
+gh-scout discussions REPO [NUMBER] [--category C]            # list or detail
+gh-scout prs         REPO [NUMBER] [--state S] [--search Q]  # list or detail
+gh-scout releases    REPO [TAG]                              # list or detail
 ```
 
 Search commands do not take a positional REPO; scope with flags instead:
@@ -93,6 +95,10 @@ Pause and ask the user when:
   code-search "changelog" language:go` (argparse error).
 - Use `repo-search` (not `code-search`) when looking for repositories by topic, popularity, or
   language. `code-search` returns file matches; `repo-search` returns repos with stars and metadata.
+- Issue and discussion detail views show emoji reaction breakdowns (upvotes, hearts, etc.).
+  Discussion detail also shows the accepted answer when present.
+- `discussions` supports `--category`, `--answered`, and `--unanswered` filters. Categories are
+  matched case-insensitively by name.
 - Do not pipe gh-scout output through `grep` or `head`. Use built-in flags (`--limit`, `--offset`,
   `--search`, `--state`) to filter results at the source.
 

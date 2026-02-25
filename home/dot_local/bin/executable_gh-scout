@@ -95,6 +95,33 @@ def _trunc(text: str, width: int = 120) -> str:
     return text[:width] + "..." if len(text) > width else text
 
 
+REACTION_LABELS = {
+    "THUMBS_UP": "+1",
+    "THUMBS_DOWN": "-1",
+    "LAUGH": "laugh",
+    "HOORAY": "hooray",
+    "CONFUSED": "confused",
+    "HEART": "heart",
+    "ROCKET": "rocket",
+    "EYES": "eyes",
+}
+
+
+def _format_reactions(groups: list[dict]) -> str:
+    """Format reactionGroups into a compact string like '+1:5 heart:2'."""
+    parts = []
+    for g in groups:
+        count = g.get("users", {}).get("totalCount", 0)
+        if count > 0:
+            label = REACTION_LABELS.get(g["content"], g["content"])
+            parts.append(f"{label}:{count}")
+    return " ".join(parts)
+
+
+def _reaction_total(groups: list[dict]) -> int:
+    return sum(g.get("users", {}).get("totalCount", 0) for g in groups)
+
+
 # --- Commands ---
 
 
@@ -401,13 +428,14 @@ def _issue_detail(repo: str, number: int) -> None:
         "issue", "view", str(number), "-R", repo,
         "--json",
         "number,title,state,body,author,labels,assignees,comments,"
-        "createdAt,closedAt",
+        "createdAt,closedAt,reactionGroups",
     ))
     labels = ", ".join(l["name"] for l in data.get("labels", []))
     assignees = ", ".join(
         f"@{a['login']}" for a in data.get("assignees", [])
     )
     author = data.get("author", {}).get("login", "?")
+    reactions = _format_reactions(data.get("reactionGroups", []))
     for label, value in [
         ("title", data["title"]),
         ("state", data["state"]),
@@ -416,6 +444,7 @@ def _issue_detail(repo: str, number: int) -> None:
         ("closed", (data.get("closedAt") or "")[:10] or "none"),
         ("labels", labels or "none"),
         ("assignees", assignees or "none"),
+        ("reactions", reactions or "none"),
     ]:
         print(f"{label}: {value}")
     body = (data.get("body") or "").strip()
@@ -615,8 +644,149 @@ def _release_detail(repo: str, tag: str) -> None:
             )
             print(f"{a['name']}  {size_str}")
 
+def cmd_discussions(args: argparse.Namespace) -> None:
+    if args.number:
+        _discussion_detail(args.repo, args.number)
+    else:
+        _discussion_list(args)
 
 
+def _discussion_list(args: argparse.Namespace) -> None:
+    limit = args.limit or 20
+    owner, name = args.repo.split("/", 1)
+    query_filter = ""
+    if args.category:
+        query_filter = f', categoryId: "{_resolve_discussion_category(owner, name, args.category)}"'
+    if args.answered is not None:
+        query_filter += f", answered: {'true' if args.answered else 'false'}"
+    data = gh_graphql(
+        textwrap.dedent("""\
+            query($owner:String!,$repo:String!,$first:Int!) {
+              repository(owner:$owner,name:$repo) {
+                discussions(first:$first,orderBy:{field:CREATED_AT,direction:DESC}"""
+                    + query_filter + """) {
+                  nodes {
+                    number title createdAt
+                    author { login }
+                    category { name }
+                    upvoteCount
+                    comments { totalCount }
+                    isAnswered
+                  }
+                }
+              }
+            }"""),
+        owner=owner,
+        repo=name,
+        first=str(limit),
+    )
+    nodes = data["data"]["repository"]["discussions"]["nodes"]
+    for d in nodes:
+        author = (d.get("author") or {}).get("login", "?")
+        date = (d.get("createdAt") or "")[:10]
+        cat = d.get("category", {}).get("name", "")
+        upvotes = d.get("upvoteCount", 0)
+        comments = d.get("comments", {}).get("totalCount", 0)
+        answered = " [answered]" if d.get("isAnswered") else ""
+        print(f"#{d['number']} {date} @{author} [{cat}] "
+              f"{_trunc(d['title'], 70)} "
+              f"up:{upvotes} comments:{comments}{answered}")
+
+
+def _resolve_discussion_category(
+    owner: str, name: str, category_name: str,
+) -> str:
+    data = gh_graphql(
+        textwrap.dedent("""\
+            query($owner:String!,$repo:String!) {
+              repository(owner:$owner,name:$repo) {
+                discussionCategories(first:25) {
+                  nodes { id name }
+                }
+              }
+            }"""),
+        owner=owner,
+        repo=name,
+    )
+    cats = data["data"]["repository"]["discussionCategories"]["nodes"]
+    for c in cats:
+        if c["name"].lower() == category_name.lower():
+            return c["id"]
+    available = ", ".join(c["name"] for c in cats)
+    die(f"category '{category_name}' not found; available: {available}")
+
+
+def _discussion_detail(repo: str, number: int) -> None:
+    owner, name = repo.split("/", 1)
+    data = gh_graphql(
+        textwrap.dedent("""\
+            query($owner:String!,$repo:String!,$number:Int!) {
+              repository(owner:$owner,name:$repo) {
+                discussion(number:$number) {
+                  number title body createdAt
+                  author { login }
+                  category { name }
+                  upvoteCount
+                  reactionGroups { content users { totalCount } }
+                  isAnswered
+                  answer {
+                    author { login }
+                    body
+                    createdAt
+                  }
+                  comments(first:50) {
+                    nodes {
+                      author { login }
+                      body createdAt
+                      reactionGroups { content users { totalCount } }
+                      upvoteCount
+                    }
+                  }
+                }
+              }
+            }"""),
+        owner=owner,
+        repo=name,
+        number=str(number),
+    )
+    d = data["data"]["repository"]["discussion"]
+    author = (d.get("author") or {}).get("login", "?")
+    reactions = _format_reactions(d.get("reactionGroups", []))
+    for label, value in [
+        ("title", d["title"]),
+        ("category", d.get("category", {}).get("name", "?")),
+        ("author", f"@{author}"),
+        ("created", (d.get("createdAt") or "")[:10]),
+        ("upvotes", str(d.get("upvoteCount", 0))),
+        ("reactions", reactions or "none"),
+        ("answered", "yes" if d.get("isAnswered") else "no"),
+    ]:
+        print(f"{label}: {value}")
+    body = (d.get("body") or "").strip()
+    if body:
+        print(f"\n=== BODY ===\n{body}")
+    answer = d.get("answer")
+    if answer:
+        a_author = (answer.get("author") or {}).get("login", "?")
+        a_date = (answer.get("createdAt") or "")[:10]
+        print(f"\n=== ACCEPTED ANSWER by @{a_author} ({a_date}) ===")
+        print((answer.get("body") or "").strip())
+    comments = (d.get("comments") or {}).get("nodes", [])
+    if comments:
+        print(f"\n=== COMMENTS ({len(comments)}) ===")
+        for c in comments:
+            c_author = (c.get("author") or {}).get("login", "?")
+            c_date = (c.get("createdAt") or "")[:10]
+            c_reactions = _format_reactions(c.get("reactionGroups", []))
+            c_upvotes = c.get("upvoteCount", 0)
+            meta = []
+            if c_upvotes:
+                meta.append(f"up:{c_upvotes}")
+            if c_reactions:
+                meta.append(c_reactions)
+            meta_str = f" [{', '.join(meta)}]" if meta else ""
+            print(f"\n@{c_author} ({c_date}){meta_str}:")
+            print((c.get("body") or "").strip())
 
 
 # --- CLI ---
@@ -721,6 +891,17 @@ def build_parser() -> argparse.ArgumentParser:
     _add_state(p)
     _add_limit(p)
     p.set_defaults(func=cmd_issues)
+
+    p = sub.add_parser("discussions", help="list discussions or show detail")
+    p.add_argument("repo")
+    p.add_argument("number", nargs="?", type=int, help="show detail for this discussion")
+    p.add_argument("--category", help="filter by category name")
+    p.add_argument("--answered", action="store_true", default=None,
+                   help="only answered discussions")
+    p.add_argument("--unanswered", dest="answered", action="store_false",
+                   help="only unanswered discussions")
+    _add_limit(p)
+    p.set_defaults(func=cmd_discussions)
 
     p = sub.add_parser("prs", help="list PRs or show detail")
     p.add_argument("repo")
