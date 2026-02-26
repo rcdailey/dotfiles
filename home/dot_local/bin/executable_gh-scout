@@ -15,6 +15,7 @@ from typing import Any, NoReturn
 
 MAX_ORIENT_FILES = 8
 MAX_ORIENT_FILE_LINES = 150
+MAX_ORIENT_README_LINES = 200
 
 KEY_FILE_PATTERNS = [
     re.compile(r"^README(\.md|\.rst|\.txt)?$"),
@@ -212,6 +213,24 @@ def cmd_orient(args: argparse.Namespace) -> None:
     except GhError:
         pass
 
+    readme_path = next(
+        (p for p in blob_paths if KEY_FILE_PATTERNS[0].match(p)), None
+    )
+    if readme_path:
+        try:
+            content = gh_api_raw(
+                f"repos/{repo}/contents/{readme_path}",
+                params={"ref": ref},
+            )
+            lines = content.splitlines()
+            print(f"\n=== FILE: {readme_path} ===")
+            print("\n".join(lines[:MAX_ORIENT_README_LINES]))
+            remaining = len(lines) - MAX_ORIENT_README_LINES
+            if remaining > 0:
+                print(f"... plus {remaining} more lines")
+        except GhError:
+            pass
+
     if not args.brief:
         found = 0
         for pattern in KEY_FILE_PATTERNS:
@@ -220,7 +239,7 @@ def cmd_orient(args: argparse.Namespace) -> None:
             match_path = next(
                 (p for p in blob_paths if pattern.match(p)), None
             )
-            if not match_path:
+            if not match_path or match_path == readme_path:
                 continue
             try:
                 content = gh_api_raw(

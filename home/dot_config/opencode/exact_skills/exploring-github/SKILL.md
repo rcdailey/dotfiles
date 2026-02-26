@@ -45,8 +45,9 @@ gh-scout code-search QUERY [--repo OWNER/REPO]  # --repo is repeatable
 
 Most commands also accept `--ref REF` (branch/tag/SHA) and `--limit N`.
 
-`orient --brief` skips key file contents (metadata + structure + languages + contributors only). Use
-it when surveying multiple repos to reduce output volume, then `read` specific files as needed.
+`orient` always shows the README (up to 200 lines, with a truncation notice). `--brief` skips the
+remaining key file contents (metadata + structure + languages + contributors + README only). Use it
+when surveying multiple repos to reduce output volume, then `read` specific files as needed.
 
 ## Exploration Strategy
 
