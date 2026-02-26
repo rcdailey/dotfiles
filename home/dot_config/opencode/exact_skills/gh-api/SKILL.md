@@ -49,8 +49,7 @@ gh api repos/:owner/:repo/pulls -f state=open --jq '.[] | select(.user.login=="U
 
 ## PR Conversation Comments
 
-Comments on the PR timeline (not on specific lines of code). For inline review comments, use the
-`gh-pr-review` skill instead.
+Comments on the PR timeline (not on specific lines of code).
 
 ### List conversation comments
 

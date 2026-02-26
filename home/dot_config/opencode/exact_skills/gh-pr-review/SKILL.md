@@ -3,128 +3,100 @@ name: gh-pr-review
 description: Use when reviewing pull requests on GitHub
 ---
 
+# PR Review
+
 ## Critical Rules
 
-- NEVER submit reviews. The user will manually submit pending reviews.
-- All comments must be added to a pending review, never posted directly.
-
-## Extension Setup
-
-If any `gh pr-review` command fails with "unknown command" or similar, install the extension:
-
-```sh
-gh extension install agynio/gh-pr-review
-```
-
-Then retry the failed command.
+- NEVER submit reviews. The user manually submits pending reviews via GitHub UI.
+- All comments MUST go through a pending review. Never post comments directly.
+- When any comment targets a line outside diff hunks (non-zero exit from `review-comment`), do NOT
+  retry or relocate it. Collect all failures and report them to the user so they can post those
+  comments manually through the GitHub UI.
 
 ## Pending Review Workflow
 
 ### Check for existing pending review
 
-Before starting a new review, check if one already exists:
-
 ```sh
-gh pr-review review view --reviewer "$(gh api user --jq .login)" --states PENDING -R owner/repo 42
+gh-scout pr review-view owner/repo 42
 ```
 
 If a pending review exists, reuse its `PRR_...` ID.
 
 ### Start a pending review
 
-Only if no pending review exists. Returns a `PRR_...` ID for subsequent operations.
+Only if no pending review exists.
 
 ```sh
-gh pr-review review --start -R owner/repo 42
+gh-scout pr review-start owner/repo 42
 ```
 
-Output: `{"id": "PRR_kwDOAAABbcdEFG12", "state": "PENDING"}`
+Output:
 
-Pin to specific commit with `--commit <sha>`.
+```txt
+id: PRR_kwDOAAABbcdEFG12
+state: PENDING
+```
 
 ### Add comment (single line)
 
-Requires `--review-id` with the `PRR_...` identifier (not numeric).
-
 ```sh
-gh pr-review review --add-comment \
+gh-scout pr review-comment owner/repo 42 \
   --review-id PRR_kwDOAAABbcdEFG12 \
   --path internal/service.go \
   --line 42 \
-  --body "nit: prefer helper" \
-  -R owner/repo 42
+  --body "nit: prefer helper"
 ```
 
 ### Add comment (multi-line)
 
-Spans lines 10-15:
+The `--line` is the end line; `--start-line` is the beginning.
 
 ```sh
-gh pr-review review --add-comment \
+gh-scout pr review-comment owner/repo 42 \
   --review-id PRR_kwDOAAABbcdEFG12 \
   --path internal/service.go \
   --start-line 10 \
   --line 15 \
-  --body "This entire block should be extracted into a helper function" \
-  -R owner/repo 42
+  --body "Extract this block into a helper"
 ```
 
-Optional flags:
+Optional flags: `--side LEFT|RIGHT` (default RIGHT), `--start-side LEFT|RIGHT`.
 
-- `--side RIGHT|LEFT`: RIGHT for additions/context, LEFT for deletions - `--start-side RIGHT|LEFT`:
-side for start of multi-line range
-
-### Reply to existing thread (within pending review)
-
-Use `thread_id` from `review view`. Always include `--review-id` to attach reply to pending review.
+### Delete a pending review
 
 ```sh
-gh pr-review comments reply \
-  --thread-id PRRT_kwDOAAABbFg12345 \
-  --review-id PRR_kwDOAAABbcdEFG12 \
-  --body "Acknowledged" \
-  -R owner/repo 42
+gh-scout pr review-delete PRR_kwDOAAABbcdEFG12
 ```
 
-## Reading Reviews and Threads
+## Line Targeting Constraints
 
-### Get review snapshot
+GitHub's API only supports comments on lines within diff hunks (changed lines plus a few lines of
+surrounding context). Lines in the gap between hunks cannot be targeted.
 
-```sh
-gh pr-review review view -R owner/repo 42
+When `review-comment` targets a non-diff line, it exits non-zero with:
+
+```txt
+error: path/file.cs L21 is outside the diff hunks. GitHub API does not support
+comments on non-diff lines. Post this comment manually through the GitHub UI.
 ```
 
-Filters:
+**When this happens:**
 
-- `--reviewer <login>`: single reviewer
-- `--states PENDING,APPROVED,CHANGES_REQUESTED,COMMENTED,DISMISSED`: comma-separated
-- `--unresolved`: only unresolved threads
-- `--not_outdated`: exclude outdated threads
-- `--tail <n>`: limit replies per thread
-- `--include-comment-node-id`: include GraphQL comment IDs
+1. Continue posting remaining comments that target valid lines.
+2. After all comments are posted, report the failures to the user with file, line, and the intended
+   comment body so they can post manually.
 
-### List threads
-
-```sh
-gh pr-review threads list -R owner/repo 42
-gh pr-review threads list --unresolved --mine -R owner/repo 42
-```
-
-### Resolve/unresolve thread
-
-```sh
-gh pr-review threads resolve --thread-id PRRT_kwDOAAABbFg12345 -R owner/repo 42
-gh pr-review threads unresolve --thread-id PRRT_kwDOAAABbFg12345 -R owner/repo 42
-```
+**When writing suggestion blocks:** The `--start-line` to `--line` range defines what GitHub
+replaces when a suggestion is applied. The range MUST exactly match the lines being replaced. Do NOT
+include surrounding context lines in the range; they will be deleted.
 
 ## ID Formats
 
-- `PRR_...`: Review ID (from `review --start` or `review view`, used in `--review-id`)
-- `PRRT_...`: Thread ID (from `review view` or `threads list`, used in `--thread-id`)
+- `PRR_...`: Review node ID (from `review-start` or `review-view`)
+- `PRRT_...`: Thread node ID (from `review-comment` or `review-view`)
 
-## Output Notes
+## Output
 
-- All commands emit JSON only
-- Optional fields omitted (not null)
-- Empty arrays return `[]`
-- Errors exit non-zero with `{"status": "...", "errors": [...]}`
+- Plain text, not JSON
+- Errors go to stderr with non-zero exit

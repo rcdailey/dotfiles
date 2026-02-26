@@ -107,6 +107,42 @@ REACTION_LABELS = {
 }
 
 
+def gh_graphql_mutation(query: str, variables: dict[str, Any]) -> Any:
+    """Execute a GraphQL mutation with full variable support (nested objects)."""
+    payload = json.dumps({"query": query, "variables": variables})
+    result = subprocess.run(
+        ["gh", "api", "graphql", "--input", "-"],
+        input=payload, capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        raise GhError(result.stderr.strip())
+    data = json.loads(result.stdout)
+    if "errors" in data:
+        msgs = "; ".join(e.get("message", str(e)) for e in data["errors"])
+        raise GhError(msgs)
+    return data
+
+
+def _get_pr_identifiers(repo: str, number: int) -> tuple[str, str]:
+    """Return (node_id, head_oid) for a pull request."""
+    owner, name = repo.split("/", 1)
+    data = gh_graphql(
+        textwrap.dedent("""\
+            query($owner:String!,$repo:String!,$number:Int!) {
+              repository(owner:$owner,name:$repo) {
+                pullRequest(number:$number) { id headRefOid }
+              }
+            }"""),
+        owner=owner,
+        repo=name,
+        number=str(number),
+    )
+    pr = data["data"]["repository"]["pullRequest"]
+    if not pr:
+        die(f"PR #{number} not found in {repo}")
+    return pr["id"], pr["headRefOid"]
+
+
 def _format_reactions(groups: list[dict]) -> str:
     """Format reactionGroups into a compact string like '+1:5 heart:2'."""
     parts = []
@@ -789,6 +825,169 @@ def _discussion_detail(repo: str, number: int) -> None:
             print((c.get("body") or "").strip())
 
 
+# --- PR Review Commands (pending reviews only) ---
+
+
+def cmd_pr_review_start(args: argparse.Namespace) -> None:
+    pr_id, head_oid = _get_pr_identifiers(args.repo, args.number)
+    data = gh_graphql_mutation(
+        textwrap.dedent("""\
+            mutation($input: AddPullRequestReviewInput!) {
+              addPullRequestReview(input: $input) {
+                pullRequestReview { id state }
+              }
+            }"""),
+        {"input": {"pullRequestId": pr_id, "commitOID": head_oid}},
+    )
+    review = data["data"]["addPullRequestReview"]["pullRequestReview"]
+    print(f"id: {review['id']}")
+    print(f"state: {review['state']}")
+
+
+def cmd_pr_review_delete(args: argparse.Namespace) -> None:
+    review_id = args.review_id
+    if not review_id.startswith("PRR_"):
+        die(f"invalid review id: {review_id} (expected PRR_... node id)")
+    data = gh_graphql_mutation(
+        textwrap.dedent("""\
+            mutation($input: DeletePullRequestReviewInput!) {
+              deletePullRequestReview(input: $input) {
+                pullRequestReview { id state }
+              }
+            }"""),
+        {"input": {"pullRequestReviewId": review_id}},
+    )
+    review = data["data"]["deletePullRequestReview"]["pullRequestReview"]
+    print(f"deleted: {review['id']} (was {review['state']})")
+
+
+def cmd_pr_review_comment(args: argparse.Namespace) -> None:
+    review_id = args.review_id
+    if not review_id.startswith("PRR_"):
+        die(f"invalid review id: {review_id} (expected PRR_... node id)")
+    mutation_input: dict[str, Any] = {
+        "pullRequestReviewId": review_id,
+        "path": args.path,
+        "line": args.line,
+        "side": args.side,
+        "body": args.body,
+        "subjectType": "LINE",
+    }
+    if args.start_line is not None:
+        mutation_input["startLine"] = args.start_line
+        mutation_input["startSide"] = args.start_side or args.side
+    data = gh_graphql_mutation(
+        textwrap.dedent("""\
+            mutation($input: AddPullRequestReviewThreadInput!) {
+              addPullRequestReviewThread(input: $input) {
+                thread { id path isOutdated line startLine diffSide }
+              }
+            }"""),
+        {"input": mutation_input},
+    )
+    thread = data["data"]["addPullRequestReviewThread"]["thread"]
+    if thread is None:
+        line_desc = (
+            f"L{args.start_line}-{args.line}" if args.start_line
+            else f"L{args.line}"
+        )
+        print(
+            f"error: {args.path} {line_desc} is outside the diff hunks. "
+            f"GitHub API does not support comments on non-diff lines. "
+            f"Post this comment manually through the GitHub UI.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    start = thread.get("startLine")
+    end = thread["line"]
+    line_str = f"L{start}-{end}" if start and start != end else f"L{end}"
+    print(f"id: {thread['id']}")
+    print(f"path: {thread['path']}")
+    print(f"line: {line_str}")
+    if thread.get("isOutdated"):
+        print("warning: comment targets outdated code (file has changed)")
+
+
+def cmd_pr_review_view(args: argparse.Namespace) -> None:
+    owner, name = args.repo.split("/", 1)
+    data = gh_graphql(
+        textwrap.dedent("""\
+            query($owner:String!,$repo:String!,$number:Int!) {
+              repository(owner:$owner,name:$repo) {
+                pullRequest(number:$number) {
+                  reviews(first:50) {
+                    nodes {
+                      id state
+                      author { login }
+                    }
+                  }
+                  reviewThreads(first:100) {
+                    nodes {
+                      id isResolved isOutdated
+                      path line startLine
+                      comments(first:20) {
+                        nodes {
+                          author { login }
+                          body createdAt
+                          pullRequestReview { id state }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }"""),
+        owner=owner,
+        repo=name,
+        number=str(args.number),
+    )
+    pr = data["data"]["repository"]["pullRequest"]
+
+    pending = [r for r in pr["reviews"]["nodes"] if r["state"] == "PENDING"]
+    if pending:
+        print("=== PENDING REVIEWS ===")
+        for r in pending:
+            author = (r.get("author") or {}).get("login", "?")
+            print(f"{r['id']} @{author}")
+        print()
+
+    threads = pr["reviewThreads"]["nodes"]
+    if not threads:
+        print("no review threads")
+        return
+
+    print(f"=== THREADS ({len(threads)}) ===")
+    for t in threads:
+        flags = []
+        if t.get("isResolved"):
+            flags.append("resolved")
+        if t.get("isOutdated"):
+            flags.append("outdated")
+        flag_str = f" [{', '.join(flags)}]" if flags else ""
+
+        start = t.get("startLine")
+        line = t.get("line")
+        line_str = f"L{start}-{line}" if start and start != line else f"L{line}"
+
+        comments = (t.get("comments") or {}).get("nodes", [])
+        first = comments[0] if comments else {}
+        author = (first.get("author") or {}).get("login", "?")
+        review = first.get("pullRequestReview") or {}
+        review_state = review.get("state", "?")
+
+        print(f"\n{t['path']} {line_str} @{author} ({review_state}){flag_str}")
+        for c in comments:
+            c_author = (c.get("author") or {}).get("login", "?")
+            body = (c.get("body") or "").strip()
+            if c is first:
+                for body_line in body.splitlines():
+                    print(f"  {body_line}")
+            else:
+                print(f"  @{c_author}:")
+                for body_line in body.splitlines():
+                    print(f"    {body_line}")
+
+
 # --- CLI ---
 
 
@@ -913,6 +1112,41 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_limit(p)
     p.set_defaults(func=cmd_prs)
+
+    p_pr = sub.add_parser("pr", help="PR review operations (pending only)")
+    pr_sub = p_pr.add_subparsers(dest="pr_command", required=True)
+
+    p = pr_sub.add_parser("review-start", help="start a pending review")
+    p.add_argument("repo")
+    p.add_argument("number", type=int)
+    p.set_defaults(func=cmd_pr_review_start)
+
+    p = pr_sub.add_parser("review-delete", help="delete a pending review")
+    p.add_argument("review_id", metavar="REVIEW_ID",
+                   help="PRR_... node id")
+    p.set_defaults(func=cmd_pr_review_delete)
+
+    p = pr_sub.add_parser("review-comment",
+                          help="add inline comment to pending review")
+    p.add_argument("repo")
+    p.add_argument("number", type=int)
+    p.add_argument("--review-id", required=True, help="PRR_... node id")
+    p.add_argument("--path", required=True, help="file path in the PR")
+    p.add_argument("--line", type=int, required=True,
+                   help="line number (or end line for multi-line)")
+    p.add_argument("--start-line", type=int,
+                   help="start line for multi-line comments")
+    p.add_argument("--body", required=True, help="comment body")
+    p.add_argument("--side", choices=["LEFT", "RIGHT"], default="RIGHT",
+                   help="diff side (default: RIGHT)")
+    p.add_argument("--start-side", choices=["LEFT", "RIGHT"],
+                   help="diff side for start line")
+    p.set_defaults(func=cmd_pr_review_comment)
+
+    p = pr_sub.add_parser("review-view", help="view review threads")
+    p.add_argument("repo")
+    p.add_argument("number", type=int)
+    p.set_defaults(func=cmd_pr_review_view)
 
     p = sub.add_parser("releases", help="list releases or show detail")
     p.add_argument("repo")

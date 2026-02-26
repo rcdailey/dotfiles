@@ -120,12 +120,12 @@ Bash and task permissions support glob patterns. Last matching rule wins.
 Use the `variant` field to select a pre-defined reasoning configuration for the agent's model.
 Available variants are model-specific:
 
-| Provider/Model          | Variants                                  |
-|-------------------------|-------------------------------------------|
-| Anthropic Opus 4.6      | `low`, `medium`, `high`, `max` (adaptive) |
-| Anthropic (other)       | `high`, `max` (fixed token budget)        |
-| OpenAI GPT-5 family     | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
-| Google Gemini 3         | `low`, `high`                             |
+| Provider/Model      | Variants                                            |
+|---------------------|-----------------------------------------------------|
+| Anthropic Opus 4.6  | `low`, `medium`, `high`, `max` (adaptive)           |
+| Anthropic (other)   | `high`, `max` (fixed token budget)                  |
+| OpenAI GPT-5 family | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
+| Google Gemini 3     | `low`, `high`                                       |
 
 ```yaml
 ---
@@ -241,9 +241,8 @@ A well-structured agent prompt should include:
 ```markdown
 ## Workflow
 
-1. Load the `pr-review` skill before reviewing code
-2. Read the full diff before commenting
-3. Check existing review comments to avoid duplicates
+1. Read the full diff before commenting
+2. Check existing review comments to avoid duplicates
 ```
 
 **Domain Ownership**: Which paths or concerns this agent handles.

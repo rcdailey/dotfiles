@@ -144,8 +144,6 @@
       "*gh api* --raw-field *": "ask",
       "*gh api* --input *": "ask",
 
-      // Unofficial Extensions
-      "*gh pr-review*": "ask",
     },
     "read": {
       "*": "allow"
