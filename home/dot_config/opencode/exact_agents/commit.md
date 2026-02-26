@@ -76,6 +76,7 @@ When user specifies non-conventional format (e.g., DCO sign-off, Chris Beams sty
 
 Commit only staged changes.
 
+1. `git status -sb` to confirm which files are staged
 1. `git diff --cached` (fail if nothing staged; do NOT stage for user)
 1. Complete the mandatory research phase
 1. `git commit`
@@ -94,14 +95,20 @@ Break changes into logical commits (2-5 max).
 
 **Planning phase:**
 
-1. `git add -N . && git diff && git reset` to see all changes
+1. `git status -sb` to see the current state of all changes
+1. `git add -N . && git diff && git reset` to see the full diff of all changes
 1. Plan groups by: directory > file type > change type > dependency order
 1. List files for each commit before starting
 
 **Execution phase (for each group):**
 
-1. `git add <files|directories>` to stage only that group's files/directories. If a file needs to be
-   partially committed, use `git hunks` (load the `git-hunks` skill for usage)
+Always start from a clean index. Use `git reset HEAD` to unstage everything, then `git add` only
+the files for this commit. NEVER try to selectively unstage individual files; the reset-then-add
+approach is safer because `git add` cannot destroy uncommitted work while selective unstaging can.
+
+1. `git reset HEAD` to clear the index (skip for the first group if nothing is staged)
+1. `git add <files|directories>` to stage only this group's files. If a file needs to be partially
+   committed, use `git hunks` (load the `git-hunks` skill for usage)
 1. `git status -sb` to verify ONLY intended files are staged
 1. `git diff --cached` to review the staged diff and compose an appropriate message
 1. `git commit` with properly wrapped message
@@ -110,6 +117,8 @@ Break changes into logical commits (2-5 max).
 **Critical rules:**
 
 - NEVER use `git reset --soft HEAD~N` after any commit succeeds; this squashes groupings
+- NEVER use `git reset HEAD <file>` or `git restore --staged` to selectively unstage; always reset
+  the full index with bare `git reset HEAD` then re-add what you need
 - Pre-commit hooks stash/restore unstaged files; verify staging is clean after hooks run
 - If a commit fails (commitlint, hooks), the commit doesn't exist; fix the issue and retry the same
   `git add && git commit` sequence
