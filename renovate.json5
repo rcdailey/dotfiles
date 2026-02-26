@@ -1,0 +1,131 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "config:recommended",
+    ":disableRateLimiting",
+    ":semanticCommits",
+    "helpers:pinGitHubActionDigestsToSemver",
+  ],
+
+  dependencyDashboardTitle: "Renovate Dashboard",
+  configMigration: true,
+  gitIgnoredAuthors: ["227055450+renohate[bot]@users.noreply.github.com"],
+
+  "pre-commit": {
+    enabled: true,
+  },
+
+  // Generic annotation-based custom manager for dependencies in scripts and config files.
+  // Usage: Add a comment like `# renovate: datasource=github-releases depName=org/repo` above
+  // the line containing the version string.
+  customManagers: [
+    {
+      description: "Process annotated dependencies",
+      customType: "regex",
+      managerFilePatterns: [
+        "/(^|/).+\\.env$/",
+        "/(^|/).+\\.sh$/",
+        "/(^|/).+\\.ya?ml$/",
+        "/(^|/).+\\.toml$/",
+      ],
+      matchStrings: [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( repository=(?<registryUrl>\\S+))?\\n.+(:\\s|=)(&\\S+\\s)?(?<currentValue>\\S+)",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n.+/(?<currentValue>(v|\\d)[^/]+)",
+      ],
+      datasourceTemplate: "{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}",
+    },
+  ],
+
+  // Semantic commit and label configuration
+  packageRules: [
+    // Update type labels and commit formatting
+    {
+      matchUpdateTypes: ["major"],
+      labels: ["type/major"],
+      semanticCommitType: "build",
+      semanticCommitScope: "deps",
+      commitMessagePrefix: "{{semanticCommitType}}({{semanticCommitScope}})!:",
+      commitMessageExtra: "( {{currentVersion}} -> {{newVersion}} )",
+    },
+    {
+      matchUpdateTypes: ["minor"],
+      labels: ["type/minor"],
+      semanticCommitType: "build",
+      semanticCommitScope: "deps",
+      commitMessageExtra: "( {{currentVersion}} -> {{newVersion}} )",
+    },
+    {
+      matchUpdateTypes: ["patch"],
+      labels: ["type/patch"],
+      semanticCommitType: "build",
+      semanticCommitScope: "deps",
+      commitMessageExtra: "( {{currentVersion}} -> {{newVersion}} )",
+    },
+    {
+      matchUpdateTypes: ["digest"],
+      labels: ["type/digest"],
+      semanticCommitType: "build",
+      semanticCommitScope: "deps",
+      commitMessageExtra: "( {{currentDigestShort}} -> {{newDigestShort}} )",
+    },
+
+    // Source-specific labels and commit topics
+    {
+      matchManagers: ["github-actions"],
+      addLabels: ["renovate/github-action"],
+      commitMessageTopic: "action {{depName}}",
+    },
+    {
+      matchManagers: ["pre-commit"],
+      addLabels: ["renovate/pre-commit"],
+      commitMessagePrefix: "chore(deps):",
+      commitMessageTopic: "pre-commit hook {{depName}}",
+    },
+    {
+      matchManagers: ["mise"],
+      addLabels: ["renovate/mise"],
+      commitMessageTopic: "tool {{depName}}",
+    },
+    {
+      matchDatasources: ["github-releases"],
+      addLabels: ["renovate/github-release"],
+      commitMessageTopic: "release {{depName}}",
+    },
+
+    // Auto-merge: pre-commit hooks (minor and patch)
+    {
+      description: "Auto-merge pre-commit hooks",
+      matchManagers: ["pre-commit"],
+      automerge: true,
+      automergeType: "pr",
+      matchUpdateTypes: ["minor", "patch"],
+      ignoreTests: true,
+    },
+
+    // Auto-merge: GitHub Actions (minor, patch, digest)
+    {
+      description: "Auto-merge GitHub Actions",
+      matchManagers: ["github-actions"],
+      automerge: true,
+      automergeType: "pr",
+      matchUpdateTypes: ["minor", "patch", "digest"],
+      minimumReleaseAge: "3 days",
+    },
+
+    // Auto-merge: mise tools (minor and patch)
+    {
+      description: "Auto-merge mise tools",
+      matchManagers: ["mise"],
+      automerge: true,
+      automergeType: "pr",
+      matchUpdateTypes: ["minor", "patch"],
+    },
+    {
+      description: "Disable auto-merge for mise Python minor/major",
+      matchManagers: ["mise"],
+      matchPackageNames: ["python"],
+      matchUpdateTypes: ["minor", "major"],
+      automerge: false,
+    },
+  ],
+}
