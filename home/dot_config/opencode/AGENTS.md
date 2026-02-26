@@ -61,6 +61,8 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
   `gh api` or `gh` subcommands for: orientation (metadata, structure, languages, contributors), file
   browsing, code search, commits, blame, PRs, issues, releases, and comparisons. NEVER use raw `gh
   api` or `gh` CLI for these operations; `gh-scout` handles all API interaction internally.
+- Use `gh-review` for PR review operations (pending reviews, inline comments). MUST use instead of
+  raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
 - Use `gh` CLI directly only for mutations (creating PRs, pushing, repo settings) and auth.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
 - MUST use Edit for modifying existing files; NEVER use Write to replace a file that needs targeted
@@ -79,7 +81,7 @@ the trigger condition is met violates this directive.
 - `gh-api`: REQUIRED when managing draft PRs, posting PR comments, or querying Discussions
 - `gh-gist`: REQUIRED when creating or editing GitHub Gists
 - `git-hunks`: REQUIRED when staging individual hunks or partial file changes
-- `gh-pr-review`: REQUIRED when reviewing pull requests on GitHub
+- `gh-pr-review`: REQUIRED when posting code review comments on pull requests
 - `exploring-github`: REQUIRED when exploring remote GitHub repositories. This includes: browsing
   repo contents or file trees, reading remote files, searching code in repos, inspecting
   issues/PRs/commits/releases, comparing refs or tags, viewing blame, analyzing contributors or

@@ -3,8 +3,10 @@ description: Code review for PRs with GitHub-ready comments
 ---
 
 Review code and create `pr-{number}-review-comments.ignored.md` in repo root with GitHub-ready
-comments. Focus on critical/high priority issues unless $ARGUMENTS includes "medium", "minor",
-"low", or "all".
+comments. Load the `gh-pr-review` skill for review etiquette and tooling reference.
+
+Focus on critical/high priority issues unless $ARGUMENTS includes "medium", "minor", "low", or
+"all".
 
 ## Argument Parsing
 
@@ -30,7 +32,7 @@ Working copy has uncommitted changes. Clean up before PR checkout:
 
 For PRs (after safety check passes):
 
-- `gh pr view {number} --json title,body,files,additions,deletions`
+- `gh-scout prs {owner/repo} {number}` for PR metadata and comments
 - `gh pr checkout {number}`
 - `gh pr diff {number}`
 
@@ -40,26 +42,12 @@ For current changes: `git status` and `git diff HEAD`
 
 ### 3. Analyze
 
-Use Context7 and web search to verify unfamiliar patterns, best practices, and security
-implications. With PR checked out, read full files to understand context beyond the diff.
-
-Review categories (priority order):
-
-- **Security**: Credentials, injection, auth flaws, input validation
-- **Architecture**: Resource config, error handling, data loss risks, breaking changes
-- **Code quality**: Duplication, logic errors, performance, missing config
-
-Medium/low (only if requested): Organization, docs, test coverage, style, naming
+With PR checked out, read full files to understand context beyond the diff. Apply the review
+priorities and verification rules from the `gh-pr-review` skill.
 
 ### 4. Write Comments
 
-For each issue, verify every technical claim with Context7/web search before writing.
-
-**Tone:**
-
-- Bugs/defects: Direct language ("I think this is a bug...", "This will cause...")
-- Style/architecture: Questions ("What do you think about...", "Would it make sense to...")
-- Use contractions, be conversational, comment on code not developer
+Apply the tone and etiquette guidelines from the `gh-pr-review` skill.
 
 **Format:**
 
@@ -75,8 +63,6 @@ For each issue, verify every technical claim with Context7/web search before wri
 {code fix if applicable}
 ```
 ````
-
-Skip comments that just repeat what other reviewers already said.
 
 ### 5. File Structure
 
