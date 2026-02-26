@@ -34,30 +34,6 @@
       "url": "https://mcp.dailey.app/mcp"
     }
   },
-  "tui": {
-    "diff_style": "stacked"
-  },
-  "keybinds": {
-    "session_parent": "alt+up",
-    "session_child_cycle": "alt+right",
-    "session_child_cycle_reverse": "alt+left",
-    "session_timeline": "alt+z",
-    "session_fork": "alt+f",
-    "input_visual_line_home": "home",
-    "input_visual_line_end": "end",
-    "model_list": "alt+m",
-    "messages_copy": "alt+c",
-    "messages_undo": "alt+u",
-    "session_list": "alt+l",
-    "session_new": "alt+n",
-    "display_thinking": "alt+t",
-
-    // these conflict with home/end keys above
-    "messages_first": "ctrl+g",
-    "messages_last": "ctrl+alt+g",
-    "input_buffer_home": "none",
-    "input_buffer_end": "none"
-  },
   "permission": {
     "*": "allow",
     "grep": "deny", // require ripgrep instead
