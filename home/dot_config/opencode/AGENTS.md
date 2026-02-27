@@ -53,6 +53,9 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 
 ## Tools
 
+- ALWAYS use `rg` (ripgrep) for file and text search; it is installed, faster, and respects
+  .gitignore. NEVER use `grep`, `find -name`, `awk`, `sed`, or piped search chains. Patterns: `rg
+  --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter).
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh-scout` for all remote GitHub repository exploration. MUST use `gh-scout` instead of raw
   `gh api` or `gh` subcommands for: orientation (metadata, structure, languages, contributors), file
