@@ -102,8 +102,8 @@ Break changes into logical commits (2-5 max).
 
 **Execution phase (for each group):**
 
-Always start from a clean index. Use `git reset HEAD` to unstage everything, then `git add` only
-the files for this commit. NEVER try to selectively unstage individual files; the reset-then-add
+Always start from a clean index. Use `git reset HEAD` to unstage everything, then `git add` only the
+files for this commit. NEVER try to selectively unstage individual files; the reset-then-add
 approach is safer because `git add` cannot destroy uncommitted work while selective unstaging can.
 
 1. `git reset HEAD` to clear the index (skip for the first group if nothing is staged)
@@ -176,6 +176,11 @@ Include a body when ANY of these apply:
 - Change affects 3+ files or 50+ lines
 - Issue keys were provided (body is required to hold the trailers)
 - The caller provided context about why the change was made that adds value beyond the subject
+- Caller provided minimal or no context (e.g., just a workflow keyword like "staged" or "all"), and
+  the mandatory research phase revealed observations about affected components, change nature, or
+  non-obvious implications that add value beyond the subject line. The research phase already
+  requires forming these observations; when no caller context exists to supplement the subject,
+  those observations belong in the body.
 
 ### Issue Keys
 
@@ -207,8 +212,7 @@ Follow the tracker's conventions for linking and resolution keywords if known.
 ### Body Format
 
 - Hard-wrap at 72 chars (break at last word boundary before exceeding)
-- Prefer no body over a badly wrapped body. If wrapping is difficult, the body is probably
-  unnecessary.
+- If wrapping is difficult, simplify the body content rather than omitting it entirely.
 - Use one `-m` for subject and one `-m` for the entire body
 - Embed newlines with `$'...\n...'` syntax for hard-wrapping within a single `-m`
 - DO NOT use `-m ""` to create blank lines (confuses some commitlint parsers)
@@ -256,8 +260,8 @@ A rejected commit (hook failure) does NOT create a commit. The staging area is p
 
 ### External Hook Conflicts
 
-When a repo-owned commitlint config enforces a format that conflicts with conventional commits (e.g.,
-custom types, different header length rules, or a non-conventional format):
+When a repo-owned commitlint config enforces a format that conflicts with conventional commits
+(e.g., custom types, different header length rules, or a non-conventional format):
 
 1. Look for `.commitlintrc*`, `commitlint.config.*`, `.husky/` in repo
 2. If present and the rules conflict with conventional commit format, adapt the message to satisfy
