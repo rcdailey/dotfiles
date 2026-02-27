@@ -92,6 +92,8 @@ the trigger condition is met violates this directive.
 
 SHOULD use agents autonomously without explicit prompt from user for appropriate operations.
 
+- When delegating to subagents, explicitly require them to respond directly to the caller; MUST NOT
+  write research, outcomes, or responses to files on disk.
 - `commit`: For commit-related requests with git (NO push or gh cli allowed). Batch multiple commits
   into a single delegation; one agent per commit is wasteful. Callers MUST NOT run git inspection
   commands (diff, status, log, show) before delegating; the subagent performs all inspection
