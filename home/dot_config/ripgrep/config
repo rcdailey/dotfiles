@@ -18,3 +18,7 @@
 
 # Use heading format for better readability (groups matches by file)
 --heading
+
+# Truncate lines longer than 2000 characters (matches opencode grep tool behavior)
+--max-columns=2000
+--max-columns-preview

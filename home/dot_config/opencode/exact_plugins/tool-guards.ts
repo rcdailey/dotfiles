@@ -1,43 +1,53 @@
 import type { Plugin } from "@opencode-ai/plugin"
 
+// Extract command names from the first line of a shell command. Only the first
+// line is checked because multi-line content is heredocs or inline scripts
+// where tool names appear as data, not invocations. Splits on shell operators
+// (|, &&, ||, ;) and resolves each segment's first meaningful token (skipping
+// env assignments, sudo, env).
+function extractCommands(input: string): string[] {
+  const firstLine = input.split("\n")[0]
+  const segments = firstLine.split(/\s*(?:\|(?!\|)|\|\||&&|;)\s*/)
+  const commands: string[] = []
+  for (const segment of segments) {
+    const tokens = segment.trim().split(/\s+/)
+    for (const token of tokens) {
+      if (!token || token.includes("=") || token === "sudo" || token === "env")
+        continue
+      commands.push(token.includes("/") ? token.split("/").pop()! : token)
+      break
+    }
+  }
+  return commands
+}
+
 interface RedirectionRule {
-  pattern: RegExp
+  command: string
+  subpattern?: RegExp
   message: string
 }
 
 const REDIRECTIONS: RedirectionRule[] = [
   {
-    pattern: /(?<!-)\bgrep\b/,
+    command: "grep",
     message: "Use 'rg' instead of 'grep' for better performance and features",
   },
   {
-    pattern: /\bfind\b.*-name/,
+    command: "find",
+    subpattern: /-name/,
     message: "Use 'rg --files -g pattern' instead of 'find -name'",
   },
   {
-    pattern: /\|.*(?<!-)\bgrep\b/,
-    message:
-      "Avoid chaining grep commands - use 'rg' with multiple patterns or combined regex",
-  },
-  {
-    pattern: /\bls\b.*\|.*\b(rg|grep)\b/,
-    message:
-      "Use 'rg --files -g pattern' instead of 'ls | rg/grep' for file filtering",
-  },
-  {
-    pattern: /\bfind\b.*\|.*\b(rg|grep)\b/,
-    message:
-      "Use 'rg --files -g pattern' instead of 'find | rg/grep' combinations",
-  },
-  {
-    pattern: /sops\s+--set/,
+    command: "sops",
+    subpattern: /\s--set\b/,
     message:
       "Use 'sops set' instead of 'sops --set'\nCorrect: sops set file.sops.yaml '[\"section\"][\"key\"]' '\"value\"'",
   },
 ]
 
-const EXCLUDED_COMMAND_PREFIX =
-  /^\s*(git|ssh|gh\s+search|kubectl\s+(exec|run|debug)|docker\s+exec|podman\s+exec|talosctl)\s/
+// Commands that run in remote/container contexts where we can't control tooling
+const REMOTE_EXEC =
+  /^\s*(git|ssh|kubectl\s+(exec|run|debug)|docker\s+exec|podman\s+exec|talosctl)\s/
 
 export const ToolGuards: Plugin = async () => {
   return {
@@ -47,14 +57,14 @@ export const ToolGuards: Plugin = async () => {
       const command = output.args?.command as string
       if (!command) return
 
-      // Skip validation for remote execution and container commands
-      if (EXCLUDED_COMMAND_PREFIX.test(command)) return
+      if (REMOTE_EXEC.test(command)) return
 
-      // Check tool redirections
+      const cmds = extractCommands(command)
+
       for (const rule of REDIRECTIONS) {
-        if (rule.pattern.test(command)) {
-          throw new Error(`TOOL USAGE VIOLATION: ${rule.message}`)
-        }
+        if (!cmds.includes(rule.command)) continue
+        if (rule.subpattern && !rule.subpattern.test(command)) continue
+        throw new Error(`TOOL USAGE VIOLATION: ${rule.message}`)
       }
     },
   }
