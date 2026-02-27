@@ -5,16 +5,22 @@ description: Use when writing or modifying C# code
 
 # C# Coding Skill
 
-Patterns and idioms for writing modern C# code.
+Mandatory patterns and idioms for writing modern C#. All items in this skill are requirements, not
+suggestions. Use for new code; opportunistically refactor existing code when revisiting.
 
-This skill covers C# 14 language features, .NET 10 conventions, and idiomatic C# development. Load
-this skill before writing or modifying C# code.
+## Framework Detection
+
+Before writing code, check `TargetFramework` in the project's csproj to determine the available C#
+language version. If the csproj has no `TargetFramework`, look for a `Directory.Build.props` (or
+other `*.props` file) that defines it; these files spread common properties across multiple
+projects. Only use features whose minimum version tag (e.g., C# 12+) is satisfied by the project.
+When a mandated feature is unavailable, fall back to the idiomatic alternative for that version.
 
 ## Required Language Features
 
 - File-scoped namespaces: `namespace MyApp.Core;`
-- Primary constructors: `class Service(IDep dep, ILogger logger)`
-- Collection expressions (MANDATORY): `[]`, `[item]`, `[..spread]`
+- Primary constructors (C# 12+): `class Service(IDep dep, ILogger logger)`
+- Collection expressions (C# 12+): `[]`, `[item]`, `[..spread]`
   - NEVER use `new[]`, `new List<T>()`, `Array.Empty<T>()`
   - For type inference, prefer `[new T { }, new T { }]` over casts
   - Use `T[] x = [...]` only when simpler forms fail
@@ -24,16 +30,16 @@ this skill before writing or modifying C# code.
   - Recursive/nested: `obj is Type { Outer: { Inner: value } }`
   - Extended property pattern: `obj is { Outer.Inner: value }` (C# 10)
   - Empty property pattern: `{ } name` matches non-null and binds (e.g., `is Type { Prop: { } x }`)
-- Spread operator for collections: `[..first, ..second]`
-
-## C# 14 Features (.NET 10)
-
-- `field` keyword: `public string Name { get; set => field = value ?? throw; } = "";`
-- Extension blocks: `extension(T src) { public bool IsEmpty => !src.Any(); }` (properties + statics)
-- Null-conditional assignment: `obj?.Prop = value;` (RHS evaluated only if obj not null)
-- Lambda modifiers without types: `(text, out result) => int.TryParse(text, out result)`
-
-Migration: Use new syntax for new code; opportunistically refactor existing code when revisiting.
+- Spread operator for collections (C# 12+): `[..first, ..second]`
+- `field` keyword in properties (C# 14+): `public string Name { get; set => field = value ?? throw;
+  } = "";`
+  - NEVER use explicit backing fields when `field` suffices
+- Extension blocks for extension methods and properties (C# 14+): `extension(T src) { public bool
+  IsEmpty => !src.Any(); }`
+  - NEVER use `static class` with `this` parameter for new extension methods
+- Null-conditional assignment (C# 14+): `obj?.Prop = value;` over null checks wrapping assignment
+- Lambda modifiers without types (C# 14+): `(text, out result) => int.TryParse(text, out result)`
+  - NEVER add redundant parameter types when modifiers alone suffice
 
 ## Required Idioms
 
@@ -127,9 +133,9 @@ Comments must earn their place by reducing cognitive load. When to comment:
 - Early returns/continues: Include reason if not obvious from context
 - Complex algorithms: Comment explaining approach at top, not line-by-line
 - Null-suppression operator (`!`): Every use MUST have an inline comment explaining why null is
-  impossible at that point (e.g., `// non-null: validated above`, `// non-null: dict always
-  contains key after init`). The comment documents the runtime guarantee so reviewers can verify
-  it and future maintainers can detect if the invariant breaks.
+  impossible at that point (e.g., `// non-null: validated above`, `// non-null: dict always contains
+  key after init`). The comment documents the runtime guarantee so reviewers can verify it and
+  future maintainers can detect if the invariant breaks.
 - General: Any code where a reader would pause and wonder "why?" or "what's happening here?"
 
 NEVER:
