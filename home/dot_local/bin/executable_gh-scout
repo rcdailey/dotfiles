@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import re
 import shutil
@@ -193,13 +194,13 @@ def cmd_orient(args: argparse.Namespace) -> None:
         for directory, count, exts in rows[:100]:
             print(f"{directory:<{col1}}  {f'{count} files':<{col2}}  {exts}")
 
-    lang_data = gh_api(f"repos/{repo}/languages")
-    lang_total = sum(lang_data.values()) or 1
-    if lang_data:
+    lang_entries = metadata.get("languages", [])
+    if lang_entries:
+        lang_total = sum(l["size"] for l in lang_entries) or 1
         print()
         print("=== LANGUAGES ===")
-        for lang, bytes_ in lang_data.items():
-            print(f"{lang}: {bytes_ / lang_total * 100:.1f}%")
+        for l in lang_entries:
+            print(f"{l['node']['name']}: {l['size'] / lang_total * 100:.1f}%")
 
     try:
         contribs = gh_api(
@@ -278,21 +279,22 @@ def cmd_read(args: argparse.Namespace) -> None:
     params: dict[str, str] = {}
     if args.ref:
         params["ref"] = args.ref
-    try:
-        raw = gh_api(
-            f"repos/{args.repo}/contents/{args.path}", params=params
-        )
-    except GhError:
-        raw = None
-    if isinstance(raw, list):
-        items = sorted(raw, key=lambda x: (x["type"] != "dir", x["name"]))
+    data = gh_api(
+        f"repos/{args.repo}/contents/{args.path}", params=params
+    )
+    if isinstance(data, list):
+        items = sorted(data, key=lambda x: (x["type"] != "dir", x["name"]))
         for i in items:
             suffix = "/" if i["type"] == "dir" else f"  {i['size']}B"
             print(f"{i['name']}{suffix}")
         return
-    content = gh_api_raw(
-        f"repos/{args.repo}/contents/{args.path}", params=params
-    )
+    if data.get("content"):
+        content = base64.b64decode(data["content"]).decode()
+    else:
+        # File too large for contents API (>1MB); fall back to raw.
+        content = gh_api_raw(
+            f"repos/{args.repo}/contents/{args.path}", params=params
+        )
     lines = content.splitlines(keepends=True)
     lines = lines[offset:][:limit]
     sys.stdout.write("".join(lines))
@@ -309,18 +311,6 @@ def cmd_tree(args: argparse.Namespace) -> None:
         print(path)
 
 
-def _resolve_repo(repo: str) -> str:
-    """Resolve a repo to its canonical owner/name (follows renames)."""
-    try:
-        data = json.loads(run_gh("repo", "view", repo, "--json", "nameWithOwner"))
-        canonical = data["nameWithOwner"]
-        if canonical.lower() != repo.lower():
-            print(f"warning: {repo} -> {canonical} (repo renamed)", file=sys.stderr)
-        return canonical
-    except GhError:
-        return repo
-
-
 def cmd_search(args: argparse.Namespace) -> None:
     limit = args.limit or 20
     cmd = [
@@ -329,7 +319,7 @@ def cmd_search(args: argparse.Namespace) -> None:
         "--json", "path,repository,textMatches",
     ]
     for r in (args.search_repos or []):
-        cmd.extend(["--repo", _resolve_repo(r)])
+        cmd.extend(["--repo", r])
     data = json.loads(run_gh(*cmd))
     scoped = bool(args.search_repos and len(args.search_repos) == 1)
     for i, item in enumerate(data):
