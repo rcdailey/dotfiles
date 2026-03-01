@@ -69,6 +69,10 @@ phase, even if the caller describes the change in detail or suggests a commit me
 1. `git log --oneline -5` for recent commit context
 1. `git show` or file reads if the diff alone is insufficient to understand intent
 
+Scan the diff for `CodeReview` marker comments in added or modified lines. If any are found, stop
+immediately. Report each marker (file, line, content) to the calling agent and do not proceed with
+the commit or attempt to remove them.
+
 After these commands, articulate internally (not in output):
 
 - Which components, modules, or systems are affected
