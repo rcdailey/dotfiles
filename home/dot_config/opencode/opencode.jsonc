@@ -29,9 +29,16 @@
     // "@tarquinen/opencode-dcp@latest" // super bad to use this with anthropic -- causes $$$
   ],
   "mcp": {
-    "toolhive": {
+    "context7": {
       "type": "remote",
-      "url": "https://mcp.dailey.app/mcp"
+      "url": "https://mcp.context7.com/mcp/oauth"
+    },
+    "searxng": {
+      "type": "local",
+      "command": ["npx", "-y", "mcp-searxng"],
+      "environment": {
+        "SEARXNG_URL": "https://search.dailey.app"
+      }
     }
   },
   "permission": {
