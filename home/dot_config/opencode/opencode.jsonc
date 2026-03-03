@@ -34,11 +34,8 @@
       "url": "https://mcp.context7.com/mcp/oauth"
     },
     "searxng": {
-      "type": "local",
-      "command": ["npx", "-y", "github:rcdailey/mcp-searxng"],
-      "environment": {
-        "SEARXNG_URL": "https://search.dailey.app"
-      }
+      "type": "remote",
+      "url": "https://mcp-search.dailey.app/mcp"
     }
   },
   "permission": {
