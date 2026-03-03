@@ -588,7 +588,7 @@ def cmd_repo_search(args: argparse.Namespace) -> None:
         "search", "repos", args.query,
         "--limit", str(limit),
         "--json", "fullName,stargazersCount,language,description,"
-                  "updatedAt,isArchived",
+                  "updatedAt,isArchived,isFork",
     ]
     if args.language:
         cmd.extend(["--language", args.language])
@@ -604,6 +604,10 @@ def cmd_repo_search(args: argparse.Namespace) -> None:
     if args.owner:
         for o in args.owner:
             cmd.extend(["--owner", o])
+    if args.include_forks:
+        cmd.extend(["--include-forks", args.include_forks])
+    if args.visibility:
+        cmd.extend(["--visibility", args.visibility])
     data = json.loads(run_gh(*cmd))
     if not data:
         print("no results")
@@ -613,10 +617,15 @@ def cmd_repo_search(args: argparse.Namespace) -> None:
         stars = f"{r['stargazersCount']:>6}*"
         lang = (r.get("language") or "?")[:12]
         updated = (r.get("updatedAt") or "")[:10]
-        archived = " [archived]" if r.get("isArchived") else ""
+        flags = []
+        if r.get("isArchived"):
+            flags.append("archived")
+        if r.get("isFork"):
+            flags.append("fork")
+        flag_str = f" [{','.join(flags)}]" if flags else ""
         desc = _trunc(r.get("description") or "", 80)
         print(f"{r['fullName']:<{col1}}  {stars}  {lang:<12}  "
-              f"{updated}{archived}  {desc}")
+              f"{updated}{flag_str}  {desc}")
 
 
 def _release_detail(repo: str, tag: str) -> None:
@@ -871,6 +880,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--topic", action="append", help="filter by topic; repeatable")
     p.add_argument("--owner", action="append", help="filter by owner; repeatable")
     p.add_argument("--updated", help="last updated filter (e.g. >=2025-01-01)")
+    p.add_argument("--include-forks", choices=["false", "true", "only"],
+                   help="include forks: false (default), true, or only")
+    p.add_argument("--visibility", choices=["public", "private", "internal"],
+                   help="filter by visibility")
     _add_limit(p)
     p.set_defaults(func=cmd_repo_search)
 

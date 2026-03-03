@@ -39,7 +39,7 @@ gh-scout releases    REPO [TAG]                              # list or detail
 Search commands do not take a positional REPO; scope with flags instead:
 
 ```txt
-gh-scout repo-search QUERY [--sort stars] [--stars ">=N"] [--language L] [--topic T]
+gh-scout repo-search QUERY [--sort stars] [--stars ">=N"] [--language L] [--topic T] [--include-forks only]
 gh-scout code-search QUERY [--repo OWNER/REPO]  # --repo is repeatable
 ```
 
@@ -96,6 +96,8 @@ Pause and ask the user when:
   code-search "changelog" language:go` (argparse error).
 - Use `repo-search` (not `code-search`) when looking for repositories by topic, popularity, or
   language. `code-search` returns file matches; `repo-search` returns repos with stars and metadata.
+- To find a user's forks of a project, use `repo-search` with owner and fork filters:
+  `gh-scout repo-search toolhive --owner rcdailey --include-forks only`.
 - Issue and discussion detail views show emoji reaction breakdowns (upvotes, hearts, etc.).
   Discussion detail also shows the accepted answer when present.
 - `discussions` supports `--category`, `--answered`, and `--unanswered` filters. Categories are
