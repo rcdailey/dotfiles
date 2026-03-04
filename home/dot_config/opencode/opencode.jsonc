@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "logLevel": "DEBUG",
   "autoupdate": false,
   "share": "manual",
   "compaction": { "auto": false },
