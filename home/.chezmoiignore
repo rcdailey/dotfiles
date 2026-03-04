@@ -36,9 +36,7 @@ Documents/**
 AppData/**
 {{ end }}
 
-# Exclude Linux-specific xremap files on non-Linux platforms
+# Exclude Linux-specific files on non-Linux platforms
 {{ if ne .chezmoi.os "linux" }}
-.local/bin/setup-xremap
-.config/xremap/**
-.config/systemd/user/xremap.service
+.config/systemd/**
 {{ end }}
