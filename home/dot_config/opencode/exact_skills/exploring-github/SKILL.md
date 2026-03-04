@@ -40,7 +40,7 @@ Search commands do not take a positional REPO; scope with flags instead:
 
 ```txt
 gh-scout repo-search QUERY [--sort stars] [--stars ">=N"] [--language L] [--topic T] [--include-forks only]
-gh-scout code-search QUERY [--repo OWNER/REPO]  # --repo is repeatable
+gh-scout code-search QUERY [--repo OWNER/REPO]  # --repo is repeatable; NO regex
 ```
 
 Most commands also accept `--ref REF` (branch/tag/SHA) and `--limit N`.

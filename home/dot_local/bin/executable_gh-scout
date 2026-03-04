@@ -321,6 +321,9 @@ def cmd_search(args: argparse.Namespace) -> None:
     for r in (args.search_repos or []):
         cmd.extend(["--repo", r])
     data = json.loads(run_gh(*cmd))
+    if not data:
+        print("no results")
+        return
     scoped = bool(args.search_repos and len(args.search_repos) == 1)
     for i, item in enumerate(data):
         repo = item["repository"]["nameWithOwner"]
