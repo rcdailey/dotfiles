@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+# opencode-clear-plugins - Clear the opencode plugin cache to force re-resolution
+#
+# Removes cached node_modules, lockfile, and package.json from the opencode
+# cache directory so that @latest-tagged plugins are freshly resolved on
+# next launch.
+#
+# Usage:
+#   opencode-clear-plugins
+
+set -euo pipefail
+
+readonly CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/opencode"
+readonly OPENCODE_BIN="${HOME}/.opencode/bin/opencode"
+
+# Resolve Bun's global install cache using opencode's embedded Bun runtime.
+# bun pm cache requires a package.json in cwd, so we must resolve this
+# BEFORE deleting anything from CACHE_DIR.
+resolve_bun_cache() {
+  if [[ ! -x "$OPENCODE_BIN" ]]; then
+    return 1
+  fi
+  if [[ ! -d "$CACHE_DIR" ]]; then
+    return 1
+  fi
+  BUN_BE_BUN=1 "$OPENCODE_BIN" pm cache --cwd "$CACHE_DIR" 2>/dev/null
+}
+
+removed=0
+
+remove_path() {
+  local target="$1"
+  if [[ -e "$target" ]]; then
+    rm -rf "$target"
+    echo "Removed $target"
+    ((++removed))
+  fi
+}
+
+# Resolve Bun's global cache path first (needs package.json to exist)
+bun_cache="$(resolve_bun_cache || true)"
+
+# Clear opencode's plugin cache (package.json, lockfile, node_modules)
+if [[ -d "$CACHE_DIR" ]]; then
+  for t in node_modules bun.lock package.json; do
+    remove_path "$CACHE_DIR/$t"
+  done
+fi
+
+# Clear Bun's global install cache so stale package metadata doesn't
+# cause bun add --force to resolve outdated versions
+if [[ -n "$bun_cache" && -d "$bun_cache" ]]; then
+  remove_path "$bun_cache"
+fi
+
+if ((removed == 0)); then
+  echo "Plugin cache was already clean."
+else
+  echo "Cleared $removed item(s). Plugins will re-resolve on next opencode launch."
+fi

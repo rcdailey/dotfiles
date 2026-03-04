@@ -39,6 +39,12 @@ export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
 
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 
+# Force opencode's embedded Bun to bypass its global package cache when
+# resolving @latest plugin versions. Without this, Bun serves stale metadata
+# and plugins don't upgrade until the cache is manually cleared.
+# See: https://github.com/oven-sh/bun/issues/19936
+export CI=1
+
 # Homebrew - disable new casks/formula messages and analytics
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_BOOTSNAP=1
