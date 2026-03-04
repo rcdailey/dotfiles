@@ -1,0 +1,9 @@
+[Unit]
+Description=Periodically clean up orphaned TUI processes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

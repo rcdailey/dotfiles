@@ -1,0 +1,19 @@
+[Unit]
+Description=Clean up orphaned TUI processes (opencode, etc.)
+
+[Service]
+Type=oneshot
+# Orphaned processes get reparented to the user's systemd instance.
+# Find opencode processes whose parent is systemd and that have been
+# running for more than 5 minutes (avoids killing fresh startups).
+ExecStart=/bin/bash -c '\
+  sd_pid=$$(pgrep -u $$USER -x systemd --oldest); \
+  for name in opencode; do \
+    pgrep -u $$USER -P "$$sd_pid" -x "$$name" | while read pid; do \
+      etimes=$$(ps -o etimes= -p "$$pid" 2>/dev/null | tr -d " "); \
+      if [ "$${etimes:-0}" -gt 300 ]; then \
+        kill -TERM "$$pid" 2>/dev/null && \
+          echo "Terminated orphaned $$name (PID $$pid, uptime $${etimes}s)"; \
+      fi; \
+    done; \
+  done'
