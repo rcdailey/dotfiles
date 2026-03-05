@@ -19,7 +19,7 @@ repos:
 
 # Python: Ruff for linting and formatting
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.13.1
+  rev: v0.15.4
   hooks:
   - id: ruff-check
     args: [--fix]
@@ -30,7 +30,7 @@ repos:
 
 # YAML validation
 - repo: https://github.com/adrienverge/yamllint
-  rev: v1.37.1
+  rev: v1.38.0
   hooks:
   - id: yamllint
     args: [--format, parsable, --strict]
@@ -46,9 +46,18 @@ repos:
     files: \.(ps1|psm1|psd1)$
     stages: [manual]
 
+# TypeScript: Biome for linting and formatting
+- repo: local
+  hooks:
+  - id: biome
+    name: Biome check
+    entry: biome check --write --no-errors-on-unmatched
+    language: system
+    files: \.(ts|tsx|js|jsx)$
+
 # Markdown formatting
 - repo: https://github.com/DavidAnson/markdownlint-cli2
-  rev: v0.18.1
+  rev: v0.21.0
   hooks:
   - id: markdownlint-cli2
     args: [--fix]
