@@ -19,10 +19,6 @@ uv = "latest"
 yamllint = "latest"
 yq = "latest"
 
-# Python and packages
-python = "3.13"
-"pipx:git-filter-repo" = "latest"
-
 # Node and NPM packages
 node = "latest"
 "npm:@commitlint/cli" = "latest"
