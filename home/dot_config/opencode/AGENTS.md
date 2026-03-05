@@ -66,9 +66,10 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
   raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
 - Use `gh` CLI directly only for mutations (creating PRs, pushing, repo settings) and auth.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
-- MUST use Edit for modifying existing files; NEVER use Write to replace a file that needs targeted
-  changes. Write is only appropriate when creating new files or completely overhauling existing
-  ones. Edit is faster, more token-efficient, and avoids silently dropping content.
+- MUST NOT use the `write` tool under any circumstances; it is disabled and will be rejected. MUST
+  use the edit tools (`edit`, `multiedit`, `patch`) for modifying existing files. To create new
+  files: `install -D /dev/null <path>` (creates intermediate directories and an empty file), then
+  use an edit tool to populate content.
 
 ## Skills
 
