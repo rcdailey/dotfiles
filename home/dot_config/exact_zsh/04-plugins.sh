@@ -38,7 +38,7 @@ zinit ice as"completion" id-as"mise" \
 zinit load zdharma-continuum/null
 
 # Task completions - deferred until mise tools are available
-zinit ice wait lucid nocompile atload'eval "$(task --completion zsh)"'
+zinit ice wait lucid nocompile atload'eval "$(task --completion zsh 2>/dev/null)"'
 zinit load zdharma-continuum/null
 
 
