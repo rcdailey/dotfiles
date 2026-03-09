@@ -18,6 +18,7 @@ tmux = "latest"
 uv = "latest"
 yamllint = "latest"
 yq = "latest"
+bun = "latest"
 
 # Node and NPM packages
 node = "latest"
