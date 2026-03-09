@@ -9,19 +9,19 @@
     "general": {
       "model": "anthropic/claude-sonnet-4-6",
       "variant": "high",
-      "tools": { "question": false }
+      "tools": { "question": false },
     },
     "explore": {
       "model": "anthropic/claude-haiku-4-5",
-      "tools": { "question": false }
-    }
+      "tools": { "question": false },
+    },
   },
   "formatter": {
     "shfmt": { "disabled": true },
     "markdownlint-cli2": {
       "command": ["markdownlint-cli2", "--fix", "$FILE"],
-      "extensions": [".md"]
-    }
+      "extensions": [".md"],
+    },
   },
   "plugin": [
     "@plannotator/opencode@latest",
@@ -31,12 +31,12 @@
   "mcp": {
     "context7": {
       "type": "remote",
-      "url": "https://mcp.context7.com/mcp/oauth"
+      "url": "https://mcp.context7.com/mcp/oauth",
     },
     "searxng": {
       "type": "remote",
-      "url": "https://mcp-search.dailey.app/mcp"
-    }
+      "url": "https://mcp-search.dailey.app/mcp",
+    },
   },
   "permission": {
     "*": "allow",
@@ -123,10 +123,9 @@
       "*gh api* --field *": "ask",
       "*gh api* --raw-field *": "ask",
       "*gh api* --input *": "ask",
-
     },
     "read": {
-      "*": "allow"
-    }
+      "*": "allow",
+    },
   },
 }
