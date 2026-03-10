@@ -1,4 +1,7 @@
 {
+  // Per-machine overrides (model, agent, provider, etc.) go in:
+  //   ~/.config/opencode/opencode.local.jsonc
+  // That file is deep-merged on top of this one via OPENCODE_CONFIG.
   "$schema": "https://opencode.ai/config.json",
   "logLevel": "DEBUG",
   "autoupdate": false,

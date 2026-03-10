@@ -39,6 +39,9 @@ export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
 
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 
+# Per-machine opencode overrides (model, provider, agent defaults)
+export OPENCODE_CONFIG="$XDG_CONFIG_HOME/opencode/opencode.local.jsonc"
+
 # Force opencode's embedded Bun to bypass its global package cache when
 # resolving @latest plugin versions. Without this, Bun serves stale metadata
 # and plugins don't upgrade until the cache is manually cleared.
