@@ -63,10 +63,9 @@ export const ToolGuards: Plugin = async () => {
           );
         }
         throw new Error(
-          "TOOL USAGE VIOLATION: Use 'install -D /dev/null <path>' to " +
-            "create the file (with intermediate directories), then use " +
-            "an edit tool to populate its content. The write tool is " +
-            "disabled.",
+          "TOOL USAGE VIOLATION: Use 'mktouch <path>' to create the " +
+            "file (with intermediate directories), then use an edit " +
+            "tool to populate its content. The write tool is disabled.",
         );
       }
 

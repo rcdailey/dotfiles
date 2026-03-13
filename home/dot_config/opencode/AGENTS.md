@@ -68,8 +68,8 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
 - MUST NOT use the `write` tool under any circumstances; it is disabled and will be rejected. MUST
   use the edit tools (`edit`, `multiedit`, `patch`) for modifying existing files. To create new
-  files: `install -D /dev/null <path>` (creates intermediate directories and an empty file), then
-  use an edit tool to populate content.
+  files: `mktouch <path>` (creates intermediate directories and an empty file), then use an edit
+  tool to populate content.
 
 ## Skills
 
