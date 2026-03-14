@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs";
 import type { Plugin } from "@opencode-ai/plugin";
 
 // Extract command names from the first line of a shell command. Only the first
@@ -53,22 +52,6 @@ const REMOTE_EXEC =
 export const ToolGuards: Plugin = async () => {
   return {
     "tool.execute.before": async (input, output) => {
-      if (input.tool === "write") {
-        const filePath = output.args?.filePath as string;
-        if (filePath && existsSync(filePath)) {
-          throw new Error(
-            "TOOL USAGE VIOLATION: File already exists. " +
-              "Use an edit tool (edit, multiedit, patch) to modify " +
-              "existing files. The write tool is disabled.",
-          );
-        }
-        throw new Error(
-          "TOOL USAGE VIOLATION: Use 'mktouch <path>' to create the " +
-            "file (with intermediate directories), then use an edit " +
-            "tool to populate its content. The write tool is disabled.",
-        );
-      }
-
       if (input.tool !== "bash") return;
 
       const command = output.args?.command as string;

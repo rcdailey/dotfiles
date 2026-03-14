@@ -66,10 +66,9 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
   raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
 - Use `gh` CLI directly only for mutations (creating PRs, pushing, repo settings) and auth.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
-- MUST NOT use the `write` tool under any circumstances; it is disabled and will be rejected. MUST
-  use the edit tools (`edit`, `multiedit`, `patch`) for modifying existing files. To create new
-  files: `mktouch <path>` (creates intermediate directories and an empty file), then use an edit
-  tool to populate content.
+- New files: use `write`. Existing files: use edit tools (`edit`, `multiedit`, `patch`) by default.
+  Use `write` instead when the total size of all oldStrings and newStrings combined would exceed the
+  file's current size (typically when rewriting more than half the file).
 
 ## Skills
 
