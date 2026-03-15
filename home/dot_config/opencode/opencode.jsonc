@@ -15,8 +15,13 @@
       "tools": { "question": false },
     },
     "explore": {
-      "model": "anthropic/claude-haiku-4-5",
+      "model": "google/gemini-3-flash-preview",
       "tools": { "question": false },
+      "options": {
+        "thinkingConfig": {
+          "thinkingLevel": "minimal",
+        },
+      },
     },
   },
   "formatter": {
@@ -29,6 +34,7 @@
   "plugin": [
     "@plannotator/opencode@latest",
     "opencode-anthropic-auth@latest",
+    "opencode-gemini-auth@latest",
     // "@tarquinen/opencode-dcp@latest" // super bad to use this with anthropic -- causes $$$
   ],
   "mcp": {
