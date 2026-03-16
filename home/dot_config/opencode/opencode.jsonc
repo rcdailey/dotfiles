@@ -10,13 +10,13 @@
   "model": "anthropic/claude-opus-4-6",
   "agent": {
     "general": {
-      "model": "anthropic/claude-sonnet-4-6",
-      "variant": "high",
       "tools": { "question": false },
+      "model": "anthropic/claude-sonnet-4-6",
+      "variant": "medium",
     },
     "explore": {
-      "model": "google/gemini-3-flash-preview",
       "tools": { "question": false },
+      "model": "google/gemini-3-flash-preview",
       "options": {
         "thinkingConfig": {
           "thinkingLevel": "minimal",
