@@ -206,6 +206,10 @@ SHOULD use agents autonomously without explicit prompt from user for appropriate
 
 - When delegating to subagents, explicitly require them to respond directly to the caller; MUST NOT
   write research, outcomes, or responses to files on disk.
+- Callers MUST cross-reference subagent findings before acting on them. This doesn't mean repeating
+  the work; it means spot-checking reported results against primary sources (reading cited files,
+  verifying links, searching docs, etc.) to catch hallucinations and false assumptions. Subagent
+  models are weaker than the caller; trust but verify.
 - `commit`: For commit-related requests with git (NO push or gh cli allowed). Batch multiple commits
   into a single delegation; one agent per commit is wasteful. Callers MUST NOT run git inspection
   commands (diff, status, log, show) before delegating; the subagent performs all inspection
