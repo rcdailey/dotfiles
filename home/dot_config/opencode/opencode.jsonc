@@ -16,12 +16,7 @@
     },
     "explore": {
       "tools": { "question": false },
-      "model": "google/gemini-3-flash-preview",
-      "options": {
-        "thinkingConfig": {
-          "thinkingLevel": "minimal",
-        },
-      },
+      "model": "anthropic/claude-haiku-4-5"
     },
   },
   "formatter": {
