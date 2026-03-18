@@ -58,13 +58,11 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
   --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter). Use
   unescaped `|` for alternation (`rg "foo|bar|baz"`, NEVER `rg "foo\|bar\|baz"`).
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
-- Use `gh-scout` for all remote GitHub repository exploration. MUST use `gh-scout` instead of raw
-  `gh api` or `gh` subcommands for: orientation (metadata, structure, languages, contributors), file
-  browsing, code search, commits, blame, PRs, issues, releases, and comparisons. NEVER use raw `gh
-  api` or `gh` CLI for these operations; `gh-scout` handles all API interaction internally.
 - Use `gh-review` for PR review operations (pending reviews, inline comments). MUST use instead of
   raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
-- Use `gh` CLI directly only for mutations (creating PRs, pushing, repo settings) and auth.
+- Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations). For
+  multi-step exploration (orienting on a repo, reading multiple remote files, cross-referencing
+  issues/PRs/commits), delegate to the `github-explorer` subagent instead of doing it inline.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
 - New files: use `write`. Existing files: use edit tools (`edit`, `multiedit`, `patch`) by default.
   Use `write` instead when the total size of all oldStrings and newStrings combined would exceed the
@@ -83,11 +81,6 @@ the trigger condition is met violates this directive.
 - `gh-gist`: REQUIRED when creating or editing GitHub Gists
 - `git-hunks`: REQUIRED when staging individual hunks or partial file changes
 - `gh-pr-review`: REQUIRED when posting code review comments on pull requests
-- `exploring-github`: REQUIRED when exploring remote GitHub repositories. This includes: browsing
-  repo contents or file trees, reading remote files, searching code in repos, inspecting
-  issues/PRs/commits/releases, comparing refs or tags, viewing blame, analyzing contributors or
-  languages, or answering any question that requires examining a remote repository. Load this skill
-  and use `gh-scout` for all such operations.
 - `humanizer`: REQUIRED when writing or editing documentation, drafting emails or messages,
   composing GitHub issues/PRs/discussions, writing forum posts, or any non-code text intended for
   human readers. NOT required for code comments, log messages, or variable naming.
@@ -220,3 +213,8 @@ SHOULD use agents autonomously without explicit prompt from user for appropriate
   and why), (2) workflow hint if not default (e.g., "all" or "multiple commits"), and (3) any issue
   keys (GitHub, Jira, etc.). Callers MUST NOT prescribe exact commit messages or describe the diff;
   the agent determines everything from its own inspection.
+- `github-explorer`: For multi-step remote GitHub exploration (orienting on repos, reading multiple
+  remote files, cross-referencing issues/PRs/commits, code search across repos). Callers pass the
+  question or research goal; the agent explores and returns a synthesized answer. Do NOT delegate
+  simple single-command operations (listing issues, viewing a PR, checking a release); use `gh` CLI
+  directly for those.
