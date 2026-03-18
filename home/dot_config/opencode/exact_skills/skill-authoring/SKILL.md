@@ -58,9 +58,11 @@ relevant skills get fully loaded per session.
 
 ### Implications for authoring
 
-- Keep SKILL.md lean; link out for heavy content (100+ lines of reference)
 - The description determines whether the agent ever reads the body
-- Referenced files (scripts/, references/) provide unbounded depth without upfront cost
+- Referenced files (scripts/, references/) provide depth without upfront cost
+- Split into SKILL.md + referenced files only when the reference material is genuinely separable
+  (e.g., a 600-line API spec the agent reads selectively). Do not split just to hit a size target;
+  if the agent needs the content every time, it belongs in SKILL.md
 
 ## File Location and Discovery
 
@@ -153,34 +155,35 @@ What goes wrong and how to fix it.
 5. **Stop conditions**: When to pause and ask the human?
 6. **Recovery**: What if a check fails?
 
-## Token Efficiency
+## Completeness
 
-Skills load into the context window. Every token counts, especially for frequently-triggered skills.
+Skills load into the context window. Include everything the agent needs to act correctly when the
+skill is loaded. The goal is zero wasted tool calls for discovery (running `--help`, reading READMEs
+to learn how a tool works, etc.).
 
-**Target sizes:**
+**Guiding principle:** If the agent needs information every time the skill is loaded, put it in
+SKILL.md. If the information is only needed for specific sub-tasks within the skill's scope, it can
+go in a referenced file.
 
-- Frequently-triggered skills: under 200 words if possible
-- Standard skills: under 500 words
-- Reference-heavy skills: split into SKILL.md (lean) + referenced files (deep)
+**Avoiding true waste:**
 
-**Techniques:**
-
-- Reference `--help` output instead of documenting all flags inline
-- Cross-reference other skills by name instead of repeating their content
+- Cross-reference other skills by name instead of duplicating shared content
 - One excellent example beats three mediocre ones
 - Compress examples; avoid verbose setups when a minimal example suffices
 
-**Splitting heavy content:**
+**Splitting genuinely separable content:**
 
 ```txt
 my-skill/
-  SKILL.md          # Overview + workflows (lean)
+  SKILL.md           # Core workflows + reference the agent always needs
   references/
-    api-reference.md  # 600 lines of API docs
-    patterns.md       # Detailed code patterns
+    api-reference.md  # 600 lines the agent reads selectively
 ```
 
 Reference from SKILL.md: "See `references/api-reference.md` for complete API documentation."
+
+Do not split just to reduce SKILL.md size. If you find yourself splitting content that the agent
+reads every session, it belongs inline.
 
 ## Directory Structure
 
@@ -191,7 +194,7 @@ skill-name/
   SKILL.md    # Everything inline
 ```
 
-When: All content fits without exceeding ~500 words.
+When: The agent needs all the content every time the skill is loaded (most skills).
 
 ### Skill with reference material
 
@@ -202,7 +205,7 @@ skill-name/
     detailed-ref.md  # Heavy reference docs
 ```
 
-When: Reference material is too large for inline.
+When: Reference material is genuinely separable (agent reads it selectively, not every session).
 
 ### Skill with scripts
 
@@ -219,11 +222,12 @@ When: Deterministic operations better handled by code than token generation.
 
 | Failure              | Symptom                               | Fix                                        |
 |----------------------|---------------------------------------|--------------------------------------------|
-| The Encyclopedia     | SKILL.md reads like a wiki            | Split into lean body + referenced files    |
 | The Everything Bagel | Skill applies to every task           | It's a rule, move to AGENTS.md             |
 | The Secret Handshake | Agent never loads the skill           | Description too abstract; rewrite triggers |
 | The Fragile Skill    | Breaks when repo changes              | Move specifics to referenced files         |
 | The Shortcut         | Agent follows description, skips body | Remove workflow summary from description   |
+| The Skeleton         | Agent wastes tool calls on discovery  | Include reference material inline          |
+|                      | (--help, reading READMEs, etc.)       |                                            |
 
 ## Validation Checklist
 
@@ -236,6 +240,7 @@ When: Deterministic operations better handled by code than token generation.
 - [ ] Description does NOT summarize the skill's workflow or content
 - [ ] Body starts with clear purpose statement
 - [ ] Examples are copy-pasteable without modification
-- [ ] Heavy reference material is in separate files, not inline
+- [ ] Agent can act from SKILL.md alone without discovery tool calls
+- [ ] Content split to referenced files only when genuinely separable
 - [ ] Line length <= 100 characters
 - [ ] Code blocks have language specifiers

@@ -287,13 +287,23 @@ npm run build
 - Do not guess at intent
 ```
 
-### Pointer to Skills
+### Reference Material
 
-Reference skills for detailed knowledge rather than embedding it:
+Include everything the agent needs to perform its task correctly. If the agent uses a custom tool,
+embed the command reference inline rather than telling it to run `--help` (which wastes a tool call
+every session). If the agent shares domain knowledge with a skill that other agents also use,
+reference the skill by name to avoid duplication.
 
 ```markdown
-Load the `csharp-coding` skill for C# patterns and idioms.
+## Command Reference
+
+gh-scout orient  REPO [--brief]           # metadata, tree, key files
+gh-scout ls      REPO [PATH] [--limit N]  # list directory
+...
 ```
+
+The test is: can the agent do its job from the prompt alone, without extra tool calls to discover
+how its tools work? If not, the prompt is missing information.
 
 ## CLI Creation
 
@@ -311,28 +321,21 @@ This guides you through:
 4. Selecting tools
 5. Creating the markdown file
 
-## Agent vs Skill Separation
+## What Belongs in the Agent Prompt
 
-**Agent (always loaded):**
+Include everything the agent needs to do its job without extra discovery steps:
 
 - Workflow/prerequisites (mandatory steps)
-- Domain ownership (which paths)
-- Hard constraints (NEVER rules)
+- Domain ownership (which paths or concerns)
+- Hard constraints (NEVER/MUST rules)
 - Verification commands
-- Pointer to skill
+- Tool reference material (command syntax, flags, gotchas) for any non-standard tools
+- Tips and error handling for tools the agent operates
 
-**Skill (loaded on demand):**
-
-- Code examples and patterns
-- Step-by-step procedures
-- File templates
-- Debugging guides
-- Comprehensive reference
-
-**Decision heuristic**: Is this needed in every conversation with this agent?
-
-- Yes: Put in agent
-- No, only for specific operations: Put in skill
+If the agent has a companion skill that other agents also load, reference the skill instead of
+duplicating shared content. But a standalone subagent (no companion skill) MUST have its reference
+material inline. Stripping reference material into a skill that only one agent uses adds indirection
+without value.
 
 ## Validation Checklist
 
@@ -342,7 +345,8 @@ Before finalizing changes:
 - [ ] Description is clear and concise
 - [ ] Tool permissions match agent's purpose (read-only agents disable write/edit/bash)
 - [ ] Hard constraints use RFC 2119 keywords (MUST, MUST NOT, NEVER)
-- [ ] Skills referenced where detailed patterns live
+- [ ] Agent can perform its task from the prompt alone (no discovery tool calls needed)
+- [ ] Custom tool reference material is inline (not deferred to --help or external files)
 - [ ] "When stuck" guidance included
 - [ ] Line length <= 100 characters
 - [ ] Code blocks have language specifiers
