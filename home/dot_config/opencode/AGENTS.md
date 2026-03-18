@@ -88,6 +88,9 @@ the trigger condition is met violates this directive.
   issues/PRs/commits/releases, comparing refs or tags, viewing blame, analyzing contributors or
   languages, or answering any question that requires examining a remote repository. Load this skill
   and use `gh-scout` for all such operations.
+- `humanizer`: REQUIRED when writing or editing documentation, drafting emails or messages,
+  composing GitHub issues/PRs/discussions, writing forum posts, or any non-code text intended for
+  human readers. NOT required for code comments, log messages, or variable naming.
 
 ## Communication Voice
 
