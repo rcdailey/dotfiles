@@ -7,8 +7,10 @@
   answers when sufficient. This applies to conversation only, not work artifacts.
 - Use Context7 MCP tools (resolve-library-id, query-docs) for code generation, setup/configuration,
   or tool/library/API documentation.
-- Write naturally - no emojis, Unicode symbols, em/en dashes, or arbitrary bolding. Preserve
-  existing symbols when editing others' content.
+- MUST NOT use emojis, em dashes (\u2014), en dashes (\u2013), curly quotes
+  (\u201C\u201D\u2018\u2019), or Unicode symbols in any output. Use commas, semicolons, or
+  parentheses instead of dashes for parenthetical content. Use straight quotes. Preserve existing
+  symbols when editing others' content.
 - Vary punctuation naturally. Avoid defaulting to hyphens/dashes for joining clauses or
   parenthetical content. Use periods for independent thoughts, semicolons for closely related
   clauses, parentheses for de-emphasized asides, and dashes only for emphatic interruptions.
@@ -71,7 +73,10 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 ## Skills
 
 You MUST load the relevant skill BEFORE performing the listed actions. Failure to load a skill when
-the trigger condition is met violates this directive.
+the trigger condition is met violates this directive. Skills MUST be loaded alone (never in parallel
+with other tool calls) and MUST complete before acting on the governed task. Skills inject context
+needed for the very next action; loading a skill in parallel with that action means the instructions
+arrive too late.
 
 - `agents-authoring`: REQUIRED when working on AGENTS.md files
 - `skill-authoring`: REQUIRED when creating or modifying SKILL.md files
