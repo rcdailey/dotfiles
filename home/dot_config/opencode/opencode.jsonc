@@ -29,9 +29,7 @@
   "plugin": [
     "@plannotator/opencode@latest",
     "./plugins/anthropic-auth.mjs",
-    // "opencode-anthropic-login-via-cli@latest",
     "opencode-gemini-auth@latest",
-    // "@tarquinen/opencode-dcp@latest" // super bad to use this with anthropic -- causes $$$
   ],
   "mcp": {
     "context7": {
