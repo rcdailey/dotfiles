@@ -28,7 +28,7 @@
   },
   "plugin": [
     "@plannotator/opencode@latest",
-    "./plugins/anthropic-auth.mjs",
+    "opencode-claude-auth@latest",
     "opencode-gemini-auth@latest",
   ],
   "mcp": {
