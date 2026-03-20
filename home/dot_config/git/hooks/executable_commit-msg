@@ -4,15 +4,30 @@
 
 COMMIT_MSG_FILE="$1"
 
-# Run commitlint with explicit config path. Cosmiconfig's global strategy
-# uses env-paths which resolves to ~/Library/Preferences/ on macOS instead
-# of ~/.config/, so auto-discovery fails to find the XDG config.
+# Run commitlint if available. A repo-local config takes precedence over the
+# global one: when commitlint finds a local config via cosmiconfig it uses
+# that config's rules (including custom type-enum overrides). When no local
+# config exists, we fall back to the explicit global config path because
+# cosmiconfig's global strategy uses env-paths which resolves to
+# ~/Library/Preferences/ on macOS instead of ~/.config/.
 if command -v commitlint >/dev/null 2>&1; then
-    COMMITLINT_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/commitlint/config.mjs"
-    if [ -f "$COMMITLINT_CONFIG" ]; then
-        commitlint --config "$COMMITLINT_CONFIG" --edit "$COMMIT_MSG_FILE"
-    else
+    REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+    HAS_LOCAL_CONFIG=false
+
+    if [ -n "$REPO_ROOT" ]; then
+        # shellcheck disable=SC2012
+        HAS_LOCAL_CONFIG=$(ls "$REPO_ROOT"/.commitlintrc* "$REPO_ROOT"/commitlint.config.* 2>/dev/null | head -1)
+    fi
+
+    if [ -n "$HAS_LOCAL_CONFIG" ]; then
         commitlint --edit "$COMMIT_MSG_FILE"
+    else
+        COMMITLINT_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/commitlint/config.mjs"
+        if [ -f "$COMMITLINT_CONFIG" ]; then
+            commitlint --config "$COMMITLINT_CONFIG" --edit "$COMMIT_MSG_FILE"
+        else
+            commitlint --edit "$COMMIT_MSG_FILE"
+        fi
     fi
     RESULT=$?
     if [ $RESULT -ne 0 ]; then
