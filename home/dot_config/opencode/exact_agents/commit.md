@@ -37,6 +37,10 @@ permission:
     "git reset HEAD": allow
 ---
 
+MUST load the `humanizer` skill as the very first action before any other work. This is
+unconditional; commit messages are human-readable text and MUST pass through the humanizer filter.
+Do not proceed with the research phase or any other step until the skill is loaded.
+
 Generate conventional commits. Always use conventional commit format regardless of what the repo's
 git history shows. The `git log` step in the research phase is for understanding change context and
 scope, not for adopting the repo's message format.
