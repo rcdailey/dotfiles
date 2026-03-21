@@ -86,6 +86,7 @@ arrive too late.
 - `gh-gist`: REQUIRED when creating or editing GitHub Gists
 - `git-hunks`: REQUIRED when staging individual hunks or partial file changes
 - `gh-pr-review`: REQUIRED when posting code review comments on pull requests
+- `command-authoring`: REQUIRED when creating, editing, or refactoring custom commands
 - `humanizer`: REQUIRED when writing or editing documentation, drafting emails or messages,
   composing GitHub issues/PRs/discussions, writing forum posts, or any non-code text intended for
   human readers. NOT required for code comments, log messages, or variable naming.
