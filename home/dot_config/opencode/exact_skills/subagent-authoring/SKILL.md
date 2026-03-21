@@ -5,8 +5,7 @@ description: Use when creating or modifying custom agent definitions
 
 # Subagent Authoring
 
-Load this skill when creating or modifying custom OpenCode agents. This skill documents our
-conventions, not exhaustive OpenCode capabilities. Omissions are intentional.
+Conventions for defining custom OpenCode agents. Omissions are intentional.
 
 ## What Agents Are
 
@@ -277,6 +276,20 @@ npm run build
 ```
 ````
 
+**Output Format**: What the agent produces and how it's structured. Critical when a caller consumes
+the response; inconsistent output forces the caller to parse unpredictable formats.
+
+````markdown
+## Output
+
+Return a single message with:
+- Summary (1-2 sentences)
+- Findings as a bullet list
+- Recommended next steps
+
+Do not write results to files.
+````
+
 **When Stuck**: Escape hatch for uncertainty.
 
 ```markdown
@@ -328,6 +341,7 @@ Include everything the agent needs to do its job without extra discovery steps:
 - Workflow/prerequisites (mandatory steps)
 - Domain ownership (which paths or concerns)
 - Hard constraints (NEVER/MUST rules)
+- Output format (what the agent produces, especially when callers consume the response)
 - Verification commands
 - Tool reference material (command syntax, flags, gotchas) for any non-standard tools
 - Tips and error handling for tools the agent operates

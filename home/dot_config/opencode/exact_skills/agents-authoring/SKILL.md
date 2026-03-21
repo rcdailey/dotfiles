@@ -5,20 +5,7 @@ description: Use when creating or updating AGENTS.md files
 
 # AGENTS.md Authoring
 
-Load this skill when creating or updating AGENTS.md files. This skill documents our conventions, not
-exhaustive OpenCode capabilities. Omissions are intentional.
-
-## Research Foundation
-
-This guidance synthesizes:
-
-- [agents.md](https://agents.md) - Open standard used by 60k+ projects, stewarded by Agentic AI
-  Foundation under Linux Foundation
-- GitHub's analysis of 2,500+ repositories with agents.md files
-- Anthropic's context engineering documentation
-- OpenAI Codex custom instructions guide
-- Devin AI's good vs bad instructions documentation
-- Builder.io's AGENTS.md best practices guide
+Conventions for writing AGENTS.md files. Omissions are intentional.
 
 ## Core Concept
 
@@ -186,6 +173,13 @@ Global rules in `~/.config/opencode/AGENTS.md` apply across all sessions.
 - Organize into distinct sections
 - Group related rules together
 - Use consistent formatting
+
+### Position Sensitivity
+
+Models attend more to the beginning and end of context than the middle. Place the most critical
+rules (safety, correctness, non-negotiable constraints) at the top of AGENTS.md. Put less critical
+guidelines and reference material in the middle. Checklists and verification steps work well at the
+end.
 
 ## Rule Writing Guidelines
 

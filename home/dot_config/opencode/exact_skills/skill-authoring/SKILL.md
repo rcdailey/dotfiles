@@ -228,6 +228,8 @@ When: Deterministic operations better handled by code than token generation.
 | The Shortcut         | Agent follows description, skips body | Remove workflow summary from description   |
 | The Skeleton         | Agent wastes tool calls on discovery  | Include reference material inline          |
 |                      | (--help, reading READMEs, etc.)       |                                            |
+| The Echo             | Opener restates the trigger condition | State purpose, not loading instructions    |
+|                      | ("Load this skill when...")           | (the skill is already loaded)              |
 
 ## Validation Checklist
 
