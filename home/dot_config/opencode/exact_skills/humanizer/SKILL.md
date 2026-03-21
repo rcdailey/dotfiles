@@ -1,9 +1,10 @@
 ---
 name: humanizer
 description: >-
-  Use when writing or editing documentation, drafting emails or messages, composing
-  GitHub issues/PRs/discussions, writing forum posts, or any non-code text intended
-  for human readers
+  Use when producing any text read by humans, directly or indirectly: documentation,
+  changelogs, release notes, commit messages, PR/issue descriptions, emails, messages,
+  forum posts, README files, and any other non-code prose. NOT required for inline
+  code comments, log messages, or variable naming.
 ---
 
 # Humanizer: Remove AI Writing Patterns

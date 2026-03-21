@@ -62,8 +62,8 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh-review` for PR review operations (pending reviews, inline comments). MUST use instead of
   raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
-- Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations). For
-  multi-step exploration (orienting on a repo, reading multiple remote files, cross-referencing
+- Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations). For multi-step
+  exploration (orienting on a repo, reading multiple remote files, cross-referencing
   issues/PRs/commits), delegate to the `github-explorer` subagent instead of doing it inline.
 - Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
 - New files: use `write`. Existing files: use edit tools (`edit`, `multiedit`, `patch`) by default.
@@ -87,9 +87,10 @@ arrive too late.
 - `git-hunks`: REQUIRED when staging individual hunks or partial file changes
 - `gh-pr-review`: REQUIRED when posting code review comments on pull requests
 - `command-authoring`: REQUIRED when creating, editing, or refactoring custom commands
-- `humanizer`: REQUIRED when writing or editing documentation, drafting emails or messages,
-  composing GitHub issues/PRs/discussions, writing forum posts, or any non-code text intended for
-  human readers. NOT required for code comments, log messages, or variable naming.
+- `humanizer`: REQUIRED when producing any text read by humans, directly or indirectly:
+  documentation, changelogs, release notes, commit messages, PR/issue descriptions, emails,
+  messages, forum posts, README files, and any other non-code prose. NOT required for inline code
+  comments, log messages, or variable naming.
 
 ## Communication Voice
 
