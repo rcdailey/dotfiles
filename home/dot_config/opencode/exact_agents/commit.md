@@ -12,6 +12,7 @@ permission:
   external_directory: allow
   bash:
     "*": deny
+    "ls*": allow
     "cd *": allow
     "echo *": allow
     "cat *": allow
