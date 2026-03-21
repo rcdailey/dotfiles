@@ -14,6 +14,7 @@ permission:
   external_directory: allow
   bash:
     "*": deny
+    "echo*": allow
     "gh-scout *": allow
     "gh issue *": allow
     "gh pr *": allow
