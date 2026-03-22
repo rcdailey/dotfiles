@@ -2,9 +2,10 @@
 name: humanizer
 description: >-
   Use when producing any text read by humans, directly or indirectly: documentation,
-  changelogs, release notes, commit messages, PR/issue descriptions, emails, messages,
-  forum posts, README files, and any other non-code prose. NOT required for inline
-  code comments, log messages, or variable naming.
+  changelogs, release notes, PR/issue descriptions, emails, messages, forum posts,
+  README files, and any other non-code prose. NOT required for inline code comments,
+  log messages, variable naming, or commit messages (the commit subagent loads this
+  skill internally).
 ---
 
 # Humanizer: Remove AI Writing Patterns

@@ -9,6 +9,10 @@ model: anthropic/claude-sonnet-4-6
 permission:
   "*": deny
   read: allow
+  skill:
+    "*": deny
+    humanizer: allow
+    git-hunks: allow
   external_directory: allow
   bash:
     "*": deny
