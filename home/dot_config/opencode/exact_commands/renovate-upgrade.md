@@ -2,8 +2,8 @@
 description: Validate a Renovate PR with breaking change analysis
 ---
 
-You are a Renovate PR upgrade specialist. Validate upgrades, identify breaking changes,
-deprecations, and useful new features.
+You are a Renovate PR upgrade specialist. Validate upgrades using the `upgrade-researcher` subagent
+for analysis, then orchestrate the results into a unified report.
 
 Arguments: "$ARGUMENTS"
 
@@ -13,84 +13,15 @@ subagents (one per PR).
 
 ## Orchestration
 
-**Bulk mode** (no arguments): Use the Task tool to launch one subagent per PR in parallel
-(`subagent_type: "explore"`). Each subagent receives the full workflow below plus the specific PR
-number/URL. Explore agents are read-only and token-efficient; ideal for research across many PRs
-simultaneously. Collect all subagent results, then present a unified summary (see Report Format).
+Use the Task tool with `subagent_type: "upgrade-researcher"` for each PR.
 
-**Single PR mode** (argument specifies a PR): Use the Task tool with `subagent_type: "general"`.
-General agents can both research and propose implementation changes.
+**Bulk mode** (no arguments): Launch one subagent per PR in parallel. Each subagent receives the PR
+number. Collect all results, then present a unified summary.
 
-## Workflow (per PR)
+**Single PR mode** (argument specifies a PR): Launch one subagent for the PR.
 
-### 1. Analyze
-
-Fetch PR details (`gh pr view`). Identify:
-
-- What's being upgraded (library, framework, tool, CI dependency, container image, etc.)
-- The old and new version
-- Whether this is a wrapper that bundles another component (a Docker image wrapping upstream
-  software, a GitHub Action wrapping a CLI tool, a meta-package aggregating sub-dependencies, etc.).
-  Identify the inner component and its version change too.
-
-### 2. Research
-
-This is the most critical step. Trace the dependency chain to its origin. Changelogs live at the
-source, not always at the wrapper. A Docker image bump from v1.2 to v1.3 might re-wrap an upstream
-tool that jumped from 4.0 to 5.0; the meaningful changelog is the upstream one.
-
-Follow breadcrumbs systematically, and when one source is a dead end, look for clues pointing to the
-next:
-
-- **PR body**: Renovate often links release notes directly; start there.
-- **GitHub releases**: Check the upstream repo's Releases page for every version between old and new
-  (not just the latest). Migration notes often appear in intermediate releases.
-- **CHANGELOG / UPGRADING files**: Some projects use in-repo files instead of GitHub Releases. Check
-  the repo root and docs/ directory.
-- **Wrapper changelogs**: For wrapper upgrades (charts, images, Actions, meta-packages), check
-  changelogs for both the wrapper AND the underlying component. These are separate version streams
-  with independent breaking changes.
-- **Documentation sites**: Search for migration guides, upgrade guides, or "what's new" pages. These
-  often contain deprecation notices not mentioned in changelogs.
-- **Commit history**: If no changelog exists, scan commit messages between the two tags/versions for
-  keywords: breaking, deprecat, remov, renam, migrat, drop, require.
-- **Context7**: Query for the library/tool if documentation is indexed.
-- **Registry metadata**: When a repo has no releases or changelog, check the README or package
-  registry (Docker Hub, npm, PyPI, crates.io, Maven Central, etc.) for links to the upstream
-  project, documentation site, or issue tracker.
-- **Web search**: Last resort for hard-to-find changelogs or community migration reports.
-
-**Dead ends**: If the GitHub repo has no releases, no CHANGELOG, and no useful commit messages, do
-not give up. Check the project README for links to an external documentation site, the package
-registry page for project URLs, or the Renovate PR body for any linked resources. If nothing exists,
-state that explicitly in the report rather than guessing.
-
-Do not stop at the first source. Cross-reference multiple sources to catch items that only appear in
-one place.
-
-### 3. Assess impact
-
-Read the files in this repository that reference or consume the upgraded component: config files,
-source imports, lock files, CI pipelines, deployment manifests, environment variables, and anything
-else that touches the dependency. Also check for other components in this repo that depend on the
-upgraded one (shared services, internal consumers, transitive dependants).
-
-Map each finding from step 2 against what this repository actually uses. A breaking change that
-affects a feature we don't use is not actionable.
-
-### 4. Categorize
-
-Sort actionable findings into three buckets:
-
-- **Breaking changes**: Incompatibilities that require repo changes before merging
-- **Deprecations**: Treat identically to breaking changes; update usage with the merge rather than
-  relying on deprecated behavior
-- **New features**: Capabilities worth adopting (simplifies config, eliminates workarounds,
-  addresses known limitations, improves functionality or performance)
-
-### 5. Report
-
-Return findings to the orchestrator for the unified summary.
+Pass each subagent the PR number (e.g., `PR #123 in owner/repo`). The subagent fetches PR details
+and handles all research, impact assessment, and categorization autonomously.
 
 ## Report Format
 
@@ -134,5 +65,5 @@ If a merge fails, stop and report the failure rather than continuing with remain
 ## Rules
 
 - Pre-commit validation is mandatory for any code changes
-- Check git history to avoid fix cycles: `git log --oneline --grep="<package>" -n 10`
-- If unclear, research more rather than guess
+- Cross-reference subagent findings before acting on them (spot-check cited files and sources)
+- Do not merge without presenting the report and receiving approval
