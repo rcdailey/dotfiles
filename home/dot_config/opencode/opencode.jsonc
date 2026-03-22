@@ -28,8 +28,8 @@
   },
   "plugin": [
     "@plannotator/opencode@latest",
-    "opencode-claude-auth@latest",
     "opencode-gemini-auth@latest",
+    "@ex-machina/opencode-anthropic-auth@latest",
   ],
   "mcp": {
     "context7": {
