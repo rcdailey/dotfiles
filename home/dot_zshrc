@@ -1,10 +1,8 @@
 # Modern zsh configuration with optimal initialization order
 # Priority: Correctness of initialization timing over all other concerns
 
-# Skip full shell initialization in Claude Code - non-interactive automation context
-# Claude spawns many shell sessions for bash commands; loading plugins is unnecessary overhead
-if [[ -n "$CLAUDECODE" ]] || [[ ! -t 0 ]]; then
-    # Keep essential PATH only for tool availability (rg, git, etc.)
+# Skip full shell initialization for non-interactive shells (no tty)
+if [[ ! -t 0 ]]; then
     export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin:$PATH"
     return 0
 fi
