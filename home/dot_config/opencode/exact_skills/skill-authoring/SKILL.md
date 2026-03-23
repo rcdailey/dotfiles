@@ -155,35 +155,35 @@ What goes wrong and how to fix it.
 5. **Stop conditions**: When to pause and ask the human?
 6. **Recovery**: What if a check fails?
 
-## Completeness
+## Content Balance
 
-Skills load into the context window. Include everything the agent needs to act correctly when the
-skill is loaded. The goal is zero wasted tool calls for discovery (running `--help`, reading READMEs
-to learn how a tool works, etc.).
+Skills load into the context window. Include what the agent needs to act correctly, but write it
+concisely. The goal is zero wasted tool calls for discovery without padding content with verbose
+explanations.
 
-**Guiding principle:** If the agent needs information every time the skill is loaded, put it in
-SKILL.md. If the information is only needed for specific sub-tasks within the skill's scope, it can
-go in a referenced file.
+**Guiding principle:** If the agent needs it every load, put it in SKILL.md. If only needed for
+specific sub-tasks, put it in a referenced file.
 
-**Avoiding true waste:**
+**Staying lean:**
 
 - Cross-reference other skills by name instead of duplicating shared content
 - One excellent example beats three mediocre ones
-- Compress examples; avoid verbose setups when a minimal example suffices
+- Compress examples; minimal setups, no verbose scaffolding
+- Terse rules and compressed prose; every sentence should earn its place
 
-**Splitting genuinely separable content:**
+**Splitting content:**
 
 ```txt
 my-skill/
-  SKILL.md           # Core workflows + reference the agent always needs
+  SKILL.md           # Core workflows + always-needed reference (concise)
   references/
-    api-reference.md  # 600 lines the agent reads selectively
+    api-reference.md  # Large reference the agent reads selectively
 ```
 
 Reference from SKILL.md: "See `references/api-reference.md` for complete API documentation."
 
-Do not split just to reduce SKILL.md size. If you find yourself splitting content that the agent
-reads every session, it belongs inline.
+Split when reference material is genuinely separable (agent reads it selectively). Don't split just
+to hit a size target, but don't inline 600 lines the agent only sometimes needs either.
 
 ## Directory Structure
 
@@ -194,7 +194,7 @@ skill-name/
   SKILL.md    # Everything inline
 ```
 
-When: The agent needs all the content every time the skill is loaded (most skills).
+When: All content is needed every load (most skills).
 
 ### Skill with reference material
 
@@ -205,7 +205,7 @@ skill-name/
     detailed-ref.md  # Heavy reference docs
 ```
 
-When: Reference material is genuinely separable (agent reads it selectively, not every session).
+When: Reference material is large and only needed for specific sub-tasks.
 
 ### Skill with scripts
 
@@ -221,7 +221,7 @@ When: Deterministic operations better handled by code than token generation.
 ## Failure Modes
 
 | Failure              | Symptom                               | Fix                                        |
-|----------------------|---------------------------------------|--------------------------------------------|
+| -------------------- | ------------------------------------- | ------------------------------------------ |
 | The Everything Bagel | Skill applies to every task           | It's a rule, move to AGENTS.md             |
 | The Secret Handshake | Agent never loads the skill           | Description too abstract; rewrite triggers |
 | The Fragile Skill    | Breaks when repo changes              | Move specifics to referenced files         |
@@ -242,7 +242,7 @@ When: Deterministic operations better handled by code than token generation.
 - [ ] Description does NOT summarize the skill's workflow or content
 - [ ] Body starts with clear purpose statement
 - [ ] Examples are copy-pasteable without modification
-- [ ] Agent can act from SKILL.md alone without discovery tool calls
-- [ ] Content split to referenced files only when genuinely separable
+- [ ] Agent can act without discovery tool calls (needed references are inline)
+- [ ] Content is concise; no filler prose or redundant explanations
 - [ ] Line length <= 100 characters
 - [ ] Code blocks have language specifiers

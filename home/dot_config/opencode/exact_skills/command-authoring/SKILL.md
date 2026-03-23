@@ -105,9 +105,9 @@ Simple commands may only need Role/Goal and Constraints. Complex commands benefi
 
 ### Prompt Engineering Principles
 
-**Present a complete world.** The command template is the agent's entire understanding of the task.
-Include everything needed to act correctly. If the command uses a custom tool or skill, reference it
-by name; do not assume the agent will discover it.
+**Present a complete world, concisely.** The command template is the agent's entire understanding of
+the task. Include what it needs to act correctly (tool names, skill references, key constraints) but
+keep the prose tight. Do not assume the agent will discover tools or skills on its own.
 
 **Be specific, not vague.** "Analyze the code carefully" is useless. "Run `npm test`, parse
 failures, correlate with `git blame`" is actionable.

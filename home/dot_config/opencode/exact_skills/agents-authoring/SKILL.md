@@ -161,12 +161,11 @@ Global rules in `~/.config/opencode/AGENTS.md` apply across all sessions.
 - Flexible enough to provide strong heuristics
 - Not so detailed it becomes brittle
 
-### Completeness Over Brevity
+### Completeness Without Bloat
 
-- Include everything the agent needs to behave correctly
-- Completeness does NOT mean verbose; it means no gaps that force guessing or extra tool calls
-- Remove true duplication (the same rule stated twice), but do not strip reference material that the
-  agent needs to do its job
+- Include what the agent needs to act without guessing or extra tool calls
+- Write concisely: terse rules, compressed examples, no filler prose
+- Remove duplication, but keep reference material the agent needs to do its job
 
 ### Structure
 
@@ -229,13 +228,13 @@ Good: "Format: `fix(auth): handle expired tokens`, `feat(api): add search endpoi
 ## Antipatterns
 
 | Antipattern                       | Problem                   | Fix                           |
-|-----------------------------------|---------------------------|-------------------------------|
+| --------------------------------- | ------------------------- | ----------------------------- |
 | Repeated rules                    | Inconsistency risk        | Single authoritative location |
 | Vague adjectives                  | Subjective interpretation | Concrete criteria or examples |
 | Prohibitions without alternatives | No guidance on what TO do | Include correct approach      |
 | Project-wide commands only        | Slow feedback loops       | File-scoped commands          |
-| Stripped reference material       | Agent guesses or wastes   | Include what the agent needs  |
-|                                   | tool calls on discovery   | to act without discovery      |
+| Stripped reference material       | Agent wastes tool calls   | Include needed references     |
+| Verbose explanations              | Wastes tokens             | Terse rule + example          |
 
 ## Good vs Bad Instructions (Devin Research)
 

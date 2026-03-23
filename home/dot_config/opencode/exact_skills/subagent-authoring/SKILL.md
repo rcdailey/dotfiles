@@ -60,7 +60,7 @@ Define in `opencode.json`:
 ### Core Fields
 
 | Field         | Type   | Description                                       |
-|---------------|--------|---------------------------------------------------|
+| ------------- | ------ | ------------------------------------------------- |
 | `name`        | string | Agent identifier (defaults to filename)           |
 | `description` | string | Brief description shown in UI (required)          |
 | `mode`        | string | `primary`, `subagent`, or `all` (defaults to all) |
@@ -106,7 +106,7 @@ Bash and task permissions support glob patterns. Last matching rule wins.
 ### Behavior Options
 
 | Field         | Type    | Description                                        |
-|---------------|---------|----------------------------------------------------|
+| ------------- | ------- | -------------------------------------------------- |
 | `hidden`      | boolean | Hide from @ autocomplete menu (subagent only)      |
 | `steps`       | integer | Max agentic iterations (`maxSteps` is deprecated)  |
 | `disable`     | boolean | Set `true` to disable the agent                    |
@@ -120,7 +120,7 @@ Use the `variant` field to select a pre-defined reasoning configuration for the 
 Available variants are model-specific:
 
 | Provider/Model      | Variants                                            |
-|---------------------|-----------------------------------------------------|
+| ------------------- | --------------------------------------------------- |
 | Anthropic Opus 4.6  | `low`, `medium`, `high`, `max` (adaptive)           |
 | Anthropic (other)   | `high`, `max` (fixed token budget)                  |
 | OpenAI GPT-5 family | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
@@ -302,10 +302,9 @@ Do not write results to files.
 
 ### Reference Material
 
-Include everything the agent needs to perform its task correctly. If the agent uses a custom tool,
-embed the command reference inline rather than telling it to run `--help` (which wastes a tool call
-every session). If the agent shares domain knowledge with a skill that other agents also use,
-reference the skill by name to avoid duplication.
+Include tool references the agent needs to act without discovery calls (don't tell it to run
+`--help`). Keep references concise: command signatures and key flags, not exhaustive documentation.
+Reference shared skills by name instead of duplicating content.
 
 ```markdown
 ## Command Reference
@@ -315,8 +314,8 @@ gh-scout ls      REPO [PATH] [--limit N]  # list directory
 ...
 ```
 
-The test is: can the agent do its job from the prompt alone, without extra tool calls to discover
-how its tools work? If not, the prompt is missing information.
+The test: can the agent do its job from the prompt alone? If not, add the missing reference. If it
+can, don't add more.
 
 ## CLI Creation
 
@@ -336,20 +335,18 @@ This guides you through:
 
 ## What Belongs in the Agent Prompt
 
-Include everything the agent needs to do its job without extra discovery steps:
+Include what the agent needs to act correctly, written concisely:
 
 - Workflow/prerequisites (mandatory steps)
 - Domain ownership (which paths or concerns)
 - Hard constraints (NEVER/MUST rules)
-- Output format (what the agent produces, especially when callers consume the response)
+- Output format (especially when callers consume the response)
 - Verification commands
-- Tool reference material (command syntax, flags, gotchas) for any non-standard tools
-- Tips and error handling for tools the agent operates
+- Tool command signatures for non-standard tools (concise, not exhaustive)
 
-If the agent has a companion skill that other agents also load, reference the skill instead of
-duplicating shared content. But a standalone subagent (no companion skill) MUST have its reference
-material inline. Stripping reference material into a skill that only one agent uses adds indirection
-without value.
+Reference companion skills instead of duplicating shared content. Standalone subagents (no companion
+skill) MUST have their reference material inline; extracting it into a skill only one agent uses
+adds indirection without value.
 
 ## Validation Checklist
 
@@ -359,8 +356,8 @@ Before finalizing changes:
 - [ ] Description is clear and concise
 - [ ] Tool permissions match agent's purpose (read-only agents disable write/edit/bash)
 - [ ] Hard constraints use RFC 2119 keywords (MUST, MUST NOT, NEVER)
-- [ ] Agent can perform its task from the prompt alone (no discovery tool calls needed)
-- [ ] Custom tool reference material is inline (not deferred to --help or external files)
+- [ ] Agent can act from prompt alone (no discovery tool calls needed)
+- [ ] Tool references are inline and concise (not deferred to --help)
 - [ ] "When stuck" guidance included
 - [ ] Line length <= 100 characters
 - [ ] Code blocks have language specifiers
