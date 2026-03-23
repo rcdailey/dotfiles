@@ -29,7 +29,7 @@
   "plugin": [
     "@plannotator/opencode@latest",
     "opencode-gemini-auth@latest",
-    "@ex-machina/opencode-anthropic-auth@latest",
+    "opencode-claude-auth@latest",
   ],
   "mcp": {
     "context7": {
