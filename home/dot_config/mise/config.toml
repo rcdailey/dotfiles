@@ -30,6 +30,7 @@ node = "latest"
 # opencode = "latest"
 
 [settings]
+activate_aggressive = true
 auto_install = true
 jobs = 4
 trusted_config_paths = ["~/.config/mise"]
