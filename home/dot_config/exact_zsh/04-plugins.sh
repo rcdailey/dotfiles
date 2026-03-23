@@ -29,12 +29,16 @@ zinit light zsh-users/zsh-syntax-highlighting
 # Enable fzf-tab after loading
 enable-fzf-tab
 
-# Generate mise completions with conditional installation
-# Only reinstalls completion if symlink is missing or source is newer
+# Generate mise completions
 zinit ice as"completion" id-as"mise" \
-  atclone"mise completion zsh > _mise" \
-  atpull"%atclone" \
-  atload'[[ ! -L "${ZINIT[COMPLETIONS_DIR]}/_mise" ]] && zinit creinstall mise'
+  atclone"mise completion zsh > _mise && zinit creinstall mise" \
+  atpull"%atclone"
+zinit load zdharma-continuum/null
+
+# Generate just completions
+zinit ice as"completion" id-as"just" \
+  atclone"just --completions zsh > _just && zinit creinstall just" \
+  atpull"%atclone"
 zinit load zdharma-continuum/null
 
 # Task completions - deferred until mise tools are available
