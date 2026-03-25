@@ -36,6 +36,7 @@ jobs = 4
 trusted_config_paths = ["~/.config/mise"]
 experimental = true
 env_file = ".env"
+node.verify = false
 
 [env]
 _.source = ["~/.config/mise/scripts/node-path.sh"]
