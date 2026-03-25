@@ -53,6 +53,46 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Prefer composition (O(n+m)) over inheritance hierarchies (O(n×m)).
 - Document architectural constraints prominently; make violations obvious at design-time.
 
+## Testing
+
+Test at the highest scope that's practical. Write a failing test for the happy path first, implement
+until it passes, then check coverage for gaps. Push to lower-scoped tests only when higher-scoped
+tests cannot reach specific code paths.
+
+**Test behavior, not implementation.** Skip anything with no meaningful behavior to verify:
+
+- Output formatting (console output, log messages, UI rendering)
+- Data containers with no logic (no conditionals, no transformation)
+- Implementation details that could change without affecting outcomes
+
+**Assert outcomes, not interactions.** Verify the result, side effect, or state change rather than
+asserting a mock method was called. Interaction verification couples tests to implementation; they
+break on refactors even when behavior is correct. If interaction verification feels like the only
+option, challenge the design first (void method hiding a meaningful result, missing return value,
+side effect with no observable state change).
+
+**Debugging test failures:** Gather evidence before changing code. Avoid guess-and-check cycles.
+
+1. Read assertion output carefully; diff output often reveals the issue immediately
+2. Add adhoc logs to trace execution; remove when done
+3. Compare with passing tests to spot differences
+4. Add intermediate assertions to pinpoint divergence
+5. Simplify to minimal reproduction; strip test down, add back until failure
+6. Write adhoc granular tests to isolate suspected areas; remove when done
+7. Check test isolation: run alone (`--filter` or equivalent) vs. suite to detect state leakage
+
+**Test framing:** Tests serve as documentation. Positive tests verify expected behavior, then check
+absence of side effects. Negative tests assert the error/rejection IS raised. Both are equally
+important.
+
+**Anti-patterns:**
+
+- Over-mocking or mocking business logic
+- Tests coupled to implementation details
+- Duplicate coverage for same logical paths
+- Production code added solely for testing
+- Unexplained magic constants
+
 ## Tools
 
 - ALWAYS use `rg` (ripgrep) for file and text search; it is installed, faster, and respects
