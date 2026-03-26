@@ -47,6 +47,7 @@ priorities and verification rules from the `gh-pr-review` skill.
 
 ### 4. Write Comments
 
+Load the `humanizer` skill before creating the review file (not in parallel with the file creation).
 Apply the tone and etiquette guidelines from the `gh-pr-review` skill.
 
 **Format:**
