@@ -31,12 +31,13 @@ When a mandated feature is unavailable, fall back to the idiomatic alternative f
   - Extended property pattern: `obj is { Outer.Inner: value }` (C# 10)
   - Empty property pattern: `{ } name` matches non-null and binds (e.g., `is Type { Prop: { } x }`)
 - Spread operator for collections (C# 12+): `[..first, ..second]`
-- `field` keyword in properties (C# 14+): `public string Name { get; set => field = value ?? throw;
-  } = "";`
+- `field` keyword in properties (C# 14+): `public string Name { get; set => field = value ?? throw
+  new ArgumentNullException(); } = "";`
   - NEVER use explicit backing fields when `field` suffices
-- Extension blocks for extension methods and properties (C# 14+): `extension(T src) { public bool
+- Extension members for methods, properties, operators (C# 14+); declared inside `extension` blocks
+  within a top-level nongeneric `static class`: `extension(IEnumerable<int> src) { public bool
   IsEmpty => !src.Any(); }`
-  - NEVER use `static class` with `this` parameter for new extension methods
+  - NEVER use `this` parameter syntax for new extension methods; use `extension` blocks instead
 - Null-conditional assignment (C# 14+): `obj?.Prop = value;` over null checks wrapping assignment
 - Lambda modifiers without types (C# 14+): `(text, out result) => int.TryParse(text, out result)`
   - NEVER add redundant parameter types when modifiers alone suffice
