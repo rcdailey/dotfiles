@@ -11,12 +11,12 @@
   "agent": {
     "general": {
       "tools": { "question": false },
-      "model": "anthropic/claude-sonnet-4-6",
-      "variant": "medium",
+      "model": "opencode/kimi-k2.5",
     },
     "explore": {
       "tools": { "question": false },
-      "model": "anthropic/claude-haiku-4-5"
+      "model": "opencode/kimi-k2.5",
+      "thinking": { "type": "disabled" },
     },
   },
   "formatter": {

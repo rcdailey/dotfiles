@@ -5,7 +5,7 @@ description: >
   applicable, and any issue keys. Callers MUST NOT run git inspection commands before delegating,
   describe the diff, or dictate commit messages; this agent handles all inspection internally.
 mode: all
-model: anthropic/claude-sonnet-4-6
+model: opencode/kimi-k2.5
 permission:
   "*": deny
   read: allow

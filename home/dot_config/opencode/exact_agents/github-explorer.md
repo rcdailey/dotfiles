@@ -6,7 +6,7 @@ description: >
   all exploration and returns a synthesized answer. Do NOT delegate simple single-command gh
   operations (e.g., listing issues, viewing a single PR); use gh CLI directly for those.
 mode: subagent
-model: anthropic/claude-sonnet-4-6
+model: opencode/kimi-k2.5
 hidden: true
 permission:
   "*": deny
