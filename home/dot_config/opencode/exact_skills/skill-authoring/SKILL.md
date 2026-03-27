@@ -21,58 +21,34 @@ in AGENTS.md).
 ## When to Create a Skill vs. AGENTS.md
 
 **Litmus test**: Would you want this instruction to apply even when you're not thinking about it?
+Yes = AGENTS.md (rules, constraints, conventions). No = skill (procedures, reference, workflows).
 
-- **Yes**: Put in AGENTS.md (rules, constraints, conventions, build commands)
-- **No**: Put in a skill (procedures, reference, infrequent workflows)
+AGENTS.md can route to skills: `- testing: Use for any test-related work`. This keeps always-on
+context small while making the agent adaptable.
 
-AGENTS.md can serve as routing logic that points to skills:
-
-```markdown
-## Skills
-- `testing` - Use for any test-related work
-- `changelog` - Use when updating CHANGELOG.md
-```
-
-This keeps always-on context small while making the agent adaptable.
-
-### Concrete examples
+Examples:
 
 - "Never commit `.env` files" -> **AGENTS.md** (invariant)
 - "When writing tests, follow these NUnit patterns" -> **Skill** (procedure)
 - "Use `const` by default, `let` when reassignment needed" -> **AGENTS.md** (convention)
 - "When creating decision records, follow this template" -> **Skill** (infrequent workflow)
-- "When touching billing code, run these integration tests" -> **Skill** (conditional procedure)
 
 ## Progressive Disclosure
 
-Skills use a three-layer loading model to manage context efficiently:
+Skills load in three layers:
 
-1. **Metadata** (~100 tokens): Name and description loaded at startup for all installed skills. The
-   agent uses this to decide relevance.
-2. **SKILL.md body** (loaded when triggered): Core instructions, patterns, and workflows.
-3. **Referenced files** (loaded on demand): Heavy reference material, scripts, and templates that
-   the agent reads only when needed.
+1. **Metadata** (~100 tokens): Name and description at startup. Agent uses this to decide relevance.
+2. **SKILL.md body** (on trigger): Core instructions, patterns, workflows.
+3. **Referenced files** (on demand): Heavy reference material the agent reads selectively.
 
-This means a project can have dozens of skills installed with minimal context cost. Only the 2-3
-relevant skills get fully loaded per session.
-
-### Implications for authoring
-
-- The description determines whether the agent ever reads the body
-- Referenced files (scripts/, references/) provide depth without upfront cost
-- Split into SKILL.md + referenced files only when the reference material is genuinely separable
-  (e.g., a 600-line API spec the agent reads selectively). Do not split just to hit a size target;
-  if the agent needs the content every time, it belongs in SKILL.md
+Implications: the description determines whether the agent ever reads the body. Split into SKILL.md
+plus referenced files only when the reference is genuinely separable (e.g., a 600-line API spec). If
+the agent needs content every load, it belongs in SKILL.md.
 
 ## File Location and Discovery
 
-**Project-local** (walks up to git worktree root):
-
-- `.opencode/skills/<name>/SKILL.md`
-
-**Global**:
-
-- `~/.config/opencode/skills/<name>/SKILL.md`
+- **Project-local**: `.opencode/skills/<name>/SKILL.md` (walks up to git worktree root)
+- **Global**: `~/.config/opencode/skills/<name>/SKILL.md`
 
 The skill name MUST match the directory name.
 
@@ -92,144 +68,70 @@ description: Use when [triggering conditions]
 
 ### Description: The Most Critical Field
 
-The description determines when the agent loads the skill. It is the **routing mechanism**.
+The description is the routing mechanism. Describe **when to use**, not what the skill contains.
 
-**CRITICAL**: Describe **when to use**, not **what the skill contains or does**.
-
-obra/superpowers testing revealed that descriptions summarizing the skill's workflow cause the agent
-to follow the description as a shortcut instead of reading the full SKILL.md body. The skill body
-becomes documentation the agent skips.
+Internal testing showed that descriptions summarizing the workflow cause the agent to follow the
+description as a shortcut, skipping the full body.
 
 ```yaml
 # BAD: Summarizes content (agent may shortcut)
 description: Testing patterns, infrastructure, and fixtures for Recyclarr
-
-# BAD: Describes what it does
-description: Creates consistent releases and changelogs
 
 # BAD: Too vague
 description: For async testing
 
 # GOOD: Triggering conditions only
 description: Use when writing or modifying tests, improving coverage, or debugging test failures
-
-# GOOD: Specific triggers
-description: Use when creating or editing ADRs or PDRs in docs/decisions/
-
-# GOOD: Technology-scoped trigger
-description: Use when writing or modifying C# code
 ```
 
-**Guidelines:**
-
-- Start with "Use when..." to focus on triggering conditions
-- Include specific symptoms, situations, and file paths that signal relevance
-- Write in third person (injected into system prompt)
-- NEVER summarize the skill's process or workflow
+Start with "Use when...", include specific situations and file paths, write in third person. NEVER
+summarize the skill's process or workflow.
 
 ### Body Content
 
-Open with a brief purpose statement, then provide actionable content.
-
-**Recommended structure:**
-
-```markdown
-# Skill Name
-
-## Overview (optional)
-Core concept in 1-2 sentences. When NOT to use.
-
-## [Core Content]
-Patterns, procedures, commands, reference material.
-
-## Common Mistakes
-What goes wrong and how to fix it.
-```
-
-**Every skill should answer these questions** (not necessarily as sections):
-
-1. **Trigger**: When should the agent load this? (covered by description)
-2. **Inputs**: What info does it need before starting?
-3. **Steps**: What is the procedure?
-4. **Checks**: How to verify it worked?
-5. **Stop conditions**: When to pause and ask the human?
-6. **Recovery**: What if a check fails?
+Open with a brief purpose statement, then actionable content. Every skill should address (not
+necessarily as separate sections): what info it needs before starting, what the procedure is, how to
+verify it worked, when to pause and ask the human, and what to do if a check fails.
 
 ## Content Balance
 
-Skills load into the context window. Include what the agent needs to act correctly, but write it
-concisely. The goal is zero wasted tool calls for discovery without padding content with verbose
-explanations.
+Include what the agent needs to act correctly, written concisely. The goal: zero wasted tool calls
+for discovery without padding with verbose explanations.
 
-**Guiding principle:** If the agent needs it every load, put it in SKILL.md. If only needed for
-specific sub-tasks, put it in a referenced file.
-
-**Staying lean:**
+**Guiding principle:** If the agent needs it every load, put it in SKILL.md. If only for specific
+sub-tasks, put it in a referenced file.
 
 - Cross-reference other skills by name instead of duplicating shared content
 - One excellent example beats three mediocre ones
-- Compress examples; minimal setups, no verbose scaffolding
-- Terse rules and compressed prose; every sentence should earn its place
+- Compress examples: minimal setups, no verbose scaffolding
+- Terse rules and compressed prose; every sentence earns its place
 
-**Splitting content:**
+### Directory Structures
+
+Most skills are self-contained (`skill-name/SKILL.md`). Add subdirectories only when justified:
 
 ```txt
-my-skill/
-  SKILL.md           # Core workflows + always-needed reference (concise)
-  references/
-    api-reference.md  # Large reference the agent reads selectively
+skill-name/
+  SKILL.md              # Core workflows + always-needed reference
+  references/           # Large docs the agent reads selectively
+    api-reference.md
+  scripts/              # Deterministic operations better as code
+    validate.py
 ```
 
 Reference from SKILL.md: "See `references/api-reference.md` for complete API documentation."
 
-Split when reference material is genuinely separable (agent reads it selectively). Don't split just
-to hit a size target, but don't inline 600 lines the agent only sometimes needs either.
-
-## Directory Structure
-
-### Self-contained skill
-
-```txt
-skill-name/
-  SKILL.md    # Everything inline
-```
-
-When: All content is needed every load (most skills).
-
-### Skill with reference material
-
-```txt
-skill-name/
-  SKILL.md           # Overview + workflows
-  references/
-    detailed-ref.md  # Heavy reference docs
-```
-
-When: Reference material is large and only needed for specific sub-tasks.
-
-### Skill with scripts
-
-```txt
-skill-name/
-  SKILL.md    # Overview + when to run scripts
-  scripts/
-    validate.py
-```
-
-When: Deterministic operations better handled by code than token generation.
-
 ## Failure Modes
 
-| Failure              | Symptom                               | Fix                                        |
-| -------------------- | ------------------------------------- | ------------------------------------------ |
-| The Everything Bagel | Skill applies to every task           | It's a rule, move to AGENTS.md             |
-| The Secret Handshake | Agent never loads the skill           | Description too abstract; rewrite triggers |
-| The Fragile Skill    | Breaks when repo changes              | Move specifics to referenced files         |
-| The Shortcut         | Agent follows description, skips body | Remove workflow summary from description   |
-| The Skeleton         | Agent wastes tool calls on discovery  | Include reference material inline          |
-|                      | (--help, reading READMEs, etc.)       |                                            |
-| The Echo             | Opener restates the trigger condition | State purpose, not loading instructions    |
-|                      | ("Load this skill when...")           | (the skill is already loaded)              |
+- **The Everything Bagel**: skill applies to every task. Fix: it's a rule, move it to AGENTS.md.
+- **The Secret Handshake**: agent never loads the skill. Fix: description is too abstract, rewrite
+  the trigger.
+- **The Fragile Skill**: breaks when the repo changes. Fix: move specifics to referenced files.
+- **The Shortcut**: agent follows the description and skips the body. Fix: remove workflow summary
+  from the description.
+- **The Skeleton**: agent wastes tool calls on discovery. Fix: include the needed reference material
+  inline.
+- **The Echo**: opener restates the trigger condition. Fix: state purpose, not loading instructions.
 
 ## Validation Checklist
 

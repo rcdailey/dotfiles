@@ -9,110 +9,64 @@ Conventions for writing AGENTS.md files. Omissions are intentional.
 
 ## Core Concept
 
-AGENTS.md is a "README for agents" - a dedicated, predictable place for AI coding agent context.
-Supported by: OpenAI Codex, Google Jules, Cursor, VS Code, GitHub Copilot, Devin, Windsurf,
-OpenCode, Aider, and many others.
+AGENTS.md is a "README for agents": a dedicated, predictable place for AI coding agent context.
+Supported by OpenAI Codex, Google Jules, Cursor, VS Code, GitHub Copilot, Devin, Windsurf, OpenCode,
+Aider, and others.
+
+## Writing Style
+
+When writing AGENTS.md content, prefer dense prose over multi-header structures. Collapse related
+constraints into single paragraphs. Use bullet lists only for genuine enumeration, not as a
+structural default. The screenshot test: if removing a header and merging its content into the
+preceding section loses nothing, the header was unnecessary.
 
 ## Essential Sections
 
-Every AGENTS.md should cover:
+Every AGENTS.md should cover these areas (not necessarily as separate sections):
 
-### 1. Dos and Don'ts (Constraints)
+1. **Constraints** (dos/don'ts): Be nitpicky. Clear guidelines prevent repeated mistakes.
+2. **Commands**: Prefer file-scoped over project-wide. Faster feedback, fewer wasted cycles.
+3. **Permissions**: Explicit allow/ask lists prevent surprises.
+4. **Structure hints**: A tiny index saves exploration time every session.
+5. **Example pointers**: Point to real files. Examples beat abstractions.
+6. **When stuck**: Escape hatch for uncertainty.
+7. **PR/commit checklist**: Define "ready" explicitly.
 
-Be nitpicky. Clear guidelines prevent repeated mistakes.
+Annotated example covering all sections:
 
 ````markdown
-### Do
+## Do
 - use TypeScript strict mode
-- use functional components with hooks
 - default to small, focused diffs
 
-### Don't
-- do not hard code colors - use design tokens
+## Don't
+- do not hard code colors; use design tokens
 - do not add dependencies without approval
-````
 
-### 2. File-Scoped Commands
-
-Prefer file-specific commands over project-wide. Faster feedback, fewer wasted cycles.
-
-````markdown
-### Commands
-# Type check single file (seconds, not minutes)
+## Commands
+# Type check single file (prefer over full build)
 npm run tsc --noEmit path/to/file.tsx
-
 # Lint single file
 npm run eslint --fix path/to/file.tsx
 
-# Test single file
-npm run vitest run path/to/file.test.tsx
+## Permissions
+Allowed without asking: read files, type check, lint, run single unit tests.
+Ask first: package installs, git push, deleting files, full build.
 
-# Full build only when explicitly requested
-npm run build
-````
-
-### 3. Safety and Permissions
-
-Explicit allow/ask lists prevent surprises.
-
-````markdown
-### Permissions
-Allowed without asking:
-- read files, list directories
-- type check, lint, format single files
-- run single unit tests
-
-Ask first:
-- package installs
-- git push
-- deleting files
-- full build or E2E suites
-````
-
-### 4. Project Structure Hints
-
-A tiny index saves exploration time every session.
-
-````markdown
-### Structure
+## Structure
 - routes: `src/App.tsx`
 - components: `src/components/`
 - design tokens: `src/lib/theme/tokens.ts`
-- API client: `src/api/client.ts`
-````
 
-### 5. Good/Bad Example Pointers
+## Examples
+Copy: `src/components/UserForm.tsx` (forms), `src/hooks/useProjects.ts` (data fetching).
+Avoid: `src/legacy/Admin.tsx` (class component, legacy).
 
-Point to real files. Examples beat abstractions.
+## When stuck
+Ask a clarifying question, propose a short plan, or open a draft PR with notes.
+Do not push large speculative changes.
 
-````markdown
-### Examples
-Copy these patterns:
-- forms: `src/components/UserForm.tsx`
-- data fetching: `src/hooks/useProjects.ts`
-
-Avoid these (legacy):
-- class components like `src/legacy/Admin.tsx`
-````
-
-### 6. When Stuck Guidance
-
-Escape hatch for uncertainty.
-
-````markdown
-### When stuck
-- ask a clarifying question
-- propose a short plan
-- open a draft PR with notes
-- do not push large speculative changes
-````
-
-### 7. PR/Commit Checklist
-
-Define "ready" explicitly.
-
-````markdown
-### PR checklist
+## PR checklist
 - lint, type check, tests: all green
 - diff is small and focused
 - brief summary of what changed and why
@@ -120,162 +74,72 @@ Define "ready" explicitly.
 
 ## Alternative: Instructions in opencode.json
 
-Instead of (or alongside) AGENTS.md, rules can be loaded via the `instructions` field in
-`opencode.json`. Supports globs and remote URLs.
+Rules can also load via the `instructions` field in `opencode.json`. Supports globs and remote URLs.
+All instruction files combine with AGENTS.md content.
 
 ```json
 {
   "instructions": [
     "CONTRIBUTING.md",
-    "docs/guidelines.md",
     "packages/*/AGENTS.md",
     "https://raw.githubusercontent.com/my-org/shared-rules/main/style.md"
   ]
 }
 ```
 
-All instruction files are combined with AGENTS.md content.
-
 ## Nested AGENTS.md for Monorepos
 
-Place AGENTS.md in subdirectories for package-specific rules. OpenCode traverses up from the current
-working directory to the git worktree root, loading any AGENTS.md files it finds. Closer files take
-precedence over those further up the tree.
-
-```txt
-/root
-  AGENTS.md           # Project-wide defaults
-  /packages/legacy
-    AGENTS.md         # React 17 rules for this package
-  /packages/new-app
-    AGENTS.md         # React 18 rules for this package
-```
-
+Place AGENTS.md in subdirectories for package-specific rules. OpenCode traverses up from the working
+directory to the git worktree root, loading AGENTS.md files it finds. Closer files take precedence.
 Global rules in `~/.config/opencode/AGENTS.md` apply across all sessions.
 
-## Anthropic Context Engineering Principles
+## Context Engineering Principles
 
-### Clarity at the Right Altitude
+**Position sensitivity**: Models attend more to the beginning and end of context. Place critical
+rules (safety, correctness, non-negotiable constraints) at the top. Checklists work well at the end.
 
-- Specific enough to guide behavior effectively
-- Flexible enough to provide strong heuristics
-- Not so detailed it becomes brittle
+**Completeness without bloat**: Include what the agent needs to act without guessing. Write
+concisely: terse rules, compressed examples, no filler. Remove duplication, but keep reference
+material the agent needs. Organize into distinct sections with consistent formatting.
 
-### Completeness Without Bloat
+## Rule Writing
 
-- Include what the agent needs to act without guessing or extra tool calls
-- Write concisely: terse rules, compressed examples, no filler prose
-- Remove duplication, but keep reference material the agent needs to do its job
+Use RFC 2119 keywords (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY) for directives. LLMs parse these as
+strict requirement levels, producing measurably higher compliance than softer phrasing.
 
-### Structure
+- `MUST` / `SHALL`: absolute requirement
+- `MUST NOT` / `SHALL NOT`: absolute prohibition
+- `SHOULD` / `SHOULD NOT`: strong preference; exceptions require justification
+- `MAY`: truly discretionary; usually omit instead
 
-- Organize into distinct sections
-- Group related rules together
-- Use consistent formatting
+**Format: constraint + consequence.** Bad: "Don't commit to main." Good: "MUST NOT commit directly
+to main; use feature branches and PRs."
 
-### Position Sensitivity
+**Prefer positive framing.** Bad: "MUST NOT use var." Good: "MUST use `const` by default, `let` when
+reassignment needed (NEVER `var`)."
 
-Models attend more to the beginning and end of context than the middle. Place the most critical
-rules (safety, correctness, non-negotiable constraints) at the top of AGENTS.md. Put less critical
-guidelines and reference material in the middle. Checklists and verification steps work well at the
-end.
+**Be specific.** Bad: "Be careful with error handling." Good: "All async functions MUST have
+try/catch; unhandled rejections crash the process."
 
-## Rule Writing Guidelines
-
-### RFC 2119 Style for Maximum Compliance
-
-Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY) for directives. LLMs parse these as strict
-requirement levels. This produces measurably higher compliance rates than softer phrasing.
-
-**Keyword semantics:**
-
-- **MUST / REQUIRED / SHALL**: Absolute requirement. No exceptions.
-- **MUST NOT / SHALL NOT**: Absolute prohibition. No exceptions.
-- **SHOULD / RECOMMENDED**: Strong preference. Valid exceptions exist but require justification.
-- **SHOULD NOT / NOT RECOMMENDED**: Strong discouragement. Valid exceptions require justification.
-- **MAY / OPTIONAL**: Truly discretionary.
-
-**Application:**
-
-- Use MUST/MUST NOT for safety, correctness, and non-negotiable constraints
-- Use SHOULD/SHOULD NOT for best practices where context may warrant deviation
-- Use MAY sparingly; if something is truly optional, consider omitting it entirely
-
-### Format: Constraint + Consequence
-
-Bad: "Don't commit directly to main"
-
-Good: "MUST NOT commit directly to main - use feature branches and PRs"
-
-### Prefer Positive Over Negative
-
-Bad: "MUST NOT use var"
-
-Good: "MUST use `const` by default, `let` when reassignment needed (NEVER `var`)"
-
-### Be Specific, Not Vague
-
-Bad: "Be careful with error handling"
-
-Good: "All async functions MUST have try/catch - unhandled rejections crash the process"
-
-### Use Examples Over Adjectives
-
-Bad: "Write concise commit messages"
-
-Good: "Format: `fix(auth): handle expired tokens`, `feat(api): add search endpoint`"
+**Examples over adjectives.** Bad: "Write concise commit messages." Good: "Format: `fix(auth):
+handle expired tokens`."
 
 ## Antipatterns
 
-| Antipattern                       | Problem                   | Fix                           |
-| --------------------------------- | ------------------------- | ----------------------------- |
-| Repeated rules                    | Inconsistency risk        | Single authoritative location |
-| Vague adjectives                  | Subjective interpretation | Concrete criteria or examples |
-| Prohibitions without alternatives | No guidance on what TO do | Include correct approach      |
-| Project-wide commands only        | Slow feedback loops       | File-scoped commands          |
-| Stripped reference material       | Agent wastes tool calls   | Include needed references     |
-| Verbose explanations              | Wastes tokens             | Terse rule + example          |
-
-## Good vs Bad Instructions (Devin Research)
-
-### Good Instructions
-
-- Name specific files/components
-- Reference existing code as templates
-- Include clear success criteria
-- Define verification steps
-
-Example: "Create endpoint `/users/stats` returning JSON. Reference `/orders/stats` in
-`statsController.js` for structure. Add tests to `StatsController.test.js`."
-
-### Bad Instructions
-
-- Vague ("make it user-friendly")
-- No specific components mentioned
-- Unclear validation criteria
-- Open-ended scope
-
-Example: "Add a user stats endpoint." (No format, source, tests, or reference)
+- Repeated rules across files: use a single authoritative location.
+- Vague adjectives: replace with concrete criteria or examples.
+- Prohibitions without alternatives: include the correct approach.
+- Project-wide commands only: prefer file-scoped commands.
+- Stripped reference material: include the references the agent needs.
+- Verbose explanations: use a terse rule plus one example.
+- Multi-header structures for simple related constraints: use one dense paragraph.
 
 ## Maintenance
 
-Update AGENTS.md when:
-
-- New constraints or coding standards are adopted
-- Infrastructure or tooling changes
-- Command syntax changes
-- Project structure evolves
-
-Process:
-
-1. Identify what changed and why
-2. Update the authoritative location (not duplicates)
-3. Verify no contradictions introduced
-4. Validate formatting (markdownlint)
+Update AGENTS.md when constraints, tooling, command syntax, or project structure changes. Update the
+authoritative location (not duplicates), verify no contradictions, validate formatting.
 
 ## Validation Checklist
-
-Before finalizing changes:
 
 - [ ] Each constraint has a consequence
 - [ ] Commands are copy-pasteable and file-scoped where possible

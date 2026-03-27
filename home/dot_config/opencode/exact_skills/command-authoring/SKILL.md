@@ -18,39 +18,24 @@ Conventions and patterns for OpenCode custom commands. Omissions are intentional
 
 The filename (without `.md`) becomes the `/command-name`.
 
-### Required Frontmatter
+### Frontmatter
 
 ```yaml
 ---
 description: Brief description shown in TUI autocomplete
+agent: plan          # optional: which agent executes (defaults to current)
+model: anthropic/claude-sonnet-4-5  # optional: override model
+subtask: true        # optional: force subagent invocation (isolated context)
 ---
 ```
 
-`description` is the only required field. It appears in the TUI when the user types `/`.
-
-### Optional Frontmatter
-
-| Field     | Type    | Purpose                                      |
-| --------- | ------- | -------------------------------------------- |
-| `agent`   | string  | Which agent executes (defaults to current)   |
-| `model`   | string  | Override the default model                   |
-| `subtask` | boolean | Force subagent invocation (isolated context) |
-
-```yaml
----
-description: Deep code review with fresh context
-agent: plan
-subtask: true
----
-```
-
-When `agent` references a subagent, subtask invocation happens automatically. Set `subtask: true`
-explicitly when you want isolation even with a primary agent (keeps main context clean). Set
-`subtask: false` to disable automatic subtask for subagent references.
+`description` is the only required field. When `agent` references a subagent, subtask invocation
+happens automatically. Set `subtask: true` explicitly when you want isolation with a primary agent.
+Set `subtask: false` to disable automatic subtask for subagent references.
 
 ### Template Body
 
-Everything after the frontmatter is the prompt template. Supports:
+Everything after frontmatter is the prompt template. Supports:
 
 - **`$ARGUMENTS`**: All arguments as a single string
 - **`$1`, `$2`, `$3`...**: Positional arguments
@@ -59,18 +44,26 @@ Everything after the frontmatter is the prompt template. Supports:
 
 ## Writing Effective Commands
 
-### Structure Pattern
+### The Five Elements
 
-Well-structured commands follow this skeleton:
+- **Role/Goal**: what the command is doing; opening directive and domain framing.
+- **Expertise**: what it knows; specific tools, patterns, and skill references.
+- **Process**: how it works; numbered phases and decision criteria.
+- **Output**: what it produces; format templates and required sections.
+- **Constraints**: what it will not do; rules, anti-patterns, and stop points.
+
+Simple commands may only need Role/Goal and Constraints. Complex commands benefit from all five.
+
+### Structure Pattern
 
 ```markdown
 ---
 description: One-line purpose
 ---
 
-[Opening directive: what the agent should do, in imperative mood]
+[Opening directive in imperative mood]
 
-Arguments: $ARGUMENTS (or describe what $1, $2, etc. mean)
+Arguments: $ARGUMENTS
 
 ## Process
 
@@ -89,73 +82,35 @@ Arguments: $ARGUMENTS (or describe what $1, $2, etc. mean)
 
 Not every command needs all sections. A 3-line command is fine for simple tasks.
 
-### The Five Elements
-
-Effective commands share five elements:
-
-| Element         | Question             | How It Manifests                           |
-| --------------- | -------------------- | ------------------------------------------ |
-| **Role/Goal**   | What are you doing?  | Opening directive, domain framing          |
-| **Expertise**   | What do you know?    | Specific tools, patterns, skill references |
-| **Process**     | How do you work?     | Numbered phases, decision criteria         |
-| **Output**      | What do you produce? | Format templates, required sections        |
-| **Constraints** | What won't you do?   | Rules section, anti-patterns, stop points  |
-
-Simple commands may only need Role/Goal and Constraints. Complex commands benefit from all five.
-
 ### Prompt Engineering Principles
 
-**Present a complete world, concisely.** The command template is the agent's entire understanding of
-the task. Include what it needs to act correctly (tool names, skill references, key constraints) but
-keep the prose tight. Do not assume the agent will discover tools or skills on its own.
-
-**Be specific, not vague.** "Analyze the code carefully" is useless. "Run `npm test`, parse
-failures, correlate with `git blame`" is actionable.
-
-**Constraints over examples.** Telling the agent what NOT to do is safe and effective. Examples risk
-overfitting (the agent pattern-matches too literally). When examples are necessary, one excellent
-example beats three mediocre ones.
-
-**Front-load the directive.** Models pay most attention to the beginning and end of the prompt.
-State what the command does in the first sentence.
-
-**Consistency across components.** If the command references a tool, file path, or skill, ensure
-those references are accurate. Do not surprise the model with mismatched expectations.
+- **Present a complete world, concisely.** The template is the agent's entire understanding. Include
+  what it needs (tool names, skill references, constraints) but keep prose tight.
+- **Be specific.** "Analyze carefully" is useless. "Run `npm test`, parse failures, correlate with
+  `git blame`" is actionable.
+- **Constraints over examples.** Examples risk overfitting. When necessary, one excellent example
+  beats three mediocre ones.
+- **Front-load the directive.** Models attend most to the beginning and end. State purpose first.
 
 ### Context Pollution Awareness
 
-Every command runs in the main context window by default. Long outputs (test results, logs, large
-diffs) accumulate and degrade performance. Subagent isolation can yield ~8x cleaner main context for
-diagnostic tasks compared to inline slash commands.
+Every command runs in the main context window by default. Long outputs accumulate and degrade
+performance.
 
-**Guidelines:**
-
-- Commands that generate large output (test runners, log analyzers, multi-file research) SHOULD use
-  `subtask: true` or delegate to a subagent
-- Commands that produce concise, actionable output (commit prep, code generation, quick analysis)
-  work fine in the main context
-- If a command runs shell commands that produce verbose output, consider having it summarize rather
-  than dumping raw output
+- Commands generating large output (test runners, log analyzers) SHOULD use `subtask: true` or
+  delegate to a subagent
+- Commands producing concise output (commit prep, quick analysis) work fine inline
+- If shell commands produce verbose output, have the command summarize rather than dump raw text
 
 ### Argument Handling
 
-```markdown
-# Full arguments string
-Analyze $ARGUMENTS for security vulnerabilities.
-
-# Positional arguments
-Create a $1 component in $2 with these features: $3
-
-# Optional arguments with fallback
-Review $ARGUMENTS (or infer from recent discussion if not provided).
-```
-
-Design commands so they degrade gracefully when arguments are missing. State the fallback behavior
-explicitly.
+Design commands to degrade gracefully when arguments are missing. State fallback behavior
+explicitly: `Review $ARGUMENTS (or infer from recent discussion if not provided).`
 
 ### Shell Output Injection
 
-Use `` !`command` `` to include live data in the prompt:
+Use `` !`command` `` for dynamic context. Commands run in the project root. Avoid commands with
+massive output (pipe through `head` or summarize).
 
 ```markdown
 Current branch status:
@@ -164,83 +119,22 @@ Current branch status:
 Based on these changes, prepare a commit message.
 ```
 
-Commands run in the project root. Use this for dynamic context the agent needs before acting. Do not
-use it for commands with massive output (pipe through `head` or summarize instead).
+### Referencing Skills and Files
 
-### Referencing Skills
-
-Commands can (and should) reference skills when the command enters a domain covered by an existing
-skill:
-
-```markdown
-Load the `gh-pr-review` skill for review etiquette and tooling reference.
-```
-
-This tells the agent to load the skill for procedural knowledge, while the command provides the
-task-specific workflow. Avoid duplicating skill content in the command.
-
-### Referencing Files
-
-Use `@path/to/file` to include file contents:
-
-```markdown
-Review the component in @src/components/Button.tsx.
-Check for accessibility issues.
-```
-
-The file content is injected into the prompt automatically.
-
-## Personas in Commands
-
-Giving the agent a specific role identity can improve output quality when used correctly, but it is
-not universally necessary.
-
-### When Personas Help
-
-- **Specialist tasks** where domain framing improves output: security audit, performance review,
-  architecture analysis
-- **Adversarial perspective** where the agent should challenge assumptions: devil's advocate, risk
-  analysis
-- **Consistent output format** where the persona anchors behavior across invocations
-
-### When Personas Are Unnecessary
-
-- Simple operational tasks (run tests, format files, generate boilerplate)
-- Tasks where the directive is already specific enough
-- Commands that delegate to subagents (the subagent's own prompt handles persona)
-
-### Persona Pattern
-
-When using a persona, establish it in the opening line:
-
-```markdown
-You are a senior application security engineer specializing in code review.
-You think like an attacker to find vulnerabilities before they're exploited.
-```
-
-Effective personas include: specific seniority/expertise, a perspective or stance (not just a job
-title), and bounded domain knowledge.
-
-**Anti-pattern**: "You are a helpful AI assistant." This says nothing actionable.
+Reference skills by name when the command enters a covered domain. Avoid duplicating skill content.
+Use `@path/to/file` to include file contents in the prompt.
 
 ## Command Categories
 
-### Operational Commands
+- **Operational**: short, focused, minimal process. Example: format staged files and report the
+  diff.
+- **Workflow**: multi-step with phases. Example: generate release notes from git log.
+- **Orchestration**: coordinates parallel subagents. Example: validate all open Renovate PRs.
+- **Research**: gathers information without mutations. Example: analyze a library upgrade path.
 
-Short, focused tasks. Minimal process, clear output.
+Research and orchestration commands are good candidates for `subtask: true`.
 
-```markdown
----
-description: Format staged files
----
-
-Run the project formatter on all staged files. Report what changed.
-Do not commit.
-```
-
-### Workflow Commands
-
-Multi-step processes with phases.
+Workflow example:
 
 ```markdown
 ---
@@ -249,71 +143,37 @@ description: Prepare release notes
 
 Generate release notes for $ARGUMENTS (version tag or range).
 
-## Process
-
-### 1. Gather Changes
+### 1. Gather
 !`git log --oneline $1`
 
 ### 2. Categorize
 Group by: breaking changes, features, fixes, chores.
 
 ### 3. Output
-Format as markdown release notes with categories and PR references.
+Markdown release notes with categories and PR references.
 ```
 
-### Orchestration Commands
+## Personas
 
-Commands that coordinate subagents for parallel or isolated work. Use for tasks where context
-pollution is a concern or parallelism is beneficial.
+Giving the agent a role identity helps for specialist tasks (security audit, architecture review)
+and adversarial perspectives (devil's advocate, risk analysis). Unnecessary for simple operational
+tasks or when the directive is already specific enough.
 
-```markdown
----
-description: Validate all open Renovate PRs
----
+When using a persona, establish it in the opening line with specific expertise and a stance: `You
+are a senior application security engineer. You think like an attacker.`
 
-List open Renovate PRs. Launch one explore subagent per PR in parallel.
-Each subagent researches breaking changes and reports back.
-Present unified summary.
-```
-
-### Research Commands
-
-Commands that gather information without making changes. Good candidates for `subtask: true` to keep
-main context clean.
-
-```markdown
----
-description: Research library upgrade path
-subtask: true
----
-
-Research the upgrade path from current to latest version of $ARGUMENTS.
-Check changelogs, migration guides, and breaking changes.
-Return a concise summary of required changes.
-```
+Anti-pattern: "You are a helpful AI assistant." (says nothing actionable)
 
 ## Common Mistakes
 
-| Mistake                   | Symptom                   | Fix                          |
-| ------------------------- | ------------------------- | ---------------------------- |
-| Vague directive           | Inconsistent output       | Specific verbs, named tools  |
-| Verbose output inline     | Context pollution         | Use subtask or summarize     |
-| Duplicating skill content | Drift, maintenance burden | Reference skill by name      |
-| No argument fallback      | Fails without args        | State fallback explicitly    |
-| Overengineered persona    | Follows persona, not task | Persona is framing, not task |
-| Missing constraints       | Unexpected agent behavior | Add Rules section            |
-| Too many commands         | Cognitive overhead        | Consolidate; use args        |
-| Belongs in AGENTS.md      | Redundant, may conflict   | Move to AGENTS.md            |
-
-## Refactoring Existing Commands
-
-When editing an existing command:
-
-1. **Read the current command** to understand its intent and structure
-2. **Check if it should be a command** (vs AGENTS.md rule, skill, or subagent prompt)
-3. **Identify context pollution risk**: does it generate large output in-line?
-4. **Apply the five elements**: which are missing or vague?
-5. **Test mentally**: given this prompt, would the agent produce consistent results?
+- Vague directive: use specific verbs and named tools.
+- Verbose output inline: use `subtask: true` or summarize.
+- Duplicating skill content: reference the skill by name.
+- No argument fallback: state fallback behavior explicitly.
+- Overengineered persona: persona is framing, not the task.
+- Missing constraints: add a `Rules` section.
+- Too many commands: consolidate and use arguments.
+- Belongs in AGENTS.md: move persistent rules to AGENTS.md.
 
 ## Validation Checklist
 
