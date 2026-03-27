@@ -16,12 +16,13 @@ subagents (one per PR).
 Use the Task tool with `subagent_type: "upgrade-researcher"` for each PR.
 
 **Bulk mode** (no arguments): Launch one subagent per PR in parallel. Each subagent receives the PR
-number. Collect all results, then present a unified summary.
+reference. Collect all results, then present a unified summary.
 
 **Single PR mode** (argument specifies a PR): Launch one subagent for the PR.
 
-Pass each subagent the PR number (e.g., `PR #123 in owner/repo`). The subagent fetches PR details
-and handles all research, impact assessment, and categorization autonomously.
+The subagent prompt MUST contain only the PR reference (e.g., `PR #123 in owner/repo`). The agent's
+own directives define its workflow, research strategy, output format, and categorization rules. Do
+not repeat, paraphrase, or supplement those instructions in the prompt.
 
 ## Report Format
 

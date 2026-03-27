@@ -265,3 +265,8 @@ SHOULD use agents autonomously without explicit prompt from user for appropriate
   question or research goal; the agent explores and returns a synthesized answer. Do NOT delegate
   simple single-command operations (listing issues, viewing a PR, checking a release); use `gh` CLI
   directly for those.
+- `upgrade-researcher`: For dependency upgrade impact analysis. Callers pass only the PR reference
+  (e.g., `PR #123 in owner/repo`) or package with version range. The agent owns the entire workflow:
+  fetching PR details, tracing changelogs, assessing repo impact, categorizing findings, and
+  structuring output. Callers MUST NOT include research instructions, output format requirements, or
+  categorization rules in the prompt; these are codified in the agent's directives.
