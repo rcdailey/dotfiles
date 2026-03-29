@@ -5,7 +5,7 @@ description: >
   applicable, and any issue keys. Callers MUST NOT run git inspection commands before delegating,
   describe the diff, or dictate commit messages; this agent handles all inspection internally.
 mode: all
-model: opencode/kimi-k2.5
+model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
 permission:
   "*": deny
   read: allow

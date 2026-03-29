@@ -5,7 +5,7 @@ description: >
   categorizes findings. Callers pass a PR number or package/version details; this agent performs
   all research and returns structured findings.
 mode: subagent
-model: opencode/kimi-k2.5
+model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
 hidden: true
 permission:
   write: deny

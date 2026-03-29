@@ -6,7 +6,7 @@ description: >
   all exploration and returns a synthesized answer. Do NOT delegate simple single-command gh
   operations (e.g., listing issues, viewing a single PR); use gh CLI directly for those.
 mode: subagent
-model: opencode/kimi-k2.5
+model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
 hidden: true
 permission:
   "*": deny

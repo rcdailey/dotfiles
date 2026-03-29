@@ -11,11 +11,11 @@
   "agent": {
     "general": {
       "tools": { "question": false },
-      "model": "opencode/kimi-k2.5",
+      "model": "fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo",
     },
     "explore": {
       "tools": { "question": false },
-      "model": "opencode/kimi-k2.5",
+      "model": "fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo",
     },
   },
   "formatter": {
