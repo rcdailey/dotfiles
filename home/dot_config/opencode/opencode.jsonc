@@ -16,7 +16,6 @@
     "explore": {
       "tools": { "question": false },
       "model": "opencode/kimi-k2.5",
-      "thinking": { "type": "disabled" },
     },
   },
   "formatter": {
