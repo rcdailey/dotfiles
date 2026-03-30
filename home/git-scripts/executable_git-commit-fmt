@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""Structured commit message formatter for LLM-driven workflows.
+
+Accepts a subject line and optional body paragraphs, handles all text
+wrapping (markdown-aware), and calls git commit. Designed to eliminate
+LLM hard-wrapping errors that trigger commitlint rejections.
+"""
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import textwrap
+
+DEFAULT_WRAP = 72
+
+# Patterns for list item detection
+RE_UNORDERED = re.compile(r"^(\s*)(- )(.*)")
+RE_ORDERED = re.compile(r"^(\s*)(\d+\. )(.*)")
+
+
+def wrap_paragraph(text, width):
+    """Wrap a single -p value, handling plain text and list items."""
+    lines = text.split("\n")
+    result = []
+    plain_buffer = []
+
+    def flush_plain():
+        if plain_buffer:
+            joined = " ".join(plain_buffer)
+            result.append(textwrap.fill(joined, width=width))
+            plain_buffer.clear()
+
+    for line in lines:
+        ul_match = RE_UNORDERED.match(line)
+        ol_match = RE_ORDERED.match(line)
+
+        if ul_match or ol_match:
+            flush_plain()
+            match = ul_match or ol_match
+            indent = match.group(1)
+            marker = match.group(2)
+            content = match.group(3)
+            prefix = indent + marker
+            continuation_indent = " " * len(prefix)
+            wrapped = textwrap.fill(
+                content,
+                width=width,
+                initial_indent=prefix,
+                subsequent_indent=continuation_indent,
+            )
+            result.append(wrapped)
+        else:
+            stripped = line.strip()
+            if stripped:
+                plain_buffer.append(stripped)
+            else:
+                flush_plain()
+                result.append("")
+
+    flush_plain()
+    return "\n".join(result)
+
+
+def format_message(subject, paragraphs, width):
+    """Assemble the full commit message from subject and paragraphs."""
+    parts = [subject]
+    if paragraphs:
+        parts.append("")
+        body_parts = []
+        for p in paragraphs:
+            body_parts.append(wrap_paragraph(p, width))
+        parts.append("\n\n".join(body_parts))
+    return "\n".join(parts) + "\n"
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Format and commit with structured input.",
+        add_help=False,
+    )
+    parser.add_argument("-s", required=True, help="Subject line")
+    parser.add_argument("-p", action="append", default=[], help="Body paragraph (repeatable)")
+    parser.add_argument("-w", type=int, default=DEFAULT_WRAP, help="Wrap column")
+    parser.add_argument("-n", action="store_true", help="Dry run (git commit --dry-run)")
+    parser.add_argument("-h", action="help", help="Show help")
+    args = parser.parse_args()
+
+    subject = args.s.strip()
+    if len(subject) > args.w:
+        print(
+            f"error: subject is {len(subject)} chars, exceeds {args.w}-char limit",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    paragraphs = [p.encode().decode("unicode_escape") for p in args.p]
+    message = format_message(subject, paragraphs, args.w)
+
+    if args.n:
+        print(message, end="")
+        sys.exit(0)
+
+    fd, msg_path = tempfile.mkstemp(prefix="commit-msg-", suffix=".txt")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(message)
+
+        result = subprocess.run(["git", "commit", "-F", msg_path])
+        sys.exit(result.returncode)
+    finally:
+        os.unlink(msg_path)
+
+
+if __name__ == "__main__":
+    main()

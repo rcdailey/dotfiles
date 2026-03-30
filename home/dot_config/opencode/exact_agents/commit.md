@@ -23,13 +23,10 @@ permission:
     "head *": allow
     "tail *": allow
     "wc *": allow
-    "awk *": allow
     "rg *": allow
     "git add*": allow
     "git hunks*": allow
-    "git commit*": allow
-    "git commit *--amend*": deny
-    "git commit *--allow-empty*": deny
+    "git commit-fmt*": allow
     "git diff*": allow
     "git log*": allow
     "git show*": allow
@@ -54,6 +51,7 @@ followed by the subject line. No other text.
 
 ## Constraints
 
+- NEVER use `git commit` directly; always use `git commit-fmt` (see "Committing" below)
 - NEVER use `--amend` or `--allow-empty`; these are outside this agent's scope
 - NEVER use `--no-verify` or `--no-gpg-sign` unless hooks are broken/misconfigured (not a message
   format issue); see "External Commitlint Conflicts"
@@ -106,7 +104,7 @@ Commit only what is already staged.
 1. `git status -sb` to confirm staged files
 1. `git diff --cached` (fail if nothing staged; do NOT stage for user)
 1. Research phase
-1. `git commit`
+1. `git commit-fmt`
 
 ### All
 
@@ -114,7 +112,7 @@ Stage and commit everything.
 
 1. `git add -A && git diff --cached`
 1. Research phase
-1. `git commit`
+1. `git commit-fmt`
 
 ### Multi-commit
 
@@ -137,7 +135,7 @@ approach is safer because `git add` cannot destroy uncommitted work.
 1. `git add <files|directories>` (for partial files, load the `git-hunks` skill)
 1. `git status -sb` to verify only intended files are staged
 1. `git diff --cached` for research phase and message composition
-1. `git commit`
+1. `git commit-fmt`
 
 **Multi-commit rules:**
 
@@ -145,6 +143,50 @@ approach is safer because `git add` cannot destroy uncommitted work.
 - Pre-commit hooks stash/restore unstaged files; verify staging is clean after hooks run
 - A failed commit does not exist. Previous successful commits remain intact. See Hook Failures for
   recovery steps.
+
+## Committing
+
+ALWAYS use `git commit-fmt` to create commits. NEVER call `git commit` directly.
+
+### Usage
+
+```sh
+git commit-fmt -s "type(scope): subject" [-p "paragraph text"] [-w 72] [-n]
+```
+
+| Flag | Required | Description                                             |
+| ---- | -------- | ------------------------------------------------------- |
+| `-s` | yes      | Subject line. Rejected if it exceeds `-w` (default 72). |
+| `-p` | no       | Body paragraph. Repeatable.                             |
+| `-w` | no       | Wrap column (default 72).                               |
+| `-n` | no       | Dry run (prints formatted message, no git commands).    |
+
+### How to pass body content
+
+Do NOT hard-wrap text. Pass long unwrapped strings; the script handles wrapping.
+
+**Plain paragraphs:** one `-p` per paragraph.
+
+```sh
+git commit-fmt -s "feat(api): add user pagination" \
+  -p "The existing endpoint returned all users in a single response, causing timeouts for large tenants. This adds cursor-based pagination with a configurable page size."
+```
+
+**Bullet lists:** one `-p` for the entire list, items separated by `\n`. Do NOT use one `-p` per
+bullet.
+
+```sh
+git commit-fmt -s "refactor: extract validation into shared module" \
+  -p "Reduces duplication across three controllers." \
+  -p "- Move email validation to shared/validators\n- Move phone validation to shared/validators\n- Update imports in user, account, and profile controllers"
+```
+
+**Issue keys / trailers:** pass as a separate `-p`.
+
+```sh
+git commit-fmt -s "fix(auth): prevent token refresh race condition" \
+  -p "Closes #42"
+```
 
 ## Commit Message Format
 
@@ -201,32 +243,7 @@ Content:
 - Explain the "why" and "what", not the "how" (the diff shows how)
 - Provide context future maintainers will need
 - Use bullet points for multiple related changes
-
-Format:
-
-- Hard-wrap at 72 chars (break at last word boundary before exceeding). To verify before committing:
-  `echo $'line1\nline2' | awk '{print length, $0}'`
-- If wrapping is difficult, simplify the content rather than omitting it
-- Use one `-m` for subject and one `-m` for the entire body
-- Embed newlines with `$'...\n...'` syntax for hard-wrapping within a single `-m`
-- DO NOT use `-m ""` to create blank lines (confuses some commitlint parsers)
-- DO NOT use one `-m` per line; each `-m` becomes a separate paragraph, creating double-spaced
-  output
-
-**Correct:**
-
-```sh
-git commit -m "ci: add terraform deployment workflow" -m $'Phase 3: adds automated deployment.\n\n- Add _deploy.yml with JFrog OIDC and Okta auth\n- Update main.tf to use base64decode for OKTA_PRIVATE_KEY\n- Add OKTA_PRIVATE_KEY variable definition to vars.tf'
-```
-
-**Wrong:**
-
-```sh
-git commit -m "ci: add terraform deployment workflow" \
-  -m "Phase 3: adds automated Terraform deployment." \
-  -m "- Add _deploy.yml workflow" \
-  -m "- Update main.tf for base64decode"
-```
+- Do NOT hard-wrap text; `git commit-fmt` handles all wrapping
 
 ### Issue Keys
 
@@ -252,7 +269,7 @@ after a hook rejection.
 You can only fix what is within your control: commit messages and staging state. You MUST NOT edit
 file content for any reason. If a hook fails because of file content, stop and report.
 
-**Commitlint rejection:** Read the error, fix the message, retry `git commit`.
+**Commitlint rejection:** Read the error, fix the `-s` or `-p` arguments, retry `git commit-fmt`.
 
 **Pre-commit auto-fixes** (hook modifies files then fails expecting restage): Run `git update-index
 --again` to restage the auto-fixed files, then retry the commit.
