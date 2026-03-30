@@ -17,33 +17,63 @@ Focus on critical/high priority issues unless $ARGUMENTS includes "medium", "min
 
 ## Process
 
-### 1. Safety Check (PRs only)
+### 1. Gather Context
 
-Run `git status --porcelain`. If ANY output exists, abort with:
-
-```txt
-Working copy has uncommitted changes. Clean up before PR checkout:
-- Commit: git add -A && git commit
-- Stash: git stash push -u -m "WIP"
-- Clean: git clean -fd (destructive)
-```
-
-### 2. Gather Context
-
-For PRs (after safety check passes):
+**For PRs:**
 
 - `gh-scout prs {owner/repo} {number}` for PR metadata and comments
-- `gh pr checkout {number}`
+- Fetch the PR head ref and create a detached worktree. If a worktree from a previous review of the
+  same PR exists, remove it first:
+
+```bash
+git worktree remove --force /tmp/pr-review-{number} 2>/dev/null
+git fetch origin pull/{number}/head &&
+  git worktree add --detach /tmp/pr-review-{number} FETCH_HEAD
+```
+
+- The worktree is a bare checkout with no installed dependencies. If the project has a dependency
+  manifest (e.g., `package.json`, `go.mod`, `requirements.txt`, `*.csproj`), run the appropriate
+  install command in the worktree so analysis tools, linters, and type checkers work.
+
 - `gh pr diff {number}`
 
-For commits: `git log {range} --oneline` and `git diff {range}`
+Note the worktree path (`/tmp/pr-review-{number}`) for file reads in the analysis step. The worktree
+is left in place after the review so you can reference files while posting comments.
 
-For current changes: `git status` and `git diff HEAD`
+- Fetch existing comments from both sources:
+
+```bash
+gh api repos/{owner}/{repo}/pulls/{number}/comments --paginate
+```
+
+```bash
+gh api repos/{owner}/{repo}/issues/{number}/comments --paginate
+```
+
+The first returns review comments on specific diff lines; the second returns conversation-level
+comments (including bot output). Catalog the topics, files, and lines already covered.
+
+**For commits:** `git log {range} --oneline` and `git diff {range}`
+
+**For current changes:** `git status` and `git diff HEAD`
+
+### 2. Deduplicate Against Existing Comments
+
+Before formulating your own feedback, cross-reference the diff analysis against the existing comment
+catalog. For each potential comment:
+
+- **Already covered adequately:** Omit it. Don't restate what a bot or reviewer already said.
+- **Covered but incomplete or incorrect:** Affirm the existing comment and add the missing context.
+  Reference who raised it (e.g., "Building on @dependabot's note about...").
+- **Not yet raised:** Include it as a new comment.
+
+The review file should only contain comments that add value beyond what's already on the PR.
 
 ### 3. Analyze
 
-With PR checked out, read full files to understand context beyond the diff. Apply the review
-priorities and verification rules from the `gh-pr-review` skill.
+Read full files from the worktree path (or current working copy for non-PR reviews) to understand
+context beyond the diff. Apply the review priorities and verification rules from the `gh-pr-review`
+skill.
 
 ### 4. Write Comments
 
@@ -66,6 +96,8 @@ Apply the tone and etiquette guidelines from the `gh-pr-review` skill.
 ````
 
 ### 5. File Structure
+
+Write the review file to the **original repo root** (not the worktree).
 
 ```markdown
 # PR #{number} Review Comments
@@ -106,3 +138,4 @@ If minor issues requested, add section at end:
 - Use `\`\`\`suggestion` format for code fixes
 - Include file paths and line numbers
 - Do not use TodoWrite or task tracking
+- Do not clean up the worktree; leave it in `/tmp` for reference during comment posting
