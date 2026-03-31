@@ -64,11 +64,44 @@ def wrap_paragraph(text, width):
     return "\n".join(result)
 
 
+def is_list_item(text):
+    """Check if a paragraph value is a bare list item (not a block containing lists)."""
+    return bool(RE_UNORDERED.match(text) or RE_ORDERED.match(text))
+
+
+def merge_list_paragraphs(paragraphs):
+    """Merge consecutive bare list-item -p values into single paragraphs.
+
+    Agents sometimes pass one -p per bullet point instead of one -p for
+    the whole list with \\n separators. This produces blank lines between
+    items because each -p becomes a separate paragraph. Detect and merge
+    consecutive list items to prevent that.
+    """
+    merged = []
+    list_buffer = []
+
+    def flush_list():
+        if list_buffer:
+            merged.append("\n".join(list_buffer))
+            list_buffer.clear()
+
+    for p in paragraphs:
+        if is_list_item(p):
+            list_buffer.append(p)
+        else:
+            flush_list()
+            merged.append(p)
+
+    flush_list()
+    return merged
+
+
 def format_message(subject, paragraphs, width):
     """Assemble the full commit message from subject and paragraphs."""
     parts = [subject]
     if paragraphs:
         parts.append("")
+        paragraphs = merge_list_paragraphs(paragraphs)
         body_parts = []
         for p in paragraphs:
             body_parts.append(wrap_paragraph(p, width))
