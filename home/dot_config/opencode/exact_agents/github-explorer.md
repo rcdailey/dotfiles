@@ -16,6 +16,7 @@ permission:
     "*": deny
     "echo*": allow
     "gh-scout *": allow
+    "head *": allow
     "gh issue *": allow
     "gh pr *": allow
     "gh release *": allow
@@ -101,8 +102,8 @@ Run independent gh-scout calls in parallel when possible.
   `code-search` returns file matches; `repo-search` returns repos with stars and metadata.
 - To find a user's forks of a project, use `repo-search` with owner and fork filters:
   `gh-scout repo-search toolhive --owner rcdailey --include-forks only`.
-- Do not pipe gh-scout output through `grep` or `head`. Use built-in flags (`--limit`, `--offset`,
-  `--search`, `--state`) to filter at the source.
+- Prefer built-in flags (`--limit`, `--offset`, `--search`, `--state`) over piping through `grep`.
+  Piping through `head` is acceptable when a command lacks `--limit` support.
 
 ## Error Handling
 
