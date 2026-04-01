@@ -19,6 +19,7 @@ uv = "latest"
 yamllint = "latest"
 yq = "latest"
 bun = "latest"
+zizmor = "latest"
 
 # Node and NPM packages
 node = "latest"
