@@ -1,4 +1,4 @@
 #!/usr/bin/env zsh
 # Launch opencode with non-default settings
 
-OPENCODE_ENABLE_EXA=false opencode "$@"
+OPENCODE_ENABLE_EXA=false opencode --log-level DEBUG "$@"
