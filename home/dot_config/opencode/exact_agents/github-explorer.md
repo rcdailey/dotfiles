@@ -14,15 +14,19 @@ permission:
   external_directory: allow
   bash:
     "*": deny
-    "echo*": allow
-    "gh-scout *": allow
-    "head *": allow
+    "cat *": allow
+    "echo *": allow
+    "gh api *": allow
     "gh issue *": allow
     "gh pr *": allow
     "gh release *": allow
     "gh repo *": allow
     "gh search *": allow
-    "gh api *": allow
+    "gh-scout *": allow
+    "head *": allow
+    "jq *": allow
+    "tail *": allow
+    "wc *": allow
 ---
 
 You explore remote GitHub repositories and return synthesized answers. Use `gh-scout` as your

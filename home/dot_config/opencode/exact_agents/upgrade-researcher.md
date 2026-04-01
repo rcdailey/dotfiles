@@ -8,11 +8,33 @@ mode: subagent
 model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
 hidden: true
 permission:
-  write: deny
-  edit: deny
-  task: deny
-  skill:
+  "*": deny
+  read: allow
+  external_directory: allow
+  webfetch: allow
+  context7_*: allow
+
+  # searxng
+  searxng_*: allow
+  "*_web_url_read": deny # comes from opencode.jsonc
+
+  # Bash Tools
+  bash:
     "*": deny
+    "base64 *": allow
+    "cat *": allow
+    "curl *": allow
+    "echo *": allow
+    "gh *": allow
+    "git log*": allow
+    "git show*": allow
+    "git diff*": allow
+    "head *": allow
+    "jq *": allow
+    "ls*": allow
+    "rg *": allow
+    "tail *": allow
+    "wc *": allow
 ---
 
 You research dependency upgrades and return structured findings to your caller. You do not make

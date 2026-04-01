@@ -51,9 +51,6 @@
     "websearch": "deny",
     "*_web_url_read": "deny",
 
-    // octocode MCP
-    "*_packageSearch": "deny",
-
     "bash": {
       "*": "allow",
       // grep redirection handled by tool-guards plugin (allows kubectl exec, git, etc)
