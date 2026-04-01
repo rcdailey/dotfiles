@@ -35,6 +35,16 @@ Medium/low (only when explicitly requested): Organization, docs, test coverage, 
 Use Context7 and web search to verify unfamiliar patterns, best practices, and security implications
 before writing comments. Every technical claim must be verified.
 
+## Review File Comment Boundaries
+
+The `pr-review` command produces a review file where each comment has two audiences. Content between
+`<!-- POST -->` and `<!-- /POST -->` markers is the GitHub comment body. Everything outside those
+markers (Background, Sources, file/line metadata) is for the reviewer's reference only and MUST NOT
+be included in the `--body` argument when posting.
+
+When posting comments from a review file, extract only the content between the POST markers for the
+`--body` value.
+
 ## Pending Review Workflow
 
 ### Check for existing pending review

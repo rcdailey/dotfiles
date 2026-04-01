@@ -21,7 +21,10 @@ Focus on critical/high priority issues unless $ARGUMENTS includes "medium", "min
 
 **For PRs:**
 
-- `gh-scout prs {owner/repo} {number}` for PR metadata and comments
+- `gh-scout prs {owner/repo} {number}` for PR metadata, description, and comments
+- Follow linked issues, tickets, or PRDs referenced in the PR description or comments. Check the
+  repo for product documentation (README, docs/, wiki) relevant to the changed areas. This context
+  feeds the Background section of each comment.
 - Fetch the PR head ref and create a detached worktree. If a worktree from a previous review of the
   same PR exists, remove it first:
 
@@ -75,10 +78,25 @@ Read full files from the worktree path (or current working copy for non-PR revie
 context beyond the diff. Apply the review priorities and verification rules from the `gh-pr-review`
 skill.
 
+For every potential comment, research both the technical claim and the domain context:
+
+- Use Context7 to query relevant library/framework documentation
+- Use web search or web fetch for official docs, security advisories, or language specs
+- Check the project's own code for patterns that confirm or contradict your concern
+- Read linked issues, PRDs, or product docs to understand the business context and user-facing
+  behavior of the code being changed
+
+Track which sources informed each comment. If you cannot find an authoritative source to back a
+technical claim, either drop the comment or reframe it as an open question. Do not assert facts
+based solely on training knowledge.
+
 ### 4. Write Comments
 
 Load the `humanizer` skill before creating the review file (not in parallel with the file creation).
 Apply the tone and etiquette guidelines from the `gh-pr-review` skill.
+
+The review file serves two audiences. Mark sections clearly so the posting step knows what to
+include.
 
 **Format:**
 
@@ -88,12 +106,55 @@ Apply the tone and etiquette guidelines from the `gh-pr-review` skill.
 **File:** `{path}`
 **Line:** {number}
 
-{Conversational explanation of the issue and why it matters. End with suggestion.}
+<!-- POST: Everything between POST markers is the GitHub comment body -->
+
+{Conversational explanation of the issue and why it matters. End with
+suggestion.}
 
 ```suggestion
 {code fix if applicable}
 ```
+
+<!-- /POST -->
+
+**Background:** {Teach the reviewer about the product and codebase context
+surrounding this comment. This section is for the reviewer's education, not
+for the PR author. Write it so someone with no prior exposure to this area
+of the product can follow the comment.
+
+Lead with product context before implementation details. Follow this order:
+
+1. What feature or area of the product is this? What does it do for users
+   and why does it exist?
+2. What business goal or user need is driving this change?
+3. Any domain concepts or terminology needed to follow the discussion.
+4. Only then: how the relevant code is structured and how components
+   interact.
+
+Do not assume the reviewer knows what any feature, entity, or workflow is.
+Name it, explain its purpose, then connect it to the comment.
+
+Draw from linked issues, PR description, PRDs, project documentation, README
+files, external product docs, and broader codebase exploration. Keep it to a
+short paragraph (3-5 sentences).}
+
+**Sources:**
+
+- {Each source that informed this comment and the background section: Context7
+  doc queries, web search results, official documentation URLs, linked issues
+  or PRDs, language/framework specs, or RFCs. Use "[Title](url)" for links.
+  For project code, cite file path and line range. For issue trackers, link
+  directly to the issue or ticket.}
 ````
+
+- Content between `<!-- POST -->` and `<!-- /POST -->`: posted to GitHub as the review comment.
+  Nothing outside these markers is posted.
+- Background, Sources, file/line metadata: reviewer's eyes only. These stay in the local review
+  file.
+- Every comment MUST have both a Background and Sources section. Comments without verifiable sources
+  must not be included in the review. If no authoritative source can be found for a concern, demote
+  it to a question rather than an assertion (e.g., "I'm not sure if this is safe; worth checking the
+  docs for [X]").
 
 ### 5. File Structure
 
