@@ -71,10 +71,18 @@ Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
 3. Test: `chezmoi apply --dry-run`
 4. Apply: `chezmoi apply`
 
+## Upstream References
+
+- `home/dot_config/opencode/exact_skills/humanizer/SKILL.md` is based on
+  [blader/humanizer](https://github.com/blader/humanizer). Voice Calibration section is
+  intentionally omitted (redundant with Communication Voice in the global AGENTS.md). To sync: fetch
+  upstream SKILL.md via `gh api`, overwrite our copy, then restore our frontmatter and remove Voice
+  Calibration.
+
 ## Constraints
 
 ### Git Operations
 
-NEVER run git mutations (add/commit/reset/push/rebase/merge) without explicit user
-approval. ASK before running these commands unless the user's request clearly
-authorizes them (e.g., "commit this" or "push to remote").
+NEVER run git mutations (add/commit/reset/push/rebase/merge) without explicit user approval. ASK
+before running these commands unless the user's request clearly authorizes them (e.g., "commit this"
+or "push to remote").
