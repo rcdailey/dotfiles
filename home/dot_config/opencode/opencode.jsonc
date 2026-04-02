@@ -18,6 +18,9 @@
       "model": "fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo",
     },
   },
+  "lsp": {
+    "yaml-ls": { "disabled": true },
+  },
   "formatter": {
     "shfmt": { "disabled": true },
     "markdownlint-cli2": {
