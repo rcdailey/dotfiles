@@ -179,10 +179,10 @@ and Legacy, Future Outlook
 
 ### 7. Overused "AI Vocabulary" Words
 
-**High-frequency AI words:** Additionally, align with, crucial, delve, emphasizing, enduring,
-enhance, fostering, garner, highlight (verb), interplay, intricate/intricacies, key (adjective),
-landscape (abstract noun), pivotal, showcase, tapestry (abstract noun), testament, underscore
-(verb), valuable, vibrant
+**High-frequency AI words:** Actually, additionally, align with, crucial, delve, emphasizing,
+enduring, enhance, fostering, garner, highlight (verb), interplay, intricate/intricacies, key
+(adjective), landscape (abstract noun), pivotal, showcase, tapestry (abstract noun), testament,
+underscore (verb), valuable, vibrant
 
 **Problem:** These words appear far more frequently in post-2023 text. They often co-occur.
 
@@ -209,10 +209,11 @@ landscape (abstract noun), pivotal, showcase, tapestry (abstract noun), testamen
 > Gallery 825 is LAAA's exhibition space for contemporary art. The gallery has four rooms totaling
 > 3,000 square feet.
 
-### 9. Negative Parallelisms
+### 9. Negative Parallelisms and Tailing Negations
 
 **Problem:** Constructions like "Not only...but..." or "It's not just about..., it's..." are
-overused.
+overused. So are clipped tailing-negation fragments such as "no guessing" or "no wasted motion"
+tacked onto the end of a sentence instead of written as a real clause.
 
 **Before:**
 > It's not just about the beat riding under the vocals; it's part of the aggression and atmosphere.
@@ -220,6 +221,12 @@ overused.
 
 **After:**
 > The heavy beat adds to the aggressive tone.
+
+**Before (tailing negation):**
+> The options come from the selected item, no guessing.
+
+**After:**
+> The options come from the selected item without forcing the user to guess.
 
 ### 10. Rule of Three Overuse
 
@@ -254,11 +261,24 @@ overused.
 **After:**
 > The book covers the Big Bang, star formation, and current theories about dark matter.
 
+### 13. Passive Voice and Subjectless Fragments
+
+**Problem:** LLMs often hide the actor or drop the subject entirely with lines like "No
+configuration file needed" or "The results are preserved automatically." Rewrite these when active
+voice makes the sentence clearer and more direct.
+
+**Before:**
+> No configuration file needed. The results are preserved automatically.
+
+**After:**
+> You do not need a configuration file. The system preserves the results automatically.
+
 ## STYLE PATTERNS
 
-### 13. Em Dash Overuse
+### 14. Em Dash Overuse
 
-**Problem:** LLMs use em dashes (—) more than humans, mimicking "punchy" sales writing.
+**Problem:** LLMs use em dashes (—) more than humans, mimicking "punchy" sales writing. In practice,
+most of these can be rewritten more cleanly with commas, periods, or parentheses.
 
 **Before:**
 > The term is primarily promoted by Dutch institutions—not by the people themselves. You don't say
@@ -268,7 +288,7 @@ overused.
 > The term is primarily promoted by Dutch institutions, not by the people themselves. You don't say
 > "Netherlands, Europe" as an address, yet this mislabeling continues in official documents.
 
-### 14. Overuse of Boldface
+### 15. Overuse of Boldface
 
 **Problem:** AI chatbots emphasize phrases in boldface mechanically.
 
@@ -280,7 +300,7 @@ overused.
 > It blends OKRs, KPIs, and visual strategy tools like the Business Model Canvas and Balanced
 > Scorecard.
 
-### 15. Inline-Header Vertical Lists
+### 16. Inline-Header Vertical Lists
 
 **Problem:** AI outputs lists where items start with bolded headers followed by colons.
 
@@ -294,7 +314,7 @@ overused.
 > The update improves the interface, speeds up load times through optimized algorithms, and adds
 > end-to-end encryption.
 
-### 16. Title Case in Headings
+### 17. Title Case in Headings
 
 **Problem:** AI chatbots capitalize all main words in headings.
 
@@ -306,7 +326,7 @@ overused.
 
 > ## Strategic negotiations and global partnerships
 
-### 17. Emojis
+### 18. Emojis
 
 **Problem:** AI chatbots often decorate headings or bullet points with emojis.
 
@@ -318,7 +338,7 @@ overused.
 > The product launches in Q3. User research showed a preference for simplicity. Next step: schedule
 > a follow-up meeting.
 
-### 18. Curly Quotation Marks
+### 19. Curly Quotation Marks
 
 **Problem:** ChatGPT uses curly quotes (“...”) instead of straight quotes ("...").
 
@@ -330,7 +350,7 @@ overused.
 
 ## COMMUNICATION PATTERNS
 
-### 19. Collaborative Communication Artifacts
+### 20. Collaborative Communication Artifacts
 
 **Words to watch:** I hope this helps, Of course!, Certainly!, You're absolutely right!, Would you
 like..., let me know, here is a...
@@ -345,7 +365,7 @@ like..., let me know, here is a...
 > The French Revolution began in 1789 when financial crisis and food shortages led to widespread
 > unrest.
 
-### 20. Knowledge-Cutoff Disclaimers
+### 21. Knowledge-Cutoff Disclaimers
 
 **Words to watch:** as of [date], Up to my last training update, While specific details are
 limited/scarce..., based on available information...
@@ -359,7 +379,7 @@ limited/scarce..., based on available information...
 **After:**
 > The company was founded in 1994, according to its registration documents.
 
-### 21. Sycophantic/Servile Tone
+### 22. Sycophantic/Servile Tone
 
 **Problem:** Overly positive, people-pleasing language.
 
@@ -372,7 +392,7 @@ limited/scarce..., based on available information...
 
 ## FILLER AND HEDGING
 
-### 22. Filler Phrases
+### 23. Filler Phrases
 
 **Before → After:**
 
@@ -383,7 +403,7 @@ limited/scarce..., based on available information...
 - "The system has the ability to process" → "The system can process"
 - "It is important to note that the data shows" → "The data shows"
 
-### 23. Excessive Hedging
+### 24. Excessive Hedging
 
 **Problem:** Over-qualifying statements.
 
@@ -393,7 +413,7 @@ limited/scarce..., based on available information...
 **After:**
 > The policy may affect outcomes.
 
-### 24. Generic Positive Conclusions
+### 25. Generic Positive Conclusions
 
 **Problem:** Vague upbeat endings.
 
@@ -403,6 +423,78 @@ limited/scarce..., based on available information...
 
 **After:**
 > The company plans to open two more locations next year.
+
+### 26. Hyphenated Word Pair Overuse
+
+**Words to watch:** third-party, cross-functional, client-facing, data-driven, decision-making,
+well-known, high-quality, real-time, long-term, end-to-end
+
+**Problem:** AI hyphenates common word pairs with perfect consistency. Humans rarely hyphenate these
+uniformly, and when they do, it's inconsistent. Less common or technical compound modifiers are fine
+to hyphenate.
+
+**Before:**
+> The cross-functional team delivered a high-quality, data-driven report on our client-facing tools.
+> Their decision-making process was well-known for being thorough and detail-oriented.
+
+**After:**
+> The cross functional team delivered a high quality, data driven report on our client facing tools.
+> Their decision making process was known for being thorough and detail oriented.
+
+### 27. Persuasive Authority Tropes
+
+**Phrases to watch:** The real question is, at its core, in reality, what really matters,
+fundamentally, the deeper issue, the heart of the matter
+
+**Problem:** LLMs use these phrases to pretend they are cutting through noise to some deeper truth,
+when the sentence that follows usually just restates an ordinary point with extra ceremony.
+
+**Before:**
+> The real question is whether teams can adapt. At its core, what really matters is organizational
+> readiness.
+
+**After:**
+> The question is whether teams can adapt. That mostly depends on whether the organization is ready
+> to change its habits.
+
+### 28. Signposting and Announcements
+
+**Phrases to watch:** Let's dive in, let's explore, let's break this down, here's what you need to
+know, now let's look at, without further ado
+
+**Problem:** LLMs announce what they are about to do instead of doing it. This meta-commentary slows
+the writing down and gives it a tutorial-script feel.
+
+**Before:**
+> Let's dive into how caching works in Next.js. Here's what you need to know.
+
+**After:**
+> Next.js caches data at multiple layers, including request memoization, the data cache, and the
+> router cache.
+
+### 29. Fragmented Headers
+
+**Signs to watch:** A heading followed by a one-line paragraph that simply restates the heading
+before the real content begins.
+
+**Problem:** LLMs often add a generic sentence after a heading as a rhetorical warm-up. It usually
+adds nothing and makes the prose feel padded.
+
+**Before:**
+
+> ## Performance
+>
+> Speed matters.
+>
+> When users hit a slow page, they leave.
+
+**After:**
+
+> ## Performance
+>
+> When users hit a slow page, they leave.
+
+---
 
 ## Process
 
@@ -528,7 +620,7 @@ Provide:
 - Removed formulaic challenges section ("Despite challenges... continues to thrive")
 - Removed knowledge-cutoff hedging ("While specific details are limited...")
 - Removed excessive hedging ("could potentially be argued that... might have some")
-- Removed filler phrases ("In order to", "At its core")
+- Removed filler phrases and persuasive framing ("In order to", "At its core")
 - Removed generic positive conclusion ("the future looks bright", "exciting times lie ahead")
 - Made the voice more personal and less "assembled" (varied rhythm, fewer placeholders)
 
