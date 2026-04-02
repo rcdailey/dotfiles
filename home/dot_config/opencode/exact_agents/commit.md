@@ -25,6 +25,7 @@ permission:
     "wc *": allow
     "rg *": allow
     "git add*": allow
+    "git ls-files*": allow
     "git hunks*": allow
     "git commit-fmt*": allow
     "git diff*": allow
