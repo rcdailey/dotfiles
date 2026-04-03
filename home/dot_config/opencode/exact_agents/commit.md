@@ -152,41 +152,49 @@ ALWAYS use `git commit-fmt` to create commits. NEVER call `git commit` directly.
 ### Usage
 
 ```sh
-git commit-fmt -s "type(scope): subject" [-p "paragraph text"] [-w 72] [-n]
+git commit-fmt -s "type(scope): subject" [-p "text"] [-c "text"] [-i "text"]
 ```
 
-| Flag | Required | Description                                             |
-| ---- | -------- | ------------------------------------------------------- |
-| `-s` | yes      | Subject line. Rejected if it exceeds `-w` (default 72). |
-| `-p` | no       | Body paragraph. Repeatable.                             |
-| `-w` | no       | Wrap column (default 72).                               |
-| `-n` | no       | Dry run (prints formatted message, no git commands).    |
+- `-s` (required): Subject line. Rejected if it exceeds 50 chars.
+- `-p` (repeatable): Body paragraph. One `-p` per paragraph.
+- `-c` (repeatable): Changelog entry. One `-c` per entry.
+- `-i` (repeatable): Issue reference. One `-i` per issue.
 
-### How to pass body content
+The script enforces structural order regardless of argument order on the command line: subject, then
+paragraphs, then changelog entries (rendered as bullet items), then issue references. All text is
+automatically wrapped; do NOT hard-wrap.
 
-Do NOT hard-wrap text. Pass long unwrapped strings; the script handles wrapping.
+### Examples
 
-**Plain paragraphs:** one `-p` per paragraph.
+**Subject only** (small, self-explanatory change):
+
+```sh
+git commit-fmt -s "fix(config): correct default cache TTL"
+```
+
+**Subject with summary paragraph:**
 
 ```sh
 git commit-fmt -s "feat(api): add user pagination" \
   -p "The existing endpoint returned all users in a single response, causing timeouts for large tenants. This adds cursor-based pagination with a configurable page size."
 ```
 
-**Bullet lists:** one `-p` for the entire list, items separated by `\n`. Do NOT use one `-p` per
-bullet.
+**Full structure** (summary, changelog, issue reference):
 
 ```sh
-git commit-fmt -s "refactor: extract validation into shared module" \
-  -p "Reduces duplication across three controllers." \
-  -p "- Move email validation to shared/validators\n- Move phone validation to shared/validators\n- Update imports in user, account, and profile controllers"
+git commit-fmt -s "ci: harden GitHub Actions workflow security" \
+  -p "Apply security hardening across all workflow files based on zizmor static analysis findings." \
+  -c "Add persist-credentials: false to all actions/checkout steps to prevent credential leakage" \
+  -c "Replace overly broad permissions: read-all with minimum-required permission scopes" \
+  -c "Add zizmor pre-commit hook for continuous static analysis" \
+  -i "Closes #42"
 ```
 
-**Issue keys / trailers:** pass as a separate `-p`.
+**Issue reference without body:**
 
 ```sh
-git commit-fmt -s "fix(auth): prevent token refresh race condition" \
-  -p "Closes #42"
+git commit-fmt -s "fix(auth): prevent token refresh race" \
+  -i "Closes #42"
 ```
 
 ## Commit Message Format
@@ -214,7 +222,7 @@ function, rename variable, simplify conditional). `style` is purely cosmetic wit
 
 ### Subject Line
 
-- 50 char soft limit, 72 char hard limit (the 50/72 rule)
+- 50 char hard limit (enforced by `git commit-fmt`)
 - Imperative mood, lowercase type, no trailing period. Test: "If applied, this commit will *your
   subject line here*"
 - Describe what the change accomplishes, not what you did
@@ -224,43 +232,76 @@ function, rename variable, simplify conditional). `style` is purely cosmetic wit
 list`, `refactor: extract validation into shared module`
 
 **Bad:** `fix bug` (vague), `updated the user service to fix the login issue` (past tense, too long,
-no type), `feat(auth): add JWT token refresh with automatic retry logic to handle expired sessions`
-(exceeds 72)
+no type), `feat(auth): add JWT token refresh with automatic retry logic` (exceeds 50)
 
-### Body
+### Body Structure
 
-Include when ANY of these apply:
+The body has three optional layers, each mapped to a `git commit-fmt` flag. Use only the layers the
+change warrants; small changes need none, large changes may need all three.
+
+**Paragraphs (`-p`):** High-level summary of the change. Explain the "why" and "what", not the "how"
+(the diff shows how). Provide context future maintainers will need. Include when ANY of these apply:
 
 - Non-obvious root cause or design decision the subject cannot convey
 - Breaking changes or migration steps
 - Change affects 3+ files or 50+ lines
-- Issue keys were provided (body required to hold trailers)
 - Caller provided context about why the change was made that adds value beyond the subject
 - Research phase revealed observations that add value beyond the subject and no caller context
   supplements it
 
-Content:
+**Changelog entries (`-c`):** Specific, lower-level details about individual changes within the
+commit. Each entry becomes a bullet item in the rendered message. MUST NOT repeat what the paragraph
+already explains; these go deeper. Include when the diff contains 2+ logically distinct changes that
+the summary paragraph cannot enumerate without becoming a run-on list.
 
-- Explain the "why" and "what", not the "how" (the diff shows how)
-- Provide context future maintainers will need
-- Use bullet points for multiple related changes
-- Do NOT hard-wrap text; `git commit-fmt` handles all wrapping
+**Bad (all detail crammed into separate paragraphs, no structure):**
 
-### Issue Keys
+```txt
+fix(docker): use log output in cron mode
 
-When the caller provides issue keys, they MUST appear in the body/trailers (not the subject). Do not
-fabricate issue keys.
+Add --log flag to cron.sh so Docker logs receive structured Serilog
+output instead of garbled Spectre.Console UI output.
+
+Add RECYCLARR_LOG_LEVEL env var support for controlling log verbosity
+in cron mode.
+
+Add -no-reap flag to supercronic to suppress reaping warning since
+tini handles process reaping in the container.
+```
+
+**Good (summary paragraph frames the change, changelog entries detail specifics):**
+
+```txt
+ci: harden GitHub Actions workflow security
+
+Apply security hardening across all workflow files based on zizmor
+static analysis findings.
+
+- Add persist-credentials: false to all actions/checkout steps to
+  prevent credential leakage via artifacts
+- Replace overly broad permissions: read-all with minimum-required
+  permission scopes
+- Fix missing contents: read permission in docker jobs
+- Add .github/zizmor.yml configuration to suppress accepted-risk
+  findings
+- Add zizmor pre-commit hook for continuous static analysis
+```
+
+### Issue References
+
+When the caller provides issue keys, pass them via `-i`. Do not fabricate issue keys. Do not place
+issue keys in the subject.
 
 **GitHub:** Use closing keywords (`close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`,
 `resolves`, `resolved`). Keywords are case-insensitive and may be followed by a colon.
 
-- Same repo: `Closes #10`
-- Cross-repo: `Fixes octo-org/repo#100`
-- Multiple: `Resolves #10, resolves #123`
-- Non-closing reference: `Refs #42` or `See #42`
+- Same repo: `-i "Closes #10"`
+- Cross-repo: `-i "Fixes octo-org/repo#100"`
+- Multiple: `-i "Resolves #10" -i "Resolves #123"`
+- Non-closing reference: `-i "Refs #42"`
 
-**Jira/other trackers:** Include the key as provided (e.g., `PROJ-456`). Follow tracker conventions
-if known.
+**Jira/other trackers:** Include the key as provided (e.g., `-i "PROJ-456"`). Follow tracker
+conventions if known.
 
 ## Hook Failures
 
@@ -270,7 +311,8 @@ after a hook rejection.
 You can only fix what is within your control: commit messages and staging state. You MUST NOT edit
 file content for any reason. If a hook fails because of file content, stop and report.
 
-**Commitlint rejection:** Read the error, fix the `-s` or `-p` arguments, retry `git commit-fmt`.
+**Commitlint rejection:** Read the error, fix the `-s`, `-p`, `-c`, or `-i` arguments, retry `git
+commit-fmt`.
 
 **Pre-commit auto-fixes** (hook modifies files then fails expecting restage): Run `git update-index
 --again` to restage the auto-fixed files, then retry the commit.

@@ -1,136 +1,84 @@
 #!/usr/bin/env python3
 """Structured commit message formatter for LLM-driven workflows.
 
-Accepts a subject line and optional body paragraphs, handles all text
-wrapping (markdown-aware), and calls git commit. Designed to eliminate
-LLM hard-wrapping errors that trigger commitlint rejections.
+Accepts a subject line, optional body paragraphs, changelog entries, and
+issue references as separate arguments. Enforces commit message structure
+and handles all text wrapping, then calls git commit.
 """
 
 import argparse
 import os
-import re
 import subprocess
 import sys
 import tempfile
 import textwrap
 
-DEFAULT_WRAP = 72
-
-# Patterns for list item detection
-RE_UNORDERED = re.compile(r"^(\s*)(- )(.*)")
-RE_ORDERED = re.compile(r"^(\s*)(\d+\. )(.*)")
+SUBJECT_WIDTH = int(os.environ.get("GIT_COMMIT_FMT_SUBJECT_WIDTH", 50))
+BODY_WIDTH = int(os.environ.get("GIT_COMMIT_FMT_BODY_WIDTH", 72))
 
 
-def wrap_paragraph(text, width):
-    """Wrap a single -p value, handling plain text and list items."""
-    lines = text.split("\n")
-    result = []
-    plain_buffer = []
-
-    def flush_plain():
-        if plain_buffer:
-            joined = " ".join(plain_buffer)
-            result.append(textwrap.fill(joined, width=width))
-            plain_buffer.clear()
-
-    for line in lines:
-        ul_match = RE_UNORDERED.match(line)
-        ol_match = RE_ORDERED.match(line)
-
-        if ul_match or ol_match:
-            flush_plain()
-            match = ul_match or ol_match
-            indent = match.group(1)
-            marker = match.group(2)
-            content = match.group(3)
-            prefix = indent + marker
-            continuation_indent = " " * len(prefix)
-            wrapped = textwrap.fill(
-                content,
-                width=width,
-                initial_indent=prefix,
-                subsequent_indent=continuation_indent,
-            )
-            result.append(wrapped)
-        else:
-            stripped = line.strip()
-            if stripped:
-                plain_buffer.append(stripped)
-            else:
-                flush_plain()
-                result.append("")
-
-    flush_plain()
-    return "\n".join(result)
+def wrap_paragraph(text):
+    """Wrap a plain-text paragraph to BODY_WIDTH."""
+    return textwrap.fill(text.strip(), width=BODY_WIDTH)
 
 
-def is_list_item(text):
-    """Check if a paragraph value is a bare list item (not a block containing lists)."""
-    return bool(RE_UNORDERED.match(text) or RE_ORDERED.match(text))
+def wrap_changelog(text):
+    """Wrap a changelog entry as a bullet item with continuation indent."""
+    prefix = "- "
+    continuation = "  "
+    return textwrap.fill(
+        text.strip(),
+        width=BODY_WIDTH,
+        initial_indent=prefix,
+        subsequent_indent=continuation,
+    )
 
 
-def merge_list_paragraphs(paragraphs):
-    """Merge consecutive bare list-item -p values into single paragraphs.
-
-    Agents sometimes pass one -p per bullet point instead of one -p for
-    the whole list with \\n separators. This produces blank lines between
-    items because each -p becomes a separate paragraph. Detect and merge
-    consecutive list items to prevent that.
-    """
-    merged = []
-    list_buffer = []
-
-    def flush_list():
-        if list_buffer:
-            merged.append("\n".join(list_buffer))
-            list_buffer.clear()
-
-    for p in paragraphs:
-        if is_list_item(p):
-            list_buffer.append(p)
-        else:
-            flush_list()
-            merged.append(p)
-
-    flush_list()
-    return merged
-
-
-def format_message(subject, paragraphs, width):
-    """Assemble the full commit message from subject and paragraphs."""
+def format_message(subject, paragraphs, changelogs, issues):
+    """Assemble the full commit message in enforced structural order."""
     parts = [subject]
+
+    body_sections = []
+
     if paragraphs:
+        body_sections.append(
+            "\n\n".join(wrap_paragraph(p) for p in paragraphs)
+        )
+
+    if changelogs:
+        body_sections.append(
+            "\n".join(wrap_changelog(c) for c in changelogs)
+        )
+
+    if issues:
+        body_sections.append("\n".join(i.strip() for i in issues))
+
+    if body_sections:
         parts.append("")
-        paragraphs = merge_list_paragraphs(paragraphs)
-        body_parts = []
-        for p in paragraphs:
-            body_parts.append(wrap_paragraph(p, width))
-        parts.append("\n\n".join(body_parts))
+        parts.append("\n\n".join(body_sections))
+
     return "\n".join(parts) + "\n"
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Format and commit with structured input.",
-        add_help=False,
-    )
-    parser.add_argument("-s", required=True, help="Subject line")
-    parser.add_argument("-p", action="append", default=[], help="Body paragraph (repeatable)")
-    parser.add_argument("-w", type=int, default=DEFAULT_WRAP, help="Wrap column")
-    parser.add_argument("-n", action="store_true", help="Dry run (git commit --dry-run)")
-    parser.add_argument("-h", action="help", help="Show help")
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("-s", required=True)
+    parser.add_argument("-p", action="append", default=[])
+    parser.add_argument("-c", action="append", default=[])
+    parser.add_argument("-i", action="append", default=[])
+    parser.add_argument("-n", action="store_true")
     args = parser.parse_args()
 
     subject = args.s.strip()
-    if len(subject) > args.w:
+    if len(subject) > SUBJECT_WIDTH:
         print(
-            f"error: subject is {len(subject)} chars, exceeds {args.w}-char limit",
+            f"error: subject is {len(subject)} chars, exceeds"
+            f" {SUBJECT_WIDTH}-char limit",
             file=sys.stderr,
         )
         sys.exit(1)
 
-    paragraphs = [p.encode().decode("unicode_escape") for p in args.p]
-    message = format_message(subject, paragraphs, args.w)
+    message = format_message(subject, args.p, args.c, args.i)
 
     if args.n:
         print(message, end="")
