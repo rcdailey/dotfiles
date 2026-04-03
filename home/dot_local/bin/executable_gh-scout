@@ -289,7 +289,12 @@ def cmd_read(args: argparse.Namespace) -> None:
             print(f"{i['name']}{suffix}")
         return
     if data.get("content"):
-        content = base64.b64decode(data["content"]).decode()
+        raw = base64.b64decode(data["content"])
+        try:
+            content = raw.decode()
+        except UnicodeDecodeError:
+            print(f"binary file: {args.path} ({len(raw)} bytes)")
+            return
     else:
         # File too large for contents API (>1MB); fall back to raw.
         content = gh_api_raw(
