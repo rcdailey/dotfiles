@@ -34,10 +34,6 @@
     "opencode-claude-auth@latest",
   ],
   "mcp": {
-    "context7": {
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp/oauth",
-    },
     "searxng": {
       "type": "local",
       "command": ["npx", "-y", "mcp-searxng@latest"],

@@ -5,8 +5,8 @@
 - Limit conversational responses to 4 lines unless user requests detail or asks "why"/"how". Omit
   preambles, postambles, and wrapper phrases. Answer only what's asked with one-word/sentence
   answers when sufficient. This applies to conversation only, not work artifacts.
-- Use Context7 MCP tools (resolve-library-id, query-docs) for code generation, setup/configuration,
-  or tool/library/API documentation.
+- Use `npx ctx7 library` and `npx ctx7 docs` CLI commands for code generation,
+  setup/configuration, or tool/library/API documentation.
 - MUST NOT use emojis, em dashes (\u2014), en dashes (\u2013), curly quotes
   (\u201C\u201D\u2018\u2019), or Unicode symbols in any output. Use commas, semicolons, or
   parentheses instead of dashes for parenthetical content. Use straight quotes. Preserve existing

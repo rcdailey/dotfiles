@@ -12,7 +12,6 @@ permission:
   read: allow
   external_directory: allow
   webfetch: allow
-  context7_*: allow
 
   # searxng
   searxng_*: allow
@@ -26,6 +25,7 @@ permission:
     "curl *": allow
     "echo *": allow
     "gh *": allow
+    "npx ctx7 *": allow
     "git log*": allow
     "git show*": allow
     "git diff*": allow
