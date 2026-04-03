@@ -105,15 +105,19 @@ important.
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations). For multi-step
   exploration (orienting on a repo, reading multiple remote files, cross-referencing
   issues/PRs/commits), delegate to the `github-explorer` subagent instead of doing it inline.
-- Use `web` CLI for search and page fetching (LLM-optimized output, wraps sx/SearXNG). Commands:
-  `web search "query" -n 5` (search), `web fetch URL` (page to markdown, truncated at 20k chars),
-  `web fetch URL --find "pattern"` (search cached page by paragraph), `web fetch URL --find
-  "pattern" -C 2` (with 2 paragraphs context). Fetched pages are cached in /tmp; --find reads from
-  cache without re-fetching. Use `--max-chars 0` for full output. Prefer `web` over the built-in
-  WebFetch tool. For web search, MUST use `web search` via bash instead of the MCP searxng tools.
-  SearXNG has limited support for advanced search operators (`site:`, `filetype:`, `inurl:`, etc.);
-  these work on some engines but not reliably across all backends. If a query with operators returns
-  no results, retry with plain keywords (drop the operators, keep the intent).
+- Use `web` CLI for search and page fetching (LLM-optimized output, wraps sx/SearXNG). MUST use
+  instead of built-in WebFetch and MCP searxng tools. Commands:
+  - `web search "query" -n 5` (search)
+  - `web fetch URL` (page to markdown, truncated at 20k chars)
+  - `web fetch URL --find "pattern"` (search cached page by paragraph)
+  - `web fetch URL --find "pattern" -C 2` (with 2 paragraphs context)
+  - `web fetch URL --max-chars 0` (full output, no truncation)
+  - Fetched pages are cached in /tmp; `--find` reads from cache without re-fetching
+  - Prefer targeted retrieval: search first, fetch truncated, then `--find` for specifics
+  - Only use `--max-chars 0` when full content is truly needed
+  - SearXNG has limited support for advanced search operators (`site:`, `filetype:`, `inurl:`,
+    etc.); these work on some engines but not reliably across all backends. If a query with
+    operators returns no results, retry with plain keywords (drop the operators, keep the intent).
 - New files: use `write`. Existing files: use edit tools (`edit`, `multiedit`, `patch`) by default.
   Use `write` instead when the total size of all oldStrings and newStrings combined would exceed the
   file's current size (typically when rewriting more than half the file).
