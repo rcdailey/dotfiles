@@ -154,10 +154,19 @@ def cmd_search(args: argparse.Namespace) -> None:
     if result.returncode != 0:
         die(f"sx failed: {result.stderr.strip()}")
 
+    # sx returns exit code 0 with a plain-text message (not JSON) when
+    # SearXNG finds no results. Detect this before attempting JSON parsing
+    # so the user gets a clean "no results" exit instead of a confusing
+    # "invalid JSON" error.
+    stdout = result.stdout.strip()
+    if not stdout or not stdout.startswith(("{", "[")):
+        print("No results found.", file=sys.stderr)
+        sys.exit(2)
+
     try:
-        data = json.loads(result.stdout)
+        data = json.loads(stdout)
     except json.JSONDecodeError:
-        die(f"sx returned invalid JSON: {result.stdout[:200]}")
+        die(f"sx returned invalid JSON: {stdout[:200]}")
 
     results = data.get("results", [])
     if not results:

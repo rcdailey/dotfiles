@@ -111,6 +111,9 @@ important.
   "pattern" -C 2` (with 2 paragraphs context). Fetched pages are cached in /tmp; --find reads from
   cache without re-fetching. Use `--max-chars 0` for full output. Prefer `web` over the built-in
   WebFetch tool. For web search, MUST use `web search` via bash instead of the MCP searxng tools.
+  SearXNG has limited support for advanced search operators (`site:`, `filetype:`, `inurl:`, etc.);
+  these work on some engines but not reliably across all backends. If a query with operators returns
+  no results, retry with plain keywords (drop the operators, keep the intent).
 - New files: use `write`. Existing files: use edit tools (`edit`, `multiedit`, `patch`) by default.
   Use `write` instead when the total size of all oldStrings and newStrings combined would exceed the
   file's current size (typically when rewriting more than half the file).
