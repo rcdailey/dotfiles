@@ -249,6 +249,10 @@ change warrants; small changes need none, large changes may need all three.
 - Research phase revealed observations that add value beyond the subject and no caller context
   supplements it
 
+NEVER pass bullet items (`- ...`, `* ...`) or bare section headers (`Changes:`, `Key features:`) as
+`-p`. The script rejects these. Bullet items belong in `-c`; headers are unnecessary because `-c`
+entries render as a bullet list automatically.
+
 **Changelog entries (`-c`):** Specific, lower-level details about individual changes within the
 commit. Each entry becomes a bullet item in the rendered message. MUST NOT repeat what the paragraph
 already explains; these go deeper. Include when the diff contains 2+ logically distinct changes that
@@ -285,6 +289,29 @@ static analysis findings.
 - Add .github/zizmor.yml configuration to suppress accepted-risk
   findings
 - Add zizmor pre-commit hook for continuous static analysis
+```
+
+**Bad `-p` usage (bullets and headers crammed into `-p` flags):**
+
+```sh
+# WRONG: each bullet is a separate -p, producing double-spaced paragraphs;
+# "Changes:" is a bare header that adds no value
+git commit-fmt -s "feat(opencode): switch from MCP to web CLI" \
+  -p "Removes the MCP-based server in favor of the new web CLI." \
+  -p "Changes:" \
+  -p "- Remove MCP searxng configuration from opencode.jsonc" \
+  -p "- Disable websearch/webfetch built-in tools" \
+  -p "- Update AGENTS.md with web CLI usage instructions"
+```
+
+**Correct equivalent using `-c`:**
+
+```sh
+git commit-fmt -s "feat(opencode): switch from MCP to web CLI" \
+  -p "Removes the MCP-based server in favor of the new web CLI." \
+  -c "Remove MCP searxng configuration from opencode.jsonc" \
+  -c "Disable websearch/webfetch built-in tools" \
+  -c "Update AGENTS.md with web CLI usage instructions"
 ```
 
 ### Issue References
