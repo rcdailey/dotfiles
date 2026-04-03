@@ -5,8 +5,8 @@
 - Limit conversational responses to 4 lines unless user requests detail or asks "why"/"how". Omit
   preambles, postambles, and wrapper phrases. Answer only what's asked with one-word/sentence
   answers when sufficient. This applies to conversation only, not work artifacts.
-- Use `npx ctx7 library` and `npx ctx7 docs` CLI commands for code generation,
-  setup/configuration, or tool/library/API documentation.
+- Use `npx ctx7 library` and `npx ctx7 docs` CLI commands for code generation, setup/configuration,
+  or tool/library/API documentation. MUST load `context7-cli` skill first.
 - MUST NOT use emojis, em dashes (\u2014), en dashes (\u2013), curly quotes
   (\u201C\u201D\u2018\u2019), or Unicode symbols in any output. Use commas, semicolons, or
   parentheses instead of dashes for parenthetical content. Use straight quotes. Preserve existing
@@ -105,7 +105,12 @@ important.
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations). For multi-step
   exploration (orienting on a repo, reading multiple remote files, cross-referencing
   issues/PRs/commits), delegate to the `github-explorer` subagent instead of doing it inline.
-- Webfetch for specific URLs when full page content is needed (noisy on nav-heavy sites).
+- Use `web` CLI for search and page fetching (LLM-optimized output, wraps sx/SearXNG). Commands:
+  `web search "query" -n 5` (search), `web fetch URL` (page to markdown, truncated at 20k chars),
+  `web fetch URL --find "pattern"` (search cached page by paragraph), `web fetch URL --find
+  "pattern" -C 2` (with 2 paragraphs context). Fetched pages are cached in /tmp; --find reads from
+  cache without re-fetching. Use `--max-chars 0` for full output. Prefer `web` over the built-in
+  WebFetch tool. For web search, MUST use `web search` via bash instead of the MCP searxng tools.
 - New files: use `write`. Existing files: use edit tools (`edit`, `multiedit`, `patch`) by default.
   Use `write` instead when the total size of all oldStrings and newStrings combined would exceed the
   file's current size (typically when rewriting more than half the file).
@@ -126,6 +131,8 @@ arrive too late.
 - `gh-gist`: REQUIRED when creating or editing GitHub Gists
 - `git-hunks`: REQUIRED when staging individual hunks or partial file changes
 - `gh-pr-review`: REQUIRED when posting code review comments on pull requests
+- `context7-cli`: REQUIRED before using `ctx7` CLI commands (`npx ctx7 library`, `npx ctx7 docs`, or
+  any ctx7 invocation)
 - `command-authoring`: REQUIRED when creating, editing, or refactoring custom commands
 - `humanizer`: REQUIRED when producing any text read by humans, directly or indirectly:
   documentation, changelogs, release notes, PR/issue descriptions, emails, messages, forum posts,

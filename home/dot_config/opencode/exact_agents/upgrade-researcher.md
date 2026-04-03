@@ -11,13 +11,6 @@ permission:
   "*": deny
   read: allow
   external_directory: allow
-  webfetch: allow
-
-  # searxng
-  searxng_*: allow
-  "*_web_url_read": deny # comes from opencode.jsonc
-
-  # Bash Tools
   bash:
     "*": deny
     "base64 *": allow
@@ -34,6 +27,7 @@ permission:
     "ls*": allow
     "rg *": allow
     "tail *": allow
+    "web *": allow
     "wc *": allow
 ---
 
