@@ -8,6 +8,7 @@ and handles all text wrapping, then calls git commit.
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -32,6 +33,32 @@ def wrap_changelog(text):
         initial_indent=prefix,
         subsequent_indent=continuation,
     )
+
+
+_BARE_HEADER_RE = re.compile(r"^[\w /'-]{1,30}:\s*$")
+
+
+def validate_paragraphs(paragraphs):
+    """Reject -p values that should be -c entries or are bare headers."""
+    errors = []
+    for p in paragraphs:
+        stripped = p.strip()
+        if stripped.startswith(("- ", "* ")):
+            errors.append(
+                f"-p looks like a bullet item: \"{stripped[:40]}...\""
+                if len(stripped) > 40
+                else f"-p looks like a bullet item: \"{stripped}\""
+            )
+            errors.append("  use -c for changelog/list entries instead")
+        elif _BARE_HEADER_RE.match(stripped):
+            errors.append(
+                f"-p looks like a bare header: \"{stripped}\""
+            )
+            errors.append(
+                "  headers are unnecessary; -c entries render"
+                " as bullets automatically"
+            )
+    return errors
 
 
 def format_message(subject, paragraphs, changelogs, issues):
@@ -76,6 +103,12 @@ def main():
             f" {SUBJECT_WIDTH}-char limit",
             file=sys.stderr,
         )
+        sys.exit(1)
+
+    errors = validate_paragraphs(args.p)
+    if errors:
+        for err in errors:
+            print(f"error: {err}", file=sys.stderr)
         sys.exit(1)
 
     message = format_message(subject, args.p, args.c, args.i)
