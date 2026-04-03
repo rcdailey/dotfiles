@@ -57,6 +57,7 @@ import argparse
 import hashlib
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -119,11 +120,34 @@ def cmd_search(args: argparse.Namespace) -> None:
     if not query:
         die("query is required")
 
+    # Auto-install sx if not on PATH. This makes the script self-healing on
+    # fresh machines where mise hasn't pulled all tools yet (sx is declared in
+    # ~/.config/mise/config.toml but not yet installed). The install is a
+    # one-time cost (~2s) that saves the user from a cryptic "not found" error.
+    if not shutil.which("sx"):
+        try:
+            subprocess.run(
+                ["mise", "install", "github:byteowlz/sx"],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        except FileNotFoundError:
+            die("neither sx nor mise found; install mise first: https://mise.jdx.dev")
+        except subprocess.CalledProcessError as e:
+            die(f"failed to install sx via mise: {e.stderr.strip()}")
+        except subprocess.TimeoutExpired:
+            die("timed out installing sx via mise")
+
+        if not shutil.which("sx"):
+            die("mise installed sx but it's not on PATH; check mise shims")
+
     sx_cmd = ["sx", query, "--json", "--clean", "-n", str(args.num)]
     try:
         result = subprocess.run(sx_cmd, capture_output=True, text=True, timeout=30)
     except FileNotFoundError:
-        die("sx not found; install via: mise use -g github:byteowlz/sx")
+        die("sx not found despite passing PATH check; check mise shims")
     except subprocess.TimeoutExpired:
         die("search timed out after 30s")
 
