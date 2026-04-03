@@ -1,0 +1,3 @@
+searxng_url = "https://search.dailey.app"
+result_count = 5
+no_color = true

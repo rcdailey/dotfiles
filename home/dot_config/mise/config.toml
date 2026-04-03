@@ -20,6 +20,8 @@ yamllint = "latest"
 yq = "latest"
 bun = "latest"
 zizmor = "latest"
+ruff = "latest"
+"github:byteowlz/sx" = "latest"
 
 # Node and NPM packages
 node = "latest"

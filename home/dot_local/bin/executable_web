@@ -1,0 +1,457 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "httpx",
+#     "trafilatura",
+# ]
+# ///
+"""web - LLM-optimized search and fetch CLI.
+
+Wraps sx (SearXNG CLI) for search and trafilatura for page fetching,
+producing compact output suitable for LLM consumption.
+
+Agent directives for modifying this file:
+
+  Architecture: This is a thin wrapper. Search delegates to sx (a Go
+  binary that talks to SearXNG). Fetch uses httpx for HTTP and
+  trafilatura for content extraction + markdown conversion. Do not add
+  direct SearXNG API calls; sx owns that interface. Do not add heavy
+  dependencies (browser engines, ML models). The uv shebang installs
+  deps on first run; adding a dependency is cheap but each one
+  increases cold-start time.
+
+  Output contract: Output is consumed by LLMs, not humans. Every byte
+  costs tokens. Prefer compact, structured plaintext over verbose
+  markdown. Do not add color, progress bars, or interactive prompts.
+  Errors go to stderr; content goes to stdout. Exit codes: 0 success,
+  1 error, 2 no results.
+
+  Caching: Fetched pages are cached as markdown in /tmp/web-fetch-cache/
+  keyed by SHA-256 of the URL. Cache is per-boot (cleared on reboot).
+  The --find flag reads from cache to avoid re-fetching. If no cache
+  exists when --find is used, the page is auto-fetched and cached.
+
+  Corner case documentation: Each hack, workaround, or corner case in
+  this script MUST have an explanatory comment block near the relevant
+  code justifying and explaining it for historical context. When adding
+  new workarounds, follow the same pattern. When removing one, delete
+  the comment with it.
+
+  Testing: Test changes via a subagent to avoid blowing through tokens.
+  Run against these representative sites:
+    - paulgraham.com (layout tables, no semantic HTML)
+    - blog.golang.org (clean semantic HTML)
+    - docs.github.com (server-side rendered JS app)
+    - httpbin.org/status/404 (error handling)
+  Report first 5-10 lines and char count, not full output.
+
+  Dependencies: Managed via PEP 723 inline metadata (the /// script
+  block above). uv resolves and caches them automatically. Do not add
+  a requirements.txt or setup.py; this is a single-file script.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+from typing import NoReturn
+
+import httpx
+import trafilatura
+
+_CACHE_DIR = Path("/tmp/web-fetch-cache")
+
+
+def die(message: str) -> NoReturn:
+    print(f"error: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# Cache
+# ---------------------------------------------------------------------------
+
+
+def _cache_path(url: str) -> Path:
+    """Return the cache file path for a URL, keyed by SHA-256."""
+    url_hash = hashlib.sha256(url.encode()).hexdigest()[:16]
+    return _CACHE_DIR / f"{url_hash}.md"
+
+
+def _read_cache(url: str) -> str | None:
+    """Read cached markdown for a URL. Returns None if not cached."""
+    path = _cache_path(url)
+    if path.exists():
+        return path.read_text()
+    return None
+
+
+def _write_cache(url: str, content: str) -> None:
+    """Write markdown content to cache."""
+    _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    _cache_path(url).write_text(content)
+
+
+# ---------------------------------------------------------------------------
+# Search
+# ---------------------------------------------------------------------------
+
+
+def cmd_search(args: argparse.Namespace) -> None:
+    """Search via sx (SearXNG CLI) and format results for LLM consumption.
+
+    Corner cases handled:
+    - sx returns more results than requested (SearXNG paginates by engine,
+      not by total count). Results are truncated to -n after deduplication.
+    - Duplicate URLs across engines: deduplicated by URL.
+    - Snippet quality varies by engine: some return just the domain or a
+      URL instead of a text snippet. These are detected and omitted.
+    - sx --json --clean still includes fields irrelevant to LLMs (engine,
+      template, category, publishedDate). Only title/url/content extracted.
+    """
+    query = " ".join(args.query)
+    if not query:
+        die("query is required")
+
+    sx_cmd = ["sx", query, "--json", "--clean", "-n", str(args.num)]
+    try:
+        result = subprocess.run(sx_cmd, capture_output=True, text=True, timeout=30)
+    except FileNotFoundError:
+        die("sx not found; install via: mise use -g github:byteowlz/sx")
+    except subprocess.TimeoutExpired:
+        die("search timed out after 30s")
+
+    if result.returncode != 0:
+        die(f"sx failed: {result.stderr.strip()}")
+
+    try:
+        data = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        die(f"sx returned invalid JSON: {result.stdout[:200]}")
+
+    results = data.get("results", [])
+    if not results:
+        print("No results found.", file=sys.stderr)
+        sys.exit(2)
+
+    seen_urls: set[str] = set()
+    count = 0
+    for r in results:
+        if count >= args.num:
+            break
+        url = r.get("url", "")
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        count += 1
+
+        title = r.get("title", "(no title)")
+        snippet = r.get("content", "")
+        # Some engines return just the domain or a bare URL as the snippet,
+        # which adds no value for an LLM. Detect and suppress these.
+        if snippet and snippet != url and not snippet.startswith("http"):
+            snippet = snippet[:200].strip()
+        else:
+            snippet = ""
+
+        print(f"{count}. {title}")
+        print(f"   {url}")
+        if snippet:
+            print(f"   {snippet}")
+        print()
+
+
+# ---------------------------------------------------------------------------
+# Fetch
+# ---------------------------------------------------------------------------
+
+_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
+
+_HEADERS = {
+    "User-Agent": _USER_AGENT,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+}
+
+_DEFAULT_MAX_CHARS = 20000
+
+
+def _fetch_url(url: str) -> str:
+    """Fetch a URL and return raw HTML.
+
+    Corner cases handled:
+    - Redirects: httpx follows redirects automatically.
+    - Encoding: httpx handles charset detection from headers/BOM.
+    - Timeouts: 30s per request, reported to stderr.
+    """
+    try:
+        with httpx.Client(
+            headers=_HEADERS,
+            follow_redirects=True,
+            timeout=30,
+        ) as client:
+            resp = client.get(url)
+            resp.raise_for_status()
+            return resp.text
+    except httpx.HTTPStatusError as e:
+        die(f"HTTP {e.response.status_code} fetching {url}")
+    except httpx.ConnectError as e:
+        die(f"connection failed for {url}: {e}")
+    except httpx.TimeoutException:
+        die(f"timed out fetching {url}")
+    except httpx.HTTPError as e:
+        die(f"failed to fetch {url}: {e}")
+    return ""  # unreachable
+
+
+def _extract_markdown(html: str, url: str) -> str:
+    """Extract main content from HTML and convert to markdown.
+
+    Uses trafilatura for content extraction. Trafilatura handles:
+    - Boilerplate removal (nav, footer, sidebar, ads, cookie banners)
+    - Main content detection (equivalent to readability)
+    - Layout table handling (extracts text content, ignores table structure)
+    - Markdown formatting with headings, links, and lists
+
+    Corner cases handled:
+    - JS-rendered sites: Many sites (GitHub docs, MDN) serve enough
+      server-side HTML that trafilatura extracts content successfully.
+      Fully JS-rendered SPAs return None; we fall back to an empty
+      string with a stderr warning.
+    - trafilatura returns None on extraction failure (e.g., empty page,
+      paywall, login wall). Caller handles this.
+    """
+    result = trafilatura.extract(
+        html,
+        url=url,
+        output_format="markdown",
+        include_links=True,
+        include_tables=True,
+        include_formatting=True,
+        include_images=False,
+        include_comments=False,
+    )
+    if result is None:
+        print(f"warning: no content extracted from {url}", file=sys.stderr)
+        return ""
+
+    # Strip empty/whitespace-only markdown table rows. Trafilatura preserves
+    # HTML tables as markdown tables, including layout tables (paulgraham.com)
+    # and infobox tables (Wikipedia). These produce rows like "| |" or
+    # "| | | |" that add noise without content. We strip rows where every
+    # cell is empty, plus the separator row (|---|---|) if the header row
+    # above it was empty. Rows with actual cell content are preserved.
+    result = re.sub(r"^\|[\s|]*\|\s*$", "", result, flags=re.MULTILINE)
+    result = re.sub(r"^\|[-|\s:]*\|\s*$", "", result, flags=re.MULTILINE)
+    result = re.sub(r"\n{3,}", "\n\n", result)
+
+    return result.strip()
+
+
+def _get_markdown(url: str, *, no_cache: bool = False) -> str:
+    """Get markdown for a URL, using cache if available.
+
+    Fetches and caches if not already cached (or if no_cache is True).
+    """
+    if not no_cache:
+        cached = _read_cache(url)
+        if cached is not None:
+            return cached
+
+    html = _fetch_url(url)
+    markdown = _extract_markdown(html, url)
+    _write_cache(url, markdown)
+    return markdown
+
+
+# ---------------------------------------------------------------------------
+# Semantic search (--find)
+# ---------------------------------------------------------------------------
+
+
+def _find_in_markdown(markdown: str, pattern: str, context: int) -> str:
+    """Search cached markdown by paragraph, returning matching paragraphs.
+
+    Paragraphs are split on double newlines (markdown's natural boundary).
+    Returns matching paragraphs with surrounding context, separated by
+    '...' between non-adjacent groups.
+
+    Corner cases handled:
+    - Overlapping context: Adjacent or overlapping match windows are
+      merged into a single group to avoid duplicating paragraphs.
+    - Regex patterns: The pattern is compiled with re.IGNORECASE. If the
+      pattern is invalid regex, it falls back to a literal string search.
+    - No matches: Returns a message indicating no matches found.
+    """
+    # Split markdown into paragraphs. Trafilatura sometimes uses single
+    # newlines between paragraphs (paulgraham.com) instead of double newlines
+    # (blog.golang.org). We try double-newline splitting first; if that
+    # produces fewer than 3 chunks, fall back to splitting on single newlines
+    # that follow sentence-ending punctuation or precede headings.
+    paragraphs = re.split(r"\n\n+", markdown)
+    if len(paragraphs) < 3:
+        paragraphs = re.split(r"\n(?=(?:#|\n|[A-Z]))", markdown)
+        paragraphs = [p.strip() for p in paragraphs if p.strip()]
+
+    try:
+        compiled = re.compile(pattern, re.IGNORECASE)
+        match_indices = {i for i, p in enumerate(paragraphs) if compiled.search(p)}
+    except re.error:
+        # Invalid regex; fall back to case-insensitive literal search.
+        lower_pattern = pattern.lower()
+        match_indices = {i for i, p in enumerate(paragraphs) if lower_pattern in p.lower()}
+
+    if not match_indices:
+        return f'[no matches for "{pattern}" in {len(markdown)} chars]'
+
+    # Expand each match index by context paragraphs, then merge overlapping
+    # ranges into contiguous groups.
+    included: set[int] = set()
+    for idx in match_indices:
+        start = max(0, idx - context)
+        end = min(len(paragraphs), idx + context + 1)
+        included.update(range(start, end))
+
+    sorted_indices = sorted(included)
+
+    # Group contiguous indices together so we can insert "..." between
+    # non-adjacent groups.
+    groups: list[list[int]] = []
+    current_group: list[int] = [sorted_indices[0]]
+    for idx in sorted_indices[1:]:
+        if idx == current_group[-1] + 1:
+            current_group.append(idx)
+        else:
+            groups.append(current_group)
+            current_group = [idx]
+    groups.append(current_group)
+
+    parts: list[str] = []
+    header = (
+        f"[{len(match_indices)} match{'es' if len(match_indices) != 1 else ''}"
+        f" in cached page, {len(markdown)} chars total]"
+    )
+    parts.append(header)
+
+    for group in groups:
+        parts.append("\n\n".join(paragraphs[i] for i in group))
+
+    return "\n\n...\n\n".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# Fetch command
+# ---------------------------------------------------------------------------
+
+
+def cmd_fetch(args: argparse.Namespace) -> None:
+    """Fetch URL(s) and convert to markdown.
+
+    Corner cases handled:
+    - URLs without scheme: auto-prefixed with https://.
+    - Multi-URL: each page separated by --- with URL as heading.
+    - HTTP errors: reported to stderr with status code, exits 1.
+    - Truncation: Output capped at --max-chars (default 20000) with a
+      footer indicating total size and how to search full content.
+    - --find: Searches cached markdown by paragraph instead of returning
+      the full page. Auto-fetches if not cached.
+    """
+    for i, url in enumerate(args.urls):
+        if not url.startswith(("http://", "https://")):
+            url = f"https://{url}"
+
+        markdown = _get_markdown(url, no_cache=args.no_cache)
+
+        if args.find:
+            output = _find_in_markdown(markdown, args.find, args.context)
+        elif args.max_chars > 0 and len(markdown) > args.max_chars:
+            # Truncate at a paragraph boundary to avoid cutting mid-sentence.
+            # Find the last double-newline before max_chars.
+            cut = markdown.rfind("\n\n", 0, args.max_chars)
+            if cut == -1:
+                cut = args.max_chars
+            output = markdown[:cut]
+            output += (
+                f"\n\n[truncated at {cut}/{len(markdown)} chars;"
+                f' use --find "pattern" to search full content]'
+            )
+        else:
+            output = markdown
+
+        if len(args.urls) > 1:
+            if i > 0:
+                print("\n---\n")
+            print(f"# {url}\n")
+        print(output)
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="web",
+        description="LLM-optimized search and fetch",
+    )
+    sub = parser.add_subparsers(dest="command")
+
+    p_search = sub.add_parser("search", help="search the web via SearXNG")
+    p_search.add_argument("query", nargs="+", help="search query")
+    p_search.add_argument(
+        "-n",
+        "--num",
+        type=int,
+        default=5,
+        help="max results (default: 5)",
+    )
+
+    p_fetch = sub.add_parser("fetch", help="fetch URL(s) as markdown")
+    p_fetch.add_argument("urls", nargs="+", help="URL(s) to fetch")
+    p_fetch.add_argument(
+        "--max-chars",
+        type=int,
+        default=_DEFAULT_MAX_CHARS,
+        help=f"truncate output (default: {_DEFAULT_MAX_CHARS}, 0 to disable)",
+    )
+    p_fetch.add_argument(
+        "--find",
+        type=str,
+        default=None,
+        help="search cached page by paragraph (regex or literal)",
+    )
+    p_fetch.add_argument(
+        "-C",
+        "--context",
+        type=int,
+        default=1,
+        help="paragraphs of context around --find matches (default: 1)",
+    )
+    p_fetch.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="force re-fetch, ignoring cache",
+    )
+
+    args = parser.parse_args()
+    if args.command == "search":
+        cmd_search(args)
+    elif args.command == "fetch":
+        cmd_fetch(args)
+    else:
+        parser.print_help()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
