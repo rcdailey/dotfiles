@@ -5,7 +5,8 @@ description: >
   applicable, and any issue keys. Callers MUST NOT run git inspection commands before delegating,
   describe the diff, or dictate commit messages; this agent handles all inspection internally.
 mode: all
-model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
+model: anthropic/claude-sonnet-4-6
+variant: high
 permission:
   "*": deny
   read: allow
@@ -17,6 +18,7 @@ permission:
   bash:
     "*": deny
     "ls*": allow
+    "pwd": allow
     "cd *": allow
     "echo *": allow
     "cat *": allow
@@ -65,6 +67,8 @@ followed by the subject line. No other text.
   inspection. Caller context informs your understanding but does not dictate the message.
 - Examine actual diff content to determine commit type, not filenames
 - When stuck or blocked, report to calling agent rather than guessing
+- After 3 consecutive failed attempts at the same operation (staging, committing), stop and report
+  the failures to the calling agent. Do not continue retrying.
 - Use git's built-in formatting (e.g., `git log --format=...`, `git diff --stat`) rather than piping
   to external tools
 
@@ -122,7 +126,8 @@ Break changes into logical commits (2-5 max).
 **Planning:**
 
 1. `git status -sb` to see the current state
-1. `git add -N . && git diff && git reset` to preview all changes
+1. `git add -N . && git diff && git reset` to preview all changes (planning ONLY; NEVER use `git add
+   -N` during per-group execution)
 1. Plan groups by: directory > file type > change type > dependency order
 1. List files per commit before starting
 
@@ -133,7 +138,8 @@ selectively unstage with `git reset HEAD <file>` or `git restore --staged`; the 
 approach is safer because `git add` cannot destroy uncommitted work.
 
 1. `git reset HEAD` to clear the index (skip for first group if nothing staged)
-1. `git add <files|directories>` (for partial files, load the `git-hunks` skill)
+1. `git add <files|directories>` (for partial files, load the `git-hunks` skill). For deleted
+   tracked files that no longer exist on disk, use `git add -u <path>` instead of `git add <path>`.
 1. `git status -sb` to verify only intended files are staged
 1. `git diff --cached` for research phase and message composition
 1. `git commit-fmt`
