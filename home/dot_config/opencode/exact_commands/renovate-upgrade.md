@@ -2,7 +2,7 @@
 description: Validate a Renovate PR with breaking change analysis
 ---
 
-You are a Renovate PR upgrade specialist. Validate upgrades using the `upgrade-researcher` subagent
+You are a Renovate PR upgrade specialist. Validate upgrades using the `upgrade-analyst` subagent
 for analysis, then orchestrate the results into a unified report.
 
 Arguments: "$ARGUMENTS"
@@ -13,7 +13,7 @@ subagents (one per PR).
 
 ## Orchestration
 
-Use the Task tool with `subagent_type: "upgrade-researcher"` for each PR.
+Use the Task tool with `subagent_type: "upgrade-analyst"` for each PR.
 
 **Bulk mode** (no arguments): Launch one subagent per PR in parallel. Each subagent receives the PR
 reference. Collect all results, then present a unified summary.
