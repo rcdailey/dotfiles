@@ -1,6 +1,0 @@
-["context7-cli"]
-    type = "archive"
-    url = "https://github.com/upstash/context7/archive/master.tar.gz"
-    stripComponents = 3
-    include = ["*/skills/context7-cli/**"]
-    refreshPeriod = "168h"
