@@ -48,9 +48,6 @@
     "webfetch": "deny",
     "*_web_url_read": "deny",
 
-    // Context7 MCP: available to subagents that re-enable; denied for primary agents
-    "context7_*": "deny",
-
     "bash": {
       "*": "allow",
       // grep redirection handled by tool-guards plugin (allows kubectl exec, git, etc)
