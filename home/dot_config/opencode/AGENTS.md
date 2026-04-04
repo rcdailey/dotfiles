@@ -5,8 +5,6 @@
 - Limit conversational responses to 4 lines unless user requests detail or asks "why"/"how". Omit
   preambles, postambles, and wrapper phrases. Answer only what's asked with one-word/sentence
   answers when sufficient. This applies to conversation only, not work artifacts.
-- Use `npx ctx7 library` and `npx ctx7 docs` CLI commands for code generation, setup/configuration,
-  or tool/library/API documentation. MUST load `context7-cli` skill first.
 - MUST NOT use emojis, em dashes (\u2014), en dashes (\u2013), curly quotes
   (\u201C\u201D\u2018\u2019), or Unicode symbols in any output. Use commas, semicolons, or
   parentheses instead of dashes for parenthetical content. Use straight quotes. Preserve existing
@@ -102,18 +100,7 @@ important.
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh-review` for PR review operations (pending reviews, inline comments). MUST use instead of
   raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
-- Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations). For multi-step
-  exploration (orienting on a repo, reading multiple remote files, cross-referencing
-  issues/PRs/commits), delegate to the `github-explorer` subagent instead of doing it inline.
-- Use `web` CLI for search and page fetching. MUST use instead of built-in WebFetch and MCP searxng
-  tools. Commands:
-  - `web search "query" -n 5` (search)
-  - `web fetch URL` (page to markdown, truncated at 20k chars)
-  - `web fetch URL --find "pattern"` (search cached page by paragraph)
-  - `web fetch URL --find "pattern" -C 2` (with 2 paragraphs context)
-  - `web fetch URL --max-chars 0` (full output, no truncation)
-  - Prefer targeted retrieval: search first, fetch truncated, then `--find` for specifics
-  - Only use `--max-chars 0` when full content is truly needed.
+- Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
 - New files: use `write`. Existing files: use edit tools (`edit`, `multiedit`, `patch`) by default.
   Use `write` instead when the total size of all oldStrings and newStrings combined would exceed the
   file's current size (typically when rewriting more than half the file).
@@ -134,8 +121,6 @@ arrive too late.
 - `gh-gist`: REQUIRED when creating or editing GitHub Gists
 - `git-hunks`: REQUIRED when staging individual hunks or partial file changes
 - `gh-pr-review`: REQUIRED when posting code review comments on pull requests
-- `context7-cli`: REQUIRED before using `ctx7` CLI commands (`npx ctx7 library`, `npx ctx7 docs`, or
-  any ctx7 invocation)
 - `command-authoring`: REQUIRED when creating, editing, or refactoring custom commands
 - `humanizer`: REQUIRED when producing any text read by humans, directly or indirectly:
   documentation, changelogs, release notes, PR/issue descriptions, emails, messages, forum posts,
@@ -255,28 +240,9 @@ explicitly. Uses inline quote blocks when replying to specific points.
 
 ## Agents
 
-SHOULD use agents autonomously without explicit prompt from user for appropriate operations.
-
 - When delegating to subagents, explicitly require them to respond directly to the caller; MUST NOT
   write research, outcomes, or responses to files on disk.
 - Callers MUST cross-reference subagent findings before acting on them. This doesn't mean repeating
   the work; it means spot-checking reported results against primary sources (reading cited files,
   verifying links, searching docs, etc.) to catch hallucinations and false assumptions. Subagent
   models are weaker than the caller; trust but verify.
-- `commit`: For commit-related requests with git (NO push or gh cli allowed). Batch multiple commits
-  into a single delegation; one agent per commit is wasteful. Callers MUST NOT run git inspection
-  commands (diff, status, log, show) before delegating; the subagent performs all inspection
-  internally. Pass only: (1) high-level task context (what feature/fix/refactor you were working on
-  and why), (2) workflow hint if not default (e.g., "all" or "multiple commits"), and (3) any issue
-  keys (GitHub, Jira, etc.). Callers MUST NOT prescribe exact commit messages or describe the diff;
-  the agent determines everything from its own inspection.
-- `github-explorer`: For multi-step remote GitHub exploration (orienting on repos, reading multiple
-  remote files, cross-referencing issues/PRs/commits, code search across repos). Callers pass the
-  question or research goal; the agent explores and returns a synthesized answer. Do NOT delegate
-  simple single-command operations (listing issues, viewing a PR, checking a release); use `gh` CLI
-  directly for those.
-- `upgrade-researcher`: For dependency upgrade impact analysis. Callers pass only the PR reference
-  (e.g., `PR #123 in owner/repo`) or package with version range. The agent owns the entire workflow:
-  fetching PR details, tracing changelogs, assessing repo impact, categorizing findings, and
-  structuring output. Callers MUST NOT include research instructions, output format requirements, or
-  categorization rules in the prompt; these are codified in the agent's directives.
