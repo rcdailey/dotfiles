@@ -55,11 +55,13 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html as html_mod
 import json
 import re
 import shutil
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import NoReturn
 
@@ -103,16 +105,48 @@ def _write_cache(url: str, content: str) -> None:
 # Search
 # ---------------------------------------------------------------------------
 
+def _query_to_pattern(query: str) -> str | None:
+    """Convert a search query into a regex alternation pattern.
+
+    Filters words 4 chars or shorter and numeric-only tokens (years,
+    status codes), sorts the remainder by length (longest first), and
+    picks the top 3. Longer words are more specific and less likely to
+    match every paragraph. Short common words like "null", "list",
+    "from" are dropped, as are numbers like "2024", "404".
+
+    Returns None if no usable terms remain. The caller should fall back
+    to showing the first N prose paragraphs in that case.
+    """
+    words = query.lower().split()
+    if not words:
+        return None
+    # Filter short words and numeric-only tokens (years like "2024",
+    # status codes like "404", etc.) which match broadly without
+    # adding topical specificity.
+    terms = [w for w in set(words) if len(w) > 4 and not w.isdigit()]
+    terms = sorted(terms, key=len, reverse=True)[:3]
+    if not terms:
+        return None
+    return "|".join(re.escape(t) for t in terms)
+
 
 def cmd_search(args: argparse.Namespace) -> None:
     """Search via sx (SearXNG CLI) and format results for LLM consumption.
+
+    By default, each result page is fetched in parallel and relevant
+    paragraphs are extracted using the search query as keywords (enriched
+    mode). Use --brief to get the old compact format with SearXNG snippets.
 
     Corner cases handled:
     - sx returns more results than requested (SearXNG paginates by engine,
       not by total count). Results are truncated to -n after deduplication.
     - Duplicate URLs across engines: deduplicated by URL.
-    - Snippet quality varies by engine: some return just the domain or a
-      URL instead of a text snippet. These are detected and omitted.
+    - Dead links in enriched mode: requests 2x results from sx so dead
+      links (404, extraction failure, no snippet) are silently replaced
+      by backup results. Remaining live results fall back to snippets.
+    - Short/numeric query words: words <=4 chars and numeric-only tokens
+      are filtered to avoid matching every paragraph. Falls back to
+      showing the first few prose paragraphs if no usable terms remain.
     - sx --json --clean still includes fields irrelevant to LLMs (engine,
       template, category, publishedDate). Only title/url/content extracted.
     """
@@ -143,7 +177,11 @@ def cmd_search(args: argparse.Namespace) -> None:
         if not shutil.which("sx"):
             die("mise installed sx but it's not on PATH; check mise shims")
 
-    sx_cmd = ["sx", query, "--json", "--clean", "-n", str(args.num)]
+    # In enriched mode, request 2x results from sx so we have backups
+    # to replace dead links (404s, extraction failures). Brief mode
+    # doesn't fetch pages so overfetching adds no value there.
+    sx_count = args.num * 2 if not args.brief else args.num
+    sx_cmd = ["sx", query, "--json", "--clean", "-n", str(sx_count)]
     try:
         result = subprocess.run(sx_cmd, capture_output=True, text=True, timeout=30)
     except FileNotFoundError:
@@ -173,31 +211,153 @@ def cmd_search(args: argparse.Namespace) -> None:
         print("No results found.", file=sys.stderr)
         sys.exit(2)
 
+    # Deduplicate and collect results. In enriched mode we collect up to
+    # 2x the requested count so dead links can be replaced with backups.
     seen_urls: set[str] = set()
-    count = 0
+    result_list: list[dict] = []
     for r in results:
-        if count >= args.num:
+        if len(result_list) >= sx_count:
             break
         url = r.get("url", "")
         if not url or url in seen_urls:
             continue
         seen_urls.add(url)
-        count += 1
+        result_list.append(r)
 
+    if args.brief:
+        _print_brief(result_list[:args.num])
+    else:
+        _print_enriched(result_list, query, args.context, args.num)
+
+
+def _sx_snippet(r: dict) -> str:
+    """Extract a usable snippet from an sx result, or return empty string.
+
+    Some engines return just the domain or a bare URL as the snippet,
+    which adds no value for an LLM. Detect and suppress these.
+    Also filters domain-only strings like "reddit.com" or
+    "github.com/username" that contain no spaces (not real prose).
+    """
+    url = r.get("url", "")
+    snippet = r.get("content", "")
+    if snippet and snippet != url and not snippet.startswith("http"):
+        snippet = snippet[:200].strip()
+        # Domain-only or path-only strings have no spaces and aren't prose.
+        if " " not in snippet:
+            return ""
+        # SearXNG snippets often contain raw HTML entities (&#x27;, &amp;)
+        # and inline tags (<strong>, <em>). Clean these for readability.
+        snippet = html_mod.unescape(snippet)
+        snippet = re.sub(r"<[^>]+>", "", snippet)
+        return snippet
+    return ""
+
+
+def _print_brief(result_list: list[dict]) -> None:
+    """Print compact search results (SearXNG snippets only)."""
+    for i, r in enumerate(result_list, 1):
+        if i > 1:
+            print("\n\n\n")
         title = r.get("title", "(no title)")
-        snippet = r.get("content", "")
-        # Some engines return just the domain or a bare URL as the snippet,
-        # which adds no value for an LLM. Detect and suppress these.
-        if snippet and snippet != url and not snippet.startswith("http"):
-            snippet = snippet[:200].strip()
-        else:
-            snippet = ""
-
-        print(f"{count}. {title}")
-        print(f"   {url}")
+        url = r.get("url", "")
+        snippet = _sx_snippet(r)
+        print(f"=== RESULT {i} ===")
+        print(title)
+        print(url)
         if snippet:
-            print(f"   {snippet}")
-        print()
+            print(f"\n{snippet}")
+
+
+def _print_enriched(
+    result_list: list[dict], query: str, context: int, num: int
+) -> None:
+    """Fetch each result page in parallel, print relevant excerpts.
+
+    result_list may contain up to 2x num results (overfetch). All URLs
+    are fetched, but only the first num "live" results are printed.
+    A result is dead if its fetch failed (404, timeout, blocked) AND it
+    has no usable SearXNG snippet. Dead results are silently skipped and
+    replaced by the next viable result from the backup pool.
+
+    Falls back to the SearXNG snippet for any result whose fetch or
+    extraction fails. Uses _find_in_markdown with query-derived keywords
+    to surface relevant paragraphs.
+    """
+    pattern = _query_to_pattern(query)
+    urls = [r.get("url", "") for r in result_list]
+
+    # Fetch HTML in parallel (I/O bound), but extract markdown
+    # sequentially. trafilatura uses lxml internally, which has
+    # thread safety issues that cause "free(): invalid pointer"
+    # crashes when multiple extractions run concurrently.
+    markdowns: dict[str, str] = {}
+
+    # Check cache first, collect URLs that need fetching.
+    uncached: list[str] = []
+    for url in urls:
+        cached = _read_cache(url)
+        if cached is not None:
+            markdowns[url] = cached
+        else:
+            uncached.append(url)
+
+    # Parallel fetch of raw HTML.
+    html_results: dict[str, str] = {}
+    if uncached:
+        with ThreadPoolExecutor(max_workers=len(uncached)) as executor:
+            futures = {executor.submit(_fetch_url, url): url for url in uncached}
+            for future in as_completed(futures):
+                url = futures[future]
+                try:
+                    html_results[url] = future.result()
+                except BaseException:
+                    html_results[url] = ""
+
+    # Sequential extraction (lxml is not thread-safe).
+    for url, html in html_results.items():
+        if html:
+            md = _extract_markdown(html, url)
+            # Only cache successful extractions. Empty results (JS-rendered
+            # SPAs, rate-limited pages) may succeed on a future attempt.
+            if md:
+                _write_cache(url, md)
+            markdowns[url] = md
+        else:
+            markdowns[url] = ""
+
+    # Print up to num live results, skipping dead ones.
+    printed = 0
+    for r in result_list:
+        if printed >= num:
+            break
+        url = r.get("url", "")
+        md = markdowns.get(url, "")
+
+        # Build excerpt to determine if this result is live.
+        excerpt = ""
+        if md and pattern:
+            excerpt = _find_in_markdown(md, pattern, context, prose_only=True)
+            if excerpt.startswith("[no matches"):
+                excerpt = ""
+        if md and not excerpt:
+            excerpt = _first_prose(md)
+        if not excerpt:
+            excerpt = _sx_snippet(r)
+
+        # Dead result: no markdown and no usable snippet. Skip it and
+        # pull from the backup pool instead.
+        if not md and not excerpt:
+            continue
+
+        printed += 1
+        if printed > 1:
+            print("\n\n\n")
+        title = r.get("title", "(no title)")
+        print(f"=== RESULT {printed} ===")
+        print(title)
+        print(url)
+        if excerpt:
+            print(f"\n{excerpt}")
 
 
 # ---------------------------------------------------------------------------
@@ -311,12 +471,110 @@ def _get_markdown(url: str, *, no_cache: bool = False) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _find_in_markdown(markdown: str, pattern: str, context: int) -> str:
+_MIN_PROSE_WORDS = 10
+
+
+def _extract_prose(markdown: str) -> str:
+    """Transform markdown into plain prose for summary extraction.
+
+    Three-phase pipeline:
+
+    1. Remove: code fences (and their contents), indented code blocks,
+       and heading lines. These are structural elements that add noise
+       to keyword-matched summaries.
+    2. Clean: convert table pipe characters to newlines so cell content
+       becomes individual lines. Strip table separator rows (|---|---|).
+       This lets table cell text be evaluated as prose in phase 3.
+    3. The caller handles phase 3 (paragraph splitting and word-count
+       filtering) since that logic is shared with the non-prose path.
+
+    Bullet points and list items are preserved; they often contain
+    substantive descriptions worth surfacing in summaries.
+    """
+    lines = markdown.splitlines()
+    cleaned: list[str] = []
+    in_code_fence = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Phase 1: Remove code fences and their contents.
+        if stripped.startswith(("```", "~~~")):
+            in_code_fence = not in_code_fence
+            continue
+        if in_code_fence:
+            continue
+
+        # Phase 1: Remove indented code blocks (4+ spaces or tab).
+        if stripped and (line.startswith("    ") or line.startswith("\t")):
+            continue
+
+        # Phase 1: Remove heading lines.
+        if stripped.startswith("#"):
+            continue
+
+        # Phase 1: Strip markdown link syntax. Remove the [text](url)
+        # markup entirely, leaving only text that lives outside links.
+        # This means link-heavy lines (GitHub labels, nav chrome, badge
+        # descriptions) get reduced to their non-link residue, which
+        # phase 3's word count filter then judges on its own merit.
+        if "[" in stripped and "](" in stripped:
+            stripped = re.sub(r"\[.*?\]\(.*?\)", "", stripped)
+            stripped = re.sub(r"\s+", " ", stripped).strip()
+
+        # Phase 2: Convert table syntax to plain text.
+        # Drop separator rows like |---|---| entirely.
+        if re.match(r"^\|[-|\s:]+\|$", stripped):
+            continue
+        # Replace pipes with newlines so each cell becomes its own line,
+        # which later becomes its own paragraph candidate after splitting.
+        if "|" in stripped:
+            stripped = stripped.replace("|", "\n")
+            cleaned.append(stripped)
+            continue
+
+        cleaned.append(stripped)
+
+    return "\n".join(cleaned)
+
+
+_MAX_SUMMARY_GROUPS = 3
+_MAX_SUMMARY_PARAGRAPHS = 8
+_FALLBACK_PROSE_PARAGRAPHS = 5
+
+
+def _first_prose(markdown: str) -> str:
+    """Return the first few prose paragraphs from markdown.
+
+    Used as a fallback when the search query has no usable keywords
+    (all words are too short to be specific). Runs the same prose
+    extraction pipeline so the output is clean.
+    """
+    cleaned = _extract_prose(markdown)
+    paragraphs = re.split(r"\n\n+", cleaned)
+    paragraphs = [
+        p.strip() for p in paragraphs
+        if p.strip() and len(p.strip().split()) >= _MIN_PROSE_WORDS
+    ]
+    if not paragraphs:
+        return ""
+    selected = paragraphs[:_FALLBACK_PROSE_PARAGRAPHS]
+    return "\n\n".join(selected)
+
+
+def _find_in_markdown(
+    markdown: str, pattern: str, context: int, *, prose_only: bool = False
+) -> str:
     """Search cached markdown by paragraph, returning matching paragraphs.
 
     Paragraphs are split on double newlines (markdown's natural boundary).
     Returns matching paragraphs with surrounding context, separated by
     '...' between non-adjacent groups.
+
+    When prose_only is True, the markdown is first run through
+    _extract_prose (removing code blocks, headings, and converting table
+    syntax to plain text), then paragraphs shorter than _MIN_PROSE_WORDS
+    are dropped. This produces cleaner summaries for search results.
 
     Corner cases handled:
     - Overlapping context: Adjacent or overlapping match windows are
@@ -325,6 +583,11 @@ def _find_in_markdown(markdown: str, pattern: str, context: int) -> str:
       pattern is invalid regex, it falls back to a literal string search.
     - No matches: Returns a message indicating no matches found.
     """
+    # Phase 1-2: If prose_only, strip non-prose elements and clean up
+    # table syntax before splitting into paragraphs.
+    if prose_only:
+        markdown = _extract_prose(markdown)
+
     # Split markdown into paragraphs. Trafilatura sometimes uses single
     # newlines between paragraphs (paulgraham.com) instead of double newlines
     # (blog.golang.org). We try double-newline splitting first; if that
@@ -333,7 +596,14 @@ def _find_in_markdown(markdown: str, pattern: str, context: int) -> str:
     paragraphs = re.split(r"\n\n+", markdown)
     if len(paragraphs) < 3:
         paragraphs = re.split(r"\n(?=(?:#|\n|[A-Z]))", markdown)
-        paragraphs = [p.strip() for p in paragraphs if p.strip()]
+    paragraphs = [p.strip() for p in paragraphs if p.strip()]
+
+    # Phase 3: Filter by minimum word count to drop UI fragments,
+    # labels, and other short non-prose lines.
+    if prose_only:
+        paragraphs = [
+            p for p in paragraphs if len(p.split()) >= _MIN_PROSE_WORDS
+        ]
 
     try:
         compiled = re.compile(pattern, re.IGNORECASE)
@@ -367,6 +637,25 @@ def _find_in_markdown(markdown: str, pattern: str, context: int) -> str:
             groups.append(current_group)
             current_group = [idx]
     groups.append(current_group)
+
+    # In prose_only mode, cap both the number of groups and the total
+    # number of paragraphs shown. When a keyword matches most paragraphs
+    # on a topically relevant page (e.g., "reddit" on a page about Reddit
+    # APIs), context expansion merges everything into one giant group.
+    # The group cap alone doesn't help; the paragraph cap prevents
+    # dumping the entire page.
+    if prose_only:
+        if len(groups) > _MAX_SUMMARY_GROUPS:
+            groups = groups[:_MAX_SUMMARY_GROUPS]
+        total = 0
+        capped: list[list[int]] = []
+        for group in groups:
+            remaining = _MAX_SUMMARY_PARAGRAPHS - total
+            if remaining <= 0:
+                break
+            capped.append(group[:remaining])
+            total += len(capped[-1])
+        groups = capped
 
     parts: list[str] = []
     header = (
@@ -447,6 +736,18 @@ def main() -> None:
         type=int,
         default=5,
         help="max results (default: 5)",
+    )
+    p_search.add_argument(
+        "--brief",
+        action="store_true",
+        help="show compact results without fetching pages",
+    )
+    p_search.add_argument(
+        "-C",
+        "--context",
+        type=int,
+        default=2,
+        help="paragraphs of context around keyword matches (default: 2)",
     )
 
     p_fetch = sub.add_parser("fetch", help="fetch URL(s) as markdown")
