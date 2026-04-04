@@ -133,6 +133,16 @@ handle expired tokens`."
 - Stripped reference material: include the references the agent needs.
 - Verbose explanations: use a terse rule plus one example.
 - Multi-header structures for simple related constraints: use one dense paragraph.
+- Restating structural enforcement: if a tool or action is denied via permissions or config, do not
+  add a prose rule prohibiting it. Positive instructions ("use X") are sufficient; negative
+  instructions ("do not use Y") for structurally unavailable capabilities waste tokens.
+- Duplicated routing: when a subagent replaces direct tool usage, document the routing in one
+  location only. The Agents section is authoritative for delegation rules; do not duplicate routing
+  instructions in the Tools section.
+- Unscoped delegation: AGENTS.md is inherited by all agents (primary and subagents) with no
+  filtering. Delegation directives ("use subagent X for task Y") must scope to primary agents when
+  subagents have direct access to the same tools. Otherwise subagents receive conflicting
+  instructions: a directive to delegate to an agent they cannot invoke.
 
 ## Maintenance
 

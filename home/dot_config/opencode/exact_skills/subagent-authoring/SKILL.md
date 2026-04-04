@@ -110,7 +110,10 @@ A well-structured agent prompt includes (not all required for every agent):
 
 - **Workflow/prerequisites**: Mandatory steps before starting work
 - **Domain ownership**: Which paths or concerns this agent handles
-- **Hard constraints**: Non-negotiable rules using RFC 2119 keywords (MUST, NEVER)
+- **Hard constraints**: Non-negotiable rules using RFC 2119 keywords (MUST, NEVER). Do not restate
+  constraints already enforced by permissions (denied tools, missing capabilities). Positive
+  instructions are sufficient; negative instructions for structurally unavailable tools waste
+  tokens.
 - **Verification commands**: How to validate work
 - **Output format**: What the agent produces (critical when callers consume the response)
 - **When stuck**: Escape hatch for uncertainty
