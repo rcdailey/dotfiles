@@ -45,8 +45,7 @@
 
     // web CLI replaces both search and fetch; deny built-in equivalents
     "websearch": "deny",
-    "webfetch": "deny",
-    "*_web_url_read": "deny",
+    // "webfetch": "deny",
 
     "bash": {
       "*": "allow",
