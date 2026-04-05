@@ -100,6 +100,11 @@ important.
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh-review` for PR review operations (pending reviews, inline comments). MUST use instead of
   raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
+- Use Context7 MCP (`resolve-library-id` then `query-docs`) for library and framework documentation
+  lookups. Context7 returns current, version-specific docs and code examples directly; prefer it
+  over delegating to the researcher subagent for API usage, configuration, migration guides, and
+  "how do I do X with library Y" questions. Fall back to the researcher only when Context7 lacks
+  coverage or the question spans multiple projects, community discussions, or issue trackers.
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
 - New files: use `write`. Existing files: use edit tools (`edit`, `multiedit`, `patch`) by default.
   Use `write` instead when the total size of all oldStrings and newStrings combined would exceed the
