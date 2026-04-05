@@ -27,7 +27,13 @@ Agent directives for modifying this file:
   Errors go to stderr; content goes to stdout. Exit codes: 0 success,
   1 error, 2 no results.
 
-  Caching: Fetched pages are cached as markdown in /tmp/web-fetch-cache/
+   Search results: Hardcoded to 5 results. In enriched mode (default),
+   each result page is fetched and keyword-matched paragraphs are
+   extracted. The result count is not configurable; LLMs requesting
+   more results adds latency (2x page fetches per result for dead link
+   replacement) without proportional value.
+
+   Caching: Fetched pages are cached as markdown in /tmp/web-fetch-cache/
   keyed by SHA-256 of the URL. Cache is per-boot (cleared on reboot).
   The --find flag reads from cache to avoid re-fetching. If no cache
   exists when --find is used, the page is auto-fetched and cached.
@@ -69,6 +75,32 @@ import httpx
 import trafilatura
 
 _CACHE_DIR = Path("/tmp/web-fetch-cache")
+_SEARCH_RESULTS = 5
+
+# raw.githubusercontent.com serves plain text (source code), not HTML.
+# trafilatura always fails on these because there's no HTML structure
+# to extract from. LLMs frequently try to fetch GitHub files this way
+# instead of using gh-scout read, which has proper pagination and error
+# handling. Failing fast with a concrete gh-scout command steers the
+# model to the correct tool.
+_RAW_GH_RE = re.compile(
+    r"^https?://raw\.githubusercontent\.com/"
+    r"(?P<owner>[^/]+)/(?P<repo>[^/]+)/(?P<ref>[^/]+)/(?P<path>.+)$"
+)
+
+
+def _check_raw_github(url: str) -> None:
+    """Reject raw.githubusercontent.com URLs with a gh-scout suggestion."""
+    m = _RAW_GH_RE.match(url)
+    if not m:
+        return
+    owner, repo, ref, path = m.group("owner", "repo", "ref", "path")
+    hint = f"gh-scout read {owner}/{repo} {path} --ref {ref}"
+    die(
+        f"raw.githubusercontent.com URLs are plain text, not HTML; "
+        f"trafilatura cannot extract content. Use gh-scout read instead:\n"
+        f"  {hint}"
+    )
 
 
 def die(message: str) -> NoReturn:
@@ -108,11 +140,11 @@ def _write_cache(url: str, content: str) -> None:
 def _query_to_pattern(query: str) -> str | None:
     """Convert a search query into a regex alternation pattern.
 
-    Filters words 4 chars or shorter and numeric-only tokens (years,
+    Filters words 3 chars or shorter and numeric-only tokens (years,
     status codes), sorts the remainder by length (longest first), and
     picks the top 3. Longer words are more specific and less likely to
-    match every paragraph. Short common words like "null", "list",
-    "from" are dropped, as are numbers like "2024", "404".
+    match every paragraph. Short common words like "to", "the", "for"
+    are dropped, as are numbers like "2024", "404".
 
     Returns None if no usable terms remain. The caller should fall back
     to showing the first N prose paragraphs in that case.
@@ -123,7 +155,7 @@ def _query_to_pattern(query: str) -> str | None:
     # Filter short words and numeric-only tokens (years like "2024",
     # status codes like "404", etc.) which match broadly without
     # adding topical specificity.
-    terms = [w for w in set(words) if len(w) > 4 and not w.isdigit()]
+    terms = [w for w in set(words) if len(w) > 3 and not w.isdigit()]
     terms = sorted(terms, key=len, reverse=True)[:3]
     if not terms:
         return None
@@ -137,14 +169,18 @@ def cmd_search(args: argparse.Namespace) -> None:
     paragraphs are extracted using the search query as keywords (enriched
     mode). Use --brief to get the old compact format with SearXNG snippets.
 
+    Result count is hardcoded to 5. In enriched mode, 2x results are
+    requested from sx to replace dead links, but only 5 live results
+    are printed. This keeps latency bounded (10 parallel fetches max).
+
     Corner cases handled:
     - sx returns more results than requested (SearXNG paginates by engine,
-      not by total count). Results are truncated to -n after deduplication.
+      not by total count). Results are truncated after deduplication.
     - Duplicate URLs across engines: deduplicated by URL.
     - Dead links in enriched mode: requests 2x results from sx so dead
       links (404, extraction failure, no snippet) are silently replaced
       by backup results. Remaining live results fall back to snippets.
-    - Short/numeric query words: words <=4 chars and numeric-only tokens
+    - Short/numeric query words: words <=3 chars and numeric-only tokens
       are filtered to avoid matching every paragraph. Falls back to
       showing the first few prose paragraphs if no usable terms remain.
     - sx --json --clean still includes fields irrelevant to LLMs (engine,
@@ -177,10 +213,11 @@ def cmd_search(args: argparse.Namespace) -> None:
         if not shutil.which("sx"):
             die("mise installed sx but it's not on PATH; check mise shims")
 
-    # In enriched mode, request 2x results from sx so we have backups
-    # to replace dead links (404s, extraction failures). Brief mode
-    # doesn't fetch pages so overfetching adds no value there.
-    sx_count = args.num * 2 if not args.brief else args.num
+    # Hardcoded result count. In enriched mode, request 2x so we have
+    # backups to replace dead links (404s, extraction failures). Brief
+    # mode doesn't fetch pages so overfetching adds no value.
+    num = _SEARCH_RESULTS
+    sx_count = num * 2 if not args.brief else num
     sx_cmd = ["sx", query, "--json", "--clean", "-n", str(sx_count)]
     try:
         result = subprocess.run(sx_cmd, capture_output=True, text=True, timeout=30)
@@ -225,9 +262,9 @@ def cmd_search(args: argparse.Namespace) -> None:
         result_list.append(r)
 
     if args.brief:
-        _print_brief(result_list[:args.num])
+        _print_brief(result_list[:num])
     else:
-        _print_enriched(result_list, query, args.context, args.num)
+        _print_enriched(result_list, query, args.context, num)
 
 
 def _sx_snippet(r: dict) -> str:
@@ -292,9 +329,13 @@ def _print_enriched(
     # crashes when multiple extractions run concurrently.
     markdowns: dict[str, str] = {}
 
-    # Check cache first, collect URLs that need fetching.
+    # Check cache first, collect URLs that need fetching. Skip raw
+    # GitHub URLs since trafilatura can't extract plain text.
     uncached: list[str] = []
     for url in urls:
+        if _RAW_GH_RE.match(url):
+            markdowns[url] = ""
+            continue
         cached = _read_cache(url)
         if cached is not None:
             markdowns[url] = cached
@@ -325,6 +366,36 @@ def _print_enriched(
         else:
             markdowns[url] = ""
 
+    # Cross-page dedup: collect paragraphs from all pages, then flag
+    # any paragraph that appears in 2+ pages as boilerplate. This
+    # catches GitHub UI chrome ("You must be signed in..."), nav
+    # remnants, and other repeated page elements without needing a
+    # hardcoded blocklist.
+    para_page_count: dict[str, int] = {}
+    for md in markdowns.values():
+        if not md:
+            continue
+        seen_in_page: set[str] = set()
+        for para in re.split(r"\n\n+", md):
+            normalized = para.strip().lower()
+            if normalized and normalized not in seen_in_page:
+                seen_in_page.add(normalized)
+                para_page_count[normalized] = (
+                    para_page_count.get(normalized, 0) + 1
+                )
+    boilerplate = {p for p, c in para_page_count.items() if c >= 2}
+
+    def _strip_boilerplate(text: str) -> str:
+        """Remove paragraphs flagged as cross-page boilerplate."""
+        if not boilerplate:
+            return text
+        paras = re.split(r"\n\n+", text)
+        kept = [
+            p for p in paras
+            if p.strip().lower() not in boilerplate
+        ]
+        return "\n\n".join(kept)
+
     # Print up to num live results, skipping dead ones.
     printed = 0
     for r in result_list:
@@ -347,6 +418,10 @@ def _print_enriched(
         # Dead result: no markdown and no usable snippet. Skip it and
         # pull from the backup pool instead.
         if not md and not excerpt:
+            continue
+
+        excerpt = _strip_boilerplate(excerpt)
+        if not excerpt.strip():
             continue
 
         printed += 1
@@ -472,6 +547,7 @@ def _get_markdown(url: str, *, no_cache: bool = False) -> str:
 
 
 _MIN_PROSE_WORDS = 10
+_MIN_SUMMARY_WORDS = 15
 
 
 def _extract_prose(markdown: str) -> str:
@@ -513,13 +589,23 @@ def _extract_prose(markdown: str) -> str:
         if stripped.startswith("#"):
             continue
 
-        # Phase 1: Strip markdown link syntax. Remove the [text](url)
-        # markup entirely, leaving only text that lives outside links.
-        # This means link-heavy lines (GitHub labels, nav chrome, badge
-        # descriptions) get reduced to their non-link residue, which
-        # phase 3's word count filter then judges on its own merit.
-        if "[" in stripped and "](" in stripped:
-            stripped = re.sub(r"\[.*?\]\(.*?\)", "", stripped)
+        # Phase 1: Clean markdown link syntax. Three cases:
+        # - [text](url) inline links: keep text, strip url and brackets.
+        #   The link text is often the only meaningful noun in the
+        #   sentence ("The [HelmRelease API](url) allows..." -> "The
+        #   HelmRelease API allows...").
+        # - [label]: url reference definitions (own line): strip entirely.
+        # - Bare [label] references: strip brackets, keep label.
+        if "[" in stripped:
+            # Reference definitions: [label]: url (on their own line).
+            if re.match(r"^\[.+\]:\s+\S", stripped):
+                continue
+            # Inline links: preserve link text, strip url.
+            stripped = re.sub(
+                r"\[([^\]]*)\]\([^)]*\)", r"\1", stripped
+            )
+            # Bare references: [label] -> label.
+            stripped = re.sub(r"\[([^\]]*)\]", r"\1", stripped)
             stripped = re.sub(r"\s+", " ", stripped).strip()
 
         # Phase 2: Convert table syntax to plain text.
@@ -535,7 +621,25 @@ def _extract_prose(markdown: str) -> str:
 
         cleaned.append(stripped)
 
-    return "\n".join(cleaned)
+    # Phase 2.5: Join adjacent non-blank lines into paragraphs.
+    # Trafilatura sometimes splits what should be one paragraph across
+    # multiple lines without blank line separation. Joining adjacent
+    # lines reconstructs proper paragraphs so the caller can split on
+    # blank lines (the standard markdown paragraph boundary).
+    joined: list[str] = []
+    current: list[str] = []
+    for line in "\n".join(cleaned).splitlines():
+        if line.strip():
+            current.append(line.strip())
+        else:
+            if current:
+                joined.append(" ".join(current))
+                current = []
+            joined.append("")
+    if current:
+        joined.append(" ".join(current))
+
+    return "\n".join(joined)
 
 
 _MAX_SUMMARY_GROUPS = 3
@@ -554,7 +658,7 @@ def _first_prose(markdown: str) -> str:
     paragraphs = re.split(r"\n\n+", cleaned)
     paragraphs = [
         p.strip() for p in paragraphs
-        if p.strip() and len(p.strip().split()) >= _MIN_PROSE_WORDS
+        if p.strip() and len(p.strip().split()) >= _MIN_SUMMARY_WORDS
     ]
     if not paragraphs:
         return ""
@@ -599,10 +703,13 @@ def _find_in_markdown(
     paragraphs = [p.strip() for p in paragraphs if p.strip()]
 
     # Phase 3: Filter by minimum word count to drop UI fragments,
-    # labels, and other short non-prose lines.
+    # labels, and other short non-prose lines. prose_only mode uses a
+    # higher threshold to filter GitHub boilerplate ("You must be signed
+    # in...", "I agree to follow...") and other page chrome that
+    # trafilatura preserves from the main content area.
     if prose_only:
         paragraphs = [
-            p for p in paragraphs if len(p.split()) >= _MIN_PROSE_WORDS
+            p for p in paragraphs if len(p.split()) >= _MIN_SUMMARY_WORDS
         ]
 
     try:
@@ -691,6 +798,7 @@ def cmd_fetch(args: argparse.Namespace) -> None:
         if not url.startswith(("http://", "https://")):
             url = f"https://{url}"
 
+        _check_raw_github(url)
         markdown = _get_markdown(url, no_cache=args.no_cache)
 
         if args.find:
@@ -730,13 +838,6 @@ def main() -> None:
 
     p_search = sub.add_parser("search", help="search the web via SearXNG")
     p_search.add_argument("query", nargs="+", help="search query")
-    p_search.add_argument(
-        "-n",
-        "--num",
-        type=int,
-        default=5,
-        help="max results (default: 5)",
-    )
     p_search.add_argument(
         "--brief",
         action="store_true",
