@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+"""research - budget-enforced wrapper for researcher agent tools.
+
+Tracks tool call count across a research session and enforces a hard
+budget.  A session starts on the first call and auto-resets after 30
+seconds of inactivity (gap between consecutive calls).
+
+Usage:
+    research scout ARGS...    # delegates to gh-scout
+    research web ARGS...      # delegates to web
+    research gh ARGS...       # delegates to gh
+    research status           # print current budget usage
+
+Budget messages print to stdout so they cannot be suppressed with
+2>/dev/null.  They appear after the tool output completes.
+
+File locking (fcntl.flock) ensures parallel calls each get a unique
+counter value.
+"""
+
+from __future__ import annotations
+
+import fcntl
+import subprocess
+import sys
+import time
+from typing import NoReturn
+
+BUDGET_FILE = "/tmp/.research-budget"
+LOCK_FILE = "/tmp/.research-budget.lock"
+MAX_CALLS = 20
+IDLE_TIMEOUT = 30  # seconds between calls before session resets
+
+TOOL_MAP = {
+    "scout": "gh-scout",
+    "web": "web",
+    "gh": "gh",
+}
+
+
+def die(message: str) -> NoReturn:
+    print(f"error: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def _read_state_unlocked() -> tuple[float, int]:
+    """Read state without locking. Caller must hold the lock."""
+    try:
+        with open(BUDGET_FILE) as f:
+            parts = f.read().strip().split("\n")
+            last_ts = float(parts[0])
+            count = int(parts[1])
+            if time.time() - last_ts > IDLE_TIMEOUT:
+                return (0.0, 0)
+            return (last_ts, count)
+    except (FileNotFoundError, ValueError, IndexError):
+        return (0.0, 0)
+
+
+def _write_state_unlocked(count: int) -> None:
+    """Write state without locking. Caller must hold the lock."""
+    with open(BUDGET_FILE, "w") as f:
+        f.write(f"{time.time()}\n{count}")
+
+
+def _budget_message(count: int) -> str | None:
+    """Return a budget message if one should be shown, else None."""
+    remaining = MAX_CALLS - count
+
+    if remaining < 0:
+        return (
+            f"\n=== BUDGET EXCEEDED ({MAX_CALLS}/{MAX_CALLS} calls used) ===\n"
+            "You MUST synthesize your answer NOW from what you have gathered.\n"
+            "No more tool calls will be executed."
+        )
+    if count == 10:
+        return (
+            f"\n=== CHECKPOINT: {count}/{MAX_CALLS} calls used, "
+            f"{remaining} remaining ===\n"
+            "Stop and assess: can you answer the question now?\n"
+            "If yes, synthesize. If not, identify the ONE specific "
+            "gap that remains."
+        )
+    if count == 15:
+        return (
+            f"\n=== WARNING: {count}/{MAX_CALLS} calls used, "
+            f"{remaining} remaining ===\n"
+            "Begin synthesizing your answer NOW. Use remaining calls "
+            "only for critical gaps."
+        )
+    if remaining <= 5:
+        return (
+            f"\n[budget: {count}/{MAX_CALLS} calls used, "
+            f"{remaining} remaining]"
+        )
+    return None
+
+
+def _budget_check() -> int:
+    """Atomically increment counter. Returns new count. Exits if over."""
+    with open(LOCK_FILE, "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        _, count = _read_state_unlocked()
+        count += 1
+        _write_state_unlocked(count)
+        # Lock released when 'lock' file handle is closed
+
+    remaining = MAX_CALLS - count
+    if remaining < 0:
+        msg = _budget_message(count)
+        if msg:
+            print(msg, flush=True)
+        sys.exit(1)
+
+    return count
+
+
+def cmd_status() -> None:
+    with open(LOCK_FILE, "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_SH)
+        _, count = _read_state_unlocked()
+    remaining = MAX_CALLS - count
+    print(f"{count}/{MAX_CALLS} calls used, {remaining} remaining")
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        die(
+            "usage: research {scout|web|gh} ARGS...\n"
+            "       research status"
+        )
+
+    tool = sys.argv[1]
+
+    if tool == "status":
+        cmd_status()
+        return
+
+    if tool not in TOOL_MAP:
+        die(
+            f"unknown tool '{tool}'; "
+            f"use: {', '.join(sorted(TOOL_MAP))}, status"
+        )
+
+    if len(sys.argv) < 3:
+        die(f"usage: research {tool} ARGS...")
+
+    count = _budget_check()
+
+    cmd = [TOOL_MAP[tool]] + sys.argv[2:]
+    try:
+        result = subprocess.run(cmd)
+    except FileNotFoundError:
+        die(f"command not found: {TOOL_MAP[tool]}")
+    except KeyboardInterrupt:
+        sys.exit(130)
+
+    # Print budget message AFTER tool output, to stdout, so it
+    # cannot be suppressed by 2>/dev/null on the command line.
+    msg = _budget_message(count)
+    if msg:
+        print(msg, flush=True)
+
+    sys.exit(result.returncode)
+
+
+if __name__ == "__main__":
+    main()
