@@ -97,34 +97,6 @@ def _trunc(text: str, width: int = 120) -> str:
     return text[:width] + "..." if len(text) > width else text
 
 
-REACTION_LABELS = {
-    "THUMBS_UP": "+1",
-    "THUMBS_DOWN": "-1",
-    "LAUGH": "laugh",
-    "HOORAY": "hooray",
-    "CONFUSED": "confused",
-    "HEART": "heart",
-    "ROCKET": "rocket",
-    "EYES": "eyes",
-}
-
-
-
-def _format_reactions(groups: list[dict]) -> str:
-    """Format reactionGroups into a compact string like '+1:5 heart:2'."""
-    parts = []
-    for g in groups:
-        count = g.get("users", {}).get("totalCount", 0)
-        if count > 0:
-            label = REACTION_LABELS.get(g["content"], g["content"])
-            parts.append(f"{label}:{count}")
-    return " ".join(parts)
-
-
-def _reaction_total(groups: list[dict]) -> int:
-    return sum(g.get("users", {}).get("totalCount", 0) for g in groups)
-
-
 # --- Commands ---
 
 
@@ -316,7 +288,36 @@ def cmd_tree(args: argparse.Namespace) -> None:
         print(path)
 
 
+_REGEX_META_RE = re.compile(
+    r"(?:"
+    r"(?<!\\)\|"          # unescaped pipe (alternation)
+    r"|(?:\\[.dwsDWS])"   # character classes like \d, \w, \s
+    r"|(?:\.\*|\.\+)"     # .* or .+ quantifiers
+    r"|(?:\\\(|\\\))"     # escaped parens (regex groups)
+    r"|(?:\\\[|\\\])"     # escaped brackets (regex char classes)
+    r")"
+)
+
+
+def _check_code_search_regex(query: str) -> None:
+    """Reject queries that look like regex patterns.
+
+    GitHub code search treats all characters literally; there is no
+    regex support. LLMs frequently try pipe alternation (foo|bar),
+    which searches for the literal string "foo|bar" instead of
+    matching foo OR bar. Failing fast saves a round trip and teaches
+    the model to run separate searches.
+    """
+    if _REGEX_META_RE.search(query):
+        die(
+            "GitHub code search does not support regex; "
+            '"|" is literal, not alternation. '
+            "Run separate searches for each term instead."
+        )
+
+
 def cmd_search(args: argparse.Namespace) -> None:
+    _check_code_search_regex(args.query)
     limit = args.limit or 20
     cmd = [
         "search", "code", args.query,
@@ -342,24 +343,6 @@ def cmd_search(args: argparse.Namespace) -> None:
                 print("---")
             for line in fragment.splitlines():
                 print(f"| {line}")
-
-
-def cmd_commits(args: argparse.Namespace) -> None:
-    limit = args.limit or 20
-    params: dict[str, str] = {"per_page": str(limit)}
-    if args.ref:
-        params["sha"] = args.ref
-    if args.path:
-        params["path"] = args.path
-    if args.author:
-        params["author"] = args.author
-    data = gh_api(f"repos/{args.repo}/commits", params=params)
-    for c in data:
-        sha = c["sha"][:8]
-        date = c["commit"]["author"]["date"][:10]
-        author = c["commit"]["author"]["name"]
-        msg = c["commit"]["message"].split("\n", 1)[0]
-        print(f"{sha} {date} {author}: {_trunc(msg)}")
 
 
 def cmd_blame(args: argparse.Namespace) -> None:
@@ -401,419 +384,22 @@ def cmd_compare(args: argparse.Namespace) -> None:
     data = gh_api(f"repos/{args.repo}/compare/{args.base}...{args.head}")
     print(f"ahead: {data['ahead_by']}, behind: {data['behind_by']}, "
           f"total commits: {data['total_commits']}")
-    if data["commits"]:
+    path_filter = args.path
+    commits = data.get("commits", [])
+    files = data.get("files", [])
+    if path_filter:
+        files = [f for f in files if f["filename"].startswith(path_filter)]
+    if commits:
         print("\n=== COMMITS ===")
-        for c in data["commits"]:
+        for c in commits:
             sha = c["sha"][:8]
             msg = c["commit"]["message"].split("\n", 1)[0]
             print(f"{sha} {_trunc(msg)}")
-    if data.get("files"):
+    if files:
         print("\n=== FILES ===")
-        for f in data["files"]:
+        for f in files:
             print(f"{f['status']:<12} +{f['additions']}-{f['deletions']} "
                   f"{f['filename']}")
-
-
-def cmd_issues(args: argparse.Namespace) -> None:
-    if args.number:
-        _issue_detail(args.repo, args.number)
-    else:
-        _issue_list(args)
-
-
-def _issue_list(args: argparse.Namespace) -> None:
-    limit = args.limit or 20
-    state = args.state or "open"
-    cmd = [
-        "issue", "list", "-R", args.repo,
-        "--state", state,
-        "--limit", str(limit),
-        "--json", "number,title,state,author,labels,createdAt",
-    ]
-    if args.search:
-        cmd.extend(["--search", args.search])
-    data = json.loads(run_gh(*cmd))
-    for i in data:
-        labels = " ".join(f"[{l['name']}]" for l in i.get("labels", []))
-        author = i.get("author", {}).get("login", "?")
-        date = i["createdAt"][:10]
-        print(f"#{i['number']} {i['state']} {date} @{author} "
-              f"{_trunc(i['title'], 80)} {labels}".rstrip())
-
-
-def _issue_detail(repo: str, number: int) -> None:
-    data = json.loads(run_gh(
-        "issue", "view", str(number), "-R", repo,
-        "--json",
-        "number,title,state,body,author,labels,assignees,comments,"
-        "createdAt,closedAt,reactionGroups",
-    ))
-    labels = ", ".join(l["name"] for l in data.get("labels", []))
-    assignees = ", ".join(
-        f"@{a['login']}" for a in data.get("assignees", [])
-    )
-    author = data.get("author", {}).get("login", "?")
-    reactions = _format_reactions(data.get("reactionGroups", []))
-    for label, value in [
-        ("title", data["title"]),
-        ("state", data["state"]),
-        ("author", f"@{author}"),
-        ("created", data["createdAt"][:10]),
-        ("closed", (data.get("closedAt") or "")[:10] or "none"),
-        ("labels", labels or "none"),
-        ("assignees", assignees or "none"),
-        ("reactions", reactions or "none"),
-    ]:
-        print(f"{label}: {value}")
-    body = (data.get("body") or "").strip()
-    if body:
-        print(f"\n=== BODY ===\n{body}")
-    comments = data.get("comments", [])
-    if comments:
-        print(f"\n=== COMMENTS ({len(comments)}) ===")
-        for c in comments:
-            c_author = c.get("author", {}).get("login", "?")
-            c_date = c.get("createdAt", "")[:10]
-            print(f"\n@{c_author} ({c_date}):")
-            print((c.get("body") or "").strip())
-
-
-def cmd_prs(args: argparse.Namespace) -> None:
-    if args.number:
-        _pr_detail(args.repo, args.number)
-    else:
-        _pr_list(args)
-
-
-def _pr_list(args: argparse.Namespace) -> None:
-    limit = args.limit or 20
-    state = args.state or "open"
-    cmd = [
-        "pr", "list", "-R", args.repo,
-        "--state", state,
-        "--limit", str(limit),
-        "--json",
-        "number,title,state,author,baseRefName,"
-        "headRefName,createdAt,mergedAt",
-    ]
-    if args.search:
-        cmd.extend(["--search", args.search])
-    data = json.loads(run_gh(*cmd))
-    for pr in data:
-        author = pr.get("author", {}).get("login", "?")
-        date = (pr.get("mergedAt") or pr["createdAt"])[:10]
-        branches = f"{pr['headRefName']}->{pr['baseRefName']}"
-        print(f"#{pr['number']} {pr['state']} {date} @{author} "
-              f"{branches} {_trunc(pr['title'], 80)}")
-
-
-def _pr_detail(repo: str, number: int) -> None:
-    data = json.loads(run_gh(
-        "pr", "view", str(number), "-R", repo,
-        "--json",
-        "number,title,state,body,author,labels,assignees,comments,"
-        "reviews,additions,deletions,changedFiles,baseRefName,"
-        "headRefName,mergedAt,mergedBy",
-    ))
-    labels = ", ".join(l["name"] for l in data.get("labels", []))
-    assignees = ", ".join(
-        f"@{a['login']}" for a in data.get("assignees", [])
-    )
-    author = data.get("author", {}).get("login", "?")
-    merged_by = data.get("mergedBy", {})
-    merged_info = (
-        f"@{merged_by['login']} on {(data.get('mergedAt') or '')[:10]}"
-        if merged_by else "none"
-    )
-    for label, value in [
-        ("title", data["title"]),
-        ("state", data["state"]),
-        ("author", f"@{author}"),
-        ("branches", f"{data['headRefName']}->{data['baseRefName']}"),
-        ("changes", f"+{data['additions']}-{data['deletions']} "
-                    f"across {data['changedFiles']} files"),
-        ("labels", labels or "none"),
-        ("assignees", assignees or "none"),
-        ("merged by", merged_info),
-    ]:
-        print(f"{label}: {value}")
-    body = (data.get("body") or "").strip()
-    if body:
-        print(f"\n=== BODY ===\n{body}")
-    reviews = data.get("reviews", [])
-    if reviews:
-        print(f"\n=== REVIEWS ({len(reviews)}) ===")
-        for r in reviews:
-            r_author = r.get("author", {}).get("login", "?")
-            r_state = r.get("state", "?")
-            print(f"@{r_author}: {r_state}")
-            r_body = (r.get("body") or "").strip()
-            if r_body:
-                print(r_body)
-    comments = data.get("comments", [])
-    if comments:
-        print(f"\n=== COMMENTS ({len(comments)}) ===")
-        for c in comments:
-            c_author = c.get("author", {}).get("login", "?")
-            c_date = c.get("createdAt", "")[:10]
-            print(f"\n@{c_author} ({c_date}):")
-            print((c.get("body") or "").strip())
-
-
-def cmd_releases(args: argparse.Namespace) -> None:
-    if args.tag:
-        _release_detail(args.repo, args.tag)
-    else:
-        _release_list(args.repo, args.limit or 20)
-
-
-def _release_list(repo: str, limit: int) -> None:
-    data = json.loads(run_gh(
-        "release", "list", "-R", repo,
-        "--limit", str(limit),
-        "--json", "tagName,name,publishedAt,isPrerelease,isDraft,isLatest",
-    ))
-    for r in data:
-        date = (r.get("publishedAt") or "")[:10]
-        flags = []
-        if r.get("isLatest"):
-            flags.append("latest")
-        if r.get("isPrerelease"):
-            flags.append("prerelease")
-        if r.get("isDraft"):
-            flags.append("draft")
-        flag_str = f" ({', '.join(flags)})" if flags else ""
-        name = (
-            f" - {r['name']}"
-            if r.get("name") and r["name"] != r["tagName"] else ""
-        )
-        print(f"{r['tagName']}{name} {date}{flag_str}")
-
-
-def cmd_repo_search(args: argparse.Namespace) -> None:
-    limit = args.limit or 20
-    cmd = [
-        "search", "repos", args.query,
-        "--limit", str(limit),
-        "--json", "fullName,stargazersCount,language,description,"
-                  "updatedAt,isArchived,isFork",
-    ]
-    if args.language:
-        cmd.extend(["--language", args.language])
-    if args.sort:
-        cmd.extend(["--sort", args.sort])
-    if args.stars:
-        cmd.extend(["--stars", args.stars])
-    if args.topic:
-        for t in args.topic:
-            cmd.extend(["--topic", t])
-    if args.updated:
-        cmd.extend(["--updated", args.updated])
-    if args.owner:
-        for o in args.owner:
-            cmd.extend(["--owner", o])
-    if args.include_forks:
-        cmd.extend(["--include-forks", args.include_forks])
-    if args.visibility:
-        cmd.extend(["--visibility", args.visibility])
-    data = json.loads(run_gh(*cmd))
-    if not data:
-        print("no results")
-        return
-    col1 = max(len(r["fullName"]) for r in data)
-    for r in data:
-        stars = f"{r['stargazersCount']:>6}*"
-        lang = (r.get("language") or "?")[:12]
-        updated = (r.get("updatedAt") or "")[:10]
-        flags = []
-        if r.get("isArchived"):
-            flags.append("archived")
-        if r.get("isFork"):
-            flags.append("fork")
-        flag_str = f" [{','.join(flags)}]" if flags else ""
-        desc = _trunc(r.get("description") or "", 80)
-        print(f"{r['fullName']:<{col1}}  {stars}  {lang:<12}  "
-              f"{updated}{flag_str}  {desc}")
-
-
-def _release_detail(repo: str, tag: str) -> None:
-    data = json.loads(run_gh(
-        "release", "view", tag, "-R", repo,
-        "--json",
-        "tagName,name,body,publishedAt,author,assets,isPrerelease,isDraft",
-    ))
-    author = data.get("author", {}).get("login", "?")
-    flags = []
-    if data.get("isPrerelease"):
-        flags.append("prerelease")
-    if data.get("isDraft"):
-        flags.append("draft")
-    for label, value in [
-        ("tag", data["tagName"]),
-        ("name", data.get("name") or data["tagName"]),
-        ("author", f"@{author}"),
-        ("published", (data.get("publishedAt") or "")[:10]),
-        ("flags", ", ".join(flags) if flags else "none"),
-    ]:
-        print(f"{label}: {value}")
-    body = (data.get("body") or "").strip()
-    if body:
-        print(f"\n=== BODY ===\n{body}")
-    assets = data.get("assets", [])
-    if assets:
-        print(f"\n=== ASSETS ({len(assets)}) ===")
-        for a in assets:
-            size = a.get("size", 0)
-            size_str = (
-                f"{size / 1048576:.1f}MB" if size >= 1048576
-                else f"{size / 1024:.0f}KB" if size >= 1024
-                else f"{size}B"
-            )
-            print(f"{a['name']}  {size_str}")
-
-def cmd_discussions(args: argparse.Namespace) -> None:
-    if args.number:
-        _discussion_detail(args.repo, args.number)
-    else:
-        _discussion_list(args)
-
-
-def _discussion_list(args: argparse.Namespace) -> None:
-    limit = args.limit or 20
-    owner, name = args.repo.split("/", 1)
-    query_filter = ""
-    if args.category:
-        query_filter = f', categoryId: "{_resolve_discussion_category(owner, name, args.category)}"'
-    if args.answered is not None:
-        query_filter += f", answered: {'true' if args.answered else 'false'}"
-    data = gh_graphql(
-        textwrap.dedent("""\
-            query($owner:String!,$repo:String!,$first:Int!) {
-              repository(owner:$owner,name:$repo) {
-                discussions(first:$first,orderBy:{field:CREATED_AT,direction:DESC}"""
-                    + query_filter + """) {
-                  nodes {
-                    number title createdAt
-                    author { login }
-                    category { name }
-                    upvoteCount
-                    comments { totalCount }
-                    isAnswered
-                  }
-                }
-              }
-            }"""),
-        owner=owner,
-        repo=name,
-        first=str(limit),
-    )
-    nodes = data["data"]["repository"]["discussions"]["nodes"]
-    for d in nodes:
-        author = (d.get("author") or {}).get("login", "?")
-        date = (d.get("createdAt") or "")[:10]
-        cat = d.get("category", {}).get("name", "")
-        upvotes = d.get("upvoteCount", 0)
-        comments = d.get("comments", {}).get("totalCount", 0)
-        answered = " [answered]" if d.get("isAnswered") else ""
-        print(f"#{d['number']} {date} @{author} [{cat}] "
-              f"{_trunc(d['title'], 70)} "
-              f"up:{upvotes} comments:{comments}{answered}")
-
-
-def _resolve_discussion_category(
-    owner: str, name: str, category_name: str,
-) -> str:
-    data = gh_graphql(
-        textwrap.dedent("""\
-            query($owner:String!,$repo:String!) {
-              repository(owner:$owner,name:$repo) {
-                discussionCategories(first:25) {
-                  nodes { id name }
-                }
-              }
-            }"""),
-        owner=owner,
-        repo=name,
-    )
-    cats = data["data"]["repository"]["discussionCategories"]["nodes"]
-    for c in cats:
-        if c["name"].lower() == category_name.lower():
-            return c["id"]
-    available = ", ".join(c["name"] for c in cats)
-    die(f"category '{category_name}' not found; available: {available}")
-
-
-def _discussion_detail(repo: str, number: int) -> None:
-    owner, name = repo.split("/", 1)
-    data = gh_graphql(
-        textwrap.dedent("""\
-            query($owner:String!,$repo:String!,$number:Int!) {
-              repository(owner:$owner,name:$repo) {
-                discussion(number:$number) {
-                  number title body createdAt
-                  author { login }
-                  category { name }
-                  upvoteCount
-                  reactionGroups { content users { totalCount } }
-                  isAnswered
-                  answer {
-                    author { login }
-                    body
-                    createdAt
-                  }
-                  comments(first:50) {
-                    nodes {
-                      author { login }
-                      body createdAt
-                      reactionGroups { content users { totalCount } }
-                      upvoteCount
-                    }
-                  }
-                }
-              }
-            }"""),
-        owner=owner,
-        repo=name,
-        number=str(number),
-    )
-    d = data["data"]["repository"]["discussion"]
-    author = (d.get("author") or {}).get("login", "?")
-    reactions = _format_reactions(d.get("reactionGroups", []))
-    for label, value in [
-        ("title", d["title"]),
-        ("category", d.get("category", {}).get("name", "?")),
-        ("author", f"@{author}"),
-        ("created", (d.get("createdAt") or "")[:10]),
-        ("upvotes", str(d.get("upvoteCount", 0))),
-        ("reactions", reactions or "none"),
-        ("answered", "yes" if d.get("isAnswered") else "no"),
-    ]:
-        print(f"{label}: {value}")
-    body = (d.get("body") or "").strip()
-    if body:
-        print(f"\n=== BODY ===\n{body}")
-    answer = d.get("answer")
-    if answer:
-        a_author = (answer.get("author") or {}).get("login", "?")
-        a_date = (answer.get("createdAt") or "")[:10]
-        print(f"\n=== ACCEPTED ANSWER by @{a_author} ({a_date}) ===")
-        print((answer.get("body") or "").strip())
-    comments = (d.get("comments") or {}).get("nodes", [])
-    if comments:
-        print(f"\n=== COMMENTS ({len(comments)}) ===")
-        for c in comments:
-            c_author = (c.get("author") or {}).get("login", "?")
-            c_date = (c.get("createdAt") or "")[:10]
-            c_reactions = _format_reactions(c.get("reactionGroups", []))
-            c_upvotes = c.get("upvoteCount", 0)
-            meta = []
-            if c_upvotes:
-                meta.append(f"up:{c_upvotes}")
-            if c_reactions:
-                meta.append(c_reactions)
-            meta_str = f" [{', '.join(meta)}]" if meta else ""
-            print(f"\n@{c_author} ({c_date}){meta_str}:")
-            print((c.get("body") or "").strip())
 
 
 # --- CLI ---
@@ -825,12 +411,6 @@ def _add_ref(p: argparse.ArgumentParser) -> None:
 
 def _add_limit(p: argparse.ArgumentParser) -> None:
     p.add_argument("--limit", type=int, help="max results")
-
-
-def _add_state(p: argparse.ArgumentParser) -> None:
-    p.add_argument(
-        "--state", choices=["open", "closed", "all"], help="filter state"
-    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -879,30 +459,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_limit(p)
     p.set_defaults(func=cmd_search)
 
-    p = sub.add_parser("repo-search", help="search repositories on GitHub")
-    p.add_argument("query")
-    p.add_argument("--language", help="filter by language")
-    p.add_argument("--sort", choices=["stars", "forks", "updated"],
-                   help="sort order")
-    p.add_argument("--stars", help="star count filter (e.g. >=500)")
-    p.add_argument("--topic", action="append", help="filter by topic; repeatable")
-    p.add_argument("--owner", action="append", help="filter by owner; repeatable")
-    p.add_argument("--updated", help="last updated filter (e.g. >=2025-01-01)")
-    p.add_argument("--include-forks", choices=["false", "true", "only"],
-                   help="include forks: false (default), true, or only")
-    p.add_argument("--visibility", choices=["public", "private", "internal"],
-                   help="filter by visibility")
-    _add_limit(p)
-    p.set_defaults(func=cmd_repo_search)
-
-    p = sub.add_parser("commits", help="list commits")
-    p.add_argument("repo")
-    _add_ref(p)
-    p.add_argument("--author", help="filter by author")
-    p.add_argument("--path", help="filter by path")
-    _add_limit(p)
-    p.set_defaults(func=cmd_commits)
-
     p = sub.add_parser("blame", help="blame a file")
     p.add_argument("repo")
     p.add_argument("path")
@@ -913,43 +469,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("repo")
     p.add_argument("base")
     p.add_argument("head")
+    p.add_argument("--path", help="filter files by path prefix")
     p.set_defaults(func=cmd_compare)
-
-    p = sub.add_parser("issues", help="list issues or show detail")
-    p.add_argument("repo")
-    p.add_argument("number", nargs="?", type=int, help="show detail for this issue")
-    p.add_argument("--search", help="search query")
-    _add_state(p)
-    _add_limit(p)
-    p.set_defaults(func=cmd_issues)
-
-    p = sub.add_parser("discussions", help="list discussions or show detail")
-    p.add_argument("repo")
-    p.add_argument("number", nargs="?", type=int, help="show detail for this discussion")
-    p.add_argument("--category", help="filter by category name")
-    p.add_argument("--answered", action="store_true", default=None,
-                   help="only answered discussions")
-    p.add_argument("--unanswered", dest="answered", action="store_false",
-                   help="only unanswered discussions")
-    _add_limit(p)
-    p.set_defaults(func=cmd_discussions)
-
-    p = sub.add_parser("prs", help="list PRs or show detail")
-    p.add_argument("repo")
-    p.add_argument("number", nargs="?", type=int, help="show detail for this PR")
-    p.add_argument("--search", help="search query")
-    p.add_argument(
-        "--state", choices=["open", "closed", "merged", "all"],
-        help="filter state",
-    )
-    _add_limit(p)
-    p.set_defaults(func=cmd_prs)
-
-    p = sub.add_parser("releases", help="list releases or show detail")
-    p.add_argument("repo")
-    p.add_argument("tag", nargs="?", help="show detail for this tag")
-    _add_limit(p)
-    p.set_defaults(func=cmd_releases)
 
     return parser
 
