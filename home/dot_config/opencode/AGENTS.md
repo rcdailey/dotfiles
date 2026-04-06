@@ -106,9 +106,8 @@ important.
   "how do I do X with library Y" questions. Fall back to the researcher only when Context7 lacks
   coverage or the question spans multiple projects, community discussions, or issue trackers.
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
-- New files: use `write`. Existing files: use edit tools (`edit`, `multiedit`, `patch`) by default.
-  Use `write` instead when the total size of all oldStrings and newStrings combined would exceed the
-  file's current size (typically when rewriting more than half the file).
+- MUST NOT use the 'write' tool if a file exists. MUST use 'edit' tools for surgical edits to
+  existing files. It is critical to respect this rule for token efficiency.
 
 ## Skills
 
