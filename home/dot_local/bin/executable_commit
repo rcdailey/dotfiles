@@ -1,0 +1,411 @@
+#!/usr/bin/env -S uv run --script
+"""commit - deterministic workflow tool for LLM-driven git commits.
+
+Encodes commit workflows as subcommands so the LLM only needs to call
+the right command and reason about the output. Eliminates multi-step
+git command sequences that weaker models get wrong.
+
+Usage:
+    commit recon [--all]         # collect status, diff, and log
+    commit stage <files...>      # multi-commit: reset + add + show diff
+    commit hunks <file>          # list numbered hunks for partial staging
+    commit save [-a] -s "..." [-p "..."] [-c "..."] [-i "..."]
+    commit status                # quick repo state check
+
+Environment:
+    GIT_COMMIT_FMT_SUBJECT_WIDTH  Subject char limit (default: 50)
+    GIT_COMMIT_FMT_BODY_WIDTH     Body wrap width (default: 72)
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import textwrap
+from pathlib import Path
+from typing import NoReturn
+
+# Suppress pager and ANSI colors for non-tty environments
+os.environ["GIT_PAGER"] = "cat"
+os.environ["GIT_CONFIG_COUNT"] = str(
+    int(os.environ.get("GIT_CONFIG_COUNT", "0")) + 1
+)
+_idx = str(int(os.environ["GIT_CONFIG_COUNT"]) - 1)
+os.environ[f"GIT_CONFIG_KEY_{_idx}"] = "color.ui"
+os.environ[f"GIT_CONFIG_VALUE_{_idx}"] = "false"
+
+SUBJECT_WIDTH = int(os.environ.get("GIT_COMMIT_FMT_SUBJECT_WIDTH", 50))
+BODY_WIDTH = int(os.environ.get("GIT_COMMIT_FMT_BODY_WIDTH", 72))
+
+USAGE = """\
+usage: commit <subcommand> [args...]
+
+subcommands:
+  recon [--all]              collect status, diff, and log in one call
+  stage <files...>           multi-commit: reset index, add files, show diff
+  stage -p <file> <1,2,5>   stage specific hunks by index
+  hunks <file>               list numbered hunks for partial staging
+  save [-a] -s "..."         compose message and create commit
+  status                     quick repo state check
+
+Use 'commit <subcommand> --help' for subcommand details."""
+
+
+def die(message: str) -> NoReturn:
+    print(f"error: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def git(*args: str, check: bool = True, capture: bool = False) -> subprocess.CompletedProcess:
+    """Run a git command."""
+    cmd = ["git", *args]
+    return subprocess.run(
+        cmd,
+        check=check,
+        capture_output=capture,
+        text=True,
+    )
+
+
+def git_output(*args: str) -> str:
+    """Run a git command and return stdout."""
+    result = git(*args, check=True, capture=True)
+    return result.stdout
+
+
+def print_section(header: str, content: str) -> None:
+    """Print a labeled section."""
+    print(f"=== {header} ===")
+    print(content, end="" if content.endswith("\n") else "\n")
+
+
+# -- recon -----------------------------------------------------------------
+
+def cmd_recon(args: list[str]) -> None:
+    parser = argparse.ArgumentParser(prog="commit recon", add_help=True)
+    parser.add_argument(
+        "--all", action="store_true",
+        help="include unstaged and untracked changes (for all/multi-commit workflows)",
+    )
+    opts = parser.parse_args(args)
+
+    status = git_output("status", "-sb")
+    log = git_output("log", "--oneline", "-5")
+
+    if opts.all:
+        # Mark untracked files so they appear in diff, then clean up
+        git("add", "-N", ".", check=False)
+        diff = git_output("diff", "HEAD")
+        git("reset", check=False, capture=True)
+
+        if not diff.strip():
+            die("working tree is clean; nothing to commit")
+    else:
+        diff = git_output("diff", "--cached")
+
+        if not diff.strip():
+            die("nothing staged; use --all to include unstaged changes, or stage files first")
+
+    print_section("STATUS", status)
+    print()
+    print_section("DIFF", diff)
+    print()
+    print_section("LOG", log)
+
+
+# -- hunks -----------------------------------------------------------------
+
+_HUNK_RE = re.compile(r"^@@\s")
+
+
+def _parse_hunks(diff_text: str) -> list[dict]:
+    """Parse a unified diff into individual hunks with metadata."""
+    hunks = []
+    current_header = ""
+    current_lines: list[str] = []
+    in_hunk = False
+
+    for line in diff_text.splitlines(keepends=True):
+        if line.startswith("diff --git"):
+            # Save previous hunk if any
+            if in_hunk and current_lines:
+                hunks.append({"header": current_header, "lines": current_lines})
+            current_header = ""
+            current_lines = []
+            in_hunk = False
+        elif _HUNK_RE.match(line):
+            # Save previous hunk if any
+            if in_hunk and current_lines:
+                hunks.append({"header": current_header, "lines": current_lines})
+            current_header = line.rstrip("\n")
+            current_lines = [line]
+            in_hunk = True
+        elif in_hunk:
+            current_lines.append(line)
+
+    if in_hunk and current_lines:
+        hunks.append({"header": current_header, "lines": current_lines})
+
+    return hunks
+
+
+def _get_file_diff_header(diff_text: str) -> list[str]:
+    """Extract the diff header lines (everything before the first hunk)."""
+    header = []
+    for line in diff_text.splitlines(keepends=True):
+        if _HUNK_RE.match(line):
+            break
+        header.append(line)
+    return header
+
+
+def cmd_hunks(args: list[str]) -> None:
+    if not args or len(args) != 1:
+        die("commit hunks requires exactly one file argument\n\n"
+            "usage: commit hunks <file>")
+
+    filepath = args[0]
+    diff = git_output("diff", filepath)
+
+    if not diff.strip():
+        # Try cached diff
+        diff = git_output("diff", "--cached", filepath)
+
+    if not diff.strip():
+        die(f"no changes found in: {filepath}")
+
+    hunks = _parse_hunks(diff)
+    if not hunks:
+        die(f"no hunks found in diff for: {filepath}")
+
+    for i, hunk in enumerate(hunks, 1):
+        print(f"=== HUNK {i}/{len(hunks)}: {hunk['header']} ===")
+        print("".join(hunk["lines"]), end="")
+        if i < len(hunks):
+            print()
+
+
+# -- stage -----------------------------------------------------------------
+
+def _stage_hunks(filepath: str, indices: list[int]) -> None:
+    """Stage specific hunks from a file by index."""
+    diff = git_output("diff", filepath)
+    if not diff.strip():
+        die(f"no unstaged changes in: {filepath}")
+
+    header_lines = _get_file_diff_header(diff)
+    hunks = _parse_hunks(diff)
+
+    if not hunks:
+        die(f"no hunks found in diff for: {filepath}")
+
+    max_idx = len(hunks)
+    for idx in indices:
+        if idx < 1 or idx > max_idx:
+            die(f"hunk index {idx} out of range (1-{max_idx})")
+
+    # Build a partial patch with only selected hunks
+    patch_parts = header_lines[:]
+    for idx in sorted(indices):
+        patch_parts.extend(hunks[idx - 1]["lines"])
+
+    patch_text = "".join(patch_parts)
+
+    # Apply the partial patch to the index
+    result = subprocess.run(
+        ["git", "apply", "--cached", "-"],
+        input=patch_text,
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        die(f"failed to apply hunks: {result.stderr.strip()}")
+
+
+def cmd_stage(args: list[str]) -> None:
+    if not args:
+        die("commit stage requires file arguments\n\n"
+            "usage: commit stage <files...>\n"
+            "       commit stage -p <file> <1,2,5>")
+
+    # Parse -p flag for partial (hunk) staging
+    if args[0] == "-p":
+        if len(args) != 3:
+            die("partial staging requires file and hunk indices\n\n"
+                "usage: commit stage -p <file> <1,2,5>")
+        filepath = args[1]
+        try:
+            indices = [int(x) for x in args[2].split(",")]
+        except ValueError:
+            die(f"invalid hunk indices: {args[2]} (expected comma-separated integers)")
+        _stage_hunks(filepath, indices)
+    else:
+        # Reset index to clean state
+        git("reset", "HEAD", check=False, capture=True)
+
+        # Add each file; use -u for files that don't exist on disk (deleted)
+        for f in args:
+            if Path(f).exists():
+                git("add", f)
+            else:
+                git("add", "-u", f)
+
+    status = git_output("status", "-sb")
+    stat = git_output("diff", "--cached", "--stat")
+
+    if not stat.strip():
+        die(f"no changes staged after adding: {' '.join(args)}")
+
+    print_section("STATUS", status)
+    print()
+    print_section("STAGED", stat)
+
+
+# -- save ------------------------------------------------------------------
+
+_BARE_HEADER_RE = re.compile(r"^[\w /'-]{1,30}:\s*$")
+
+
+def wrap_paragraph(text: str) -> str:
+    """Wrap a plain-text paragraph to BODY_WIDTH."""
+    return textwrap.fill(text.strip(), width=BODY_WIDTH)
+
+
+def wrap_changelog(text: str) -> str:
+    """Wrap a changelog entry as a bullet item with continuation indent."""
+    return textwrap.fill(
+        text.strip(),
+        width=BODY_WIDTH,
+        initial_indent="- ",
+        subsequent_indent="  ",
+    )
+
+
+def validate_paragraphs(paragraphs: list[str]) -> list[str]:
+    """Reject -p values that should be -c entries or are bare headers."""
+    errors = []
+    for p in paragraphs:
+        stripped = p.strip()
+        if stripped.startswith(("- ", "* ")):
+            label = f'"{stripped[:40]}..."' if len(stripped) > 40 else f'"{stripped}"'
+            errors.append(f"-p looks like a bullet item: {label}")
+            errors.append("  use -c for changelog/list entries instead")
+        elif _BARE_HEADER_RE.match(stripped):
+            errors.append(f'-p looks like a bare header: "{stripped}"')
+            errors.append(
+                "  headers are unnecessary; -c entries render"
+                " as bullets automatically"
+            )
+    return errors
+
+
+def format_message(
+    subject: str,
+    paragraphs: list[str],
+    changelogs: list[str],
+    issues: list[str],
+) -> str:
+    """Assemble the full commit message in enforced structural order."""
+    parts = [subject]
+    body_sections = []
+
+    if paragraphs:
+        body_sections.append(
+            "\n\n".join(wrap_paragraph(p) for p in paragraphs)
+        )
+
+    if changelogs:
+        body_sections.append(
+            "\n".join(wrap_changelog(c) for c in changelogs)
+        )
+
+    if issues:
+        body_sections.append("\n".join(i.strip() for i in issues))
+
+    if body_sections:
+        parts.append("")
+        parts.append("\n\n".join(body_sections))
+
+    return "\n".join(parts) + "\n"
+
+
+def cmd_save(args: list[str]) -> None:
+    parser = argparse.ArgumentParser(prog="commit save", add_help=False)
+    parser.add_argument("-s", required=True)
+    parser.add_argument("-p", action="append", default=[])
+    parser.add_argument("-c", action="append", default=[])
+    parser.add_argument("-i", action="append", default=[])
+    parser.add_argument("-n", action="store_true")
+    parser.add_argument("-a", action="store_true")
+    args_parsed = parser.parse_args(args)
+
+    subject = args_parsed.s.strip()
+    if len(subject) > SUBJECT_WIDTH:
+        die(
+            f"subject is {len(subject)} chars, exceeds"
+            f" {SUBJECT_WIDTH}-char limit"
+        )
+
+    errors = validate_paragraphs(args_parsed.p)
+    if errors:
+        for err in errors:
+            print(f"error: {err}", file=sys.stderr)
+        sys.exit(1)
+
+    message = format_message(subject, args_parsed.p, args_parsed.c, args_parsed.i)
+
+    if args_parsed.n:
+        print(message, end="")
+        return
+
+    if args_parsed.a:
+        git("add", "-A")
+
+    fd, msg_path = tempfile.mkstemp(prefix="commit-msg-", suffix=".txt")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(message)
+
+        result = git("commit", "-F", msg_path, check=False)
+        sys.exit(result.returncode)
+    finally:
+        os.unlink(msg_path)
+
+
+# -- status ----------------------------------------------------------------
+
+def cmd_status(args: list[str]) -> None:
+    status = git_output("status", "-sb")
+    print(status, end="" if status.endswith("\n") else "\n")
+
+
+# -- main ------------------------------------------------------------------
+
+COMMANDS = {
+    "recon": cmd_recon,
+    "hunks": cmd_hunks,
+    "stage": cmd_stage,
+    "save": cmd_save,
+    "status": cmd_status,
+}
+
+
+def main() -> None:
+    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
+        print(USAGE)
+        sys.exit(0 if len(sys.argv) >= 2 else 2)
+
+    subcmd = sys.argv[1]
+    if subcmd not in COMMANDS:
+        print(USAGE, file=sys.stderr)
+        die(f"unknown subcommand '{subcmd}'")
+
+    COMMANDS[subcmd](sys.argv[2:])
+
+
+if __name__ == "__main__":
+    main()
