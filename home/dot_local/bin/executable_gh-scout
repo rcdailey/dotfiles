@@ -36,6 +36,12 @@ KEY_FILE_PATTERNS = [
 ]
 
 
+class HelpOnErrorParser(argparse.ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        self.print_help(sys.stderr)
+        self.exit(2, f"\nerror: {message}\n")
+
+
 class GhError(Exception):
     pass
 
@@ -414,7 +420,7 @@ def _add_limit(p: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = HelpOnErrorParser(
         prog="gh-scout",
         description="Explore GitHub repositories from the command line",
     )

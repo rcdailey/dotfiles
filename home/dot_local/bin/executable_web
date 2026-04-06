@@ -103,6 +103,12 @@ def _check_raw_github(url: str) -> None:
     )
 
 
+class HelpOnErrorParser(argparse.ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        self.print_help(sys.stderr)
+        self.exit(2, f"\nerror: {message}\n")
+
+
 def die(message: str) -> NoReturn:
     print(f"error: {message}", file=sys.stderr)
     sys.exit(1)
@@ -830,7 +836,7 @@ def cmd_fetch(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
+    parser = HelpOnErrorParser(
         prog="web",
         description="LLM-optimized search and fetch",
     )
