@@ -81,6 +81,12 @@ that explicitly in the report rather than guessing.
 Do not stop at the first source. Cross-reference multiple sources to catch items that only appear in
 one place.
 
+### Check workflow status
+
+Run `gh pr checks <PR>` to inspect CI/workflow run results. If any required checks failed or are
+still pending, report the failure details prominently. Workflow failures MUST be flagged as
+blocking; the merge recommendation MUST be "not safe to merge" regardless of changelog findings.
+
 ### Assess impact
 
 Read the files in this repository that reference or consume the upgraded component: config files,
@@ -106,6 +112,7 @@ Sort actionable findings into three buckets:
 Return findings to your caller in this structure:
 
 - PR number and package name with version range
+- CI/workflow status (pass, fail, or pending); failed checks block the merge
 - Whether it's safe to merge as-is or requires changes
 - Breaking changes (with which version introduced each, and which repo files are affected)
 - Deprecations (same detail)
