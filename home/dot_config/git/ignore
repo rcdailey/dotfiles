@@ -1,9 +1,7 @@
-# Ignore patterns for Claude Code's @-file auto complete behavior. These ignore patterns normally
-# shouldn't be necessary, however they are needed to hide certain paths from the auto completion
-# list.
+# Hide noisy paths from AI coding assistant auto-completion
 .git/
 
-# Ignore claude local files
+# Ignore local override files
 settings.local.json
 CLAUDE.local.md
 

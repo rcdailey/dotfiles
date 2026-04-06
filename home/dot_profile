@@ -1,6 +1,6 @@
 # Desktop environment integration for GUI applications
 # This file is sourced by display managers (GDM, LightDM) for desktop sessions
-# Also sourced by bash login shells (including Claude Code's bash -l)
+# Also sourced by bash login shells (bash -l)
 # Ensures GUI apps and non-interactive login shells inherit tool environment
 
 # mise shims for login shells (bash -l, display managers, etc.)

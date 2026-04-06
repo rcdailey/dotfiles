@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 Chezmoi dotfiles repo. `.chezmoiroot` = `home/` means only `home/` contains managed dotfiles. Files
 outside `home/` are repo infrastructure, not managed by chezmoi.
@@ -23,7 +23,8 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
   - `04-plugins.sh` - Zinit plugin loads (fzf-tab, syntax highlighting, etc.)
   - `05-configuration.sh` - Aliases, keybinds, mise activate, tool configs
   - `06-platform.sh.tmpl` - Platform-specific settings (Linux/macOS)
-- `home/dot_config/exact_zsh/functions/` - Autoloaded zsh functions (bwu, clip, gi, pcc, etc.)
+- `home/dot_config/exact_zsh/functions/` - Autoloaded zsh functions (bwu, clip, gi, oc, open-here,
+  pcc)
 
 **Scripts:**
 
@@ -33,10 +34,31 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 
 - `home/.chezmoiscripts/` - Lifecycle hooks; `run_onchange_` triggers on dependency changes
 - `home/.chezmoitemplates/` - Reusable template snippets
-- `.chezmoiexternal.toml` - External file dependencies
+- `.chezmoiexternal.toml` - External file dependencies; distributed across subdirectories (not at
+  repo root). Locations: `home/dot_config/opencode/exact_skills/`, `home/git-scripts/`,
+  `home/dot_local/share/zinit/`
 
-**Tool configs (`home/dot_config/`):** git, helmfile, k9s, kitty, lazygit, mise, opencode,
-powershell, ripgrep, systemd, xremap, etc.
+**OpenCode (`home/dot_config/opencode/`):**
+
+Source directories use `exact_` prefixes (chezmoi strips unmanaged files on apply), but target
+paths under `~/.config/opencode/` do not have these prefixes.
+
+- `opencode.jsonc` - Main config (model, agent overrides, LSP, formatters, providers, MCP servers)
+- `AGENTS.md` - Global directives (the file at `~/.config/opencode/AGENTS.md`)
+- `dcp.jsonc`, `tui.jsonc` - Additional config files
+- `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory
+  contains a `SKILL.md`. Some are managed via `.chezmoiexternal.toml` in this directory.
+- `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). Files:
+  `build.md`, `commit.md`, `researcher.md`, `upgrade-analyst.md`
+- `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`). Files:
+  `contrib-init.md`, `pr-review.md`, `renovate-upgrade.md`, `research.md`,
+  `setup-conventional-commits.md`
+- `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`). Contains `tool-guards.ts`.
+- `.chezmoiremove` - Tracks removed files for cleanup
+
+**Tool configs (`home/dot_config/`):** ccstatusline, commitlint, environment.d, fontconfig, git,
+helmfile, k9s, kitty, lazygit, mise, opencode, powershell, karabiner (private_karabiner), rbw,
+ripgrep, sx, systemd, tmux
 
 **Terminal:** kitty (all platforms) - `home/dot_config/kitty/`
 

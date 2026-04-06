@@ -1,5 +1,7 @@
 # .chezmoiremove - Files to remove from target system
 
-.local/bin/setup-github-mcp
-.local/bin/setup-mcp-all
-.claude/mcp-servers.json
+.local/bin/setup-claude-code
+.local/bin/setup-mcp-atlassian
+.local/bin/setup-mcp-github
+.local/bin/setup-serena
+.serena
