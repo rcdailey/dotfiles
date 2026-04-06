@@ -1,8 +1,8 @@
 ---
 name: linear-cli
 description: >
-  Use when managing Linear issues, projects, comments, labels, or relations
-  from the command line using the linear CLI
+  Use when managing Linear issues, projects, comments, labels, or relations from the command line
+  using the linear CLI
 ---
 
 # Linear CLI
@@ -34,18 +34,20 @@ linear issue create --title "My Issue" \
 ## Commands
 
 ```txt
-linear auth          Manage authentication (login, logout, whoami, token)
-linear issue         Issues (CRUD, comments, relations, attachments)
-linear project       Projects (list, view, create, update, delete)
-linear team          Teams (list, create, members, autolinks)
-linear label         Labels (list, create, delete)
-linear cycle         Cycles (list, view)
-linear milestone     Milestones (CRUD)
-linear initiative    Initiatives (CRUD, add/remove projects)
-linear document      Documents (CRUD)
-linear config        Generate .linear.toml configuration
-linear schema        Print GraphQL schema to stdout
-linear api           Raw GraphQL API requests
+linear auth               Manage authentication (login, logout, whoami, token)
+linear issue              Issues (CRUD, comments, relations, attachments)
+linear project            Projects (list, view, create, update, delete)
+linear project-update     Project status updates
+linear team               Teams (list, create, members, autolinks)
+linear label              Labels (list, create, delete)
+linear cycle              Cycles (list, view)
+linear milestone          Milestones (CRUD)
+linear initiative         Initiatives (CRUD, add/remove projects)
+linear initiative-update  Initiative status updates (timeline posts)
+linear document           Documents (CRUD)
+linear config             Generate .linear.toml configuration
+linear schema             Print GraphQL schema to stdout
+linear api                Raw GraphQL API requests
 ```
 
 Run `--help` on any command for flags and subcommands:

@@ -121,6 +121,27 @@
       "*gh api* --field *": "ask",
       "*gh api* --raw-field *": "ask",
       "*gh api* --input *": "ask",
+
+      // linear cli (mutating)
+      "*linear * create*": "ask",
+      "*linear * update*": "ask",
+      "*linear * delete*": "ask",
+      "*linear * start*": "ask",
+      "*linear * attach*": "ask",
+      "*linear * link*": "ask",
+      "*linear * add*": "ask",
+      "*linear * remove*": "ask",
+      "*linear * archive*": "ask",
+      "*linear * unarchive*": "ask",
+      "*linear * autolinks*": "ask",
+      "*linear * pr *": "ask",
+      "*linear * pull-request*": "ask",
+      "*linear api*": "ask",
+      // linear cli (destructive)
+      "*linear issue delete*": "deny",
+      "*linear project delete*": "deny",
+      "*linear initiative delete*": "deny",
+      "*linear team delete*": "deny",
     },
     "read": {
       "*": "allow",
