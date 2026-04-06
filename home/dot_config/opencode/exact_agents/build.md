@@ -21,19 +21,10 @@ Reference code with `file_path:line_number` pattern for source navigation.
 SHOULD use agents autonomously without explicit prompt from user for appropriate operations.
 
 - `commit`: For commit-related requests with git (NO push or gh cli allowed). Batch multiple commits
-  into a single delegation; one agent per commit is wasteful. Callers MUST NOT run git inspection
-  commands (diff, status, log, show) before delegating; the subagent performs all inspection
-  internally. Pass only: (1) high-level task context (what feature/fix/refactor you were working on
-  and why), (2) workflow hint if not default (e.g., "all" or "multiple commits"), and (3) any issue
-  keys (GitHub, Jira, etc.). Callers MUST NOT prescribe exact commit messages or describe the diff;
-  the agent determines everything from its own inspection.
-- `researcher`: For all research: web search, documentation lookup, GitHub repo exploration, and
-  cross-referencing issues/PRs/commits/code across repos. Callers pass the research question or
-  topic; the agent uses Context7, SearXNG, and gh-scout internally and returns a synthesized
-  response. Do NOT delegate simple single-command gh operations (listing issues, viewing a single
-  PR); use `gh` CLI directly for those.
-- `upgrade-analyst`: For dependency upgrade impact analysis. Callers pass only the PR reference
-  (e.g., `PR #123 in owner/repo`) or package with version range. The agent owns the entire workflow:
-  fetching PR details, tracing changelogs, assessing repo impact, categorizing findings, and
-  structuring output. Callers MUST NOT include research instructions, output format requirements, or
-  categorization rules in the prompt; these are codified in the agent's directives.
+  into a single delegation; one agent per commit is wasteful. Follow the caller protocol in the
+  agent's description exactly; it specifies what to pass and what not to pass.
+- `researcher`: For research requiring web search, documentation lookup, or GitHub repo exploration.
+  Follow the caller protocol in the agent's description exactly. Do NOT delegate simple
+  single-command gh operations (listing issues, viewing a single PR); use `gh` CLI directly.
+- `upgrade-analyst`: For dependency upgrade impact analysis. Follow the caller protocol in the
+  agent's description exactly.
