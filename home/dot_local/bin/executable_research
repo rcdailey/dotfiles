@@ -37,10 +37,25 @@ TOOL_MAP = {
     "gh": "gh",
 }
 
+USAGE = (
+    "usage: research {scout|web|gh} ARGS...\n"
+    "       research status\n"
+    "\n"
+    "Budget-enforced wrapper for researcher agent tools.\n"
+    "Tracks tool call count and enforces a hard 20-call limit.\n"
+    "\n"
+    "subcommands:\n"
+    "  scout ARGS...    delegates to gh-scout\n"
+    "  web ARGS...      delegates to web\n"
+    "  gh ARGS...       delegates to gh\n"
+    "  status           print current budget usage"
+)
+
 
 def die(message: str) -> NoReturn:
-    print(f"error: {message}", file=sys.stderr)
-    sys.exit(1)
+    print(USAGE, file=sys.stderr)
+    print(f"\nerror: {message}", file=sys.stderr)
+    sys.exit(2)
 
 
 def _read_state_unlocked() -> tuple[float, int]:
@@ -63,9 +78,10 @@ def _write_state_unlocked(count: int) -> None:
         f.write(f"{time.time()}\n{count}")
 
 
-def _budget_message(count: int) -> str | None:
-    """Return a budget message if one should be shown, else None."""
+def _budget_message(count: int) -> str:
+    """Return a budget message for the current call count."""
     remaining = MAX_CALLS - count
+    counter = f"[budget: {count}/{MAX_CALLS} calls used, {remaining} remaining]"
 
     if remaining < 0:
         return (
@@ -88,12 +104,7 @@ def _budget_message(count: int) -> str | None:
             "Begin synthesizing your answer NOW. Use remaining calls "
             "only for critical gaps."
         )
-    if remaining <= 5:
-        return (
-            f"\n[budget: {count}/{MAX_CALLS} calls used, "
-            f"{remaining} remaining]"
-        )
-    return None
+    return f"\n{counter}"
 
 
 def _budget_check() -> int:
@@ -107,9 +118,7 @@ def _budget_check() -> int:
 
     remaining = MAX_CALLS - count
     if remaining < 0:
-        msg = _budget_message(count)
-        if msg:
-            print(msg, flush=True)
+        print(_budget_message(count), flush=True)
         sys.exit(1)
 
     return count
@@ -125,10 +134,7 @@ def cmd_status() -> None:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        die(
-            "usage: research {scout|web|gh} ARGS...\n"
-            "       research status"
-        )
+        die("no subcommand provided")
 
     tool = sys.argv[1]
 
@@ -137,15 +143,7 @@ def main() -> None:
         return
 
     if tool not in TOOL_MAP:
-        die(
-            f"unknown tool '{tool}'; "
-            f"use: {', '.join(sorted(TOOL_MAP))}, status"
-        )
-
-    if len(sys.argv) < 3:
-        die(f"usage: research {tool} ARGS...")
-
-    count = _budget_check()
+        die(f"unknown subcommand '{tool}'")
 
     cmd = [TOOL_MAP[tool]] + sys.argv[2:]
     try:
@@ -155,11 +153,16 @@ def main() -> None:
     except KeyboardInterrupt:
         sys.exit(130)
 
+    # Usage errors (exit code 2) mean no real work was done; don't
+    # burn a budget slot for a malformed command.
+    if result.returncode == 2:
+        sys.exit(2)
+
+    count = _budget_check()
+
     # Print budget message AFTER tool output, to stdout, so it
     # cannot be suppressed by 2>/dev/null on the command line.
-    msg = _budget_message(count)
-    if msg:
-        print(msg, flush=True)
+    print(_budget_message(count), flush=True)
 
     sys.exit(result.returncode)
 
