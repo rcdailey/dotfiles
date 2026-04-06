@@ -1,9 +1,8 @@
 ---
 description: >
-  Researches questions using web search, library documentation, and GitHub repo exploration.
-  Callers pass the research question or topic; this agent searches, reads, and synthesizes an
-  answer. All raw results stay in the subagent's context. Do NOT delegate simple single-command
-  gh operations (e.g., listing issues, viewing a single PR); use gh CLI directly for those.
+  For web search, documentation lookup, knowledge questions, and GitHub repo exploration. Callers
+  MUST delegate here instead of using webfetch directly. Pass the question or topic; this agent
+  searches, reads, and synthesizes an answer.
 mode: subagent
 model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
 permission:
