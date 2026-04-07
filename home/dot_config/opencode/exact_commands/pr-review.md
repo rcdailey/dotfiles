@@ -148,6 +148,11 @@ the tutorial.}
 
 - Content between `<!-- POST -->` and `<!-- /POST -->`: posted to GitHub as the review comment.
   Nothing outside these markers is posted.
+- POST content MUST NOT contain hard line breaks within paragraphs. Each paragraph is a single
+  unbroken line; separate paragraphs with blank lines. GitHub's UI handles wrapping when rendering
+  the comment, and hard-wrapped source produces awkward line breaks in the rendered output. This
+  rule applies only to prose paragraphs; lists, code blocks, and `suggestion` blocks keep their
+  normal line structure.
 - Background and Sources: reviewer's eyes only. These stay in the local review file.
 - Every comment MUST have a Background and Sources section. For findings obvious from static
   inspection, "static analysis of diff" or a file:line citation is sufficient. For claims about
@@ -203,3 +208,4 @@ If minor issues requested, add section at end:
 - Do not read README, docs, or wiki files unless a finding specifically needs them
 - Do not delegate to the researcher subagent or use web search
 - Do not fetch the full PR diff; use the changed file list and targeted local diffs
+- Do not hard-wrap prose paragraphs inside POST markers; GitHub wraps them at render time
