@@ -107,19 +107,23 @@ def _budget_message(count: int) -> str:
     return f"\n{counter}"
 
 
-def _budget_check() -> int:
-    """Atomically increment counter. Returns new count. Exits if over."""
+def _budget_check_and_print() -> int:
+    """Atomically increment counter and print the budget message.
+
+    The print happens while the lock is held so that parallel callers
+    see their counter values in the order they finished, not in
+    whatever order the OS schedules their post-lock prints.
+    """
     with open(LOCK_FILE, "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         _, count = _read_state_unlocked()
         count += 1
         _write_state_unlocked(count)
-        # Lock released when 'lock' file handle is closed
-
-    remaining = MAX_CALLS - count
-    if remaining < 0:
         print(_budget_message(count), flush=True)
-        sys.exit(1)
+        remaining = MAX_CALLS - count
+        if remaining < 0:
+            sys.exit(1)
+        # Lock released when 'lock' file handle is closed
 
     return count
 
@@ -158,11 +162,10 @@ def main() -> None:
     if result.returncode == 2:
         sys.exit(2)
 
-    count = _budget_check()
-
-    # Print budget message AFTER tool output, to stdout, so it
-    # cannot be suppressed by 2>/dev/null on the command line.
-    print(_budget_message(count), flush=True)
+    # Budget message prints to stdout (inside the lock) so it cannot
+    # be suppressed by 2>/dev/null on the command line and so parallel
+    # callers see counter values in completion order.
+    _budget_check_and_print()
 
     sys.exit(result.returncode)
 
