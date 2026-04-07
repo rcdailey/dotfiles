@@ -5,11 +5,7 @@ description: >
   using the linear CLI
 ---
 
-# Linear CLI
-
 CLI for managing Linear issues, projects, and workflows. Installed via mise; call with Bash.
-
-Authenticate via: `linear auth login`
 
 ## Markdown Content
 
@@ -34,7 +30,6 @@ linear issue create --title "My Issue" \
 ## Commands
 
 ```txt
-linear auth               Manage authentication (login, logout, whoami, token)
 linear issue              Issues (CRUD, comments, relations, attachments)
 linear project            Projects (list, view, create, update, delete)
 linear project-update     Project status updates
