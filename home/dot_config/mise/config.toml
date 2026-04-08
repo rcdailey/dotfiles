@@ -27,7 +27,6 @@ ruff = "latest"
 node = "latest"
 "npm:@commitlint/cli" = "latest"
 "npm:@commitlint/config-conventional" = "latest"
-"npm:@schpet/linear-cli" = "latest"
 
 # Don't use this because it doesn't update frequently enough
 # Use: curl -fsSL https://opencode.ai/install | bash
