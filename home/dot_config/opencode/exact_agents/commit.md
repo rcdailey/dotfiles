@@ -1,12 +1,8 @@
 ---
 description: >
-  Dedicated agent for git commit operations (Not able to push, amend commits, or use github CLI).
-  Callers provide only: (1) the goal or motivation behind the change (why it was made, not what
-  files or functions were modified), (2) workflow hint if not default (e.g., "all" or "multiple
-  commits"), (3) any issue keys. Callers MUST NOT run git inspection commands before delegating,
-  describe the diff, enumerate specific changes, or dictate commit messages. If you find yourself
-  listing what changed, you are over-describing; state the goal and let this agent determine the
-  rest from the diff.
+  Creates git commits from staged (or unstaged) changes. Cannot push, amend, or use gh CLI. Pass
+  only the goal behind the change plus any issue keys; do not describe the diff or dictate the
+  message.
 mode: all
 model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
 variant: high
@@ -23,6 +19,17 @@ permission:
     "git show*": allow
     "git update-index*": allow
 ---
+
+## Caller Protocol
+
+Callers provide only: (1) the goal or motivation behind the change (why it was made, not what files
+or functions were modified), (2) workflow hint if not default (e.g., "all" or "multiple commits"),
+(3) any issue keys. Callers MUST NOT run git inspection commands before delegating, describe the
+diff, enumerate specific changes, or dictate commit messages. If the caller finds themselves listing
+what changed, they are over-describing; they should state the goal and let this agent determine the
+rest from the diff.
+
+## Preflight
 
 MUST load the `humanizer` skill as the very first action before any other work. This is
 unconditional; commit messages are human-readable text and MUST pass through the humanizer filter.
