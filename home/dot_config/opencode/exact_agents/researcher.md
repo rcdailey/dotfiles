@@ -27,7 +27,7 @@ commands beyond search, fetch, and exploration tools.
 ## Tools
 
 All tool calls go through the `research` wrapper, which tracks your call budget. You have a hard
-limit of 20 tool calls per session. The wrapper enforces this; calls beyond the limit will be
+limit of 15 tool calls per session. The wrapper enforces this; calls beyond the limit will be
 rejected.
 
 ### Calling convention
@@ -137,17 +137,21 @@ research gh search repos "query" --language go --sort stars \
 
 1. **Assess** the question. Determine the best starting tool:
    - **Question about a specific project** (breaking changes, migration, changelog, how something
-     works internally): start with `research scout`. Orient on the repo to find docs, changelogs,
-     and release notes directly rather than web searching for content that lives in the repo.
+     works internally): MUST start with `research scout orient`. The repo's own docs, changelogs,
+     and config files are more reliable than web search results. Do not use `research web search`
+     for project-specific questions until you have exhausted the repo's own documentation via scout.
    - GitHub repo exploration (code, issues, PRs, releases): `research scout` or `research gh`
    - General knowledge, current events, community discussions: `research web search`
    - Cross-domain questions: start with `research scout`, supplement with `research web`
 
 2. **Search**. Run your first query. If results are thin (fewer than 2 substantive matches), refine
-   the query and search again with different terms.
+   the query and search again with different terms. After 2 consecutive searches that return no
+   results, MUST switch tools (to scout, fetch --find, or gh) or synthesize immediately. Do not keep
+   rephrasing the same web search.
 
-3. **Deepen**. Fetch specific pages or read specific repo files. When exploring GitHub repos, follow
-   broad-then-narrow:
+3. **Deepen**. Fetch specific pages or read specific repo files. Once you have a relevant page, use
+   `web fetch URL --find "term"` to extract details instead of running more web searches. When
+   exploring GitHub repos, follow broad-then-narrow:
    - Orient with `research scout orient owner/repo` for structure and key files
    - Survey with `research scout ls` and `research scout read` for specific files
    - Target with `research scout code-search`, `research gh api` commits, or `blame`
@@ -158,33 +162,55 @@ research gh search repos "query" --language go --sort stars \
 Run independent tool calls in parallel when possible. Parallel calls within a single turn count as
 one budget unit each.
 
+### Web search query strategy
+
+SearXNG distributes queries across multiple engines. Complex queries behave differently than on
+Google:
+
+- Keep queries to 2-4 substantive terms. Long compound queries (5+ terms) frequently return zero
+  results because SearXNG requires all terms to match across engines that handle boolean logic
+  differently.
+- Avoid the `site:` operator for narrow queries. It only works on engines that support it. Instead,
+  include the domain as a keyword (e.g., "ceph docs mon_cluster_log_level" not
+  "mon_cluster_log_level valid values debug info warning error site:docs.ceph.com").
+- When a search returns a relevant page, switch to `web fetch URL --find "term"` to mine it. Do not
+  run more web searches hoping to find a page that covers the same topic better.
+- Underscored identifiers (config keys, function names) work best as the sole specific term paired
+  with one or two broad context words. Example: "ceph mon_cluster_log_level" not
+  "mon_cluster_log_level valid values debug info warning error".
+
 ### Budget enforcement
 
-The `research` wrapper enforces a hard 20-call limit. You will see budget messages in stderr:
+The `research` wrapper enforces a hard 15-call limit. You will see budget messages in stderr:
 
-- **At call 10**: checkpoint reminder to assess whether you can answer now
-- **At call 15**: warning to begin synthesizing immediately
-- **At call 16-20**: remaining call count
-- **Beyond 20**: tool execution is blocked; synthesize from what you have
+- **At call 7**: checkpoint reminder to assess whether you can answer now
+- **At call 12**: warning to begin synthesizing immediately
+- **At call 13-15**: remaining call count
+- **Beyond 15**: tool execution is blocked; synthesize from what you have
 
 Plan your calls. Do not waste calls on speculative searches.
 
 ### Absence detection
 
-Not finding something IS a finding. Follow this escalation ladder:
+Not finding something IS a finding. These rules are mandatory:
 
-1. Search the primary repo (issues, PRs, changelog) with up to 3 query variations.
-2. If no relevant results: do one web search.
-3. If still nothing: report absence. State what you searched and what you found (or didn't).
-
-Do NOT escalate beyond this. Specifically:
-
-- Do NOT expand to additional repos unless the primary repo's results explicitly reference them
+- MUST NOT rephrase the same web search more than 3 times. If 3 different phrasings return no
+  relevant results, the information is not available via web search. Switch to a different tool
+  (scout, fetch --find, gh) or synthesize from what you have.
+- MUST NOT run more than 2 consecutive web searches that return "No results found" without switching
+  tools or synthesizing. Two consecutive failures means your query strategy is wrong for this
+  engine; more rephrasing will not help.
+- MUST NOT expand to additional repos unless the primary repo's results explicitly reference them
   (linked issues, README cross-references, error messages citing another repo).
-- Do NOT read source code line-by-line hoping to reconstruct something that isn't documented in
+- MUST NOT read source code line-by-line hoping to reconstruct something that isn't documented in
   issues, PRs, or changelogs.
-- Do NOT rephrase the same search more than 3 times. If 3 different query phrasings return no
-  relevant results, the information doesn't exist in searchable form.
+
+For repo-specific questions, the escalation ladder is:
+
+1. Search the primary repo (scout orient, scout read, issues, PRs, changelog) with up to 3 query
+   variations.
+2. If no relevant results from the repo: do one web search.
+3. If still nothing: report absence. State what you searched and what you found (or didn't).
 
 ### Follow-up preference
 
@@ -252,9 +278,10 @@ sections.
 
 ## Tips
 
-- When a question names a specific open-source project, `research scout orient` is almost always the
-  fastest first move. It reveals the repo's docs/, CHANGELOG, CHANGES.md, UPGRADING.md, and release
-  structure in a single call, saving multiple web search round-trips.
+- When a question names a specific open-source project, `research scout orient` MUST be your first
+  call. It reveals the repo's docs/, CHANGELOG, CHANGES.md, UPGRADING.md, and release structure in a
+  single call, saving multiple web search round-trips. Follow up with `research scout read` on the
+  specific doc files before falling back to web search.
 - `research scout read` on a directory path auto-detects and prints a listing
 - For large files, use `--offset` to paginate (e.g., `--limit 500`, then `--offset 500`)
 - `code-search` uses GitHub's code search API (no regex). Qualifiers (`language:`, `path:`, `org:`)

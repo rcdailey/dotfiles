@@ -28,7 +28,9 @@ from typing import NoReturn
 
 BUDGET_FILE = "/tmp/.research-budget"
 LOCK_FILE = "/tmp/.research-budget.lock"
-MAX_CALLS = 20
+MAX_CALLS = 15
+CHECKPOINT_AT = MAX_CALLS // 2       # mid-session assessment prompt
+WARNING_AT = MAX_CALLS - 3           # final warning before cutoff
 IDLE_TIMEOUT = 30  # seconds between calls before session resets
 
 TOOL_MAP = {
@@ -42,7 +44,7 @@ USAGE = (
     "       research status\n"
     "\n"
     "Budget-enforced wrapper for researcher agent tools.\n"
-    "Tracks tool call count and enforces a hard 20-call limit.\n"
+    f"Tracks tool call count and enforces a hard {MAX_CALLS}-call limit.\n"
     "\n"
     "subcommands:\n"
     "  scout ARGS...    delegates to gh-scout\n"
@@ -89,7 +91,7 @@ def _budget_message(count: int) -> str:
             "You MUST synthesize your answer NOW from what you have gathered.\n"
             "No more tool calls will be executed."
         )
-    if count == 10:
+    if count == CHECKPOINT_AT:
         return (
             f"\n=== CHECKPOINT: {count}/{MAX_CALLS} calls used, "
             f"{remaining} remaining ===\n"
@@ -97,7 +99,7 @@ def _budget_message(count: int) -> str:
             "If yes, synthesize. If not, identify the ONE specific "
             "gap that remains."
         )
-    if count == 15:
+    if count == WARNING_AT:
         return (
             f"\n=== WARNING: {count}/{MAX_CALLS} calls used, "
             f"{remaining} remaining ===\n"
