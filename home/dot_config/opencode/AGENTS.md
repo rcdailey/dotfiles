@@ -109,29 +109,6 @@ important.
 - MUST NOT use the 'write' tool if a file exists. MUST use 'edit' tools for surgical edits to
   existing files. It is critical to respect this rule for token efficiency.
 
-## Skills
-
-You MUST load the relevant skill BEFORE performing the listed actions. Failure to load a skill when
-the trigger condition is met violates this directive. Skills MUST be loaded alone (never in parallel
-with other tool calls) and MUST complete before acting on the governed task. Skills inject context
-needed for the very next action; loading a skill in parallel with that action means the instructions
-arrive too late.
-
-- `agents-authoring`: REQUIRED when working on AGENTS.md files
-- `skill-authoring`: REQUIRED when creating or modifying SKILL.md files
-- `subagent-authoring`: REQUIRED when creating or modifying custom agents
-- `csharp-coding`: REQUIRED when writing or modifying C# code
-- `gh-api`: REQUIRED when managing draft PRs, posting PR comments, or querying Discussions
-- `gh-gist`: REQUIRED when creating or editing GitHub Gists
-- `git-hunks`: REQUIRED when staging individual hunks or partial file changes
-- `gh-pr-review`: REQUIRED when posting code review comments on pull requests
-- `command-authoring`: REQUIRED when creating, editing, or refactoring custom commands
-- `humanizer`: REQUIRED when producing any text read by humans: documentation, changelogs, commit
-  messages, code comments, PR/issue descriptions, emails, messages, forum posts, README files, and
-  any other non-identifier text. NOT required for log messages or variable/function naming. The
-  commit subagent loads humanizer internally, so direct callers do not need to load it before
-  delegating to commit.
-
 ## Agents
 
 - When delegating to subagents, explicitly require them to respond directly to the caller; MUST NOT

@@ -1,8 +1,8 @@
 ---
 name: humanizer
 description: >-
-  Use when producing any human-read prose: docs, changelogs, commit messages, code comments,
-  PR/issue text, emails, READMEs, and any other non-identifier text.
+  Use when writing text to files or through tool calls (docs, changelogs, commit messages, code
+  comments, PR/issue text, emails, READMEs). NOT for in-session conversational responses.
 ---
 
 # Humanizer: Remove AI Writing Patterns
