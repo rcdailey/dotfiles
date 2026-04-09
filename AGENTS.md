@@ -40,8 +40,8 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 
 **OpenCode (`home/dot_config/opencode/`):**
 
-Source directories use `exact_` prefixes (chezmoi strips unmanaged files on apply), but target
-paths under `~/.config/opencode/` do not have these prefixes.
+Source directories use `exact_` prefixes (chezmoi strips unmanaged files on apply), but target paths
+under `~/.config/opencode/` do not have these prefixes.
 
 - `opencode.jsonc` - Main config (model, agent overrides, LSP, formatters, providers, MCP servers)
 - `AGENTS.md` - Global directives (the file at `~/.config/opencode/AGENTS.md`)
@@ -95,11 +95,20 @@ Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
 
 ## Upstream References
 
-- `home/dot_config/opencode/exact_skills/humanizer/SKILL.md` is based on
-  [blader/humanizer](https://github.com/blader/humanizer). Voice Calibration section is
-  intentionally omitted (redundant with Communication Voice in the global AGENTS.md). To sync: fetch
-  upstream SKILL.md via `gh api`, overwrite our copy, then restore our frontmatter and remove Voice
-  Calibration.
+### humanizer skill (upstream sync)
+
+`home/dot_config/opencode/exact_skills/humanizer/SKILL.md` is based on
+[blader/humanizer](https://github.com/blader/humanizer) with two local modifications that MUST
+survive upstream syncs:
+
+1. Tightened frontmatter description
+2. `User Voice Profile` section appended at the end, delimited by `BEGIN LOCAL ADDITION` / `END
+   LOCAL ADDITION` HTML comment markers. It lives inside `SKILL.md` (not a sibling file) because
+   `mcp_skill` only injects `SKILL.md` content.
+
+To sync: extract the LOCAL ADDITION block, fetch upstream via `gh api`, drop upstream's Voice
+Calibration section, restore the tightened description, re-append the block. NEVER discard the block
+or merge its content into upstream sections; the markers MUST remain intact for future syncs.
 
 ## Constraints
 
