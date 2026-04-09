@@ -7,8 +7,6 @@ mode: subagent
 model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
 permission:
   "*": deny
-  read: allow
-  external_directory: allow
   bash:
     "*": deny
     "cat *": allow
