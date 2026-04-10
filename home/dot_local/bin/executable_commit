@@ -38,7 +38,7 @@ _idx = str(int(os.environ["GIT_CONFIG_COUNT"]) - 1)
 os.environ[f"GIT_CONFIG_KEY_{_idx}"] = "color.ui"
 os.environ[f"GIT_CONFIG_VALUE_{_idx}"] = "false"
 
-SUBJECT_WIDTH = int(os.environ.get("GIT_COMMIT_FMT_SUBJECT_WIDTH", 50))
+SUBJECT_WIDTH = int(os.environ.get("GIT_COMMIT_FMT_SUBJECT_WIDTH", 72))
 BODY_WIDTH = int(os.environ.get("GIT_COMMIT_FMT_BODY_WIDTH", 72))
 
 USAGE = """\

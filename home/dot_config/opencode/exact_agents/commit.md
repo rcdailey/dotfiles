@@ -161,7 +161,7 @@ Only after forming these observations should you compose the commit message.
 commit save -s "type(scope): subject" [-p "text"] [-c "text"] [-i "text"]
 ```
 
-- `-s` (required): Subject line. Rejected if it exceeds 50 chars.
+- `-s` (required): Subject line. Rejected if it exceeds 72 chars.
 - `-p` (repeatable): Body paragraph. One `-p` per paragraph.
 - `-c` (repeatable): Changelog entry. One `-c` per entry.
 - `-i` (repeatable): Issue reference. One `-i` per issue.
@@ -230,7 +230,7 @@ function, rename variable, simplify conditional). `style` is purely cosmetic wit
 
 ### Subject Line
 
-- 50 char hard limit (enforced by `commit save`)
+- 72 char hard limit (enforced by `commit save`)
 - Imperative mood, lowercase type, no trailing period. Test: "If applied, this commit will *your
   subject line here*"
 - Describe what the change accomplishes, not what you did
@@ -240,7 +240,8 @@ function, rename variable, simplify conditional). `style` is purely cosmetic wit
 list`, `refactor: extract validation into shared module`
 
 **Bad:** `fix bug` (vague), `updated the user service to fix the login issue` (past tense, too long,
-no type), `feat(auth): add JWT token refresh with automatic retry logic` (exceeds 50)
+no type), `feat(auth): add JWT token refresh with automatic retry and backoff on failed attempts`
+(exceeds 72)
 
 ### Body Structure
 
