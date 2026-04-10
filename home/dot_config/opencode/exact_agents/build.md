@@ -1,5 +1,6 @@
 ---
 description: The default agent. Executes tools based on configured permissions.
+variant: medium
 ---
 
 ## Identity
