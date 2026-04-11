@@ -125,8 +125,6 @@ governs means the instructions arrive too late.
   the work; it means spot-checking reported results against primary sources (reading cited files,
   verifying links, searching docs, etc.) to catch hallucinations and false assumptions. Subagent
   models are weaker than the caller; trust but verify.
-- For deep exploration of external GitHub repos (tracing code paths, multi-file search, reading many
-  files), primary agents SHOULD clone to `/tmp` and use local file tools (`read`, `glob`, `rg`)
-  instead of repeated API calls. `gh-scout` and `gh api` are appropriate for lightweight lookups
-  (repo orientation, single file reads, issue/PR queries); clone when the task requires broad
-  codebase navigation. Clean up `/tmp` clones when done.
+- For deep exploration of external GitHub repos, see the build agent's instructions. Subagents
+  (researcher, etc.) MUST use their designated tools (`research scout`, `research gh`) for repo
+  exploration; they MUST NOT clone repos or use local file tools.
