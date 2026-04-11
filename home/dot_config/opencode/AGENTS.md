@@ -109,6 +109,14 @@ important.
 - MUST NOT use the 'write' tool if a file exists. MUST use 'edit' tools for surgical edits to
   existing files. It is critical to respect this rule for token efficiency.
 
+## Skills
+
+You MUST check the available skills list before performing any task. If a skill's trigger condition
+matches the current task, load it BEFORE acting on the governed task. Failure to load a matching
+skill violates this directive. Skills MUST be loaded alone (never in parallel with other tool calls)
+and MUST complete before acting on the governed task; loading a skill in parallel with the action it
+governs means the instructions arrive too late.
+
 ## Agents
 
 - When delegating to subagents, explicitly require them to respond directly to the caller; MUST NOT
@@ -117,3 +125,8 @@ important.
   the work; it means spot-checking reported results against primary sources (reading cited files,
   verifying links, searching docs, etc.) to catch hallucinations and false assumptions. Subagent
   models are weaker than the caller; trust but verify.
+- For deep exploration of external GitHub repos (tracing code paths, multi-file search, reading many
+  files), primary agents SHOULD clone to `/tmp` and use local file tools (`read`, `glob`, `rg`)
+  instead of repeated API calls. `gh-scout` and `gh api` are appropriate for lightweight lookups
+  (repo orientation, single file reads, issue/PR queries); clone when the task requires broad
+  codebase navigation. Clean up `/tmp` clones when done.
