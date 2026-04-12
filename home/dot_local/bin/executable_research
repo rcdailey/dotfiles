@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "markitdown[all]",
+#     "ocrmypdf",
+# ]
+# ///
 """research - budget-enforced wrapper for researcher agent tools.
 
 Tracks tool call count across a research session and enforces a hard
@@ -9,6 +16,7 @@ Usage:
     research scout ARGS...    # delegates to gh-scout
     research web ARGS...      # delegates to web
     research gh ARGS...       # delegates to gh
+    research pdf URL [OPTS]   # download, OCR, convert PDF to markdown
     research status           # print current budget usage
 
 Budget messages print to stdout so they cannot be suppressed with
@@ -20,10 +28,15 @@ counter value.
 
 from __future__ import annotations
 
+import argparse
 import fcntl
+import os
+import re
 import subprocess
 import sys
+import tempfile
 import time
+import urllib.request
 from typing import NoReturn
 
 BUDGET_FILE = "/tmp/.research-budget"
@@ -40,7 +53,7 @@ TOOL_MAP = {
 }
 
 USAGE = (
-    "usage: research {scout|web|gh} ARGS...\n"
+    "usage: research {scout|web|gh|pdf} ARGS...\n"
     "       research status\n"
     "\n"
     "Budget-enforced wrapper for researcher agent tools.\n"
@@ -50,7 +63,20 @@ USAGE = (
     "  scout ARGS...    delegates to gh-scout\n"
     "  web ARGS...      delegates to web\n"
     "  gh ARGS...       delegates to gh\n"
+    "  pdf URL [OPTS]   download, OCR, convert PDF to markdown\n"
     "  status           print current budget usage"
+)
+
+PDF_USAGE = (
+    "usage: research pdf URL [--max-chars N] [--find PATTERN] [-C N]\n"
+    "\n"
+    "Download a PDF, OCR if needed, and convert to markdown.\n"
+    "\n"
+    "options:\n"
+    "  --max-chars N    truncate output (default: 20000, 0 to disable)\n"
+    "  --find PATTERN   search output by paragraph (regex or literal)\n"
+    "  -C, --context N  paragraphs of context around --find matches "
+    "(default: 1)"
 )
 
 
@@ -130,6 +156,136 @@ def _budget_check_and_print() -> int:
     return count
 
 
+def _paragraph_find(text: str, pattern: str, context: int) -> str:
+    """Search text by paragraph, returning matches with context."""
+    paragraphs = re.split(r"\n{2,}", text)
+    matches: list[int] = []
+    try:
+        regex = re.compile(pattern, re.IGNORECASE)
+    except re.error:
+        regex = re.compile(re.escape(pattern), re.IGNORECASE)
+    for i, para in enumerate(paragraphs):
+        if regex.search(para):
+            matches.append(i)
+    if not matches:
+        return f"No matches for: {pattern}"
+    seen: set[int] = set()
+    result_parts: list[str] = []
+    for idx in matches:
+        start = max(0, idx - context)
+        end = min(len(paragraphs), idx + context + 1)
+        for i in range(start, end):
+            if i not in seen:
+                seen.add(i)
+                result_parts.append(paragraphs[i])
+        result_parts.append("---")
+    return "\n\n".join(result_parts).rstrip("\n-")
+
+
+def cmd_pdf(args: list[str]) -> int:
+    """Download a PDF, OCR it if needed, convert to markdown."""
+    parser = argparse.ArgumentParser(
+        prog="research pdf", add_help=False
+    )
+    parser.add_argument("url")
+    parser.add_argument(
+        "--max-chars", type=int, default=20000
+    )
+    parser.add_argument("--find", default=None)
+    parser.add_argument("-C", "--context", type=int, default=1)
+    try:
+        opts = parser.parse_args(args)
+    except SystemExit:
+        print(PDF_USAGE, file=sys.stderr)
+        return 2
+
+    tmpdir = tempfile.mkdtemp(prefix="research-pdf-")
+    raw_pdf = os.path.join(tmpdir, "input.pdf")
+    ocr_pdf = os.path.join(tmpdir, "ocr.pdf")
+
+    try:
+        # Download
+        req = urllib.request.Request(
+            opts.url,
+            headers={"User-Agent": "research/1.0"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                with open(raw_pdf, "wb") as f:
+                    while True:
+                        chunk = resp.read(65536)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+        except Exception as e:
+            print(f"error: download failed: {e}", file=sys.stderr)
+            return 1
+
+        # OCR (skip pages that already have text)
+        import ocrmypdf
+
+        try:
+            ocrmypdf.ocr(
+                raw_pdf,
+                ocr_pdf,
+                skip_text=True,
+                progress_bar=False,
+            )
+        except ocrmypdf.PriorOcrFoundError:
+            # All pages already have text; use the original.
+            ocr_pdf = raw_pdf
+        except ocrmypdf.exceptions.ExitCodeException as e:
+            print(
+                f"warning: ocrmypdf failed ({e})"
+                ", falling back to original PDF",
+                file=sys.stderr,
+            )
+            ocr_pdf = raw_pdf
+
+        # Convert to markdown
+        from markitdown import MarkItDown
+
+        converter = MarkItDown()
+        try:
+            md_result = converter.convert(ocr_pdf)
+        except Exception as e:
+            print(
+                f"error: markitdown failed: {e}",
+                file=sys.stderr,
+            )
+            return 1
+
+        output = md_result.text_content
+
+        # Apply --find if requested
+        if opts.find:
+            output = _paragraph_find(output, opts.find, opts.context)
+
+        # Apply --max-chars truncation
+        if opts.max_chars > 0 and len(output) > opts.max_chars:
+            output = output[: opts.max_chars]
+            output += (
+                f"\n\n[truncated at {opts.max_chars} chars; "
+                "use --max-chars 0 for full output or "
+                "--find to search]"
+            )
+
+        print(output)
+        return 0
+
+    finally:
+        # Cleanup temp files
+        for f in (raw_pdf, ocr_pdf):
+            try:
+                os.unlink(f)
+            except OSError:
+                pass
+        try:
+            os.rmdir(tmpdir)
+        except OSError:
+            pass
+
+
 def cmd_status() -> None:
     with open(LOCK_FILE, "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_SH)
@@ -147,6 +303,13 @@ def main() -> None:
     if tool == "status":
         cmd_status()
         return
+
+    if tool == "pdf":
+        rc = cmd_pdf(sys.argv[2:])
+        if rc == 2:
+            sys.exit(2)
+        _budget_check_and_print()
+        sys.exit(rc)
 
     if tool not in TOOL_MAP:
         die(f"unknown subcommand '{tool}'")

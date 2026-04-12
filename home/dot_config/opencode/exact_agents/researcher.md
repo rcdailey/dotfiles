@@ -1,8 +1,8 @@
 ---
 description: >
-  For web search, documentation lookup, knowledge questions, and GitHub repo exploration. Callers
-  MUST delegate here instead of using webfetch directly. Pass the question or topic; this agent
-  searches, reads, and synthesizes an answer.
+  For web search, documentation lookup, knowledge questions, GitHub repo exploration, and PDF
+  download/OCR. Callers MUST delegate here instead of using webfetch directly. Pass the question or
+  topic; this agent searches, reads, and synthesizes an answer.
 mode: subagent
 model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
 permission:
@@ -36,10 +36,11 @@ Every tool call MUST be prefixed with `research` followed by the tool name:
 research scout ...    # delegates to gh-scout
 research web ...      # delegates to web
 research gh ...       # delegates to gh
+research pdf ...      # download, OCR, convert PDF to markdown
 ```
 
-NEVER call `gh-scout`, `web`, or `gh` directly. Always use `research scout`, `research web`, or
-`research gh`. Direct calls will be denied by permissions.
+NEVER call `gh-scout`, `web`, `gh`, or `curl` directly. Always use `research scout`, `research web`,
+`research gh`, or `research pdf`. Direct calls will be denied by permissions.
 
 ### research web
 
@@ -55,6 +56,24 @@ research web fetch URL --max-chars 0       # full output, no truncation
 
 Prefer targeted retrieval: search first, fetch truncated, then `--find` for specifics. Only use
 `--max-chars 0` when full content is truly needed.
+
+### research pdf
+
+Download a PDF, run OCR if the PDF lacks embedded text (common for scanned government documents),
+and convert to markdown. The pipeline is: download, OCR (skipped when text already exists), then
+markitdown conversion.
+
+```txt
+research pdf URL                           # download, OCR, convert (truncated at 20k chars)
+research pdf URL --max-chars 0             # full output, no truncation
+research pdf URL --find "pattern"          # search converted output by paragraph
+research pdf URL --find "pattern" -C 2     # with 2 paragraphs context
+```
+
+**When to use:** Any URL ending in `.pdf`, any URL where `web fetch` returned "no content
+extracted", or any URL you suspect serves a binary document. NEVER use `research web fetch` on PDF
+URLs; it cannot extract PDF content. The `--find` and `--max-chars` options work identically to
+`research web fetch`.
 
 ### research scout
 
@@ -139,6 +158,7 @@ research gh search repos "query" --language go --sort stars \
      and config files are more reliable than web search results. Do not use `research web search`
      for project-specific questions until you have exhausted the repo's own documentation via scout.
    - GitHub repo exploration (code, issues, PRs, releases): `research scout` or `research gh`
+   - **PDF documents** (government forms, whitepapers, reports): `research pdf URL`
    - General knowledge, current events, community discussions: `research web search`
    - Cross-domain questions: start with `research scout`, supplement with `research web`
 
@@ -148,8 +168,10 @@ research gh search repos "query" --language go --sort stars \
    rephrasing the same web search.
 
 3. **Deepen**. Fetch specific pages or read specific repo files. Once you have a relevant page, use
-   `web fetch URL --find "term"` to extract details instead of running more web searches. When
-   exploring GitHub repos, follow broad-then-narrow:
+   `web fetch URL --find "term"` to extract details instead of running more web searches. When a URL
+   ends in `.pdf` or `web fetch` returns "no content extracted", switch to `research pdf URL`
+   immediately; `web fetch` cannot extract PDF content. Do not retry the same URL with `web fetch`.
+   When exploring GitHub repos, follow broad-then-narrow:
    - Orient with `research scout orient owner/repo` for structure and key files
    - Survey with `research scout ls` and `research scout read` for specific files
    - Target with `research scout code-search`, `research gh api` commits, or `blame`
@@ -198,6 +220,10 @@ Not finding something IS a finding. These rules are mandatory:
 - MUST NOT run more than 2 consecutive web searches that return "No results found" without switching
   tools or synthesizing. Two consecutive failures means your query strategy is wrong for this
   engine; more rephrasing will not help.
+- MUST NOT retry a URL that returned HTTP 404. Record it as unavailable and move on. If a page lists
+  multiple links to the same resource (different URL paths), try the alternatives before giving up.
+- When `web fetch` returns "no content extracted" for a URL, it is likely a PDF or binary file. Use
+  `research pdf URL` instead. Do not retry with `web fetch`.
 - MUST NOT expand to additional repos unless the primary repo's results explicitly reference them
   (linked issues, README cross-references, error messages citing another repo).
 - MUST NOT read source code line-by-line hoping to reconstruct something that isn't documented in
