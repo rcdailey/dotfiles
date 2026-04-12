@@ -210,6 +210,12 @@ The `research` wrapper enforces a hard 15-call limit. You will see budget messag
 
 Plan your calls. Do not waste calls on speculative searches.
 
+**Free cache hits:** The first `web fetch` or `pdf` call for a given URL costs one budget slot.
+Subsequent calls to the same base URL (e.g., with different `--find` patterns) are free and show
+`[cached: N calls remaining]` instead. Query parameters are ignored when matching URLs. Use this to
+your advantage: fetch a page once with `--max-chars 0`, then run multiple `--find` queries against
+it without burning budget.
+
 ### Absence detection
 
 Not finding something IS a finding. These rules are mandatory:

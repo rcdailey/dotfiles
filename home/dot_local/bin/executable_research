@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import json
 import os
 import re
 import subprocess
@@ -86,24 +87,28 @@ def die(message: str) -> NoReturn:
     sys.exit(2)
 
 
-def _read_state_unlocked() -> tuple[float, int]:
+def _read_state_unlocked() -> tuple[float, int, set[str]]:
     """Read state without locking. Caller must hold the lock."""
     try:
         with open(BUDGET_FILE) as f:
-            parts = f.read().strip().split("\n")
-            last_ts = float(parts[0])
-            count = int(parts[1])
+            data = json.load(f)
+            last_ts = float(data["ts"])
+            count = int(data["count"])
+            urls = set(data.get("urls", []))
             if time.time() - last_ts > IDLE_TIMEOUT:
-                return (0.0, 0)
-            return (last_ts, count)
-    except (FileNotFoundError, ValueError, IndexError):
-        return (0.0, 0)
+                return (0.0, 0, set())
+            return (last_ts, count, urls)
+    except (FileNotFoundError, ValueError, KeyError, json.JSONDecodeError):
+        return (0.0, 0, set())
 
 
-def _write_state_unlocked(count: int) -> None:
+def _write_state_unlocked(count: int, urls: set[str]) -> None:
     """Write state without locking. Caller must hold the lock."""
     with open(BUDGET_FILE, "w") as f:
-        f.write(f"{time.time()}\n{count}")
+        json.dump(
+            {"ts": time.time(), "count": count, "urls": sorted(urls)},
+            f,
+        )
 
 
 def _budget_message(count: int) -> str:
@@ -135,8 +140,13 @@ def _budget_message(count: int) -> str:
     return f"\n{counter}"
 
 
-def _budget_check_and_print() -> int:
+def _budget_check_and_print(cached_url: str | None = None) -> int:
     """Atomically increment counter and print the budget message.
+
+    If cached_url is provided and was already seen this session, the
+    call is free (no budget slot consumed). The URL is recorded so
+    the first fetch costs a slot and subsequent --find variations
+    are free.
 
     The print happens while the lock is held so that parallel callers
     see their counter values in the order they finished, not in
@@ -144,9 +154,23 @@ def _budget_check_and_print() -> int:
     """
     with open(LOCK_FILE, "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        _, count = _read_state_unlocked()
+        _, count, urls = _read_state_unlocked()
+
+        if cached_url and cached_url in urls:
+            # Already fetched this URL; free pass
+            _write_state_unlocked(count, urls)
+            remaining = MAX_CALLS - count
+            print(
+                f"\n[cached: {remaining} calls remaining]",
+                flush=True,
+            )
+            return count
+
+        if cached_url:
+            urls.add(cached_url)
+
         count += 1
-        _write_state_unlocked(count)
+        _write_state_unlocked(count, urls)
         print(_budget_message(count), flush=True)
         remaining = MAX_CALLS - count
         if remaining < 0:
@@ -289,9 +313,25 @@ def cmd_pdf(args: list[str]) -> int:
 def cmd_status() -> None:
     with open(LOCK_FILE, "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_SH)
-        _, count = _read_state_unlocked()
+        _, count, urls = _read_state_unlocked()
     remaining = MAX_CALLS - count
     print(f"{count}/{MAX_CALLS} calls used, {remaining} remaining")
+    if urls:
+        print(f"cached URLs: {len(urls)}")
+
+
+def _extract_cacheable_url(tool: str, args: list[str]) -> str | None:
+    """Extract the base URL for cache tracking.
+
+    Returns the URL for commands that operate on a fetchable resource
+    (web fetch, pdf). Returns None for commands where URL caching
+    does not apply (web search, scout, gh).
+    """
+    if tool == "pdf" and args:
+        return args[0].split("?")[0]
+    if tool == "web" and len(args) >= 2 and args[0] == "fetch":
+        return args[1].split("?")[0]
+    return None
 
 
 def main() -> None:
@@ -305,16 +345,19 @@ def main() -> None:
         return
 
     if tool == "pdf":
-        rc = cmd_pdf(sys.argv[2:])
+        pdf_args = sys.argv[2:]
+        rc = cmd_pdf(pdf_args)
         if rc == 2:
             sys.exit(2)
-        _budget_check_and_print()
+        cached_url = _extract_cacheable_url("pdf", pdf_args)
+        _budget_check_and_print(cached_url)
         sys.exit(rc)
 
     if tool not in TOOL_MAP:
         die(f"unknown subcommand '{tool}'")
 
-    cmd = [TOOL_MAP[tool]] + sys.argv[2:]
+    tool_args = sys.argv[2:]
+    cmd = [TOOL_MAP[tool]] + tool_args
     try:
         result = subprocess.run(cmd)
     except FileNotFoundError:
@@ -330,7 +373,8 @@ def main() -> None:
     # Budget message prints to stdout (inside the lock) so it cannot
     # be suppressed by 2>/dev/null on the command line and so parallel
     # callers see counter values in completion order.
-    _budget_check_and_print()
+    cached_url = _extract_cacheable_url(tool, tool_args)
+    _budget_check_and_print(cached_url)
 
     sys.exit(result.returncode)
 
