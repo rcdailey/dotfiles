@@ -7,13 +7,12 @@ git command sequences that weaker models get wrong.
 
 Usage:
     commit recon [--all]         # collect status, diff, and log
-    commit stage <files...>      # multi-commit: reset + add + show diff
     commit hunks <file>          # list numbered hunks for partial staging
-    commit save [-a] -s "..." [-p "..."] [-c "..."] [-i "..."]
+    commit save [files] -s "..." [-H file:1,2] [-p "..."] [-c "..."] [-i "..."]
     commit status                # quick repo state check
 
 Environment:
-    GIT_COMMIT_FMT_SUBJECT_WIDTH  Subject char limit (default: 50)
+    GIT_COMMIT_FMT_SUBJECT_WIDTH  Subject char limit (default: 72)
     GIT_COMMIT_FMT_BODY_WIDTH     Body wrap width (default: 72)
 """
 
@@ -46,10 +45,8 @@ usage: commit <subcommand> [args...]
 
 subcommands:
   recon [--all]              collect status, diff, and log in one call
-  stage <files...>           multi-commit: reset index, add files, show diff
-  stage -p <file> <1,2,5>   stage specific hunks by index
   hunks <file>               list numbered hunks for partial staging
-  save [-a] -s "..."         compose message and create commit
+  save [files] -s "..."      stage files and commit (atomic)
   status                     quick repo state check
 
 Use 'commit <subcommand> --help' for subcommand details."""
@@ -189,82 +186,6 @@ def cmd_hunks(args: list[str]) -> None:
             print()
 
 
-# -- stage -----------------------------------------------------------------
-
-def _stage_hunks(filepath: str, indices: list[int]) -> None:
-    """Stage specific hunks from a file by index."""
-    diff = git_output("diff", filepath)
-    if not diff.strip():
-        die(f"no unstaged changes in: {filepath}")
-
-    header_lines = _get_file_diff_header(diff)
-    hunks = _parse_hunks(diff)
-
-    if not hunks:
-        die(f"no hunks found in diff for: {filepath}")
-
-    max_idx = len(hunks)
-    for idx in indices:
-        if idx < 1 or idx > max_idx:
-            die(f"hunk index {idx} out of range (1-{max_idx})")
-
-    # Build a partial patch with only selected hunks
-    patch_parts = header_lines[:]
-    for idx in sorted(indices):
-        patch_parts.extend(hunks[idx - 1]["lines"])
-
-    patch_text = "".join(patch_parts)
-
-    # Apply the partial patch to the index
-    result = subprocess.run(
-        ["git", "apply", "--cached", "-"],
-        input=patch_text,
-        text=True,
-        capture_output=True,
-    )
-    if result.returncode != 0:
-        die(f"failed to apply hunks: {result.stderr.strip()}")
-
-
-def cmd_stage(args: list[str]) -> None:
-    if not args:
-        die("commit stage requires file arguments\n\n"
-            "usage: commit stage <files...>\n"
-            "       commit stage -p <file> <1,2,5>")
-
-    # Parse -p flag for partial (hunk) staging
-    if args[0] == "-p":
-        if len(args) != 3:
-            die("partial staging requires file and hunk indices\n\n"
-                "usage: commit stage -p <file> <1,2,5>")
-        filepath = args[1]
-        try:
-            indices = [int(x) for x in args[2].split(",")]
-        except ValueError:
-            die(f"invalid hunk indices: {args[2]} (expected comma-separated integers)")
-        _stage_hunks(filepath, indices)
-    else:
-        # Reset index to clean state
-        git("reset", "HEAD", check=False, capture=True)
-
-        # Add each file; use -u for files that don't exist on disk (deleted)
-        for f in args:
-            if Path(f).exists():
-                git("add", f)
-            else:
-                git("add", "-u", f)
-
-    status = git_output("status", "-sb")
-    stat = git_output("diff", "--cached", "--stat")
-
-    if not stat.strip():
-        die(f"no changes staged after adding: {' '.join(args)}")
-
-    print_section("STATUS", status)
-    print()
-    print_section("STAGED", stat)
-
-
 # -- save ------------------------------------------------------------------
 
 _BARE_HEADER_RE = re.compile(r"^[\w /'-]{1,30}:\s*$")
@@ -303,6 +224,80 @@ def validate_paragraphs(paragraphs: list[str]) -> list[str]:
     return errors
 
 
+def _parse_hunk_spec(spec: str) -> tuple[str, list[int]]:
+    """Parse a -H spec like 'file.py:1,3' into (filepath, [1, 3])."""
+    if ":" not in spec:
+        die(f"invalid -H spec: {spec} (expected file:hunk_indices, e.g. app.py:1,3)")
+    filepath, indices_str = spec.rsplit(":", 1)
+    if not filepath:
+        die(f"invalid -H spec: {spec} (missing filename)")
+    try:
+        indices = [int(x) for x in indices_str.split(",")]
+    except ValueError:
+        die(f"invalid hunk indices in -H {spec} (expected comma-separated integers)")
+    return filepath, indices
+
+
+def _stage_hunks(filepath: str, indices: list[int]) -> None:
+    """Stage specific hunks from a file by index."""
+    diff = git_output("diff", filepath)
+    if not diff.strip():
+        die(f"no unstaged changes in: {filepath}")
+
+    header_lines = _get_file_diff_header(diff)
+    hunks = _parse_hunks(diff)
+
+    if not hunks:
+        die(f"no hunks found in diff for: {filepath}")
+
+    max_idx = len(hunks)
+    for idx in indices:
+        if idx < 1 or idx > max_idx:
+            die(f"hunk index {idx} out of range (1-{max_idx})")
+
+    # Build a partial patch with only selected hunks
+    patch_parts = header_lines[:]
+    for idx in sorted(indices):
+        patch_parts.extend(hunks[idx - 1]["lines"])
+
+    patch_text = "".join(patch_parts)
+
+    # Apply the partial patch to the index
+    result = subprocess.run(
+        ["git", "apply", "--cached", "-"],
+        input=patch_text,
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        die(f"failed to apply hunks: {result.stderr.strip()}")
+
+
+def _stage_files(files: list[str], hunk_specs: list[str]) -> None:
+    """Reset index, stage whole files and hunk selections, print stat."""
+    git("reset", "HEAD", check=False, capture=True)
+
+    for f in files:
+        if Path(f).exists():
+            git("add", f)
+        else:
+            git("add", "-u", f)
+
+    for spec in hunk_specs:
+        filepath, indices = _parse_hunk_spec(spec)
+        _stage_hunks(filepath, indices)
+
+    stat = git_output("diff", "--cached", "--stat")
+    if not stat.strip():
+        all_targets = list(files)
+        for spec in hunk_specs:
+            all_targets.append(spec.rsplit(":", 1)[0])
+        die(f"no changes staged after adding: {' '.join(all_targets)}")
+
+    print_section("STAGED", stat)
+    sys.stdout.flush()
+
+
 def format_message(
     subject: str,
     paragraphs: list[str],
@@ -335,13 +330,20 @@ def format_message(
 
 def cmd_save(args: list[str]) -> None:
     parser = argparse.ArgumentParser(prog="commit save", add_help=False)
+    parser.add_argument("files", nargs="*", default=[])
     parser.add_argument("-s", required=True)
+    parser.add_argument("-H", action="append", default=[], dest="hunks")
     parser.add_argument("-p", action="append", default=[])
     parser.add_argument("-c", action="append", default=[])
     parser.add_argument("-i", action="append", default=[])
     parser.add_argument("-n", action="store_true")
     parser.add_argument("-a", action="store_true")
     args_parsed = parser.parse_args(args)
+
+    has_files = bool(args_parsed.files or args_parsed.hunks)
+
+    if args_parsed.a and has_files:
+        die("-a and file arguments are mutually exclusive")
 
     subject = args_parsed.s.strip()
     if len(subject) > SUBJECT_WIDTH:
@@ -362,8 +364,18 @@ def cmd_save(args: list[str]) -> None:
         print(message, end="")
         return
 
-    if args_parsed.a:
+    # Stage files atomically: reset index, add whole files, apply hunk patches
+    if has_files:
+        _stage_files(args_parsed.files, args_parsed.hunks)
+    elif args_parsed.a:
         git("add", "-A")
+    else:
+        # Staged-only mode: verify something is staged
+        stat = git_output("diff", "--cached", "--stat")
+        if not stat.strip():
+            die("nothing staged; pass files, -H, or -a")
+        print_section("STAGED", stat)
+        sys.stdout.flush()
 
     fd, msg_path = tempfile.mkstemp(prefix="commit-msg-", suffix=".txt")
     try:
@@ -388,7 +400,6 @@ def cmd_status(args: list[str]) -> None:
 COMMANDS = {
     "recon": cmd_recon,
     "hunks": cmd_hunks,
-    "stage": cmd_stage,
     "save": cmd_save,
     "status": cmd_status,
 }

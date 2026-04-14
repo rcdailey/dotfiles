@@ -32,11 +32,10 @@ Issues: <issue keys> (omit if none)
 ```
 
 - `Files` determines the workflow and which `commit recon` variant to use:
-  - "staged only" = commit the current index. Use `commit recon` (no flags). NEVER use `--all`
-    because it resets the index, unstaging the caller's staged changes.
-  - "all" = stage and commit everything. Use `commit recon --all`, then `commit save -a`.
-  - file list = stage those files via `commit stage`. Use `commit recon --all` for the initial diff,
-    then `commit stage <files>` per group. Decide grouping from the diff.
+  - "staged only" = commit the current index. Use `commit recon` (no flags). Then `commit save -s`.
+  - "all" = stage and commit everything. Use `commit recon --all`. Then `commit save -a -s`.
+  - file list = multi-commit. Use `commit recon --all` for the full diff, plan groups, then one
+    `commit save <files> -s` per group.
 - `Workdir`: when present, pass as the `workdir` parameter on every bash call.
 - `Context`: motivation for the change, not a description of what changed. Compose the commit
   message from the diff, not from this field. If the context reads like a directive ("extract
@@ -104,7 +103,7 @@ commit save -s "type(scope): subject" [-p "text"] [-c "text"] [-i "text"]
 
 ### All
 
-Stage and commit everything.
+Stage and commit everything in a single commit.
 
 **Step 1:**
 
@@ -120,7 +119,8 @@ commit save -a -s "type(scope): subject" [-p "text"] [-c "text"] [-i "text"]
 
 ### Multi-commit
 
-Break changes into logical commits (2-5 max).
+Break changes into logical commits (2-5 max). Each `commit save` call is atomic: it resets the
+index, stages the specified files, prints a stat summary, and commits.
 
 **Step 1 (planning):**
 
@@ -131,27 +131,29 @@ commit recon --all
 Review the recon output and plan groups by: directory > file type > change type > dependency order.
 List files per commit before starting.
 
-**Step 2 (per-group, repeat for each group):**
+**Step 2 (per-group, one `commit save` per group):**
 
 ```sh
-commit stage <files|directories>
+commit save file1 file2 -s "type(scope): subject" [-p "text"] [-c "text"] [-i "text"]
 ```
 
-For partial file staging, use `commit hunks <file>` to list numbered hunks, then `commit stage -p
-<file> <1,2,5>` to stage specific hunks by index.
-
-`commit stage` shows a stat summary (not the full diff) since you already have the full diff from
-recon. Use the recon diff for analysis phase reasoning, and the stage stat to confirm correct files
-were staged. Then:
+For partial file staging, first inspect hunks with `commit hunks <file>` (read-only), then pass `-H
+file:1,2` to `commit save`:
 
 ```sh
-commit save -s "type(scope): subject" [-p "text"] [-c "text"] [-i "text"]
+commit save file1 -H file2:1,3 -s "type(scope): subject"
 ```
+
+`commit save` prints the staged stat before committing. Use the recon diff for analysis phase
+reasoning and the stat output to confirm correct files were staged. If the stat does not match the
+intended scope, the commit is wrong; stop and report.
 
 **Multi-commit rules:**
 
-- NEVER use `git reset --soft HEAD~N` after any commit succeeds; this squashes groupings
-- Pre-commit hooks stash/restore unstaged files; verify staging is clean after hooks run
+- Each `commit save <files>` atomically resets the index before staging. Previous commits are not
+  affected. There is no separate staging step.
+- NEVER use `git reset --soft HEAD~N` after any commit succeeds; this squashes groupings.
+- Pre-commit hooks stash/restore unstaged files; verify staging is clean after hooks run.
 - A failed commit does not exist. Previous successful commits remain intact. See Hook Failures for
   recovery steps.
 
@@ -175,15 +177,22 @@ Only after forming these observations should you compose the commit message.
 ## `commit save` Reference
 
 ```sh
-commit save -s "type(scope): subject" [-p "text"] [-c "text"] [-i "text"]
+commit save [files...] -s "type(scope): subject" [-H file:1,2] [-p "text"] [-c "text"] [-i "text"]
 ```
 
+- Positional args: files to stage. Mutually exclusive with `-a`.
 - `-s` (required): Subject line. Rejected if it exceeds 72 chars.
+- `-H` (repeatable): Partial hunk staging. Format: `file:hunk_indices` (e.g., `-H app.py:1,3`). Use
+  `commit hunks <file>` first to identify hunk numbers.
 - `-p` (repeatable): Body paragraph. One `-p` per paragraph.
 - `-c` (repeatable): Changelog entry. One `-c` per entry.
 - `-i` (repeatable): Issue reference. One `-i` per issue.
-- `-a`: Stage all changes (`git add -A`) before committing. Use for the "all" workflow.
+- `-a`: Stage all changes (`git add -A`) before committing. Mutually exclusive with file args.
 - `-n`: Dry run; print the formatted message without committing.
+
+**Staging behavior:** When files or `-H` are provided, `commit save` atomically resets the index,
+stages the specified files and hunks, prints the stat, then commits. When neither files nor `-a` are
+provided, it commits whatever is already staged.
 
 The script enforces structural order regardless of argument order on the command line: subject, then
 paragraphs, then changelog entries (rendered as bullet items), then issue references. All text is
@@ -197,17 +206,25 @@ automatically wrapped; do NOT hard-wrap.
 commit save -s "fix(config): correct default cache TTL"
 ```
 
-**Subject with summary paragraph:**
+**Specific files:**
 
 ```sh
-commit save -s "feat(api): add user pagination" \
+commit save src/api/auth.ts src/api/auth.test.ts \
+  -s "fix(auth): prevent token refresh race condition"
+```
+
+**Files with partial hunk staging:**
+
+```sh
+commit save src/config.yaml -H src/api/handler.py:1,3 \
+  -s "feat(api): add user pagination" \
   -p "The existing endpoint returned all users in a single response, causing timeouts for large tenants. This adds cursor-based pagination with a configurable page size."
 ```
 
 **Full structure** (summary, changelog, issue reference):
 
 ```sh
-commit save -s "ci: harden GitHub Actions workflow security" \
+commit save -a -s "ci: harden GitHub Actions workflow security" \
   -p "Apply security hardening across all workflow files based on zizmor static analysis findings." \
   -c "Add persist-credentials: false to all actions/checkout steps to prevent credential leakage" \
   -c "Replace overly broad permissions: read-all with minimum-required permission scopes" \
@@ -218,7 +235,7 @@ commit save -s "ci: harden GitHub Actions workflow security" \
 **Issue reference without body:**
 
 ```sh
-commit save -s "fix(auth): prevent token refresh race" \
+commit save -a -s "fix(auth): prevent token refresh race" \
   -i "Closes #42"
 ```
 
@@ -368,7 +385,7 @@ needed after migrating to OpenCode.
 ```sh
 # WRONG: each bullet is a separate -p, producing double-spaced paragraphs;
 # "Changes:" is a bare header that adds no value
-commit save -s "feat(opencode): switch from MCP to web CLI" \
+commit save -a -s "feat(opencode): switch from MCP to web CLI" \
   -p "Removes the MCP-based server in favor of the new web CLI." \
   -p "Changes:" \
   -p "- Remove MCP searxng configuration from opencode.jsonc" \
@@ -379,7 +396,7 @@ commit save -s "feat(opencode): switch from MCP to web CLI" \
 **Correct equivalent using `-c`:**
 
 ```sh
-commit save -s "feat(opencode): switch from MCP to web CLI" \
+commit save -a -s "feat(opencode): switch from MCP to web CLI" \
   -p "Removes the MCP-based server in favor of the new web CLI." \
   -c "Remove MCP searxng configuration from opencode.jsonc" \
   -c "Disable websearch/webfetch built-in tools" \
