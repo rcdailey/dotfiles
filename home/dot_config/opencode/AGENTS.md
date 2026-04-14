@@ -106,6 +106,7 @@ important.
   "how do I do X with library Y" questions. Fall back to the researcher only when Context7 lacks
   coverage or the question spans multiple projects, community discussions, or issue trackers.
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
+- Use `pdf2md` for PDF files: `pdf2md <file-or-url>`. Run `pdf2md --help` for full usage.
 - MUST NOT use the 'write' tool if a file exists. MUST use 'edit' tools for surgical edits to
   existing files. It is critical to respect this rule for token efficiency.
 

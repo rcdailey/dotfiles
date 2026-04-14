@@ -124,6 +124,7 @@
     },
     "read": {
       "*": "allow",
+      "*.pdf": "deny", // use pdf2md instead
     },
   },
 }
