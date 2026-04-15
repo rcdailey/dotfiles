@@ -93,10 +93,8 @@ important.
 
 ## Tools
 
-- ALWAYS use `rg` (ripgrep) for file and text search; it is installed, faster, and respects
-  .gitignore. NEVER use `grep`, `find -name`, `awk`, `sed`, or piped search chains. Patterns: `rg
-  --files -g "pattern"` (files), `rg "pattern"` (text), `--glob "!**/exclude/**"` (filter). Use
-  unescaped `|` for alternation (`rg "foo|bar|baz"`, NEVER `rg "foo\|bar\|baz"`).
+- Bash text/file search: `rg "pattern"` (text), `rg --files -g "pattern"` (files),
+  `--glob "!**/exclude/**"` (filter). Unescaped `|` for alternation (`rg "foo|bar|baz"`).
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh-review` for PR review operations (pending reviews, inline comments). MUST use instead of
   raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.

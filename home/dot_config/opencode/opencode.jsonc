@@ -41,8 +41,6 @@
   },
   "permission": {
     "*": "allow",
-    "grep": "deny", // require ripgrep instead
-
     // web CLI replaces both search and fetch; deny built-in equivalents
     "websearch": "deny",
     // "webfetch": "deny",

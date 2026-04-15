@@ -10,6 +10,7 @@ hidden: true
 permission:
   "*": deny
   "context7_*": allow
+  grep: allow
   read: allow
   external_directory: allow
   bash:
