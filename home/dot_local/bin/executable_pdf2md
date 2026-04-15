@@ -24,6 +24,7 @@ Options:
     --find PATTERN     search output by paragraph (regex or literal)
     -C, --context N    paragraphs of context around --find matches
                        (default: 1)
+    --raw              skip post-conversion sanitization
 """
 
 from __future__ import annotations
@@ -111,6 +112,115 @@ def _convert_to_markdown(pdf_path: str) -> str:
     return result.text_content
 
 
+# ---------------------------------------------------------------------------
+# Sanitization pipeline
+#
+# DESIGN: PDF-to-markdown conversion produces artifacts that waste
+# tokens when consumed by LLMs: ToC dot leaders, orphan page numbers,
+# words broken across lines by column extraction, excessive blank
+# lines, etc.  These are inherent to PDF text extraction, not bugs in
+# markitdown, so we clean them post-conversion.
+#
+# ARCHITECTURE: Each sanitizer is a pure function (str) -> str.  They
+# are collected in the SANITIZERS list and applied in sequence by
+# _sanitize().  This pipeline pattern keeps rules isolated, testable,
+# and composable.
+#
+# EXTENSIBILITY: To add a new sanitizer:
+#   1. Write a function _remove_foo(text: str) -> str
+#   2. Append ("foo", _remove_foo) to SANITIZERS
+# That's it.  No registration decorators, no classes, no config.
+#
+# GUIDELINES FOR NEW SANITIZERS:
+#   - Target patterns that are GENERICALLY noisy across many PDFs,
+#     not artifacts from a single document.  If a pattern only appears
+#     in one file, it does not belong here.
+#   - Prefer false-negative (miss some noise) over false-positive
+#     (destroy real content).  Use anchoring (^/$), context checks
+#     (surrounding blank lines), and length thresholds to stay safe.
+#   - Keep each function focused on one pattern.  Compose via
+#     ordering rather than coupling sanitizers to each other.
+#   - Run _collapse_blank_lines last; earlier sanitizers may leave
+#     gaps that it consolidates.
+#   - The --raw flag bypasses the entire pipeline for debugging.
+# ---------------------------------------------------------------------------
+
+
+def _remove_dot_leaders(text: str) -> str:
+    """Strip ToC-style dot/dash leader lines.
+
+    Matches lines whose non-whitespace content is predominantly
+    repeated separator characters (. - _) with optional spacing.
+    """
+    return re.sub(
+        r"^[ \t]*(?:[.\-_][ \t]*){10,}[ \t]*$",
+        "",
+        text,
+        flags=re.MULTILINE,
+    )
+
+
+def _remove_orphan_page_numbers(text: str) -> str:
+    """Remove bare page numbers (1-4 digits) on their own line.
+
+    Only matches when the number sits between blank lines so we
+    don't accidentally strip meaningful single-number lines inside
+    tables or lists.
+    """
+    return re.sub(
+        r"\n\s*\n[ \t]*\d{1,4}[ \t]*\n\s*\n",
+        "\n\n",
+        text,
+    )
+
+
+def _rejoin_broken_words(text: str) -> str:
+    """Rejoin words split across lines by PDF column extraction.
+
+    Targets short lines (<=20 chars) ending mid-word (lowercase
+    letter) followed by a line starting with a lowercase letter,
+    which strongly indicates a word broken by the PDF renderer.
+    """
+    return re.sub(
+        r"^(.{1,20}[a-z])\n([a-z])",
+        r"\1\2",
+        text,
+        flags=re.MULTILINE,
+    )
+
+
+def _collapse_horizontal_rules(text: str) -> str:
+    """Replace excessively long horizontal rules with a standard one."""
+    return re.sub(
+        r"^[ \t]*[-=]{20,}[ \t]*$",
+        "---",
+        text,
+        flags=re.MULTILINE,
+    )
+
+
+def _collapse_blank_lines(text: str) -> str:
+    """Collapse runs of 3+ blank lines down to 2."""
+    return re.sub(r"\n{4,}", "\n\n\n", text)
+
+
+# Sanitizers run in this order.  Append new ones here.
+SANITIZERS: list[tuple[str, callable]] = [
+    ("dot_leaders", _remove_dot_leaders),
+    ("orphan_page_numbers", _remove_orphan_page_numbers),
+    ("broken_words", _rejoin_broken_words),
+    ("horizontal_rules", _collapse_horizontal_rules),
+    ("blank_lines", _collapse_blank_lines),
+]
+
+
+def _sanitize(text: str) -> str:
+    """Run all sanitizers in order."""
+    for _name, fn in SANITIZERS:
+        text = fn(text)
+    return text
+
+
 def _paragraph_find(text: str, pattern: str, context: int) -> str:
     """Search text by paragraph, returning matches with context."""
     paragraphs = re.split(r"\n{2,}", text)
@@ -188,6 +298,10 @@ def main() -> None:
         "-C", "--context", type=int, default=1,
         help="paragraphs of context around --find matches (default: 1)",
     )
+    parser.add_argument(
+        "--raw", action="store_true",
+        help="skip post-conversion sanitization",
+    )
     opts = parser.parse_args()
 
     is_url = _is_url(opts.source)
@@ -233,6 +347,10 @@ def main() -> None:
 
         # Convert
         output = _convert_to_markdown(pdf_path)
+
+        # Sanitize unless --raw
+        if not opts.raw:
+            output = _sanitize(output)
 
         # Apply --find if requested
         if opts.find:
