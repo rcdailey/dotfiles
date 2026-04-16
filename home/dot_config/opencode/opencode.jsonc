@@ -7,8 +7,12 @@
   "autoupdate": false,
   "share": "manual",
   "compaction": { "auto": false },
-  "model": "anthropic/claude-opus-4-6",
+  "model": "anthropic/claude-opus-4-7",
   "agent": {
+    "plan": { "disable": true },
+    "compaction": {
+      "model": "fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo",
+    },
     "general": {
       "tools": { "question": false },
       "model": "fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo",
