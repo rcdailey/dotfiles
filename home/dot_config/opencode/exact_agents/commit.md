@@ -32,11 +32,15 @@ Context: <why the change was made>
 Issues: <issue keys> (omit if none)
 ```
 
-- `Files` determines the workflow and which `commit recon` variant to use:
-  - "staged only" = commit the current index. Use `commit recon` (no flags). Then `commit save -s`.
-  - "all" = stage and commit everything. Use `commit recon --all`. Then `commit save -a -s`.
-  - file list = multi-commit. Use `commit recon --all` for the full diff, plan groups, then one
-    `commit save <files> -s` per group.
+- `Files` controls what gets committed AND fixes the commit count:
+  - "staged only" -> exactly one commit from the current index. `commit recon`, then `commit save
+    -s`.
+  - "all" -> exactly one commit containing every change in the worktree. `commit recon --all`, then
+    `commit save -a -s`.
+  - "`<file list>`" -> exactly one commit containing those files. `commit recon --all` for context,
+    then `commit save <files> -s`.
+  - "split: `<file list>`" or "split: all" -> caller is delegating grouping. Use the multi-commit
+    workflow (2-5 commits max). This is the only mode in which the agent decides commit count.
 - `Workdir`: when present, pass as the `workdir` parameter on every bash call.
 - `Context`: motivation for the change, not a description of what changed. Compose the commit
   message from the diff, not from this field. If the context reads like a directive ("extract
@@ -72,7 +76,8 @@ followed by the subject line. No other text.
 - NEVER run commands after the final successful commit (no `git log`, `git show`, etc.)
 - NEVER use caller-provided descriptions as commit message content. Callers provide motivation (why
   the change was made), not a summary of what changed. Compose the message entirely from the diff.
-  If the caller over-described, ignore the specifics and use only their stated goal.
+  If the caller over-described, ignore the specifics and use only their stated goal. Likewise,
+  context length and breadth do not signal commit count; only the `Files` mode does.
 - Examine actual diff content to determine commit type, not filenames
 - When stuck or blocked, report to calling agent rather than guessing
 - After 3 consecutive failed attempts at the same operation, stop and report the failures to the
@@ -118,7 +123,10 @@ commit recon --all
 commit save -a -s "type(scope): subject" [-p "text"] [-c "text"] [-i "text"]
 ```
 
-### Multi-commit
+### Multi-commit (split mode only)
+
+Applies only when the caller used the `split:` prefix. For all other Files modes, use the matching
+single-commit workflow above.
 
 Break changes into logical commits (2-5 max). Each `commit save` call is atomic: it resets the
 index, stages the specified files, prints a stat summary, and commits.

@@ -28,9 +28,9 @@ MUST NOT call webfetch directly for research/exploration. Delegate to the approp
 
 For deep exploration of external GitHub repos (tracing code paths, multi-file search, reading many
 files), clone to `/tmp` and use local file tools (`read`, `glob`, `rg`) instead of repeated API
-calls. `gh-scout` and `gh api` are appropriate for lightweight lookups (repo orientation, single file
-reads, issue/PR queries); clone when the task requires broad codebase navigation. Clean up `/tmp`
-clones when done.
+calls. `gh-scout` and `gh api` are appropriate for lightweight lookups (repo orientation, single
+file reads, issue/PR queries); clone when the task requires broad codebase navigation. Clean up
+`/tmp` clones when done.
 
 ## Committing changes
 
@@ -46,9 +46,10 @@ Context: <why the change was made; motivation from session context>
 Issues: <issue keys> (omit if none)
 ```
 
-- `Files` controls what gets committed. "staged only" commits the current index as-is. "all" stages
-  and commits everything. A file list stages those files (the commit agent decides whether to group
-  them into one or multiple commits).
+- `Files` controls what gets committed AND how many commits result. Default is one commit. Use
+  "split: `<file list>`" or "split: all" when the work should be broken into multiple commits; the
+  commit agent then decides grouping. Without "split:", expect exactly one commit regardless of how
+  many concerns the diff touches.
 - `Workdir` is only needed when committing in a different repository than the current working
   directory. The commit agent passes this as the `workdir` parameter on every bash call.
 - `Context` provides motivation, not a description of changes. The commit agent reads the diff
