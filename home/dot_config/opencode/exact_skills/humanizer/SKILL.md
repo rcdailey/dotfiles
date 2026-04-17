@@ -1,8 +1,12 @@
 ---
 name: humanizer
 description: >-
-  Use when writing text to files or through tool calls (docs, changelogs, PR/issue text,
-  emails, READMEs). NOT for in-session conversational responses.
+  Use when writing prose text to files or through tool calls: documentation, changelogs,
+  pull request or issue descriptions and comments, email drafts, READMEs, release notes,
+  announcements, blog posts, gist content, or any durable written artifact. Removes AI
+  writing patterns (filler phrases, hedging, marketing voice) for a natural human voice.
+  Do NOT use for in-session conversational responses, code, commit messages, or structured
+  data (JSON, YAML, tables).
 ---
 
 # Humanizer: Remove AI Writing Patterns

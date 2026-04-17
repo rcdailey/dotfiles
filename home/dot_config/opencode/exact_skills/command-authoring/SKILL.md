@@ -1,8 +1,11 @@
 ---
 name: command-authoring
 description: >-
-  Use when creating, editing, or refactoring OpenCode custom commands
-  (slash commands in .opencode/commands/ or ~/.config/opencode/commands/)
+  Use when creating, editing, refactoring, or reviewing OpenCode custom slash commands;
+  writing or revising command frontmatter, arguments, agent routing, or permissions;
+  converting a recurring workflow into a reusable slash command. Triggers on phrases
+  like "new slash command", "add a /command", "edit the command file", or any edit to
+  files in a commands directory (including chezmoi source forms).
 ---
 
 # Command Authoring

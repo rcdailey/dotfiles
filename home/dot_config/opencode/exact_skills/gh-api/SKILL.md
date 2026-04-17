@@ -1,6 +1,11 @@
 ---
 name: gh-api
-description: Use when managing draft PRs, posting PR comments, or querying GitHub Discussions
+description: >-
+  Use when operating on the GitHub REST or GraphQL API via `gh api` for cases not covered by
+  higher-level `gh` subcommands: creating or managing draft pull requests, posting pull request
+  review-body or issue comments programmatically, querying or mutating GitHub Discussions, or
+  any GitHub API call requiring raw endpoints. Do NOT use for standard `gh pr`, `gh issue`,
+  `gh release`, or `gh repo` workflows, or for PR review comments (use `gh-pr-review` instead).
 ---
 
 ## Draft Pull Requests

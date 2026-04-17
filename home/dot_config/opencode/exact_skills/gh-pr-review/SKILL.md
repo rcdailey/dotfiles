@@ -1,6 +1,12 @@
 ---
 name: gh-pr-review
-description: Use when posting code review comments on pull requests via gh-review
+description: >-
+  Use when posting code review comments or managing pull request reviews via the `gh-review`
+  tool: leaving inline comments on specific diff lines, general review-body comments, starting
+  or deleting pending reviews, replying to review threads. Triggers on phrases like "review
+  this PR", "leave a comment on line X", "add review feedback", "start a pending review", or
+  any task involving structured PR code review. Do NOT use for merging, approving via
+  `gh pr review --approve`, or non-review PR operations.
 ---
 
 # PR Review

@@ -1,6 +1,12 @@
 ---
 name: agents-authoring
-description: Use when creating or updating AGENTS.md files
+description: >-
+  Use when creating, editing, refactoring, or reviewing AGENTS.md files at any level (repo,
+  package, or global); adding, revising, or scoping agent directives, rules, constraints, or
+  permissions; converting prose guidance into RFC 2119 rule format; auditing AGENTS.md for
+  redundancy, unscoped delegation, or subagent leakage. Triggers on phrases like "update
+  AGENTS.md", "add a rule to AGENTS.md", "global directives", or any edit to a file named
+  AGENTS.md (including chezmoi source forms).
 ---
 
 # AGENTS.md Authoring

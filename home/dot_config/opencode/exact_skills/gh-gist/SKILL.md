@@ -1,6 +1,11 @@
 ---
 name: gh-gist
-description: Use when creating or updating GitHub gists for document sharing
+description: >-
+  Use when creating, updating, or iterating on GitHub gists via `gh gist`: sharing documents,
+  analysis reports, proposals, design docs, code snippets, or logs externally; building gist
+  content locally before pushing; revising previously created gists with edits, renames, or
+  file additions. Triggers on phrases like "share as gist", "post to gist", "update the gist",
+  or requests to publish content for external review.
 ---
 
 ## What I do

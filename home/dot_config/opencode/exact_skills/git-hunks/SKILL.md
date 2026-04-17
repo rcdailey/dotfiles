@@ -1,8 +1,11 @@
 ---
 name: git-hunks
-description: >
-  Use when staging individual hunks, partial file changes, or splitting a file's
-  changes across multiple commits
+description: >-
+  Use when staging individual hunks or partial changes within a file non-interactively
+  (scripted replacement for `git add -p`): splitting a file's changes across multiple
+  commits, staging only selected lines or regions, or selecting hunks in automated
+  workflows where terminal interaction is unavailable. Triggers on phrases like "stage
+  this hunk", "split this commit", "partial add", or "commit only part of this file".
 ---
 
 # git-hunks

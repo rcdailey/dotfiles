@@ -1,6 +1,12 @@
 ---
 name: subagent-authoring
-description: Use when creating or modifying custom agent definitions
+description: >-
+  Use when creating, editing, or refactoring custom OpenCode agent definitions (`.md` or
+  `.md.tmpl` files in an agents directory, including chezmoi source forms); writing or
+  revising agent frontmatter (description, model, tools, permissions, mode); defining caller
+  protocols for subagents; distinguishing primary agents from subagents; reviewing agent
+  boundaries, delegation contracts, or tool scopes. Triggers on any edit to an agent
+  definition file.
 ---
 
 # Subagent Authoring
@@ -42,7 +48,7 @@ body text. Use when you need all agents in one file.
 | Field         | Type    | Description                                      |
 | ------------- | ------- | ------------------------------------------------ |
 | `name`        | string  | Agent identifier (defaults to filename)          |
-| `description` | string  | Brief description shown in UI (required)         |
+| `description` | string  | Drives caller delegation (required; see below)   |
 | `mode`        | string  | `primary`, `subagent`, or `all` (default: `all`) |
 | `model`       | string  | Provider/model identifier                        |
 | `variant`     | string  | Reasoning variant (see table below)              |
@@ -72,6 +78,34 @@ permission:
 
 The deprecated `tools` field (boolean per tool) is converted to permissions internally. Prefer
 `permission` for new agents.
+
+### Writing the Description
+
+For subagents, the description is the caller's sole signal for whether to delegate via the Task
+tool. It appears in the tool's listing of available agents; the caller reads it to decide routing.
+Same trigger-coverage discipline as skill descriptions applies (see `skill-authoring`): multiple
+phrasings, explicit scope, negative triggers for fuzzy boundaries. Subagent descriptions
+additionally MUST specify:
+
+- **Caller protocol**: what the caller MUST pass (required inputs, structured format) and what the
+  caller MUST NOT pass (context the agent infers itself, defensive framing). Thin protocols cause
+  callers to over-specify defensively or under-specify and misroute.
+- **Return contract**: what the caller should expect back (single message, structured report,
+  success/failure shape, whether output is trustworthy without verification).
+
+Primary agents have looser requirements; their description is mainly surfaced in the TUI for the
+user's benefit, not for programmatic routing.
+
+Example (subagent):
+
+```yaml
+description: >-
+  Reviews code for security, performance, and maintainability issues. Use when finalizing a PR,
+  auditing a new module, or responding to review requests. Callers MUST pass: the file paths or
+  PR number to review, the scope (security only, full review, etc.). MUST NOT pass: the diff
+  itself (the agent reads it). Returns a single message with findings as bullets; no file writes.
+  Do NOT use for style/lint concerns (use the linter) or commit message review.
+```
 
 ### Behavior Options
 
@@ -159,7 +193,10 @@ indirection without value. When a companion skill exists, reference it by name.
 ## Validation Checklist
 
 - [ ] Mode is explicitly set (primary, subagent, or all)
-- [ ] Description is clear and concise
+- [ ] Description includes multiple trigger phrasings and explicit scope
+- [ ] Description includes negative triggers when boundaries with adjacent agents/skills are fuzzy
+- [ ] Subagent descriptions specify caller protocol (inputs to pass, inputs to omit)
+- [ ] Subagent descriptions specify return contract (shape, whether to trust without verification)
 - [ ] Tool permissions match agent's purpose (read-only agents deny write/edit/bash)
 - [ ] Hard constraints use RFC 2119 keywords (MUST, MUST NOT, NEVER)
 - [ ] Agent can act from prompt alone (no discovery tool calls needed)
