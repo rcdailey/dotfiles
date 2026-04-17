@@ -52,3 +52,11 @@ if ((removed == 0)); then
 else
   echo "Cleared $removed plugin(s). They'll re-resolve on next opencode launch."
 fi
+
+# Refresh unpinned uv-script dependencies. The `research` wrapper declares
+# `linkup-sdk` without a version; uv resolves it once and caches the result,
+# so upgrades only happen when the cache is cleared.
+if command -v uv >/dev/null 2>&1; then
+  uv cache clean linkup-sdk >/dev/null
+  echo "Cleared uv cache for linkup-sdk. It'll re-resolve on next research invocation."
+fi

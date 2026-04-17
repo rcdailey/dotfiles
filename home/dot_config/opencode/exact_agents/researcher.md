@@ -44,18 +44,28 @@ NEVER call `gh-scout`, `web`, `gh`, or `curl` directly. Always use `research sco
 
 ### research web
 
-General web search and page fetching via SearXNG.
+Web search and page fetching. Search returns a ranked list of sources. Fetch returns cleaned
+markdown.
 
 ```txt
-research web search "query"                # search (5 results)
-research web fetch URL                     # fetch URL, truncated at 20k chars
-research web fetch URL --find "pattern"    # search cached page by paragraph
-research web fetch URL --find "pattern" -C 2  # with 2 paragraphs context
-research web fetch URL --max-chars 0       # full output, no truncation
+research web search "query"                     # search (5 results)
+research web search "query" --max-results 10    # request more results
+research web fetch URL                          # fetch URL as markdown, truncated at 20k chars
+research web fetch URL --find "pattern"         # show only paragraphs matching pattern
+research web fetch URL --find "pattern" -C 2    # with 2 paragraphs of context
+research web fetch URL --max-chars 0            # full output, no truncation
 ```
 
-Prefer targeted retrieval: search first, fetch truncated, then `--find` for specifics. Only use
-`--max-chars 0` when full content is truly needed.
+Prefer targeted retrieval: search first, fetch truncated, then `--find` for specifics. Default
+truncation (20k chars) is large enough for most long-form articles; reach for `--find "pattern"`
+before `--max-chars 0`. Repeated `fetch` calls for the same URL (including different `--find`
+patterns) are free for the rest of the session and do not burn a budget slot.
+
+**Reroutes are loud and automatic.** If you pass a `github.com` URL or a `.pdf` URL to `web fetch`,
+the wrapper prints a `!! REROUTE` banner to stderr, executes the correct underlying command
+(`gh-scout`, `gh`, or `pdf2md`), and returns its output. Reroutes still burn a budget slot. Read the
+banner and call the correct `research scout` / `research gh` / `research pdf` form directly next
+time; that is the entire point of the teaching banner.
 
 ### research pdf
 
@@ -184,20 +194,14 @@ one budget unit each.
 
 ### Web search query strategy
 
-SearXNG distributes queries across multiple engines. Complex queries behave differently than on
-Google:
-
-- Keep queries to 2-4 substantive terms. Long compound queries (5+ terms) frequently return zero
-  results because SearXNG requires all terms to match across engines that handle boolean logic
-  differently.
-- Avoid the `site:` operator for narrow queries. It only works on engines that support it. Instead,
-  include the domain as a keyword (e.g., "ceph docs mon_cluster_log_level" not
-  "mon_cluster_log_level valid values debug info warning error site:docs.ceph.com").
 - When a search returns a relevant page, switch to `web fetch URL --find "term"` to mine it. Do not
   run more web searches hoping to find a page that covers the same topic better.
-- Underscored identifiers (config keys, function names) work best as the sole specific term paired
-  with one or two broad context words. Example: "ceph mon_cluster_log_level" not
-  "mon_cluster_log_level valid values debug info warning error".
+- If the first search is thin, rephrase once with different wording. If still thin after two tries,
+  switch tools (scout, gh) or synthesize from what you have.
+- **Review prior tool results in this session before issuing a new search.** If you already ran a
+  search or fetch that surfaced the information, extract from it with `--find` rather than
+  re-searching with slightly different keywords. Duplicate searches waste budget and rarely produce
+  different results.
 
 ### Budget enforcement
 
@@ -224,8 +228,8 @@ Not finding something IS a finding. These rules are mandatory:
   relevant results, the information is not available via web search. Switch to a different tool
   (scout, fetch --find, gh) or synthesize from what you have.
 - MUST NOT run more than 2 consecutive web searches that return "No results found" without switching
-  tools or synthesizing. Two consecutive failures means your query strategy is wrong for this
-  engine; more rephrasing will not help.
+  tools or synthesizing. Two consecutive failures means the information is not reachable via search;
+  more rephrasing will not help.
 - MUST NOT retry a URL that returned HTTP 404. Record it as unavailable and move on. If a page lists
   multiple links to the same resource (different URL paths), try the alternatives before giving up.
 - When `web fetch` returns "no content extracted" for a URL, it is likely a PDF or binary file. Use
@@ -255,10 +259,10 @@ into your tool execution; unreported errors hide infrastructure and configuratio
 
 Errors that MUST be reported:
 
-- HTTP errors from `research web fetch` (403, 404, 429, 500, timeouts)
+- `research web search` or `research web fetch` failures (timeouts, rate limits, auth errors,
+  billing issues, upstream refusals)
 - Empty search results or "no results found" responses
-- `research web search` failures (SearXNG unavailable, sx binary missing)
-- Content extraction failures ("no content extracted from URL")
+- "URL serves a file, not an HTML page" responses (switch to `research pdf URL`)
 - gh-scout errors (404, rate limiting, private repos)
 - gh CLI errors (authentication, rate limiting, not found)
 - Budget exceeded messages
@@ -301,8 +305,9 @@ sections.
   archaeology when the project's own configuration is already authoritative.
 - **No duplicate reads.** Do not re-read files already retrieved in this session. Use `--offset` to
   read new sections of the same file.
-- **Never `web fetch` raw GitHub URLs.** Use `research scout read` for GitHub file contents. `web
-  fetch` uses HTML extraction that fails on plain text source code.
+- **Never `web fetch` github.com URLs.** The wrapper detects them and auto-reroutes to `gh-scout` /
+  `gh` with a loud `!! REROUTE` banner. Skip the banner by calling `research scout` or `research gh`
+  directly. Same applies to `.pdf` URLs: use `research pdf URL` instead of `web fetch`.
 - **`code-search` takes literal strings, not regex.** Pipe (`|`) is treated as a literal character,
   not alternation. Run a separate search for each term.
 

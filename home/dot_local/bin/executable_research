@@ -1,47 +1,63 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = []
+# dependencies = ["linkup-sdk", "diskcache"]
 # ///
 """research - budget-enforced wrapper for researcher agent tools.
 
 Tracks tool call count across a research session and enforces a hard
-budget.  A session starts on the first call and auto-resets after 30
-seconds of inactivity (gap between consecutive calls).
+budget. A session starts on the first call and auto-resets after 30
+seconds of inactivity.
 
 Usage:
     research scout ARGS...    # delegates to gh-scout
-    research web ARGS...      # delegates to web
+    research web ARGS...      # Linkup search / fetch (handled inline)
     research gh ARGS...       # delegates to gh
     research pdf ARGS...      # delegates to pdf2md
     research status           # print current budget usage
 
-Budget messages print to stdout so they cannot be suppressed with
-2>/dev/null.  They appear after the tool output completes.
+State (budget counter, seen-URL set, cached content) lives in a single
+SQLite-backed `diskcache.Cache` at CACHE_DIR. Every key is written with
+`expire=IDLE_TIMEOUT`, so idle sessions expire naturally without any
+explicit reset logic. diskcache handles cross-process locking via WAL
+mode, replacing the previous fcntl-based scheme.
 
-File locking (fcntl.flock) ensures parallel calls each get a unique
-counter value.
+The `web` subcommand is handled inline via the Linkup Python SDK. The
+API key is read from the LINKUP_API_KEY env var, falling back to
+`rbw get linkup-api-key` (a Bitwarden secure note).
 """
 
 from __future__ import annotations
 
-import fcntl
-import json
+import argparse
+import os
+import re
 import subprocess
 import sys
-import time
 from typing import NoReturn
 
-BUDGET_FILE = "/tmp/.research-budget"
-LOCK_FILE = "/tmp/.research-budget.lock"
+from diskcache import Cache
+
+CACHE_DIR = "/tmp/.research-cache"
 MAX_CALLS = 15
 CHECKPOINT_AT = MAX_CALLS // 2       # mid-session assessment prompt
 WARNING_AT = MAX_CALLS - 3           # final warning before cutoff
-IDLE_TIMEOUT = 30  # seconds between calls before session resets
+IDLE_TIMEOUT = 30  # seconds between calls before session expires
+DEFAULT_MAX_CHARS = 20_000
+DEFAULT_MAX_RESULTS = 5
+RBW_ITEM = "linkup-api-key"
+# If a non-JS fetch returns fewer than this many non-whitespace chars,
+# the page is probably an SPA shell; retry with JS rendering.
+JS_RETRY_THRESHOLD = 500
+
+# Cache key conventions:
+#   "count"      : int  budget counter for the current session
+#   "url:<URL>"  : True when seen without content, str markdown when cached
+_COUNT_KEY = "count"
+_URL_PREFIX = "url:"
 
 TOOL_MAP = {
     "scout": "gh-scout",
-    "web": "web",
     "gh": "gh",
     "pdf": "pdf2md",
 }
@@ -55,7 +71,7 @@ USAGE = (
     "\n"
     "subcommands:\n"
     "  scout ARGS...    delegates to gh-scout\n"
-    "  web ARGS...      delegates to web\n"
+    "  web ARGS...      Linkup search / fetch (inline)\n"
     "  gh ARGS...       delegates to gh\n"
     "  pdf ARGS...      delegates to pdf2md\n"
     "  status           print current budget usage"
@@ -68,28 +84,26 @@ def die(message: str) -> NoReturn:
     sys.exit(2)
 
 
-def _read_state_unlocked() -> tuple[float, int, set[str]]:
-    """Read state without locking. Caller must hold the lock."""
-    try:
-        with open(BUDGET_FILE) as f:
-            data = json.load(f)
-            last_ts = float(data["ts"])
-            count = int(data["count"])
-            urls = set(data.get("urls", []))
-            if time.time() - last_ts > IDLE_TIMEOUT:
-                return (0.0, 0, set())
-            return (last_ts, count, urls)
-    except (FileNotFoundError, ValueError, KeyError, json.JSONDecodeError):
-        return (0.0, 0, set())
+_cache_singleton: Cache | None = None
 
 
-def _write_state_unlocked(count: int, urls: set[str]) -> None:
-    """Write state without locking. Caller must hold the lock."""
-    with open(BUDGET_FILE, "w") as f:
-        json.dump(
-            {"ts": time.time(), "count": count, "urls": sorted(urls)},
-            f,
-        )
+def _cache() -> Cache:
+    """Return the process-wide Cache handle, opening it lazily."""
+    global _cache_singleton
+    if _cache_singleton is None:
+        _cache_singleton = Cache(CACHE_DIR)
+    return _cache_singleton
+
+
+def _read_cached_content(url: str) -> str | None:
+    """Return cached markdown for a URL, or None if unseen / seen-without-content."""
+    value = _cache().get(f"{_URL_PREFIX}{url}")
+    return value if isinstance(value, str) else None
+
+
+def _write_cached_content(url: str, content: str) -> None:
+    """Persist fetched markdown so repeat fetches of the same URL skip the network."""
+    _cache().set(f"{_URL_PREFIX}{url}", content, expire=IDLE_TIMEOUT)
 
 
 def _budget_message(count: int) -> str:
@@ -121,68 +135,496 @@ def _budget_message(count: int) -> str:
     return f"\n{counter}"
 
 
-def _budget_check_and_print(cached_url: str | None = None) -> int:
-    """Atomically increment counter and print the budget message.
+def _budget_reserve(cached_url: str | None = None) -> None:
+    """Reserve a budget slot (or detect a cache hit) and print the footer.
 
-    If cached_url is provided and was already seen this session, the
-    call is free (no budget slot consumed). The URL is recorded so
-    the first fetch costs a slot and subsequent --find variations
-    are free.
+    Called BEFORE the tool performs any work so the printed counter reflects
+    invocation order rather than completion order. Parallel callers serialize
+    inside `cache.transact()` and receive unique counter values.
 
-    The print happens while the lock is held so that parallel callers
-    see their counter values in the order they finished, not in
-    whatever order the OS schedules their post-lock prints.
+    If cached_url was already seen this session, no slot is consumed and a
+    distinct cache-hit footer prints. On budget exhaustion the message prints
+    then the process exits 1.
     """
-    with open(LOCK_FILE, "w") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
-        _, count, urls = _read_state_unlocked()
+    cache = _cache()
+    url_key = f"{_URL_PREFIX}{cached_url}" if cached_url else None
 
-        if cached_url and cached_url in urls:
-            # Already fetched this URL; free pass
-            _write_state_unlocked(count, urls)
+    with cache.transact():
+        count = cache.get(_COUNT_KEY, 0)
+
+        if url_key and url_key in cache:
+            cache.touch(url_key, expire=IDLE_TIMEOUT)
+            cache.set(_COUNT_KEY, count, expire=IDLE_TIMEOUT)
             remaining = MAX_CALLS - count
             print(
-                f"\n[cached: {remaining} calls remaining]",
+                f"\n[cache hit; budget unchanged at {count}/{MAX_CALLS} used, "
+                f"{remaining} remaining]",
                 flush=True,
             )
-            return count
-
-        if cached_url:
-            urls.add(cached_url)
+            return
 
         count += 1
-        _write_state_unlocked(count, urls)
+        cache.set(_COUNT_KEY, count, expire=IDLE_TIMEOUT)
+        if url_key:
+            # Placeholder marker; real markdown content overwrites this later
+            # via _write_cached_content on successful fetch.
+            cache.set(url_key, True, expire=IDLE_TIMEOUT)
         print(_budget_message(count), flush=True)
-        remaining = MAX_CALLS - count
-        if remaining < 0:
-            sys.exit(1)
-        # Lock released when 'lock' file handle is closed
 
-    return count
+    if count > MAX_CALLS:
+        sys.exit(1)
 
 
 def cmd_status() -> None:
-    with open(LOCK_FILE, "w") as lock:
-        fcntl.flock(lock, fcntl.LOCK_SH)
-        _, count, urls = _read_state_unlocked()
+    cache = _cache()
+    cache.expire()  # sweep expired entries so counts are accurate
+    count = cache.get(_COUNT_KEY, 0)
     remaining = MAX_CALLS - count
     print(f"{count}/{MAX_CALLS} calls used, {remaining} remaining")
-    if urls:
-        print(f"cached URLs: {len(urls)}")
+    url_count = sum(1 for k in cache if isinstance(k, str) and k.startswith(_URL_PREFIX))
+    if url_count:
+        print(f"cached URLs: {url_count}")
 
 
 def _extract_cacheable_url(tool: str, args: list[str]) -> str | None:
-    """Extract the base URL for cache tracking.
+    """Extract the base URL for cache tracking (subprocess path only).
 
-    Returns the URL for commands that operate on a fetchable resource
-    (web fetch, pdf). Returns None for commands where URL caching
-    does not apply (web search, scout, gh).
+    The inline `web` handler returns its own cacheable URL directly, so
+    this function only needs to cover `pdf`.
     """
     if tool == "pdf" and args:
         return args[0].split("?")[0]
-    if tool == "web" and len(args) >= 2 and args[0] == "fetch":
-        return args[1].split("?")[0]
     return None
+
+
+# ---------------------------------------------------------------------------
+# Linkup (web) inline handler
+# ---------------------------------------------------------------------------
+
+
+def _get_linkup_api_key() -> str:
+    """Return the Linkup API key from env or rbw."""
+    key = os.environ.get("LINKUP_API_KEY")
+    if key:
+        return key
+    try:
+        result = subprocess.run(
+            ["rbw", "get", RBW_ITEM],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except FileNotFoundError:
+        die("LINKUP_API_KEY not set and `rbw` binary not found")
+    except subprocess.CalledProcessError as e:
+        msg = e.stderr.strip() or f"rbw exited {e.returncode}"
+        die(f"failed to read Linkup API key from rbw ({RBW_ITEM}): {msg}")
+    key = result.stdout.strip()
+    if not key:
+        die(f"rbw returned empty value for {RBW_ITEM}")
+    return key
+
+
+def _apply_find(text: str, pattern: str, context: int) -> str:
+    """Return paragraphs matching `pattern` with `context` paragraphs around them."""
+    paragraphs = text.split("\n\n")
+    needle = pattern.lower()
+    keep: set[int] = set()
+    for i, para in enumerate(paragraphs):
+        if needle in para.lower():
+            lo = max(0, i - context)
+            hi = min(len(paragraphs), i + context + 1)
+            keep.update(range(lo, hi))
+    if not keep:
+        return f"[no paragraphs matched '{pattern}']"
+    return "\n\n".join(paragraphs[i] for i in sorted(keep))
+
+
+def _truncate(text: str, max_chars: int) -> str:
+    if max_chars <= 0 or len(text) <= max_chars:
+        return text
+    return (
+        text[:max_chars]
+        + f"\n\n[truncated at {max_chars} chars; prefer --find \"pattern\" to target "
+        "specific sections; --max-chars 0 disables truncation]"
+    )
+
+
+def _format_search_results(results: list) -> str:
+    lines: list[str] = []
+    for i, r in enumerate(results, 1):
+        if getattr(r, "type", None) == "image":
+            lines.append(f"{i}. [image] {r.name}\n   URL: {r.url}")
+            continue
+        content = getattr(r, "content", "") or ""
+        snippet = content.strip().replace("\n", " ")
+        if len(snippet) > 300:
+            snippet = snippet[:300] + "..."
+        lines.append(f"{i}. {r.name}\n   URL: {r.url}\n   {snippet}")
+    return "\n\n".join(lines) if lines else "[no results]"
+
+
+_ERROR_MESSAGES = {
+    "LinkupAuthenticationError": "authentication failed",
+    "LinkupFailedFetchError": "URL unreachable or not found",
+    "LinkupFetchResponseTooLargeError": "page too large to fetch",
+    "LinkupFetchUrlIsFileError": (
+        "URL serves a file, not an HTML page; try `research pdf URL` instead"
+    ),
+    "LinkupInsufficientCreditError": "out of credit (billing issue)",
+    "LinkupInvalidRequestError": "invalid request",
+    "LinkupNoResultError": "no results",
+    "LinkupPaymentRequiredError": "payment required",
+    "LinkupTimeoutError": "timeout",
+    "LinkupTooManyRequestsError": "rate limited, try again later",
+}
+
+
+def _translate_error(action: str, e: Exception) -> str:
+    """Translate backend-specific exceptions into agent-facing messages.
+
+    Agent-facing output uses generic terminology (search/fetch failed, reason).
+    Backend vendor names, exception class names, and upstream boilerplate are
+    stripped so the researcher agent does not accumulate implementation-specific
+    conventions.
+    """
+    name = type(e).__name__
+    reason = _ERROR_MESSAGES.get(name)
+    if reason is None:
+        # Unrecognised exception: show the class name but strip vendor prefix
+        clean = name[6:] if name.startswith("Linkup") else name
+        reason = f"{clean}: {e}"
+    return f"error: {action} failed: {reason}"
+
+
+def _cmd_web_search(args: argparse.Namespace) -> int:
+    from linkup import LinkupClient
+
+    client = LinkupClient(api_key=_get_linkup_api_key())
+    try:
+        response = client.search(
+            query=args.query,
+            depth="standard",
+            output_type="searchResults",
+            max_results=args.max_results,
+        )
+    except Exception as e:  # noqa: BLE001 - surface every error to the caller
+        print(_translate_error("search", e), file=sys.stderr)
+        return 1
+
+    print(_format_search_results(response.results))
+    return 0
+
+
+def _fetch_markdown(client, url: str) -> str:
+    """Fetch URL as markdown. Auto-retries with JS rendering when the
+    non-JS response is too thin to be real content (SPA shell).
+    """
+    response = client.fetch(url=url, render_js=False)
+    markdown = response.markdown or ""
+    if len(markdown.strip()) < JS_RETRY_THRESHOLD:
+        response = client.fetch(url=url, render_js=True)
+        markdown = response.markdown or ""
+    return markdown
+
+
+_GITHUB_HOST = re.compile(r"^https?://(?:www\.)?github\.com/", re.IGNORECASE)
+_PDF_URL = re.compile(r"\.pdf(?:$|[?#])", re.IGNORECASE)
+
+
+def _reroute_banner(url: str, reason: str, correct_form: str, executing: list[str]) -> None:
+    """Print a loud, unmistakable teaching banner to stderr.
+
+    The banner triggers on every reroute so the researcher agent learns the
+    correct command. The rerouted output still streams to stdout afterward;
+    the banner only teaches, it does not block.
+    """
+    bar = "!" * 72
+    lines = [
+        "",
+        bar,
+        "!! REROUTE: `research web fetch` is the WRONG tool for this URL.",
+        f"!! URL:        {url}",
+        f"!! Reason:     {reason}",
+        f"!! Correct:    {correct_form}",
+        f"!! Executing:  {' '.join(executing)}",
+        "!! Use the correct command directly next time. Rerouted output follows.",
+        bar,
+        "",
+    ]
+    print("\n".join(lines), file=sys.stderr, flush=True)
+
+
+def _github_reroute(url: str) -> tuple[list[str], str] | None:
+    """Return (argv, friendly_form) for github.com URLs, else None.
+
+    argv is the underlying binary invocation (gh-scout or gh). friendly_form
+    is the `research ...` command the agent should use next time.
+    """
+    m = _GITHUB_HOST.match(url)
+    if not m:
+        return None
+    path = url[m.end():].split("?")[0].split("#")[0].strip("/")
+    if not path:
+        return None
+    parts = path.split("/")
+    if len(parts) < 2:
+        return None
+    owner, repo = parts[0], parts[1]
+    if owner in {"features", "pricing", "enterprise", "orgs", "settings", "sponsors"}:
+        return None
+    slug = f"{owner}/{repo}"
+    section = parts[2] if len(parts) > 2 else ""
+    rest = parts[3:]
+
+    def pair(argv: list[str], friendly: str) -> tuple[list[str], str]:
+        return argv, friendly
+
+    if not section:
+        return pair(
+            ["gh-scout", "orient", slug],
+            f"research scout orient {slug}",
+        )
+    if section in {"blob", "raw"} and len(rest) >= 2:
+        ref, subpath = rest[0], "/".join(rest[1:])
+        return pair(
+            ["gh-scout", "read", slug, subpath, "--ref", ref],
+            f"research scout read {slug} {subpath} --ref {ref}",
+        )
+    if section == "tree" and rest:
+        ref = rest[0]
+        subpath = "/".join(rest[1:])
+        argv = ["gh-scout", "ls", slug]
+        friendly = f"research scout ls {slug}"
+        if subpath:
+            argv.append(subpath)
+            friendly += f" {subpath}"
+        argv += ["--ref", ref]
+        friendly += f" --ref {ref}"
+        return pair(argv, friendly)
+    if section == "releases":
+        if len(rest) >= 2 and rest[0] == "tag":
+            tag = rest[1]
+            return pair(
+                ["gh", "release", "view", tag, "-R", slug, "--json", "tagName,body"],
+                f"research gh release view {tag} -R {slug} --json tagName,body",
+            )
+        return pair(
+            ["gh", "release", "list", "-R", slug, "--limit", "20"],
+            f"research gh release list -R {slug} --limit 20",
+        )
+    if section == "issues":
+        if rest and rest[0].isdigit():
+            n = rest[0]
+            fields = "title,state,body,comments"
+            return pair(
+                ["gh", "issue", "view", n, "-R", slug, "--json", fields],
+                f"research gh issue view {n} -R {slug} --json {fields}",
+            )
+        return pair(
+            ["gh", "issue", "list", "-R", slug, "--json", "number,title,state"],
+            f"research gh issue list -R {slug} --json number,title,state",
+        )
+    if section in {"pull", "pulls"}:
+        if rest and rest[0].isdigit():
+            n = rest[0]
+            fields = "title,state,body,comments,reviews"
+            return pair(
+                ["gh", "pr", "view", n, "-R", slug, "--json", fields],
+                f"research gh pr view {n} -R {slug} --json {fields}",
+            )
+        return pair(
+            ["gh", "pr", "list", "-R", slug, "--json", "number,title,state"],
+            f"research gh pr list -R {slug} --json number,title,state",
+        )
+    if section == "commit" and rest:
+        sha = rest[0]
+        return pair(
+            ["gh", "api", f"repos/{slug}/commits/{sha}"],
+            f"research gh api repos/{slug}/commits/{sha}",
+        )
+    if section == "commits":
+        return pair(
+            ["gh", "api", f"repos/{slug}/commits"],
+            f"research gh api repos/{slug}/commits",
+        )
+    if section == "blame" and len(rest) >= 2:
+        ref, subpath = rest[0], "/".join(rest[1:])
+        return pair(
+            ["gh-scout", "blame", slug, subpath, "--ref", ref],
+            f"research scout blame {slug} {subpath} --ref {ref}",
+        )
+    if section == "compare" and rest and "..." in rest[0]:
+        base, head = rest[0].split("...", 1)
+        return pair(
+            ["gh-scout", "compare", slug, base, head],
+            f"research scout compare {slug} {base} {head}",
+        )
+    if section == "actions":
+        return pair(
+            ["gh", "run", "list", "-R", slug],
+            f"research gh run list -R {slug}",
+        )
+    return pair(
+        ["gh-scout", "orient", slug],
+        f"research scout orient {slug}  (or scout ls / scout read / gh for specifics)",
+    )
+
+
+def _pdf_reroute(url: str) -> tuple[list[str], str] | None:
+    """Return (argv, friendly_form) for URLs that clearly serve a PDF."""
+    if not _PDF_URL.search(url):
+        return None
+    return ["pdf2md", url], f"research pdf {url}"
+
+
+def _run_reroute(
+    url: str,
+    reason: str,
+    plan: tuple[list[str], str],
+) -> int:
+    """Execute a rerouted command after emitting the teaching banner.
+
+    Budget is reserved against the base URL so a second fetch of the same
+    URL hits the cached-slot path and avoids double-charging.
+    """
+    argv, friendly = plan
+    _reroute_banner(url, reason, friendly, argv)
+    _budget_reserve(url.split("?")[0])
+    try:
+        result = subprocess.run(argv)
+    except FileNotFoundError:
+        die(f"command not found: {argv[0]}")
+    except KeyboardInterrupt:
+        sys.exit(130)
+    return result.returncode
+
+
+def _cmd_web_fetch(args: argparse.Namespace) -> int:
+    from linkup import LinkupClient
+
+    base_url = args.url.split("?")[0]
+    cached = _read_cached_content(base_url)
+    if cached is not None:
+        markdown = cached
+    else:
+        client = LinkupClient(api_key=_get_linkup_api_key())
+        try:
+            markdown = _fetch_markdown(client, args.url)
+        except Exception as e:  # noqa: BLE001
+            # Backend discovered the URL is a file (e.g., PDF) only after the
+            # request. Reroute to pdf2md with a teaching banner; the budget
+            # slot was already reserved, so execute the tool directly without
+            # another reservation.
+            if type(e).__name__ == "LinkupFetchUrlIsFileError":
+                argv = ["pdf2md", args.url]
+                _reroute_banner(
+                    args.url,
+                    "backend reported URL serves a file, not an HTML page",
+                    f"research pdf {args.url}",
+                    argv,
+                )
+                try:
+                    r = subprocess.run(argv, capture_output=True, text=True)
+                except FileNotFoundError:
+                    die("command not found: pdf2md")
+                # Persist output so a retry hits the disk cache instead of
+                # re-paying Linkup only to reroute again.
+                if r.returncode == 0 and r.stdout:
+                    _write_cached_content(base_url, r.stdout)
+                sys.stdout.write(r.stdout)
+                sys.stderr.write(r.stderr)
+                return r.returncode
+            print(_translate_error("fetch", e), file=sys.stderr)
+            return 1
+        _write_cached_content(base_url, markdown)
+
+    if args.find:
+        output = _apply_find(markdown, args.find, args.context)
+    else:
+        output = markdown
+    print(_truncate(output, args.max_chars))
+    return 0
+
+
+def _build_web_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="research web",
+        description="Linkup search / fetch (standard depth, searchResults output)",
+    )
+    sub = p.add_subparsers(dest="action", required=True)
+
+    s = sub.add_parser("search", help="search the web via Linkup")
+    s.add_argument("query", help="natural-language search query")
+    s.add_argument(
+        "--max-results",
+        type=int,
+        default=DEFAULT_MAX_RESULTS,
+        help=f"max results to return (default: {DEFAULT_MAX_RESULTS})",
+    )
+
+    f = sub.add_parser("fetch", help="fetch a URL as clean markdown")
+    f.add_argument("url", help="URL to fetch")
+    f.add_argument(
+        "--find",
+        help="show only paragraphs matching this pattern (case-insensitive)",
+    )
+    f.add_argument(
+        "-C",
+        "--context",
+        type=int,
+        default=0,
+        help="paragraphs of context around --find matches",
+    )
+    f.add_argument(
+        "--max-chars",
+        type=int,
+        default=DEFAULT_MAX_CHARS,
+        help=f"truncate output at N chars (0 = no truncation, default: {DEFAULT_MAX_CHARS})",
+    )
+    return p
+
+
+def cmd_web(args: list[str]) -> int:
+    """Handle the `web` subcommand inline. Returns the exit code.
+
+    Reserves the budget slot BEFORE running the tool so parallel callers see
+    counter values matching invocation order. Usage errors (argparse) and
+    github.com rewrites exit before any reservation and never burn a slot.
+    """
+    parser = _build_web_parser()
+    try:
+        ns = parser.parse_args(args)
+    except SystemExit as e:
+        # argparse exits 0 for --help and 2 for usage errors. Neither
+        # should burn a budget slot.
+        sys.exit(int(e.code) if isinstance(e.code, int) else 2)
+
+    if ns.action == "search":
+        _budget_reserve(None)
+        return _cmd_web_search(ns)
+
+    # fetch: detect URLs that belong to a different tool and reroute loudly.
+    if plan := _github_reroute(ns.url):
+        return _run_reroute(
+            ns.url,
+            "github.com pages are JS-rendered; fetch returns nav chrome, not content",
+            plan,
+        )
+    if plan := _pdf_reroute(ns.url):
+        return _run_reroute(
+            ns.url,
+            "URL points to a PDF; `web fetch` cannot extract PDF content",
+            plan,
+        )
+
+    _budget_reserve(ns.url.split("?")[0])
+    return _cmd_web_fetch(ns)
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
 
 
 def main() -> None:
@@ -195,10 +637,22 @@ def main() -> None:
         cmd_status()
         return
 
+    if tool == "web":
+        sys.exit(cmd_web(sys.argv[2:]))
+
     if tool not in TOOL_MAP:
         die(f"unknown subcommand '{tool}'")
 
     tool_args = sys.argv[2:]
+    # Reserve the budget slot before running the subprocess so parallel
+    # callers see counter values matching invocation order, not completion
+    # order. A malformed subprocess invocation still burns a slot; the prior
+    # exit-2 refund path was removed because it was rare and complicated
+    # cache bookkeeping. Budget prints to stdout (inside the lock) so it
+    # cannot be suppressed by 2>/dev/null.
+    cached_url = _extract_cacheable_url(tool, tool_args)
+    _budget_reserve(cached_url)
+
     cmd = [TOOL_MAP[tool]] + tool_args
     try:
         result = subprocess.run(cmd)
@@ -206,17 +660,6 @@ def main() -> None:
         die(f"command not found: {TOOL_MAP[tool]}")
     except KeyboardInterrupt:
         sys.exit(130)
-
-    # Usage errors (exit code 2) mean no real work was done; don't
-    # burn a budget slot for a malformed command.
-    if result.returncode == 2:
-        sys.exit(2)
-
-    # Budget message prints to stdout (inside the lock) so it cannot
-    # be suppressed by 2>/dev/null on the command line and so parallel
-    # callers see counter values in completion order.
-    cached_url = _extract_cacheable_url(tool, tool_args)
-    _budget_check_and_print(cached_url)
 
     sys.exit(result.returncode)
 
