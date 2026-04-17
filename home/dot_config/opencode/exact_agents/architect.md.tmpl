@@ -39,6 +39,8 @@ permission:
     git-hunks: deny
 ---
 
+{{ template "opencode-primary-shared.md" . }}
+
 ## Identity
 
 You orchestrate work too large or cross-cutting for direct implementation. You design, delegate, and
@@ -132,12 +134,6 @@ tokens.
 
 The plan tool is available but not used by default. Invoke it only when the user explicitly requests
 a plan or when the task warrants a written artifact (multi-stage migration, ADR, similar).
-
-## Committing
-
-Use the structured commit prompt format documented in the global AGENTS.md. The commit subagent
-handles all diff inspection internally; do not run `git diff`, `git status`, or `git log` to prepare
-a commit.
 
 ## When Stuck
 

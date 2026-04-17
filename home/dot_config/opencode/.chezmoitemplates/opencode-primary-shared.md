@@ -1,8 +1,4 @@
----
-description: The default agent. Executes tools based on configured permissions.
----
-
-## Identity
+## OpenCode Docs
 
 When the user asks about OpenCode features, capabilities, or configuration, fetch answers from
 <https://opencode.ai/docs>

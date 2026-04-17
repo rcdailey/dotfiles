@@ -49,11 +49,19 @@ under `~/.config/opencode/` do not have these prefixes.
 - `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory
   contains a `SKILL.md`. Some are managed via `.chezmoiexternal.toml` in this directory.
 - `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). Files:
-  `build.md`, `commit.md`, `researcher.md`, `upgrade-analyst.md`
+  `architect.md.tmpl`, `build.md.tmpl`, `commit.md`, `researcher.md`, `upgrade-analyst.md`. The
+  primary agents (`architect`, `build`) are chezmoi templates that include a shared partial via `{{
+  template "opencode-primary-shared.md" . }}`. The partial holds directives that apply to every
+  primary agent but MUST NOT leak to subagents. OpenCode loads AGENTS.md into every agent context
+  regardless of mode (verified against source; no mode-based filter exists), so shared primary-only
+  content cannot live in AGENTS.md and the template partial is the workaround.
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`). Files:
   `contrib-init.md`, `pr-review.md`, `renovate-upgrade.md`, `research.md`,
   `setup-conventional-commits.md`
 - `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`). Contains `tool-guards.ts`.
+- `.chezmoitemplates/` - Reusable template partials scoped to OpenCode config. Template names share
+  a global namespace across all `.chezmoitemplates/` directories in the source state; prefix names
+  with `opencode-` to avoid collisions. Current partials: `opencode-primary-shared.md`.
 - `.chezmoiremove` - Tracks removed files for cleanup
 
 **Tool configs (`home/dot_config/`):** ccstatusline, commitlint, environment.d, fontconfig, git,
