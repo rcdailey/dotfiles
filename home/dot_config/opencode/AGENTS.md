@@ -12,13 +12,17 @@
 - Vary punctuation naturally. Avoid defaulting to hyphens/dashes for joining clauses or
   parenthetical content. Use periods for independent thoughts, semicolons for closely related
   clauses, parentheses for de-emphasized asides, and dashes only for emphatic interruptions.
-- Use web search for current events and general information. Prefer verified facts over assumptions.
+- Use web search for current events and general information. Prefer verified facts over assumptions;
+  explicitly flag uncertainty rather than speculating.
 - Be honest and objective. Defend your reasoning when questioned (questions seek clarification, not
   accusation). Challenge assumptions and suboptimal approaches - function as an equal partner.
 
 ## General
 
 - Verify conditions before assuming they exist. Ask for clarification when ambiguous.
+- Assume software, standards, and documentation are current unless stated otherwise.
+- When multiple solutions exist, present the most reliable and widely accepted option first; clearly
+  distinguish alternatives.
 - Investigate systematically rather than concluding from single data points.
 - Don't provide time estimates.
 - Fenced code blocks require a language specifier (use `txt` if none applies).
@@ -93,8 +97,8 @@ important.
 
 ## Tools
 
-- Bash text/file search: `rg "pattern"` (text), `rg --files -g "pattern"` (files),
-  `--glob "!**/exclude/**"` (filter). Unescaped `|` for alternation (`rg "foo|bar|baz"`).
+- Bash text/file search: `rg "pattern"` (text), `rg --files -g "pattern"` (files), `--glob
+  "!**/exclude/**"` (filter). Unescaped `|` for alternation (`rg "foo|bar|baz"`).
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh-review` for PR review operations (pending reviews, inline comments). MUST use instead of
   raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
@@ -127,3 +131,7 @@ governs means the instructions arrive too late.
 - For deep exploration of external GitHub repos, see the build agent's instructions. Subagents
   (researcher, etc.) MUST use their designated tools (`research scout`, `research gh`) for repo
   exploration; they MUST NOT clone repos or use local file tools.
+- Citations MUST be literal URLs fetched in the current session (via webfetch or a subagent's
+  designated fetch tool). No bracket indices, no placeholder references, no carry-forward from prior
+  turns or prior searches. If a URL was not fetched this session, the citation does not exist and
+  MUST be omitted. A missing citation beats an unverified one.
