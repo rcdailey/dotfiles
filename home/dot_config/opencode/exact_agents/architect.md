@@ -5,8 +5,6 @@ description: >
   Use Build for small or medium tasks; switch to Architect when a task warrants the
   orchestration overhead (large features, cross-file refactors, bulk pattern application).
 mode: primary
-model: anthropic/claude-opus-4-7
-variant: medium
 permission:
   edit: deny
   webfetch: deny
