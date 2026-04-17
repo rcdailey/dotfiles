@@ -96,14 +96,9 @@ context.
 
 Apply the review priorities and verification rules from the `gh-pr-review` skill.
 
-For every potential comment, verify technical claims about library or framework behavior using
-Context7 (`resolve-library-id` then `query-docs`). Do NOT delegate to the researcher subagent or use
-web search. If Context7 lacks coverage for a claim, either drop the comment or reframe it as an open
-question rather than asserting something unverifiable.
-
-Track which Context7 queries or project code locations informed each comment. If a finding is
-obvious from static inspection of the diff (e.g., null dereference, missing error handling, logic
-error), it does not need an external citation.
+For technical claims about library or framework behavior, verify with Context7 (`resolve-library-id`
+then `query-docs`). Do NOT delegate to the researcher subagent or use web search. If Context7 lacks
+coverage, reframe the comment as an open question rather than asserting something unverifiable.
 
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.
@@ -113,9 +108,6 @@ targeting. Do not fetch the full diff.
 Load the `humanizer` skill before creating the review file (not in parallel with file creation).
 Apply the tone and etiquette guidelines from the `gh-pr-review` skill.
 
-The review file serves two audiences. Mark sections clearly so the posting step knows what to
-include.
-
 **Format:**
 
 ````markdown
@@ -124,40 +116,17 @@ include.
 **File:** `{path}`
 **Line:** {number}
 
-<!-- POST: Everything between POST markers is the GitHub comment body -->
-
-{Conversational explanation of the issue and why it matters. End with
-suggestion.}
+{Conversational explanation of the issue and why it matters. End with suggestion.}
 
 ```suggestion
 {code fix if applicable}
 ```
-
-<!-- /POST -->
-
-**Background:** {1-2 sentences of context for the reviewer. What area of
-the product is this, and why does the finding matter? Keep it brief; skip
-the tutorial.}
-
-**Sources:**
-
-- {Context7 doc queries, project code file:line references, or "static
-  analysis of diff" if the finding is self-evident. Only include sources
-  that actually informed the comment.}
 ````
 
-- Content between `<!-- POST -->` and `<!-- /POST -->`: posted to GitHub as the review comment.
-  Nothing outside these markers is posted.
-- POST content MUST NOT contain hard line breaks within paragraphs. Each paragraph is a single
-  unbroken line; separate paragraphs with blank lines. GitHub's UI handles wrapping when rendering
-  the comment, and hard-wrapped source produces awkward line breaks in the rendered output. This
-  rule applies only to prose paragraphs; lists, code blocks, and `suggestion` blocks keep their
-  normal line structure.
-- Background and Sources: reviewer's eyes only. These stay in the local review file.
-- Every comment MUST have a Background and Sources section. For findings obvious from static
-  inspection, "static analysis of diff" or a file:line citation is sufficient. For claims about
-  library/framework behavior, cite the Context7 query. If no source can be found, demote the comment
-  to a question (e.g., "I'm not sure if this is safe; worth checking the docs for [X]").
+Do not hard-wrap prose paragraphs within a comment body. Each paragraph is a single unbroken line;
+separate paragraphs with blank lines. GitHub's UI wraps at render time, and hard-wrapped source
+produces awkward line breaks. Lists, code blocks, and `suggestion` blocks keep their normal line
+structure.
 
 ### 5. File Structure
 
@@ -208,4 +177,3 @@ If minor issues requested, add section at end:
 - Do not read README, docs, or wiki files unless a finding specifically needs them
 - Do not delegate to the researcher subagent or use web search
 - Do not fetch the full PR diff; use the changed file list and targeted local diffs
-- Do not hard-wrap prose paragraphs inside POST markers; GitHub wraps them at render time
