@@ -6,6 +6,7 @@ description: >
 mode: all
 model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
 variant: high
+hidden: true
 permission:
   "*": deny
   read: allow
