@@ -96,9 +96,9 @@ context.
 
 Apply the review priorities and verification rules from the `gh-pr-review` skill.
 
-For technical claims about library or framework behavior, verify with Context7 (`resolve-library-id`
-then `query-docs`). Do NOT delegate to the researcher subagent or use web search. If Context7 lacks
-coverage, reframe the comment as an open question rather than asserting something unverifiable.
+For technical claims about library or framework behavior, verify with `ctx7`. Do NOT delegate to the
+researcher subagent or use web search. If `ctx7` lacks coverage, reframe the comment as an open
+question rather than asserting something unverifiable.
 
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.

@@ -102,11 +102,10 @@ important.
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh-review` for PR review operations (pending reviews, inline comments). MUST use instead of
   raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
-- Use Context7 MCP (`resolve-library-id` then `query-docs`) for library and framework documentation
-  lookups. Context7 returns current, version-specific docs and code examples directly; prefer it
-  over delegating to the researcher subagent for API usage, configuration, migration guides, and
-  "how do I do X with library Y" questions. Fall back to the researcher only when Context7 lacks
-  coverage or the question spans multiple projects, community discussions, or issue trackers.
+- MUST use the `ctx7` CLI for library and framework docs before webfetch or the researcher subagent;
+  fall back to the researcher only when `ctx7` lacks coverage:
+  - `ctx7 library <name> <query>` searches the index and returns library IDs
+  - `ctx7 docs <libraryId> <query>` fetches docs for an ID (e.g. `/vercel/next.js`)
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
 - Use `pdf2md` for PDF files: `pdf2md <file-or-url>`. Run `pdf2md --help` for full usage.
 - MUST NOT use the 'write' tool if a file exists. MUST use 'edit' tools for surgical edits to

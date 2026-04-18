@@ -37,12 +37,7 @@
     "opencode-gemini-auth@latest",
     "opencode-claude-auth@latest",
   ],
-  "mcp": {
-    "context7": {
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp/oauth",
-    },
-  },
+  "mcp": {},
   "permission": {
     "*": "allow",
     // web CLI replaces both search and fetch; deny built-in equivalents

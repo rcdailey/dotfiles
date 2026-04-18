@@ -38,7 +38,7 @@ Medium/low (only when explicitly requested): Organization, docs, test coverage, 
 
 ### Verification
 
-Use Context7 and web search to verify unfamiliar patterns, best practices, and security implications
+Use `ctx7` and web search to verify unfamiliar patterns, best practices, and security implications
 before writing comments. Every technical claim must be verified.
 
 ## Review File Comment Boundaries

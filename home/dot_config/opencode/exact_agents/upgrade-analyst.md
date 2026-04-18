@@ -9,7 +9,6 @@ model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
 hidden: true
 permission:
   "*": deny
-  "context7_*": allow
   grep: allow
   read: allow
   external_directory: allow
@@ -17,6 +16,7 @@ permission:
     "*": deny
     "base64 *": allow
     "cat *": allow
+    "ctx7 *": allow
     "curl *": allow
     "echo *": allow
     "gh *": allow
