@@ -113,11 +113,21 @@ important.
 
 ## Skills
 
-You MUST check the available skills list before performing any task. If a skill's trigger condition
-matches the current task, load it BEFORE acting on the governed task. Failure to load a matching
-skill violates this directive. Skills MUST be loaded alone (never in parallel with other tool calls)
-and MUST complete before acting on the governed task; loading a skill in parallel with the action it
-governs means the instructions arrive too late.
+MUST check the available skills list before any task. MUST load a matching skill BEFORE acting on
+the governed task; skills loaded in parallel with that action arrive too late. MUST load skills
+alone (never in parallel with other tool calls).
+
+Per-skill triggers:
+
+- `humanizer`: MUST load when writing prose to files or through tool calls (docs, READMEs,
+  changelogs, PR/issue bodies, release notes, gist content). MUST NOT load for conversational chat,
+  code, commit messages, or structured data.
+- `csharp-coding`: MUST load when writing, editing, or reviewing C# / .NET code or project files.
+- `agents-authoring`: MUST load when creating, editing, or reviewing AGENTS.md files.
+- `skill-authoring`: MUST load when creating, editing, or reviewing SKILL.md files.
+- `subagent-authoring`: MUST load when creating, editing, or refactoring agent definitions.
+- `command-authoring`: MUST load when creating, editing, or refactoring OpenCode slash commands.
+- `git-hunks`: MUST load when staging individual hunks or partial file changes non-interactively.
 
 ## Agents
 

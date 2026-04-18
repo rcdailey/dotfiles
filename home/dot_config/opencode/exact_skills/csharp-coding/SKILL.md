@@ -5,8 +5,8 @@ description: >-
   (`.cs`, `.csproj`, `.razor`, `.cshtml`, `.vb` interop, `Directory.Build.props`);
   working on dotnet, ASP.NET, Blazor, MAUI, WPF, WinForms, EF Core, Roslyn, or
   NuGet packaging tasks; applying modern C# language features, nullable reference
-  types, or async patterns; configuring `TargetFramework` or `LangVersion`. Triggers
-  on any C#, .NET, or dotnet-related coding task.
+  types, or async patterns; configuring `TargetFramework` or `LangVersion`. Do NOT
+  use for F#, VB.NET, or non-CLR languages.
 ---
 
 # C# Coding Skill

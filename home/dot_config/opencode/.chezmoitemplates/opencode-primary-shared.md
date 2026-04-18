@@ -48,6 +48,14 @@ linear issue comment update <commentId> <-b body>
 linear issue comment list [ID]
 ```
 
+## Primary-only skills
+
+- `gh-pr-review`: MUST load when posting PR review comments, managing pending reviews, or replying
+  to review threads via `gh-review`.
+- `gh-api`: MUST load when using raw `gh api` for draft PRs, review-body comments, Discussions, or
+  endpoints not covered by higher-level `gh` subcommands.
+- `gh-gist`: MUST load when creating, updating, or iterating on GitHub gists.
+
 ## Committing changes
 
 Delegate to the `commit` subagent. MUST NOT run `git diff`, `git status`, `git log`, or any other

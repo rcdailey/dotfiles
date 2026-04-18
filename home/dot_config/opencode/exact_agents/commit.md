@@ -13,7 +13,6 @@ permission:
   external_directory: allow
   skill:
     "*": deny
-    humanizer: allow
   bash:
     "*": deny
     "commit *": allow
@@ -51,10 +50,6 @@ Callers MUST NOT run git inspection commands before delegating, describe the dif
 specific changes, or dictate commit messages.
 
 ## Preflight
-
-MUST load the `humanizer` skill as the very first action before any other work. This is
-unconditional; commit messages are human-readable text and MUST pass through the humanizer filter.
-Do not proceed with any other step until the skill is loaded.
 
 Generate conventional commits. Always use conventional commit format regardless of what the repo's
 git history shows. The log output from `commit recon` is for understanding change context and scope,
