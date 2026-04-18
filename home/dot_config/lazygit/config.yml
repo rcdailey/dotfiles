@@ -14,6 +14,7 @@ git:
 gui:
   mouseEvents: false
   mainPanelSplitMode: vertical
+  showBottomLine: false
 
 keybinding:
   universal:
