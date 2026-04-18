@@ -28,6 +28,26 @@ calls. `gh-scout` and `gh api` are appropriate for lightweight lookups (repo ori
 file reads, issue/PR queries); clone when the task requires broad codebase navigation. Clean up
 `/tmp` clones when done.
 
+## Linear CLI
+
+Use `linear` for Linear issue tracker operations. Lines below are usage signatures (not examples):
+`<required>`, `[optional]`. Run `linear <group> <cmd> -h` for the full flag set.
+
+- Groups: `issue`, `team`, `project`, `milestone`, `label`, `document`
+
+```txt
+linear team members [teamKey]
+linear project list [--all-teams] [--team KEY] [--status NAME]
+linear label list [--all | --team KEY | --workspace]
+linear issue view [ID] [-w] [-a]
+linear issue query [--search TERM] [-s STATE] [--project NAME] [--assignee USER] [--limit N]
+linear issue create <-t title> <-d desc> [--project NAME] [--milestone NAME] [-l LABEL]
+linear issue update <ID> [-t title] [-d desc] [-s state] [--priority 1-4] [-a assignee] [--parent ID]
+linear issue comment add [ID] <-b body> [-p parent-comment-id]
+linear issue comment update <commentId> <-b body>
+linear issue comment list [ID]
+```
+
 ## Committing changes
 
 Delegate to the `commit` subagent. MUST NOT run `git diff`, `git status`, `git log`, or any other
