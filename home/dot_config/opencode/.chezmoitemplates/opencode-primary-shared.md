@@ -28,26 +28,6 @@ calls. `research scout` and `gh api` are appropriate for lightweight lookups (re
 single file reads, issue/PR queries); clone when the task requires broad codebase navigation. Clean
 up `/tmp` clones when done.
 
-## Linear CLI
-
-Use `linear` for Linear issue tracker operations. Lines below are usage signatures (not examples):
-`<required>`, `[optional]`. Run `linear <group> <cmd> -h` for the full flag set.
-
-- Groups: `issue`, `team`, `project`, `milestone`, `label`, `document`
-
-```txt
-linear team members [teamKey]
-linear project list [--all-teams] [--team KEY] [--status NAME]
-linear label list [--all | --team KEY | --workspace]
-linear issue view [ID] [-w] [-a]
-linear issue query [--search TERM] [-s STATE] [--project NAME] [--assignee USER] [--limit N]
-linear issue create <-t title> <-d desc> [--project NAME] [--milestone NAME] [-l LABEL]
-linear issue update <ID> [-t title] [-d desc] [-s state] [--priority 1-4] [-a assignee] [--parent ID]
-linear issue comment add [ID] <-b body> [-p parent-comment-id]
-linear issue comment update <commentId> <-b body>
-linear issue comment list [ID]
-```
-
 ## Primary-only skills
 
 - `gh-pr-review`: MUST load when posting PR review comments, managing pending reviews, or replying
@@ -55,6 +35,9 @@ linear issue comment list [ID]
 - `gh-api`: MUST load when using raw `gh api` for draft PRs, review-body comments, Discussions, or
   endpoints not covered by higher-level `gh` subcommands.
 - `gh-gist`: MUST load when creating, updating, or iterating on GitHub gists.
+- `linear-cli`: MUST load when operating on Linear issues, projects, milestones, labels, or
+  documents via the `linear` CLI (creating or updating issues, adding comments, transitioning
+  state, assigning labels).
 
 ## Committing changes
 
