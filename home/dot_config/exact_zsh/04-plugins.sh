@@ -21,7 +21,7 @@ zinit load "Aloxaf/fzf-tab"
 # These can be safely deferred as they don't have strict timing requirements
 # IMPORTANT: history-substring-search bindings must be set AFTER autosuggestions loads
 # to prevent autosuggestions from overwriting them (see GitHub issue #678)
-zinit ice wait lucid atload'bindkey "$terminfo[kcuu1]" history-substring-search-up; bindkey "$terminfo[kcud1]" history-substring-search-down'
+zinit ice wait lucid atload'!_zsh_autosuggest_start; bindkey "$terminfo[kcuu1]" history-substring-search-up; bindkey "$terminfo[kcud1]" history-substring-search-down'
 zinit light zsh-users/zsh-autosuggestions
 zinit ice wait lucid
 zinit light zsh-users/zsh-syntax-highlighting

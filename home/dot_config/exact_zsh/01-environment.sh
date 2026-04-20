@@ -48,6 +48,11 @@ export OPENCODE_CONFIG="$XDG_CONFIG_HOME/opencode/opencode.local.jsonc"
 # See: https://github.com/oven-sh/bun/issues/19936
 export CI=1
 
+# zsh-autosuggestions: async fetch keeps keystrokes responsive; strategy prefers
+# history over completions for faster, more relevant suggestions.
+export ZSH_AUTOSUGGEST_USE_ASYNC=1
+export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+
 # Homebrew - disable new casks/formula messages and analytics
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_BOOTSNAP=1
