@@ -39,6 +39,10 @@ export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
 
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 
+# Point Terraform (and other Go net/netrc consumers) at a dedicated netrc file. Siggy (the Statsig
+# CLI) hardcodes ~/.netrc and writes non-RFC keywords that break Terraform parsing.
+export NETRC="$HOME/.netrc.terraform"
+
 # Per-machine opencode overrides (model, provider, agent defaults)
 export OPENCODE_CONFIG="$XDG_CONFIG_HOME/opencode/opencode.local.jsonc"
 
