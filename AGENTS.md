@@ -29,6 +29,12 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 **Scripts:**
 
 - `home/git-scripts/` - Git helper scripts and subcommands
+- `scripts/` - Repo-rooted Python projects executed in-place by thin wrappers in
+  `home/dot_local/bin/`. Lives outside `home/` so chezmoi does not manage Python build artifacts
+  (`.venv/`, `__pycache__/`, `uv.lock`); edits take effect without `chezmoi apply`.   Wrappers
+  resolve the project path via `$(chezmoi source-path)/../scripts/<name>` so the source location is
+  authoritative (no hardcoded home path). Current projects: `research/` (LLM research CLI; entry:
+  `executable_research`)
 
 **Chezmoi internals:**
 

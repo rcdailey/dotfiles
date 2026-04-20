@@ -24,9 +24,9 @@ MUST NOT call webfetch directly for research/exploration. Delegate to the approp
 
 For deep exploration of external GitHub repos (tracing code paths, multi-file search, reading many
 files), clone to `/tmp` and use local file tools (`read`, `glob`, `rg`) instead of repeated API
-calls. `gh-scout` and `gh api` are appropriate for lightweight lookups (repo orientation, single
-file reads, issue/PR queries); clone when the task requires broad codebase navigation. Clean up
-`/tmp` clones when done.
+calls. `research scout` and `gh api` are appropriate for lightweight lookups (repo orientation,
+single file reads, issue/PR queries); clone when the task requires broad codebase navigation. Clean
+up `/tmp` clones when done.
 
 ## Linear CLI
 

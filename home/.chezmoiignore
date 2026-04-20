@@ -2,6 +2,11 @@
 .gitkeep
 .gitconfig.local
 
+# Python build artifacts (in case any managed source ever contains them)
+**/__pycache__/**
+**/.venv/**
+**/*.pyc
+
 
 
 # Run the appropriate scripts based on OS
