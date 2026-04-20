@@ -5,7 +5,8 @@ description: >
   Goal, Files, Discovery, Constraints, Acceptance, Completion, Supersession. Briefs missing
   required sections are rejected.
 mode: subagent
-model: fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo
+model: anthropic/claude-sonnet-4-6
+variant: medium
 permission:
   webfetch: deny
   bash:
