@@ -96,9 +96,13 @@ context.
 
 Apply the review priorities and verification rules from the `gh-pr-review` skill.
 
-For technical claims about library or framework behavior, verify with `ctx7`. Do NOT delegate to the
-researcher subagent or use web search. If `ctx7` lacks coverage, reframe the comment as an open
-question rather than asserting something unverifiable.
+MUST verify technical claims with `ctx7` for every library, framework, language, tool, CLI, or
+standard referenced in a finding. This is not optional; unverified assertions produce hallucinated
+review feedback. Run `ctx7 library <name> <query>` to resolve an ID, then `ctx7 docs <id> <query>`
+for the specific behavior. Record every `ctx7` source consulted for the Citations section. Do NOT
+delegate to the researcher subagent or use web search. If `ctx7` lacks coverage for a given claim,
+reframe the comment as an open question rather than asserting something unverifiable, and note the
+gap in Citations.
 
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.
@@ -149,9 +153,23 @@ Write the review file to the **original repo root** (not the worktree).
 **Should fix before production:** {serious but working issues}
 
 **Recommendations:** {non-urgent improvements}
+
+## Citations
+
+List every source consulted to back findings. Each entry: the `ctx7` library ID and query, a file
+path with line range from the worktree or repo, or a URL fetched via an approved tool this session.
+No bracket indices, no carry-forward from prior sessions. If a claim could not be verified, list
+the attempt and mark it `unverified`.
+
+## Confidence
+
+Rate overall confidence in the review as `high`, `medium`, or `low`, then justify in one or two
+sentences. Address: how thoroughly sources backed each finding, whether any comment rests on
+pattern-matching rather than verified behavior, and the estimated hallucination risk. If confidence
+is not `high`, enumerate which comments are weakest and why.
 ```
 
-If minor issues requested, add section at end:
+If minor issues requested, add section before Citations:
 
 ```markdown
 ---
@@ -177,3 +195,6 @@ If minor issues requested, add section at end:
 - Do not read README, docs, or wiki files unless a finding specifically needs them
 - Do not delegate to the researcher subagent or use web search
 - Do not fetch the full PR diff; use the changed file list and targeted local diffs
+- Every finding that references a library, framework, language, tool, CLI, or standard MUST cite a
+  `ctx7` lookup or a concrete file reference. Unverified claims MUST be reframed as questions.
+- Citations and Confidence sections are mandatory; a review without them is incomplete
