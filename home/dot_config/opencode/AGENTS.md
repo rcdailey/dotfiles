@@ -39,6 +39,11 @@
 ## Development
 
 - Use latest stable versions of tools, languages, libraries, frameworks.
+- Prefer idiomatic patterns: use framework-native solutions over hand-rolled equivalents, current
+  API surfaces over deprecated predecessors, and official usage recommendations over ad-hoc
+  approaches. SHOULD verify against `ctx7` when writing non-trivial integrations with libraries,
+  frameworks, tools, or language features; model training data may reflect outdated or incorrect
+  idioms.
 - Reduce nesting: invert conditions, exit early.
 - YAML: don't quote values unless required for disambiguation.
 - Prefer defaults by omission over explicit configuration.
@@ -139,8 +144,8 @@ Per-skill triggers:
   verifying links, searching docs, etc.) to catch hallucinations and false assumptions. Subagent
   models are weaker than the caller; trust but verify.
 - For deep exploration of external GitHub repos, see the build agent's instructions. Subagents
-  (researcher, etc.) MUST use their designated tool (`research scout`) for repo exploration;
-  they MUST NOT clone repos or use local file tools.
+  (researcher, etc.) MUST use their designated tool (`research scout`) for repo exploration; they
+  MUST NOT clone repos or use local file tools.
 - Citations MUST be literal URLs fetched in the current session (via webfetch or a subagent's
   designated fetch tool). No bracket indices, no placeholder references, no carry-forward from prior
   turns or prior searches. If a URL was not fetched this session, the citation does not exist and
