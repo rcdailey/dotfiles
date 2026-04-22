@@ -21,7 +21,7 @@ Use `linear` for Linear issue tracker operations. Lines below are usage signatur
 linear team members [teamKey]
 linear project list [--all-teams] [--team KEY] [--status NAME]
 linear label list [--all | --team KEY | --workspace]
-linear issue view [ID] [-w] [-a]
+linear issue view [ID] [-w]
 linear issue query [--search TERM] [-s STATE] [--project NAME] [--assignee USER] [--limit N]
 linear issue create <-t title> <-d desc> [-s STATE] [--project NAME] [--milestone NAME]
                     [-l LABEL]... [--estimate N] [--assignee self|USER] [--no-interactive]
