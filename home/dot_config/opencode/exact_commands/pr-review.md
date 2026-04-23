@@ -118,14 +118,18 @@ Apply the tone and etiquette guidelines from the `gh-pr-review` skill.
 ## Comment {N}: {Brief title}
 
 **File:** `{path}`
-**Line:** {number}
+**Lines:** {start}-{end}
 
 {Conversational explanation of the issue and why it matters. End with suggestion.}
 
 ```suggestion
-{code fix if applicable}
+{verbatim replacement for lines start through end}
 ```
 ````
+
+The line range defines exactly which lines the suggestion block replaces. Do not include surrounding
+context lines; they would be deleted when the suggestion is applied. For single-line comments, use
+the same line for both start and end (e.g., `152-152`).
 
 Do not hard-wrap prose paragraphs within a comment body. Each paragraph is a single unbroken line;
 separate paragraphs with blank lines. GitHub's UI wraps at render time, and hard-wrapped source
