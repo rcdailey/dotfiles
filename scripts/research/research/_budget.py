@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 MAX_CALLS = 15
 CHECKPOINT_AT = MAX_CALLS // 2  # 7: mid-session assessment
 WARNING_AT = MAX_CALLS - 3  # 12: final warning
-IDLE_TIMEOUT = 30  # seconds between calls before session expires
 
 _COUNT_KEY = "count"
 _URL_PREFIX = "url:"
@@ -61,8 +60,6 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
         count = cache.get(_COUNT_KEY, 0)
 
         if url_key and url_key in cache:
-            cache.touch(url_key, expire=IDLE_TIMEOUT)
-            cache.set(_COUNT_KEY, count, expire=IDLE_TIMEOUT)
             remaining = MAX_CALLS - count
             print(
                 f"\n[cache hit; budget unchanged at {count}/{MAX_CALLS} used, "
@@ -72,9 +69,9 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
             return
 
         count += 1
-        cache.set(_COUNT_KEY, count, expire=IDLE_TIMEOUT)
+        cache.set(_COUNT_KEY, count)
         if url_key:
-            cache.set(url_key, True, expire=IDLE_TIMEOUT)
+            cache.set(url_key, True)
         print(budget_message(count), flush=True)
 
     if count > MAX_CALLS:
@@ -82,14 +79,12 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
 
 
 def get_count(cache: Cache) -> int:
-    """Return current call count, sweeping expired entries first."""
-    cache.expire()
+    """Return current call count."""
     return cache.get(_COUNT_KEY, 0)
 
 
 def format_status(cache: Cache) -> str:
     """Return status string for status command."""
-    cache.expire()
     count = cache.get(_COUNT_KEY, 0)
     remaining = MAX_CALLS - count
     lines = [f"{count}/{MAX_CALLS} calls used, {remaining} remaining"]

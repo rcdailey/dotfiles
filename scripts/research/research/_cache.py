@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from diskcache import Cache
 
-CACHE_DIR = Path("/tmp/.research-cache")
+_BASE_CACHE_DIR = Path("/tmp/.research-cache")
+_session_id = os.environ["RESEARCH_SESSION_ID"]
+CACHE_DIR = _BASE_CACHE_DIR / _session_id
 _URL_PREFIX = "url:"
-IDLE_TIMEOUT = 30  # seconds
 
 _cache_singleton: Cache | None = None
 
@@ -35,12 +37,4 @@ def read_cached_content(url: str) -> str | None:
 def write_cached_content(url: str, content: str) -> None:
     """Persist fetched markdown so repeat fetches skip the network."""
     cache = get_cache()
-    cache.set(f"{_URL_PREFIX}{url}", content, expire=IDLE_TIMEOUT)
-
-
-def touch_url(url: str) -> None:
-    """Touch a URL entry to reset its expiration."""
-    cache = get_cache()
-    key = f"{_URL_PREFIX}{url}"
-    if key in cache:
-        cache.touch(key, expire=IDLE_TIMEOUT)
+    cache.set(f"{_URL_PREFIX}{url}", content)
