@@ -124,6 +124,19 @@ _maybe_load_talosctl_completion() {
 chpwd_functions+=(_maybe_load_talosctl_completion)
 _maybe_load_talosctl_completion
 
+# Dynamic kubectl completion (loaded when mise makes it available on cd)
+_kubectl_completion_loaded=0
+_maybe_load_kubectl_completion() {
+  if (( _kubectl_completion_loaded )); then
+    return
+  fi
+  mise which kubectl &>/dev/null || return
+  eval "$(kubectl completion zsh)"
+  _kubectl_completion_loaded=1
+}
+chpwd_functions+=(_maybe_load_kubectl_completion)
+_maybe_load_kubectl_completion
+
 # History substring search bindings moved to 04-plugins.sh atload hook
 # to ensure they're set AFTER zsh-autosuggestions loads (prevents overwrite)
 
