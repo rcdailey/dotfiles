@@ -111,6 +111,19 @@ if command -v mise >/dev/null 2>&1; then
     eval "$(mise activate zsh)" 2>/dev/null
 fi
 
+# Dynamic talosctl completion (loaded when mise makes it available on cd)
+_talosctl_completion_loaded=0
+_maybe_load_talosctl_completion() {
+  if (( _talosctl_completion_loaded )); then
+    return
+  fi
+  mise which talosctl &>/dev/null || return
+  eval "$(talosctl completion zsh)"
+  _talosctl_completion_loaded=1
+}
+chpwd_functions+=(_maybe_load_talosctl_completion)
+_maybe_load_talosctl_completion
+
 # History substring search bindings moved to 04-plugins.sh atload hook
 # to ensure they're set AFTER zsh-autosuggestions loads (prevents overwrite)
 
