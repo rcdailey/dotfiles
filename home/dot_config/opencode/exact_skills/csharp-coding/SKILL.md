@@ -95,6 +95,31 @@ Mark runtime-used members (deserialization, reflection, DI):
 - Named arguments for boolean literals: `new Options(SendInfo: false, SendEmpty: true)`
 - Named arguments for consecutive same-type parameters to clarify intent
 
+### Regular Expressions
+
+- NEVER use `static readonly Regex` fields, `new Regex()`, or static `Regex.IsMatch()`/
+  `Regex.Replace()` methods
+- .NET 10+: `[GeneratedRegex]` on `static partial` properties returning `Regex` (preferred form)
+- .NET 7-9: `[GeneratedRegex]` on `static partial` methods returning `Regex`
+- Below .NET 7: fall back to `static readonly Regex` with `RegexOptions.Compiled`; add `// TODO:
+  convert to [GeneratedRegex] when TFM allows`
+
+```csharp
+// .NET 10+ (property form)
+public partial class Validators
+{
+    [GeneratedRegex(@"^[\w.-]+@[\w.-]+\.\w+$", RegexOptions.IgnoreCase)]
+    public static partial Regex Email { get; }
+}
+
+// .NET 7-9 (method form)
+public partial class Validators
+{
+    [GeneratedRegex(@"^[\w.-]+@[\w.-]+\.\w+$", RegexOptions.IgnoreCase)]
+    public static partial Regex Email();
+}
+```
+
 ### Async
 
 - `ValueTask` for hot paths
