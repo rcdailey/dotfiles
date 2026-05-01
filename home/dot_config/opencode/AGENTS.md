@@ -65,21 +65,18 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 
 ## Testing
 
-Test at the highest scope that's practical. Write a failing test for the happy path first, implement
-until it passes, then check coverage for gaps. Push to lower-scoped tests only when higher-scoped
-tests cannot reach specific code paths.
-
-**Test behavior, not implementation.** Skip anything with no meaningful behavior to verify:
-
-- Output formatting (console output, log messages, UI rendering)
-- Data containers with no logic (no conditionals, no transformation)
-- Implementation details that could change without affecting outcomes
+SHOULD write a failing test before implementing features and fixes (test-first). Test at the highest
+scope that's practical; push to lower-scoped tests only when higher-scoped tests cannot reach
+specific code paths.
 
 **Assert outcomes, not interactions.** Verify the result, side effect, or state change rather than
 asserting a mock method was called. Interaction verification couples tests to implementation; they
 break on refactors even when behavior is correct. If interaction verification feels like the only
 option, challenge the design first (void method hiding a meaningful result, missing return value,
-side effect with no observable state change).
+side effect with no observable state change). Skip anything with no meaningful behavior to verify
+(output formatting, data containers with no logic, implementation details that could change without
+affecting outcomes). Avoid: over-mocking, duplicate coverage, test-only production code, magic
+constants.
 
 **Debugging test failures:** Gather evidence before changing code. Avoid guess-and-check cycles.
 
@@ -90,18 +87,6 @@ side effect with no observable state change).
 5. Simplify to minimal reproduction; strip test down, add back until failure
 6. Write adhoc granular tests to isolate suspected areas; remove when done
 7. Check test isolation: run alone (`--filter` or equivalent) vs. suite to detect state leakage
-
-**Test framing:** Tests serve as documentation. Positive tests verify expected behavior, then check
-absence of side effects. Negative tests assert the error/rejection IS raised. Both are equally
-important.
-
-**Anti-patterns:**
-
-- Over-mocking or mocking business logic
-- Tests coupled to implementation details
-- Duplicate coverage for same logical paths
-- Production code added solely for testing
-- Unexplained magic constants
 
 ## Tools
 
