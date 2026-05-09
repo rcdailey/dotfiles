@@ -24,23 +24,22 @@ commands beyond search, fetch, and exploration tools.
 
 ## Tools
 
-All tool calls go through the `research` wrapper, which tracks your call budget. You have a hard
-limit of 15 tool calls per session. The wrapper enforces this; calls beyond the limit will be
-rejected.
+All tool calls go through the `research` wrapper. Budget tracking applies only to `web` and `pdf`
+commands (15-call limit). Scout commands have no budget limit.
 
 ### Calling convention
 
 Every tool call MUST be prefixed with `research` followed by the tool name:
 
 ```txt
-research scout ...    # GitHub repo exploration and workflows
+research scout ...    # GitHub repo exploration
 research web ...      # Linkup web search and fetch
 research pdf ...      # download, OCR, convert PDF to markdown
 research status       # budget usage report
 ```
 
-NEVER call `gh`, `web`, `curl`, or `pdf2md` directly. Always use `research scout`, `research web`,
-or `research pdf`. Direct calls will be denied by permissions.
+NEVER call `gh`, `web`, `curl`, `rg`, or `pdf2md` directly. Always use `research scout`, `research
+web`, or `research pdf`. Direct calls will be denied by permissions.
 
 ### research web
 
@@ -90,7 +89,7 @@ URLs; it cannot extract PDF content. The `--find` and `--max-chars` options work
 Explore GitHub repositories, issues, PRs, releases, and commits. All output is Markdown prose; no
 JSON is emitted.
 
-**Repo exploration:**
+**Repo exploration (API-based):**
 
 ```txt
 research scout orient REPO [--brief] [--ref REF]         # metadata, structure, key files
@@ -100,6 +99,24 @@ research scout blame REPO PATH [--ref REF]               # line-by-line attribut
 research scout diff REPO BASE..HEAD [--path P]           # compare two refs
 research scout code QUERY [--in OWNER/REPO]              # code search (literal, no regex)
 ```
+
+**Local clone exploration (auto-clones on first use):**
+
+```txt
+research scout rg REPO PATTERN [--path P] [-g GLOB] [--type TYPE] [-C N]
+research scout find REPO PATTERN [--limit N]
+research scout cat REPO PATH [--limit N] [--offset N]
+```
+
+These commands clone the repo to a local cache on first use (shallow, depth 1). Subsequent calls
+reuse the clone. Clones older than 1 hour are automatically refreshed via `git pull`. Prefer these
+over the API-based `read`/`tree`/`code` commands for code exploration; they are faster, support
+regex, and have no API rate limits.
+
+- `rg`: ripgrep search. `--path` restricts to a subdirectory. `-g` filters by file glob (repeatable,
+  e.g., `-g "*.ts"`). `--type` uses ripgrep's built-in type filters (e.g., `py`, `ts`, `go`).
+- `find`: glob pattern match on filenames (e.g., `"*.test.ts"`, `"Dockerfile*"`).
+- `cat`: read a file from the clone. `--offset` and `--limit` for pagination.
 
 **Issues and PRs:**
 
@@ -142,6 +159,10 @@ research scout changelog REPO --since v1.0  # compare from specific version
 actual content. Use `--ref` to specify a branch, tag, or SHA (defaults to HEAD). All list commands
 render as Markdown bullet lists for token efficiency.
 
+`scout rg`, `scout find`, and `scout cat` use a local clone. The first call to any of these for a
+given repo triggers a shallow clone to `/tmp/research-repos/OWNER/REPO`. Stale clones (>1 hour) are
+refreshed automatically. Clone status messages appear on stderr.
+
 ## Workflow
 
 1. **Assess** the question. Determine the best starting tool:
@@ -165,8 +186,11 @@ render as Markdown bullet lists for token efficiency.
    immediately; `web fetch` cannot extract PDF content. Do not retry the same URL with `web fetch`.
    When exploring GitHub repos, follow broad-then-narrow:
    - Orient with `research scout orient owner/repo` for structure and key files
-   - Survey with `research scout tree --depth 1` and `research scout read` for specific files
-   - Target with `research scout code`, `research scout blame`, or `research scout commits`
+   - Search code with `research scout rg` (regex, local clone) instead of `scout code` (API, literal
+     only, rate-limited)
+   - Read files with `research scout cat` (local clone) instead of `scout read` (API) when exploring
+     multiple files
+   - Find files with `research scout find` for glob-based discovery
    - Cross-reference with `research scout issue`, `research scout pr`, and `research scout activity`
 
 4. **Synthesize**. Produce your response using the output contract below.
@@ -188,14 +212,17 @@ one budget unit each.
 
 ### Budget enforcement
 
-The `research` wrapper enforces a hard 15-call limit. You will see budget messages in stdout:
+Budget applies only to `research web` and `research pdf` commands (15-call limit). Scout commands
+are not budget-tracked.
+
+You will see budget messages in stdout on web/pdf calls:
 
 - **At call 7**: checkpoint reminder to assess whether you can answer now
 - **At call 12**: warning to begin synthesizing immediately
 - **At call 13-15**: remaining call count
 - **Beyond 15**: tool execution is blocked; synthesize from what you have
 
-Plan your calls. Do not waste calls on speculative searches.
+Plan your web/pdf calls.
 
 **Free cache hits:** The first `web fetch` or `pdf` call for a given URL costs one budget slot.
 Subsequent calls to the same base URL (e.g., with different `--find` patterns) are free and show
@@ -297,12 +324,15 @@ sections.
 
 - When a question names a specific open-source project, `research scout orient` MUST be your first
   call. It reveals the repo's docs/, CHANGELOG, CHANGES.md, UPGRADING.md, and release structure in a
-  single call, saving multiple web search round-trips. Follow up with `research scout read` on the
+  single call, saving multiple web search round-trips. Follow up with `research scout cat` on the
   specific doc files before falling back to web search.
-- `research scout read` returns raw file contents; the output is the file itself, not a JSON blob
+- For code exploration across a repo, prefer the local clone commands (`rg`, `find`, `cat`) over
+  API-based equivalents (`code`, `tree`, `read`). Local commands are faster, support regex, and are
+  not rate-limited.
 - For large files, use `--offset` to paginate (e.g., `--limit 500`, then `--offset 500`)
 - `scout code` uses GitHub's code search API (literal, no regex; `|` is treated as a character).
-  Qualifiers (`language:`, `path:`, `org:`) go inside the query string, not as separate CLI args
+  Qualifiers (`language:`, `path:`, `org:`) go inside the query string, not as separate CLI args.
+  Prefer `scout rg` for regex and multi-file search.
 - `research scout activity` is the fastest way to see what's happening in a repo recently
 - `research scout changelog` combines the CHANGELOG file with recent release metadata
 

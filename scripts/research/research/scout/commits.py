@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import click
 
-from research._budget import budget_reserve
-from research._cache import get_cache
 from research._ghapi import APIError, file_history, list_commits, view_commit
 from research._render import (
     fenced_code,
@@ -42,7 +40,6 @@ def commits(
 ) -> None:
     """List commits."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
     try:
         commits_list = list_commits(owner, name, since, until, path, author, limit)
     except APIError as e:
@@ -66,7 +63,6 @@ def commits(
 def commit(repo: str, sha: str) -> None:
     """View a specific commit with diff."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
     try:
         data = view_commit(owner, name, sha)
     except APIError as e:
@@ -107,7 +103,6 @@ def commit(repo: str, sha: str) -> None:
 def history(repo: str, path: str, limit: int) -> None:
     """Commit history for a file."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
     try:
         commits_list = file_history(owner, name, path, limit)
     except APIError as e:

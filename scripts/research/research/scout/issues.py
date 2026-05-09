@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import click
 
-from research._budget import budget_reserve
-from research._cache import get_cache
 from research._ghapi import (
     APIError,
     list_issues,
@@ -44,7 +42,6 @@ def _render_comments(comments: list[dict], heading: str = "Comments") -> None:
 def issue(repo: str, number: str | None, search: str | None, state: str, limit: int) -> None:
     """List or view issues."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
 
     if number:
         try:
@@ -94,7 +91,6 @@ def issue(repo: str, number: str | None, search: str | None, state: str, limit: 
 def pr(repo: str, number: str | None, search: str | None, state: str, limit: int) -> None:
     """List or view pull requests."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
 
     if number:
         try:
@@ -160,7 +156,6 @@ def pr(repo: str, number: str | None, search: str | None, state: str, limit: int
 def release(repo: str, tag: str | None, limit: int) -> None:
     """List or view releases."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
 
     if tag:
         try:

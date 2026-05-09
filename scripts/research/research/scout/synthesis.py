@@ -8,8 +8,6 @@ import urllib.request
 
 import click
 
-from research._budget import budget_reserve
-from research._cache import get_cache
 from research._ghapi import APIError, list_commits, list_issues, list_prs, list_releases
 from research._render import format_commit_item, format_list_item, sub_heading, truncate_output
 from research.scout import cli
@@ -22,7 +20,6 @@ from research.scout._common import parse_repo
 def activity(repo: str, days: int) -> None:
     """Recent commits, merged PRs, and closed issues synthesized."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
 
     cutoff = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=days)
     since = cutoff.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -94,7 +91,6 @@ def activity(repo: str, days: int) -> None:
 def changelog(repo: str, since: str | None) -> None:
     """CHANGELOG file + recent releases synthesized."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
 
     click.echo(f"## Changelog: {repo}\n")
 

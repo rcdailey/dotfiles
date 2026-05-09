@@ -11,8 +11,6 @@ from collections import Counter
 
 import click
 
-from research._budget import budget_reserve
-from research._cache import get_cache
 from research._ghapi import APIError, _run_gh, api, api_raw, graphql, resolve_ref
 from research.scout import cli
 from research.scout._common import die, parse_repo
@@ -145,7 +143,6 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
 def orient(repo: str, brief: bool, ref: str | None) -> None:
     """Overview: metadata, structure summary, key files."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
     _render_orient(owner, name, ref, brief)
 
 
@@ -163,7 +160,6 @@ def orient(repo: str, brief: bool, ref: str | None) -> None:
 def tree(repo: str, path: str, depth: int, ref: str | None, limit: int) -> None:
     """List directory contents (--depth 1) or full recursive tree."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
 
     if depth == 1:
         params: dict[str, str] = {}
@@ -210,7 +206,6 @@ def read(repo: str, path: str, ref: str, limit: int, offset: int) -> None:
     """Read file contents (raw, no envelope)."""
     owner, name = parse_repo(repo)
     raw_url = f"https://raw.githubusercontent.com/{owner}/{name}/{ref}/{path}"
-    budget_reserve(get_cache(), raw_url)
 
     try:
         with urllib.request.urlopen(raw_url, timeout=30) as response:
@@ -241,7 +236,6 @@ def read(repo: str, path: str, ref: str, limit: int, offset: int) -> None:
 def blame(repo: str, path: str, ref: str | None) -> None:
     """Line-by-line attribution."""
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
     resolved = resolve_ref(owner, name, ref)
     query = textwrap.dedent("""\
         query($owner:String!,$repo:String!,$ref:String!,$path:String!) {
@@ -292,7 +286,6 @@ def diff_cmd(repo: str, spec: str, path: str | None) -> None:
         die("spec must be BASE..HEAD (e.g., v1.0..v2.0)", code=2)
 
     owner, name = parse_repo(repo)
-    budget_reserve(get_cache(), None)
     try:
         data = api(f"repos/{owner}/{name}/compare/{base}...{head}")
     except APIError as e:
@@ -335,8 +328,6 @@ def code_cmd(query: str, scopes: tuple[str, ...], limit: int) -> None:
             "Run separate searches for each term.",
             code=2,
         )
-    budget_reserve(get_cache(), None)
-
     args = [
         "search",
         "code",
