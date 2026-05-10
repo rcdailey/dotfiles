@@ -257,6 +257,60 @@ def file_history(owner: str, repo: str, path: str, limit: int = 30) -> list[dict
     return list_commits(owner, repo, path=path, limit=limit)
 
 
+def list_discussions(
+    owner: str,
+    repo: str,
+    search: str | None = None,
+    limit: int = 30,
+) -> list[dict]:
+    """List discussions in a repository via GraphQL."""
+    query = """\
+query($owner:String!,$repo:String!,$limit:Int!) {
+  repository(owner:$owner,name:$repo) {
+    discussions(first:$limit,orderBy:{field:CREATED_AT,direction:DESC}) {
+      nodes { number title createdAt author { login } category { name } }
+    }
+  }
+}"""
+    try:
+        data = graphql(query, owner=owner, repo=repo, limit=str(limit))
+    except APIError as e:
+        raise APIError(f"failed to list discussions: {e}") from e
+
+    nodes = data.get("data", {}).get("repository", {}).get("discussions", {}).get("nodes", [])
+    if search:
+        needle = search.lower()
+        nodes = [n for n in nodes if needle in n.get("title", "").lower()]
+    return nodes
+
+
+def view_discussion(owner: str, repo: str, number: int) -> dict:
+    """Get discussion details including comments via GraphQL."""
+    query = """\
+query($owner:String!,$repo:String!,$number:Int!) {
+  repository(owner:$owner,name:$repo) {
+    discussion(number:$number) {
+      number title body createdAt
+      author { login }
+      category { name }
+      comments(first:50) {
+        nodes { body createdAt author { login } }
+      }
+    }
+  }
+}"""
+    try:
+        data = graphql(query, owner=owner, repo=repo, number=str(number))
+    except APIError as e:
+        raise APIError(f"failed to view discussion #{number}: {e}") from e
+
+    disc = data.get("data", {}).get("repository", {}).get("discussion")
+    if not disc:
+        raise APIError(f"discussion #{number} not found in {owner}/{repo}")
+    disc["comments"] = disc.get("comments", {}).get("nodes", [])
+    return disc
+
+
 class APIError(Exception):
     """GitHub API call failed."""
 

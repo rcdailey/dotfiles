@@ -61,13 +61,47 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int) -> None:
     if is_github_url(url):
         path = strip_github_host(url)
         parts = path.split("/")
-        if len(parts) >= 2:
+        # Only reroute when URL maps to a clear owner/repo pair.
+        # Skip orgs/ paths (org-level discussions, profiles) since scout
+        # cannot access those; let them fall through to web fetch.
+        if len(parts) >= 2 and parts[0] != "orgs":
             owner, repo = parts[0], parts[1]
-            reroute_message(url, f"scout orient {owner}/{repo}", "github.com pages")
-            # Delegate to scout orient
-            from research.scout import _do_orient
 
-            _do_orient(owner, repo, "HEAD", brief=False)
+            # Detect owner/repo/discussions/N and reroute to scout discussion
+            if len(parts) >= 4 and parts[2] == "discussions" and parts[3].isdigit():
+                number = int(parts[3])
+                reroute_message(
+                    url,
+                    f"scout discussion {owner}/{repo} {number}",
+                    "github.com discussion",
+                )
+                from research._ghapi import APIError, view_discussion
+                from research._render import format_issue_body
+                from research.scout.issues import _render_comments
+
+                try:
+                    data = view_discussion(owner, repo, number)
+                except APIError as e:
+                    click.echo(f"error: {e}", err=True)
+                    sys.exit(1)
+                category = data.get("category", {}).get("name", "")
+                cat_str = f" [{category}]" if category else ""
+                click.echo(
+                    format_issue_body(
+                        data["number"],
+                        data.get("title", "N/A") + cat_str,
+                        "open",
+                        data.get("createdAt", ""),
+                        data.get("body", ""),
+                    )
+                )
+                _render_comments(data.get("comments", []))
+                return
+
+            reroute_message(url, f"scout orient {owner}/{repo}", "github.com pages")
+            from research.scout.explore import _render_orient
+
+            _render_orient(owner, repo, ref=None, brief=False)
             return
 
     if is_pdf_url(url):

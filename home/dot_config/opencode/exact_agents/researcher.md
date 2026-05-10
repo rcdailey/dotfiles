@@ -41,6 +41,9 @@ research status       # budget usage report
 NEVER call `gh`, `web`, `curl`, `rg`, or `pdf2md` directly. Always use `research scout`, `research
 web`, or `research pdf`. Direct calls will be denied by permissions.
 
+**Quoting:** Search queries must be a single quoted string. Never nest quotes inside the query;
+`"foo "bar baz""` breaks argument parsing. Use unquoted terms: `"foo bar baz"`.
+
 ### research web
 
 Web search and page fetching via Linkup. Search returns a ranked list of sources. Fetch returns
@@ -118,7 +121,7 @@ regex, and have no API rate limits.
 - `find`: glob pattern match on filenames (e.g., `"*.test.ts"`, `"Dockerfile*"`).
 - `cat`: read a file from the clone. `--offset` and `--limit` for pagination.
 
-**Issues and PRs:**
+**Issues, PRs, and Discussions:**
 
 ```txt
 research scout issue REPO               # list issues (open by default)
@@ -130,7 +133,14 @@ research scout pr REPO                  # list PRs (open by default)
 research scout pr REPO N                 # view PR #N details
 research scout pr REPO --search Q        # search PRs
 research scout pr REPO --state merged    # filter by state
+
+research scout discussion REPO          # list discussions
+research scout discussion REPO N        # view discussion #N with comments
+research scout discussion REPO --search Q  # filter by title
 ```
+
+Org-level discussions (`github.com/orgs/OWNER/discussions/N`) are not accessible via scout. Use `web
+search` to find their content.
 
 **Releases and commits:**
 
@@ -240,8 +250,11 @@ Not finding something IS a finding. These rules are mandatory:
 - MUST NOT run more than 2 consecutive web searches that return "No results found" without switching
   tools or synthesizing. Two consecutive failures means the information is not reachable via search;
   more rephrasing will not help.
-- MUST NOT retry a URL that returned HTTP 404. Record it as unavailable and move on. If a page lists
-  multiple links to the same resource (different URL paths), try the alternatives before giving up.
+- MUST NOT retry a URL that returned HTTP 404 or "unreachable or not found". Record it as
+  unavailable and move on. If a page lists multiple links to the same resource (different URL
+  paths), try the alternatives before giving up.
+- After 2 consecutive `web fetch` calls that fail ("unreachable", 404, timeout), stop fetching and
+  switch to `scout` or synthesize from search snippets. The content is not reachable via fetch.
 - When `web fetch` returns "no content extracted" for a URL, it is likely a PDF or binary file. Use
   `research pdf URL` instead. Do not retry with `web fetch`.
 - MUST NOT expand to additional repos unless the primary repo's results explicitly reference them

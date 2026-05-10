@@ -6,9 +6,11 @@ import click
 
 from research._ghapi import (
     APIError,
+    list_discussions,
     list_issues,
     list_prs,
     list_releases,
+    view_discussion,
     view_issue,
     view_pr,
     view_release,
@@ -194,3 +196,55 @@ def release(repo: str, tag: str | None, limit: int) -> None:
         if r.get("name"):
             line += f" {r['name']}"
         click.echo(line)
+
+
+@cli.command()
+@click.argument("repo")
+@click.argument("number", required=False)
+@click.option("--search", "-S", help="search query (filters by title)")
+@click.option("--limit", "-L", type=int, default=30)
+def discussion(repo: str, number: str | None, search: str | None, limit: int) -> None:
+    """List or view GitHub Discussions."""
+    owner, name = parse_repo(repo)
+
+    if number:
+        try:
+            n = int(number)
+        except ValueError:
+            die(f"invalid discussion number: {number}", code=2)
+        try:
+            data = view_discussion(owner, name, n)
+        except APIError as e:
+            die(str(e))
+        category = data.get("category", {}).get("name", "")
+        cat_str = f" [{category}]" if category else ""
+        click.echo(
+            format_issue_body(
+                data["number"],
+                data.get("title", "N/A") + cat_str,
+                "open",
+                data.get("createdAt", ""),
+                data.get("body", ""),
+            )
+        )
+        _render_comments(data.get("comments", []))
+        return
+
+    try:
+        discussions = list_discussions(owner, name, search, limit)
+    except APIError as e:
+        die(str(e))
+    if not discussions:
+        click.echo(f"No discussions found in {repo}")
+        return
+    for d in discussions:
+        category = d.get("category", {}).get("name", "")
+        cat_str = f" [{category}]" if category else ""
+        click.echo(
+            format_list_item(
+                d["number"],
+                category or "discussion",
+                d.get("createdAt", ""),
+                d.get("title", "N/A"),
+            )
+        )
