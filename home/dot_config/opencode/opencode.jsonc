@@ -22,9 +22,7 @@
       "model": "firepass/accounts/fireworks/routers/kimi-k2p6-turbo",
     },
   },
-  "lsp": {
-    "yaml-ls": { "disabled": true },
-  },
+  "lsp": false,
   "formatter": {
     "shfmt": { "disabled": true },
     "markdownlint-cli2": {
