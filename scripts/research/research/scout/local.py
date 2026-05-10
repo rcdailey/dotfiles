@@ -19,6 +19,7 @@ from research.scout._common import parse_repo
 @click.option("--glob", "-g", "globs", multiple=True, help="file glob filter (repeatable)")
 @click.option("--type", "filetype", help="ripgrep type filter (e.g., py, ts, go)")
 @click.option("--context", "-C", type=int, default=0, help="lines of context around matches")
+@click.option("--ignore-case", "-i", is_flag=True, help="case-insensitive search")
 def rg_cmd(
     repo: str,
     pattern: str,
@@ -26,6 +27,7 @@ def rg_cmd(
     globs: tuple[str, ...],
     filetype: str | None,
     context: int,
+    ignore_case: bool,
 ) -> None:
     """Search cloned repo with ripgrep (auto-clones on first use)."""
     owner, name = parse_repo(repo)
@@ -39,6 +41,8 @@ def rg_cmd(
         "--max-columns=200",
         "--max-columns-preview",
     ]
+    if ignore_case:
+        args.append("--ignore-case")
     if filetype:
         args.append(f"--type={filetype}")
     for g in globs:

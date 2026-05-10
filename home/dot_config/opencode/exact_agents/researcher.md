@@ -106,7 +106,7 @@ research scout code QUERY [--in OWNER/REPO]              # code search (literal,
 **Local clone exploration (auto-clones on first use):**
 
 ```txt
-research scout rg REPO PATTERN [--path P] [-g GLOB] [--type TYPE] [-C N]
+research scout rg REPO PATTERN [--path P] [-g GLOB] [--type TYPE] [-C N] [-i]
 research scout find REPO PATTERN [--limit N]
 research scout cat REPO PATH [--limit N] [--offset N]
 ```
