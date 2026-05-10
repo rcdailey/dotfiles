@@ -382,7 +382,18 @@ def cmd_save(args: list[str]) -> None:
         with os.fdopen(fd, "w") as f:
             f.write(message)
 
-        result = git("commit", "-F", msg_path, check=False)
+        result = git("commit", "-F", msg_path, check=False, capture=True)
+        if result.returncode == 0:
+            if result.stdout:
+                print(result.stdout, end="")
+            sha_line = git_output("log", "--oneline", "-1").strip()
+            print(f"\n=== COMMITTED === {sha_line}")
+        else:
+            if result.stderr:
+                print(result.stderr, end="", file=sys.stderr)
+            if result.stdout:
+                print(result.stdout, end="", file=sys.stderr)
+            print("\n=== COMMIT FAILED ===", file=sys.stderr)
         sys.exit(result.returncode)
     finally:
         os.unlink(msg_path)
