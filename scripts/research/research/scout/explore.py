@@ -216,6 +216,9 @@ def read(repo: str, path: str, ref: str, limit: int, offset: int) -> None:
         try:
             data = api(f"repos/{owner}/{name}/contents/{path}", params={"ref": ref})
         except APIError as api_err:
+            msg = str(api_err)
+            if "404" in msg or "Not Found" in msg:
+                die(f"file not found at ref {ref}: {path} (verify the ref and path both exist)")
             die(f"failed to read file: {api_err}")
         if not isinstance(data, dict) or "content" not in data:
             die("unexpected response from GitHub API")

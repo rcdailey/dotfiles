@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import click
 
+from research._click import HelpfulGroup
 
-@click.group()
+
+@click.group(cls=HelpfulGroup)
 def cli() -> None:
     """Explore GitHub repositories and workflows."""
 
