@@ -4,7 +4,7 @@ description: >
   download/OCR. Callers MUST delegate here instead of using webfetch directly. Pass the question or
   topic; this agent searches, reads, and synthesizes an answer.
 mode: subagent
-model: firepass/accounts/fireworks/routers/kimi-k2p6-turbo
+model: anthropic/claude-haiku-4-5
 permission:
   "*": deny
   bash:

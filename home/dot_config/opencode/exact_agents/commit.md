@@ -4,7 +4,7 @@ description: >
   Cannot create, edit, or delete files; cannot push, amend, or use gh CLI. Pass only the goal
   behind the change plus any issue keys; do not describe the diff or dictate the message.
 mode: all
-model: firepass/accounts/fireworks/routers/kimi-k2p6-turbo
+model: anthropic/claude-haiku-4-5
 variant: high
 hidden: true
 permission:

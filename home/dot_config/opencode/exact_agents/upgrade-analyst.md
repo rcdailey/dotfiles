@@ -5,7 +5,7 @@ description: >
   categorizes findings. Callers pass a PR number or package/version details; this agent performs
   all research and returns structured findings.
 mode: subagent
-model: firepass/accounts/fireworks/routers/kimi-k2p6-turbo
+model: anthropic/claude-haiku-4-5
 hidden: true
 permission:
   "*": deny
