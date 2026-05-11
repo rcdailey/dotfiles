@@ -7,7 +7,7 @@ import sys
 
 import click
 
-from research._budget import budget_reserve
+from research._budget import budget_refund, budget_reserve
 from research._cache import get_cache, read_cached_content, write_cached_content
 from research._render import apply_find, truncate_output
 
@@ -42,10 +42,12 @@ def _do_pdf(url: str, find: str | None, context: int, max_chars: int) -> None:
                 check=False,
             )
         except FileNotFoundError:
+            budget_refund(cache, base_url)
             click.echo("error: command not found: pdf2md", err=True)
             sys.exit(2)
 
         if result.returncode != 0:
+            budget_refund(cache, base_url)
             err = result.stderr.strip() or f"pdf2md exited {result.returncode}"
             click.echo(f"error: pdf failed: {err}", err=True)
             sys.exit(1)

@@ -240,6 +240,10 @@ Subsequent calls to the same base URL (e.g., with different `--find` patterns) a
 matching URLs. Use this to your advantage: fetch a page once with `--max-chars 0`, then run multiple
 `--find` queries against it without burning budget.
 
+**Automatic refunds:** Failed calls (network errors, timeouts, 404s, auth failures, pdf2md errors)
+are automatically refunded. You will see `[refund: call failed; budget restored to ...]` on stderr.
+The slot is returned and the URL is removed from the cache so a retry is possible.
+
 ### Absence detection
 
 Not finding something IS a finding. These rules are mandatory:

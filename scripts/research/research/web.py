@@ -6,7 +6,7 @@ import sys
 
 import click
 
-from research._budget import budget_reserve
+from research._budget import budget_refund, budget_reserve
 from research._cache import get_cache, read_cached_content, write_cached_content
 from research._linkup import (
     SearchError,
@@ -46,6 +46,7 @@ def search_cmd(query: str, max_results: int) -> None:
         results = search(query, max_results)
         click.echo(format_search_results(results))
     except SearchError as e:
+        budget_refund(cache)
         click.echo(f"error: {e}", err=True)
         sys.exit(1)
 
@@ -132,6 +133,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int) -> None:
                 return
             from research._linkup import translate_error
 
+            budget_refund(cache, base_url)
             click.echo(translate_error("fetch", e), err=True)
             sys.exit(1)
         write_cached_content(base_url, markdown)

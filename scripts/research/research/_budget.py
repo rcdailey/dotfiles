@@ -78,6 +78,32 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
         sys.exit(1)
 
 
+def budget_refund(cache: Cache, cached_url: str | None = None) -> None:
+    """Return a budget slot after a failed tool call.
+
+    Reverses a prior budget_reserve: decrements count and removes the URL
+    key if one was recorded. Prints a notice to stderr so the agent sees it.
+    """
+    url_key = f"{_URL_PREFIX}{cached_url}" if cached_url else None
+
+    with cache.transact():
+        count = cache.get(_COUNT_KEY, 0)
+        if count <= 0:
+            return
+        count -= 1
+        cache.set(_COUNT_KEY, count)
+        if url_key and url_key in cache:
+            cache.delete(url_key)
+
+    remaining = MAX_CALLS - count
+    print(
+        f"[refund: call failed; budget restored to {count}/{MAX_CALLS} used, "
+        f"{remaining} remaining]",
+        file=sys.stderr,
+        flush=True,
+    )
+
+
 def get_count(cache: Cache) -> int:
     """Return current call count."""
     return cache.get(_COUNT_KEY, 0)
