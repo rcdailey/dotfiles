@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from diskcache import Cache
 
-MAX_CALLS = 15
-CHECKPOINT_AT = MAX_CALLS // 2  # 7: mid-session assessment
-WARNING_AT = MAX_CALLS - 3  # 12: final warning
+MAX_CALLS = 20
+CHECKPOINT_AT = MAX_CALLS // 2  # mid-session assessment
+WARNING_AT = MAX_CALLS - 3  # final warning
 
 _COUNT_KEY = "count"
 _URL_PREFIX = "url:"
