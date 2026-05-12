@@ -54,6 +54,13 @@
 - Prefer structured output (JSON + jq) over table/text for CLI tools that support it (aws, gh,
   kubectl, docker). Structured output is parseable, filterable, and scriptable.
 
+## Git Conflict Resolution
+
+- For UD/DU conflicts (file deleted on one side, modified on the other), MUST NOT blindly accept the
+  deletion. Run `git diff REBASE_HEAD...HEAD -- <file>` to see the upstream modifications being
+  discarded, then port any meaningful changes to the replacement files before resolving with `git
+  rm`.
+
 ## Architecture
 
 Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
