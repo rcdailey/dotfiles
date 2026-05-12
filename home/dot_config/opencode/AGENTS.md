@@ -93,8 +93,9 @@ constants.
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - Use `gh-review` for PR review operations (pending reviews, inline comments). MUST use instead of
   raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
-- MUST use the `ctx7` CLI for library and framework docs before webfetch or the researcher subagent;
-  fall back to the researcher only when `ctx7` lacks coverage:
+- `ctx7` is the CLI for Context7, a service that provides up-to-date library and framework
+  documentation to LLMs. MUST use `ctx7` for library and framework docs before webfetch or the
+  researcher subagent; fall back to the researcher only when `ctx7` lacks coverage:
   - `ctx7 library <name> <query>` searches the index and returns library IDs
   - `ctx7 docs <libraryId> <query>` fetches docs for an ID (e.g. `/vercel/next.js`)
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
