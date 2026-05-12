@@ -31,7 +31,7 @@
     },
   },
   "plugin": [
-    "@plannotator/opencode@latest",
+    ["@plannotator/opencode@latest", { "workflow": "all-agents" }],
     "opencode-gemini-auth@latest",
     "opencode-claude-auth@latest",
   ],
