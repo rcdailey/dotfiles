@@ -8,25 +8,48 @@ description: >-
   `gh release`, or `gh repo` workflows, or for PR review comments (use `gh-pr-review` instead).
 ---
 
+## Output Filtering
+
+Mutation responses (`POST`, `PATCH`, `PUT`, `DELETE`) return the full object by default, which
+wastes context tokens. Always pipe through `--jq` to extract only the fields you need.
+
+### Reply to a PR review comment (minimal output)
+
+```sh
+gh api --method POST \
+  repos/{owner}/{repo}/pulls/{number}/comments/{comment_id}/replies \
+  -f body="Comment text" \
+  --jq '{id, body, html_url}'
+```
+
+### Create a conversation comment (minimal output)
+
+```sh
+gh api --method POST \
+  repos/{owner}/{repo}/issues/{number}/comments \
+  -f body="Comment text" \
+  --jq '{id, body, html_url}'
+```
+
+### General pattern
+
+For any mutation, append `--jq` selecting the fields the caller actually needs. Typical minimal set:
+`{id, body, html_url}`. Add `state`, `title`, or `number` when relevant.
+
 ## Draft Pull Requests
 
 ### Create a draft PR
 
 ```sh
-gh api --method POST repos/:owner/:repo/pulls -f title="My new feature" -f body="Description of changes" -f head="feature-branch" -f base="main" -F draft=true
+gh api --method POST repos/:owner/:repo/pulls \
+  -f title="My new feature" -f body="Description of changes" \
+  -f head="feature-branch" -f base="main" -F draft=true \
+  --jq '{number, title, html_url, draft}'
 ```
 
 For cross-repo PRs, use `head="username:branch"`.
 
-### Get PR details (check if draft)
-
-```sh
-gh api repos/:owner/:repo/pulls/<number>
-```
-
-Response includes `"draft": true|false` and `"state": "open|closed"`.
-
-### Check if PR is draft (minimal output)
+### Get PR details
 
 ```sh
 gh api repos/:owner/:repo/pulls/<number> --jq '{draft, state, title}'
@@ -35,7 +58,8 @@ gh api repos/:owner/:repo/pulls/<number> --jq '{draft, state, title}'
 ### Convert draft to ready for review
 
 ```sh
-gh api --method PATCH repos/:owner/:repo/pulls/<number> -F draft=false
+gh api --method PATCH repos/:owner/:repo/pulls/<number> -F draft=false \
+  --jq '{number, title, html_url, draft}'
 ```
 
 Note: Cannot convert back to draft via API once marked ready.
@@ -54,18 +78,13 @@ gh api repos/:owner/:repo/pulls -f state=open --jq '.[] | select(.user.login=="U
 
 ## PR Conversation Comments
 
-Comments on the PR timeline (not on specific lines of code).
+Comments on the PR timeline (not on specific lines of code). For creating comments, see the Output
+Filtering examples above.
 
 ### List conversation comments
 
 ```sh
-gh api repos/:owner/:repo/issues/<number>/comments
-```
-
-### Create a conversation comment
-
-```sh
-gh api --method POST repos/:owner/:repo/issues/<number>/comments -f body="Comment text"
+gh api repos/:owner/:repo/issues/<number>/comments --jq '[.[] | {id, author: .user.login, body}]'
 ```
 
 ## Discussions (GraphQL)
