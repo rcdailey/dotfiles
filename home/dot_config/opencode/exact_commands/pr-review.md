@@ -195,9 +195,3 @@ If minor issues requested, add section before Citations:
 - Do not use TodoWrite or task tracking
 - Do not clean up the worktree; leave it in `/tmp` for reference during comment posting
 - Citations and Confidence sections are mandatory; a review without them is incomplete
-- When replying to bot comments (infer from context: `[bot]` suffix, known CI/analysis tools,
-  automated comment patterns), use neutral, factual statements. Explain what was done and why, or
-  why something will not be done. Do not address the bot conversationally or phrase replies as if
-  speaking to a person.
-- When using `gh api` to post replies or comments, load the `gh-api` skill and apply its output
-  filtering guidance.

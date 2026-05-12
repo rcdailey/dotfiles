@@ -35,6 +35,9 @@ Medium/low (only when explicitly requested): Organization, docs, test coverage, 
 - Style/architecture: Questions ("What do you think about...", "Would it make sense to...")
 - Use contractions, be conversational, comment on code not developer
 - Skip comments that just repeat what other reviewers already said
+- Bot comments (infer from context: `[bot]` suffix, known CI/analysis tools, automated comment
+  patterns): use neutral, factual statements. Explain what was done and why, or why something will
+  not be done. Do not address the bot conversationally or phrase replies as if speaking to a person.
 
 ### Verification
 
@@ -123,6 +126,11 @@ include surrounding context lines in the range; they will be deleted.
 
 - `PRR_...`: Review node ID (from `start` or `view`)
 - `PRRT_...`: Thread node ID (from `comment` or `view`)
+
+## Using `gh api` for Replies
+
+When using `gh api` to post replies or comments, load the `gh-api` skill and apply its output
+filtering guidance to avoid dumping large response payloads into the context window.
 
 ## Output
 
