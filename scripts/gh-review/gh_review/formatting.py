@@ -1,0 +1,160 @@
+"""Prose output formatting for LLM consumption."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from .sanitize import is_bot, sanitize_bot_body, truncate_body
+
+
+def _author_info(author: dict[str, Any] | None) -> tuple[str, str]:
+    """Extract (login, typename) from an author dict."""
+    author = author or {}
+    return author.get("login", "?"), author.get("__typename", "")
+
+
+def _thread_status(thread: dict[str, Any]) -> str:
+    flags = []
+    if thread.get("isResolved"):
+        flags.append("resolved")
+    else:
+        flags.append("unresolved")
+    if thread.get("isOutdated"):
+        flags.append("outdated")
+    return ", ".join(flags)
+
+
+def _line_label(thread: dict[str, Any]) -> str:
+    start = thread.get("startLine")
+    line = thread.get("line")
+    if not line:
+        return ""
+    if start and start != line:
+        return f"L{start}-{line}"
+    return f"L{line}"
+
+
+def _format_body(
+    body: str,
+    login: str,
+    typename: str,
+    max_body: int,
+    no_bots: bool,
+) -> str | None:
+    """Process a comment body. Returns None if the comment should be dropped."""
+    if not body:
+        return ""
+    bot = is_bot(login, typename)
+    if bot and no_bots:
+        return None
+    if bot:
+        body = sanitize_bot_body(body)
+    return truncate_body(body, max_body)
+
+
+def format_review_threads(
+    threads: list[dict[str, Any]],
+    max_body: int,
+    no_bots: bool,
+) -> str:
+    """Format review threads as prose output."""
+    if not threads:
+        return "no review threads"
+
+    lines: list[str] = []
+    for t in threads:
+        status = _thread_status(t)
+        path = t.get("path", "?")
+        line_label = _line_label(t)
+        location = f"{path} {line_label}".strip()
+
+        lines.append(f"\n[{status}] {location}")
+
+        comments = (t.get("comments") or {}).get("nodes", [])
+        for c in comments:
+            login, typename = _author_info(c.get("author"))
+            raw_body = (c.get("body") or "").strip()
+            created = (c.get("createdAt") or "")[:10]
+
+            processed = _format_body(
+                raw_body,
+                login,
+                typename,
+                max_body,
+                no_bots,
+            )
+            if processed is None:
+                continue
+
+            bot = is_bot(login, typename)
+            bot_marker = " [bot, sanitized]" if bot else ""
+            header = f"  @{login} ({created}){bot_marker}:"
+
+            if not processed:
+                lines.append(header)
+                continue
+
+            body_lines = processed.splitlines()
+            if len(body_lines) == 1:
+                lines.append(f"  @{login} ({created}){bot_marker}: {body_lines[0]}")
+            else:
+                lines.append(header)
+                for bl in body_lines:
+                    lines.append(f"    {bl}")
+
+    return "\n".join(lines)
+
+
+def format_conversation_comments(
+    comments: list[dict[str, Any]],
+    max_body: int,
+    no_bots: bool,
+) -> str:
+    """Format issue-level (conversation) comments as prose output."""
+    if not comments:
+        return "no conversation comments"
+
+    lines: list[str] = []
+    for c in comments:
+        login, typename = _author_info(c.get("author"))
+        raw_body = (c.get("body") or "").strip()
+        created = (c.get("createdAt") or "")[:10]
+
+        processed = _format_body(
+            raw_body,
+            login,
+            typename,
+            max_body,
+            no_bots,
+        )
+        if processed is None:
+            continue
+
+        bot = is_bot(login, typename)
+        bot_marker = " [bot, sanitized]" if bot else ""
+        header = f"@{login} ({created}){bot_marker}:"
+
+        if not processed:
+            lines.append(header)
+            continue
+
+        body_lines = processed.splitlines()
+        if len(body_lines) == 1:
+            lines.append(f"@{login} ({created}){bot_marker}: {body_lines[0]}")
+        else:
+            lines.append(header)
+            for bl in body_lines:
+                lines.append(f"  {bl}")
+
+    return "\n".join(lines) if lines else "no conversation comments"
+
+
+def format_pending_reviews(reviews: list[dict[str, Any]]) -> str:
+    """Format pending review entries."""
+    if not reviews:
+        return ""
+    lines = ["=== PENDING REVIEWS ==="]
+    for r in reviews:
+        author = (r.get("author") or {}).get("login", "?")
+        lines.append(f"{r['id']} @{author}")
+    return "\n".join(lines)

@@ -30,14 +30,14 @@ up `/tmp` clones when done.
 
 ## Primary-only skills
 
-- `gh-pr-review`: MUST load when posting PR review comments, managing pending reviews, or replying
-  to review threads via `gh-review`.
-- `gh-api`: MUST load when using raw `gh api` for draft PRs, review-body comments, Discussions, or
-  endpoints not covered by higher-level `gh` subcommands.
+- `gh-pr-review`: MUST load when reading, posting, or managing PR review comments, replying to
+  review threads, or any PR comment workflow via `gh-review`.
+- `gh-api`: MUST load when using raw `gh api` for draft PRs, Discussions, or endpoints not covered
+  by higher-level `gh` subcommands. Do NOT use for PR review operations; use `gh-review` instead.
 - `gh-gist`: MUST load when creating, updating, or iterating on GitHub gists.
 - `linear-cli`: MUST load when operating on Linear issues, projects, milestones, labels, or
-  documents via the `linear` CLI (creating or updating issues, adding comments, transitioning
-  state, assigning labels).
+  documents via the `linear` CLI (creating or updating issues, adding comments, transitioning state,
+  assigning labels).
 
 ## Committing changes
 

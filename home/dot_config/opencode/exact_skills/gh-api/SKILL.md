@@ -2,34 +2,22 @@
 name: gh-api
 description: >-
   Use when operating on the GitHub REST or GraphQL API via `gh api` for cases not covered by
-  higher-level `gh` subcommands: creating or managing draft pull requests, posting pull request
-  review-body or issue comments programmatically, querying or mutating GitHub Discussions, or
-  any GitHub API call requiring raw endpoints. Do NOT use for standard `gh pr`, `gh issue`,
-  `gh release`, or `gh repo` workflows, or for PR review comments (use `gh-pr-review` instead).
+  higher-level `gh` subcommands: creating or managing draft pull requests, querying or mutating
+  GitHub Discussions, or any GitHub API call requiring raw endpoints. Do NOT use for standard
+  `gh pr`, `gh issue`, `gh release`, or `gh repo` workflows. Do NOT use for any PR review
+  operations (reading comments, posting replies, managing reviews); use `gh-review` instead.
 ---
+
+## PR Review Exclusion
+
+Do NOT use `gh api` for any PR review operations: reading comments, posting replies, managing
+reviews, or viewing review threads. Use `gh-review` for all review workflows. Load the
+`gh-pr-review` skill for details.
 
 ## Output Filtering
 
 Mutation responses (`POST`, `PATCH`, `PUT`, `DELETE`) return the full object by default, which
 wastes context tokens. Always pipe through `--jq` to extract only the fields you need.
-
-### Reply to a PR review comment (minimal output)
-
-```sh
-gh api --method POST \
-  repos/{owner}/{repo}/pulls/{number}/comments/{comment_id}/replies \
-  -f body="Comment text" \
-  --jq '{id, body, html_url}'
-```
-
-### Create a conversation comment (minimal output)
-
-```sh
-gh api --method POST \
-  repos/{owner}/{repo}/issues/{number}/comments \
-  -f body="Comment text" \
-  --jq '{id, body, html_url}'
-```
 
 ### General pattern
 
@@ -74,17 +62,6 @@ gh api repos/:owner/:repo/pulls --jq '.[] | select(.draft) | {number, title}'
 
 ```sh
 gh api repos/:owner/:repo/pulls -f state=open --jq '.[] | select(.user.login=="USERNAME") | {number, title, draft}'
-```
-
-## PR Conversation Comments
-
-Comments on the PR timeline (not on specific lines of code). For creating comments, see the Output
-Filtering examples above.
-
-### List conversation comments
-
-```sh
-gh api repos/:owner/:repo/issues/<number>/comments --jq '[.[] | {id, author: .user.login, body}]'
 ```
 
 ## Discussions (GraphQL)

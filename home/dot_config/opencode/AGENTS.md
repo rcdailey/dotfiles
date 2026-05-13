@@ -98,8 +98,10 @@ constants.
 ## Tools
 
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
-- Use `gh-review` for PR review operations (pending reviews, inline comments). MUST use instead of
-  raw `gh api` for review mutations. Commands: `view`, `start`, `delete`, `comment`.
+- Use `gh-review` for all PR comment operations (reading, writing, replying). MUST use instead of
+  raw `gh api` or `gh pr` for any review-related task. Commands: `view`, `start`, `delete`,
+  `comment`, `reply`. The `view` command fetches review threads and conversation comments in a
+  single query with filtering and LLM-optimized output.
 - `ctx7` is the CLI for Context7, a service that provides up-to-date library and framework
   documentation to LLMs. MUST use `ctx7` for library and framework docs before webfetch or the
   researcher subagent; fall back to the researcher only when `ctx7` lacks coverage:

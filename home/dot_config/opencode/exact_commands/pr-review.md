@@ -49,25 +49,15 @@ is left in place after the review so you can reference files while posting comme
 Do NOT install dependencies, run tests, or run build commands in the worktree. Only do so if a
 specific finding later requires it (e.g., a type error you can't confirm statically).
 
-Delegate existing comment collection to an explore subagent. The subagent should:
-
-- Fetch both review comments and issue comments:
+Fetch existing comments using `gh-review view`:
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/{number}/comments --paginate
-gh api repos/{owner}/{repo}/issues/{number}/comments --paginate
+gh-review view {owner}/{repo} {number} --no-bots
 ```
 
-- Filter with jq: truncate any comment body over 500 chars, extract only author, path, line, and a
-  short body snippet
-- Skip dismissed review comments entirely
-- For bot comments (infer from context: `[bot]` suffix, known CI/analysis tools, automated comment
-  patterns): keep only non-dismissed, line-specific feedback; discard walkthrough summaries,
-  "resolved comments" lists, and any embedded state blobs or base64 data
-- For human comments: keep all, but still truncate bodies over 500 chars
-- Return a consolidated, itemized summary (not raw JSON)
-
-The subagent keeps the massive raw comment payloads out of this context window.
+This returns all unresolved review threads and conversation comments in a single query with
+LLM-optimized prose output. Bot comments are excluded; resolved threads are filtered out by default.
+To include bot comments (sanitized), drop the `--no-bots` flag.
 
 **For commits:** `git log {range} --oneline` and `git diff {range}`
 
@@ -75,8 +65,8 @@ The subagent keeps the massive raw comment payloads out of this context window.
 
 ### 2. Deduplicate Against Existing Comments
 
-Before formulating feedback, cross-reference against the comment summary from the subagent. For each
-potential comment:
+Before formulating feedback, cross-reference against the comment output from `gh-review view`. For
+each potential comment:
 
 - **Already covered adequately:** Omit it.
 - **Covered but incomplete or incorrect:** Affirm the existing comment and add missing context.
