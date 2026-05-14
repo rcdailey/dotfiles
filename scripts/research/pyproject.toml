@@ -3,7 +3,7 @@ name = "research"
 version = "0.1.0"
 description = "LLM-optimized research CLI for web, GitHub repos, and PDFs"
 requires-python = ">=3.13"
-dependencies = ["click>=8.1", "linkup-sdk", "diskcache"]
+dependencies = ["click>=8.1", "httpx>=0.27", "linkup-sdk", "diskcache", "trafilatura"]
 
 [build-system]
 requires = ["hatchling"]

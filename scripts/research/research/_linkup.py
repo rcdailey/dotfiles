@@ -10,17 +10,9 @@ if TYPE_CHECKING:
     from linkup import LinkupClient
 
 RBW_ITEM = "linkup-api-key"
-# If a non-JS fetch returns fewer than this many non-whitespace chars,
-# the page is probably an SPA shell; retry with JS rendering.
-JS_RETRY_THRESHOLD = 500
 
 _ERROR_MESSAGES = {
     "LinkupAuthenticationError": "authentication failed",
-    "LinkupFailedFetchError": "URL unreachable or not found",
-    "LinkupFetchResponseTooLargeError": "page too large to fetch",
-    "LinkupFetchUrlIsFileError": (
-        "URL serves a file, not an HTML page; try `research pdf URL` instead"
-    ),
     "LinkupInsufficientCreditError": "out of credit (billing issue)",
     "LinkupInvalidRequestError": "invalid request",
     "LinkupNoResultError": "no results",
@@ -75,18 +67,6 @@ def translate_error(action: str, e: Exception) -> str:
         clean = name[6:] if name.startswith("Linkup") else name
         reason = f"{clean}: {e}"
     return format_error(action, reason)
-
-
-def fetch_markdown(client: LinkupClient, url: str) -> str:
-    """Fetch URL as markdown. Auto-retries with JS rendering when the
-    non-JS response is too thin to be real content (SPA shell).
-    """
-    response = client.fetch(url=url, render_js=False)
-    markdown = response.markdown or ""
-    if len(markdown.strip()) < JS_RETRY_THRESHOLD:
-        response = client.fetch(url=url, render_js=True)
-        markdown = response.markdown or ""
-    return markdown
 
 
 def search(query: str, max_results: int = 5) -> list:

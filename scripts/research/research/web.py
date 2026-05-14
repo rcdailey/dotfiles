@@ -8,12 +8,8 @@ import click
 
 from research._budget import budget_refund, budget_reserve
 from research._cache import get_cache, read_cached_content, write_cached_content
-from research._linkup import (
-    SearchError,
-    fetch_markdown,
-    format_search_results,
-    get_client,
-)
+from research._fetch import FetchError, fetch_markdown
+from research._linkup import SearchError, format_search_results
 from research._render import (
     apply_find,
     is_github_url,
@@ -120,21 +116,18 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int) -> None:
         markdown = cached
     else:
         budget_reserve(cache, base_url)
-        client = get_client()
         try:
-            markdown = fetch_markdown(client, url)
-        except Exception as e:
-            # Check for file URL error
-            if type(e).__name__ == "LinkupFetchUrlIsFileError":
-                reroute_message(url, f"pdf {url}", "backend reported URL serves a file")
+            markdown = fetch_markdown(url)
+        except FetchError as e:
+            msg = str(e)
+            if "file, not an HTML page" in msg:
+                reroute_message(url, f"pdf {url}", "response is a file, not HTML")
                 from research.pdf import _do_pdf
 
                 _do_pdf(url, find, context, max_chars)
                 return
-            from research._linkup import translate_error
-
             budget_refund(cache, base_url)
-            click.echo(translate_error("fetch", e), err=True)
+            click.echo(f"error: fetch failed: {msg}", err=True)
             sys.exit(1)
         write_cached_content(base_url, markdown)
 
