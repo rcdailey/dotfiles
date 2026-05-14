@@ -4,8 +4,8 @@ description: >
   download/OCR. Callers MUST delegate here instead of using webfetch directly. Pass the question or
   topic; this agent searches, reads, and synthesizes an answer.
 mode: subagent
-model: anthropic/claude-haiku-4-5
-variant: high
+model: anthropic/claude-sonnet-4-6
+variant: medium
 permission:
   "*": deny
   bash:
