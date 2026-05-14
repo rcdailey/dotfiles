@@ -20,6 +20,7 @@ yamllint = "latest"
 yq = "latest"
 bun = "latest"
 zizmor = "latest"
+rtk = "latest"
 ruff = "latest"
 "github:byteowlz/sx" = "latest"
 
