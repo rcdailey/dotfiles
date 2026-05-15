@@ -52,6 +52,18 @@ def _format_body(
     return truncate_body(body, max_body)
 
 
+def _comment_header(
+    login: str,
+    created: str,
+    bot_marker: str,
+    db_id: int | None,
+    indent: str,
+) -> str:
+    """Build a comment attribution header with optional databaseId."""
+    id_suffix = f" #{db_id}" if db_id else ""
+    return f"{indent}@{login} ({created}){bot_marker}{id_suffix}:"
+
+
 def format_review_threads(
     threads: list[dict[str, Any]],
     max_body: int,
@@ -75,6 +87,7 @@ def format_review_threads(
             login, typename = _author_info(c.get("author"))
             raw_body = (c.get("body") or "").strip()
             created = (c.get("createdAt") or "")[:10]
+            db_id = c.get("databaseId")
 
             processed = _format_body(
                 raw_body,
@@ -88,7 +101,7 @@ def format_review_threads(
 
             bot = is_bot(login, typename)
             bot_marker = " [bot, sanitized]" if bot else ""
-            header = f"  @{login} ({created}){bot_marker}:"
+            header = _comment_header(login, created, bot_marker, db_id, "  ")
 
             if not processed:
                 lines.append(header)
@@ -96,7 +109,7 @@ def format_review_threads(
 
             body_lines = processed.splitlines()
             if len(body_lines) == 1:
-                lines.append(f"  @{login} ({created}){bot_marker}: {body_lines[0]}")
+                lines.append(f"{header} {body_lines[0]}")
             else:
                 lines.append(header)
                 for bl in body_lines:
@@ -119,6 +132,7 @@ def format_conversation_comments(
         login, typename = _author_info(c.get("author"))
         raw_body = (c.get("body") or "").strip()
         created = (c.get("createdAt") or "")[:10]
+        db_id = c.get("databaseId")
 
         processed = _format_body(
             raw_body,
@@ -132,7 +146,7 @@ def format_conversation_comments(
 
         bot = is_bot(login, typename)
         bot_marker = " [bot, sanitized]" if bot else ""
-        header = f"@{login} ({created}){bot_marker}:"
+        header = _comment_header(login, created, bot_marker, db_id, "")
 
         if not processed:
             lines.append(header)
@@ -140,7 +154,7 @@ def format_conversation_comments(
 
         body_lines = processed.splitlines()
         if len(body_lines) == 1:
-            lines.append(f"@{login} ({created}){bot_marker}: {body_lines[0]}")
+            lines.append(f"{header} {body_lines[0]}")
         else:
             lines.append(header)
             for bl in body_lines:

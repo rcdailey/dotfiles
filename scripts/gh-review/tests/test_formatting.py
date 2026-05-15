@@ -25,6 +25,7 @@ class TestFormatReviewThreads:
                             "author": {"login": "reviewer"},
                             "body": "This looks wrong.",
                             "createdAt": "2026-05-13T10:00:00Z",
+                            "databaseId": 98765,
                             "pullRequestReview": {
                                 "id": "PRR_1",
                                 "state": "COMMENTED",
@@ -38,7 +39,35 @@ class TestFormatReviewThreads:
         assert "[unresolved]" in result
         assert "src/main.ts L42" in result
         assert "@reviewer" in result
+        assert "#98765" in result
         assert "This looks wrong." in result
+
+    def test_missing_database_id(self):
+        threads = [
+            {
+                "isResolved": False,
+                "isOutdated": False,
+                "path": "src/main.ts",
+                "line": 10,
+                "startLine": None,
+                "comments": {
+                    "nodes": [
+                        {
+                            "author": {"login": "reviewer"},
+                            "body": "No id here.",
+                            "createdAt": "2026-05-13T10:00:00Z",
+                            "pullRequestReview": {
+                                "id": "PRR_1",
+                                "state": "COMMENTED",
+                            },
+                        }
+                    ]
+                },
+            }
+        ]
+        result = format_review_threads(threads, 500, False)
+        assert "@reviewer (2026-05-13):" in result
+        assert "#" not in result
 
     def test_resolved_thread(self):
         threads = [
@@ -204,10 +233,12 @@ class TestFormatConversationComments:
                 "author": {"login": "rcdailey"},
                 "body": "Looks good to me.",
                 "createdAt": "2026-05-13T12:00:00Z",
+                "databaseId": 55555,
             }
         ]
         result = format_conversation_comments(comments, 500, False)
         assert "@rcdailey" in result
+        assert "#55555" in result
         assert "Looks good to me." in result
 
     def test_bot_comment_sanitized(self):

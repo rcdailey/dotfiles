@@ -160,7 +160,9 @@ review thread or conversation comment and routes to the correct API.
 gh-review reply owner/repo 42 COMMENT_ID --body "Fixed in abc123."
 ```
 
-The `COMMENT_ID` is the numeric database ID shown in `view` output.
+The `COMMENT_ID` is the numeric database ID shown as `#ID` in `view` output comment headers (e.g.
+`@reviewer (2026-05-14) #98765:`). Extract the number after `#` from the comment you want to reply
+to.
 
 ## Line Targeting Constraints
 

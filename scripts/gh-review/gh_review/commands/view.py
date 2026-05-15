@@ -183,6 +183,7 @@ def run(
     # Summary line
     total_threads = len(all_threads)
     unresolved_count = sum(1 for t in all_threads if not t.get("isResolved"))
+    total_convo = len(all_convo)
     shown_threads = len(threads)
     shown_convo = len(convo)
 
@@ -191,10 +192,18 @@ def run(
         f"{unresolved_count}/{total_threads} unresolved threads, "
         f"{shown_convo} conversation comments"
     )
+
+    filter_notes: list[str] = []
     if show_all:
-        print(f"(showing all; {shown_threads} threads after filters)")
+        filter_notes.append(f"showing all; {shown_threads} threads after filters")
     elif shown_threads < unresolved_count:
-        print(f"(showing {shown_threads} of {unresolved_count} unresolved after filters)")
+        filter_notes.append(
+            f"{shown_threads} of {unresolved_count} unresolved threads after filters"
+        )
+    if shown_convo < total_convo:
+        filter_notes.append(f"{shown_convo} of {total_convo} conversation comments after filters")
+    if filter_notes:
+        print(f"({'; '.join(filter_notes)})")
 
     # Pending reviews
     pending_out = format_pending_reviews(pending)
