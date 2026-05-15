@@ -23,26 +23,31 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
   - `04-plugins.sh` - Zinit plugin loads (fzf-tab, syntax highlighting, etc.)
   - `05-configuration.sh` - Aliases, keybinds, mise activate, tool configs
   - `06-platform.sh.tmpl` - Platform-specific settings (Linux/macOS)
-- `home/dot_config/exact_zsh/functions/` - Autoloaded zsh functions (bwu, clip, gi, oc, open-here,
-  pcc)
+- `home/dot_config/exact_zsh/functions/` - Autoloaded zsh functions
 
 **Scripts:**
 
 - `home/git-scripts/` - Git helper scripts and subcommands
 - `scripts/` - Repo-rooted Python projects executed in-place by thin wrappers in
   `home/dot_local/bin/`. Lives outside `home/` so chezmoi does not manage Python build artifacts
-  (`.venv/`, `__pycache__/`, `uv.lock`); edits take effect without `chezmoi apply`.   Wrappers
-  resolve the project path via `$(chezmoi source-path)/../scripts/<name>` so the source location is
+  (`.venv/`, `__pycache__/`, `uv.lock`); edits take effect without `chezmoi apply`. Wrappers resolve
+  the project path via `$(chezmoi source-path)/../scripts/<name>` so the source location is
   authoritative (no hardcoded home path). Current projects: `research/` (LLM research CLI; entry:
   `executable_research`)
+
+**Repo infrastructure (root):** Linter/formatter configs (`biome.json`, `ruff.toml`,
+`.markdownlint-cli2.yaml`, `.yamllint.yaml`, `.editorconfig`), pre-commit hooks
+(`.pre-commit-config.yaml`), dev tool versions (`mise.toml`), and `docs/`.
 
 **Chezmoi internals:**
 
 - `home/.chezmoiscripts/` - Lifecycle hooks; `run_onchange_` triggers on dependency changes
 - `home/.chezmoitemplates/` - Reusable template snippets
 - `.chezmoiexternal.toml` - External file dependencies; distributed across subdirectories (not at
-  repo root). Locations: `home/dot_config/opencode/exact_skills/`, `home/git-scripts/`,
-  `home/dot_local/share/zinit/`
+  repo root). Glob `**/.chezmoiexternal.toml` to find all locations.
+- `.chezmoiremove` - Patterns for files chezmoi should remove from the target on apply. Can exist
+  anywhere in the source state; patterns are relative to the containing directory. Glob
+  `**/.chezmoiremove` to find existing ones.
 
 **OpenCode (`home/dot_config/opencode/`):**
 
@@ -54,27 +59,20 @@ under `~/.config/opencode/` do not have these prefixes.
 - `dcp.jsonc`, `tui.jsonc` - Additional config files
 - `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory
   contains a `SKILL.md`. Some are managed via `.chezmoiexternal.toml` in this directory.
-- `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). Files:
-  `architect.md.tmpl`, `build.md.tmpl`, `commit.md`, `researcher.md`, `upgrade-analyst.md`. The
-  primary agents (`architect`, `build`) are chezmoi templates that include a shared partial via `{{
-  template "opencode-primary-shared.md" . }}`. The partial holds directives that apply to every
-  primary agent but MUST NOT leak to subagents. OpenCode loads AGENTS.md into every agent context
-  regardless of mode (verified against source; no mode-based filter exists), so shared primary-only
-  content cannot live in AGENTS.md and the template partial is the workaround.
-- `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`). Files:
-  `contrib-init.md`, `pr-review.md`, `renovate-upgrade.md`, `research.md`,
-  `setup-conventional-commits.md`
-- `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`). Contains `tool-guards.ts`.
+- `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). The primary
+  agents (`architect`, `build`) are chezmoi templates that include a shared partial via `{{ template
+  "opencode-primary-shared.md" . }}`. The partial holds directives that apply to every primary agent
+  but MUST NOT leak to subagents. OpenCode loads AGENTS.md into every agent context regardless of
+  mode (verified against source; no mode-based filter exists), so shared primary-only content cannot
+  live in AGENTS.md and the template partial is the workaround.
+- `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
+- `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`)
 - `.chezmoitemplates/` - Reusable template partials scoped to OpenCode config. Template names share
   a global namespace across all `.chezmoitemplates/` directories in the source state; prefix names
   with `opencode-` to avoid collisions. Current partials: `opencode-primary-shared.md`.
-- `.chezmoiremove` - Tracks removed files for cleanup
 
-**Tool configs (`home/dot_config/`):** ccstatusline, commitlint, environment.d, fontconfig, git,
-helmfile, k9s, kitty, lazygit, mise, opencode, powershell, karabiner (private_karabiner), rbw,
-ripgrep, sx, systemd, tmux
-
-**Terminal:** kitty (all platforms) - `home/dot_config/kitty/`
+**Tool configs:** `home/dot_config/` contains per-tool configuration directories (git, kitty, mise,
+tmux, lazygit, etc.). Browse the directory to discover what's managed.
 
 ## Conventions
 
