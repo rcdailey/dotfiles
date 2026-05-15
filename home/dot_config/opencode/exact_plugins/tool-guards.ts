@@ -49,71 +49,9 @@ const REDIRECTIONS: RedirectionRule[] = [
 const REMOTE_EXEC =
   /^\s*(git|ssh|kubectl\s+(exec|run|debug)|docker\s+exec|podman\s+exec|talosctl)\s/;
 
-// Rewrite plannotator's submit_plan to file-only mode. The upstream OpenCode
-// plugin still advertises dual-mode (inline text or file path); this strips
-// inline-text references so the LLM only sees the file-based workflow.
-const SUBMIT_PLAN_DESCRIPTION =
-  "Planning tool used to submit a plan to the user for review. Before calling " +
-  "this tool you must conduct interactive and exploratory analysis in order to " +
-  "submit a quality plan. Ask questions. Explore the codebase for context if " +
-  "needed. Only call submit_plan once you have enough details to create a " +
-  "quality plan. Work with the user to get those details. Write your plan to " +
-  "a .md file using the write tool, then pass the absolute path here.";
-
-const SUBMIT_PLAN_PARAM_DESCRIPTION = "Absolute path to a .md file on disk containing the plan.";
-
 export const ToolGuards: Plugin = async () => {
   return {
-    "tool.definition": async (input, output) => {
-      if (input.toolID !== "submit_plan") return;
-      output.description = SUBMIT_PLAN_DESCRIPTION;
-      if (output.parameters?.properties?.plan) {
-        output.parameters = {
-          ...output.parameters,
-          properties: {
-            ...output.parameters.properties,
-            plan: {
-              ...output.parameters.properties.plan,
-              description: SUBMIT_PLAN_PARAM_DESCRIPTION,
-            },
-          },
-        };
-      }
-    },
-
-    // Strip inline-text references from plannotator's injected system prompt
-    "experimental.chat.system.transform": async (_input, output) => {
-      for (let i = 0; i < output.system.length; i++) {
-        const s = output.system[i];
-        if (!s.includes("submit_plan")) continue;
-        output.system[i] = s
-          .replace(
-            /- Pass your plan as markdown text[^\n]*\n- Or pass/g,
-            "- Write your plan to a .md file, then pass",
-          )
-          .replace(
-            /The tool auto-detects whether you passed text or a file path\. Both open the same review UI\./g,
-            "The tool reads the file and opens a review UI.",
-          )
-          .replace(
-            /Pass your plan as markdown text, or pass an absolute file path to a \.md file\./g,
-            "Write your plan to a .md file using the write tool, then pass the absolute path.",
-          );
-      }
-    },
-
     "tool.execute.before": async (input, output) => {
-      if (input.tool === "submit_plan") {
-        const plan = output.args?.plan as string;
-        if (plan && !(plan.startsWith("/") && plan.endsWith(".md"))) {
-          throw new Error(
-            "submit_plan requires an absolute path to a .md file. " +
-              "Write your plan to a file first, then pass the path.",
-          );
-        }
-        return;
-      }
-
       if (input.tool !== "bash") return;
 
       const command = output.args?.command as string;
