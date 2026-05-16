@@ -6,15 +6,20 @@ import textwrap
 from datetime import datetime, timezone
 from typing import Any
 
-from .. import DEFAULT_MAX_BODY
-from ..formatting import (
+import click
+
+from gh_review._duration import parse_duration
+from gh_review._errors import GhError, die
+from gh_review._formatting import (
     format_conversation_comments,
     format_pending_reviews,
     format_review_bodies,
     format_review_threads,
 )
-from ..gh import gh_graphql, split_repo
-from ..sanitize import is_bot
+from gh_review._gh import gh_graphql, split_repo
+from gh_review._sanitize import is_bot
+
+DEFAULT_MAX_BODY = 1500
 
 _VIEW_QUERY = textwrap.dedent("""\
     query($owner:String!, $repo:String!, $number:Int!) {
@@ -53,6 +58,22 @@ _VIEW_QUERY = textwrap.dedent("""\
         }
       }
     }""")
+
+
+class _DurationType(click.ParamType):
+    """Click param type that parses relative duration strings."""
+
+    name = "DURATION"
+
+    def convert(
+        self, value: str | datetime, param: click.Parameter | None, ctx: click.Context | None
+    ) -> datetime:
+        if isinstance(value, datetime):
+            return value
+        try:
+            return parse_duration(value)
+        except ValueError as e:
+            self.fail(str(e), param, ctx)
 
 
 def _parse_iso(datestr: str) -> datetime:
@@ -161,98 +182,125 @@ def _filter_review_bodies(
     return result
 
 
-def run(
+@click.command()
+@click.argument("repo")
+@click.argument("number", type=int)
+@click.option("--all", "show_all", is_flag=True, help="show all threads (default: unresolved only)")
+@click.option(
+    "--unanswered", is_flag=True, help="only threads where PR author has not replied last"
+)
+@click.option(
+    "--since",
+    type=_DurationType(),
+    default=None,
+    metavar="DURATION",
+    help="relative time filter (e.g. 1h, 2d, 1w)",
+)
+@click.option("--no-bots", is_flag=True, help="drop bot comments entirely")
+@click.option(
+    "--max-body",
+    type=int,
+    default=DEFAULT_MAX_BODY,
+    metavar="N",
+    show_default=True,
+    help="max comment body length",
+)
+def cli(
     repo: str,
     number: int,
-    *,
-    show_all: bool = False,
-    unanswered: bool = False,
-    since: datetime | None = None,
-    no_bots: bool = False,
-    max_body: int = DEFAULT_MAX_BODY,
+    show_all: bool,
+    unanswered: bool,
+    since: datetime | None,
+    no_bots: bool,
+    max_body: int,
 ) -> None:
-    owner, name = split_repo(repo)
-    data = gh_graphql(
-        _VIEW_QUERY,
-        owner=owner,
-        repo=name,
-        number=str(number),
-    )
-    pr = data["data"]["repository"]["pullRequest"]
-    if not pr:
-        from ..gh import die
-
-        die(f"PR #{number} not found in {repo}")
-
-    pr_author = (pr.get("author") or {}).get("login", "")
-    title = pr.get("title", "")
-
-    # Reviews
-    all_reviews = pr.get("reviews", {}).get("nodes", [])
-    pending = [r for r in all_reviews if r["state"] == "PENDING"]
-    review_bodies = _filter_review_bodies(
-        all_reviews,
-        since=since,
-        no_bots=no_bots,
-    )
-
-    # Review threads
-    all_threads = pr.get("reviewThreads", {}).get("nodes", [])
-    threads = _filter_threads(
-        all_threads,
-        show_all=show_all,
-        unanswered_by=pr_author if unanswered else None,
-        since=since,
-        no_bots=no_bots,
-    )
-
-    # Conversation comments
-    all_convo = pr.get("comments", {}).get("nodes", [])
-    convo = _filter_conversation(
-        all_convo,
-        since=since,
-        no_bots=no_bots,
-    )
-
-    # Summary line
-    total_threads = len(all_threads)
-    unresolved_count = sum(1 for t in all_threads if not t.get("isResolved"))
-    total_convo = len(all_convo)
-    shown_threads = len(threads)
-    shown_convo = len(convo)
-
-    print(f"PR #{number}: {title}")
-    print(
-        f"{unresolved_count}/{total_threads} unresolved threads, "
-        f"{shown_convo} conversation comments"
-    )
-
-    filter_notes: list[str] = []
-    if show_all:
-        filter_notes.append(f"showing all; {shown_threads} threads after filters")
-    elif shown_threads < unresolved_count:
-        filter_notes.append(
-            f"{shown_threads} of {unresolved_count} unresolved threads after filters"
+    """View PR comments with filtering and LLM-optimized output."""
+    try:
+        owner, name = split_repo(repo)
+        data = gh_graphql(
+            _VIEW_QUERY,
+            owner=owner,
+            repo=name,
+            number=str(number),
         )
-    if shown_convo < total_convo:
-        filter_notes.append(f"{shown_convo} of {total_convo} conversation comments after filters")
-    if filter_notes:
-        print(f"({'; '.join(filter_notes)})")
+        pr = data["data"]["repository"]["pullRequest"]
+        if not pr:
+            die(f"PR #{number} not found in {repo}")
 
-    # Pending reviews
-    pending_out = format_pending_reviews(pending)
-    if pending_out:
-        print(f"\n{pending_out}")
+        pr_author = (pr.get("author") or {}).get("login", "")
+        title = pr.get("title", "")
 
-    # Review comments (top-level body on a review submission)
-    if review_bodies:
-        print("\n--- review comments ---")
-        print(format_review_bodies(review_bodies, max_body, no_bots))
+        # Reviews
+        all_reviews = pr.get("reviews", {}).get("nodes", [])
+        pending = [r for r in all_reviews if r["state"] == "PENDING"]
+        review_bodies = _filter_review_bodies(
+            all_reviews,
+            since=since,
+            no_bots=no_bots,
+        )
 
-    # Review threads
-    print("\n--- review threads ---")
-    print(format_review_threads(threads, max_body, no_bots))
+        # Review threads
+        all_threads = pr.get("reviewThreads", {}).get("nodes", [])
+        threads = _filter_threads(
+            all_threads,
+            show_all=show_all,
+            unanswered_by=pr_author if unanswered else None,
+            since=since,
+            no_bots=no_bots,
+        )
 
-    # Conversation comments
-    print("\n--- conversation comments ---")
-    print(format_conversation_comments(convo, max_body, no_bots))
+        # Conversation comments
+        all_convo = pr.get("comments", {}).get("nodes", [])
+        convo = _filter_conversation(
+            all_convo,
+            since=since,
+            no_bots=no_bots,
+        )
+
+        # Summary line
+        total_threads = len(all_threads)
+        unresolved_count = sum(1 for t in all_threads if not t.get("isResolved"))
+        total_convo = len(all_convo)
+        shown_threads = len(threads)
+        shown_convo = len(convo)
+
+        click.echo(f"PR #{number}: {title}")
+        click.echo(
+            f"{unresolved_count}/{total_threads} unresolved threads, "
+            f"{shown_convo} conversation comments"
+        )
+
+        filter_notes: list[str] = []
+        if show_all:
+            filter_notes.append(f"showing all; {shown_threads} threads after filters")
+        elif shown_threads < unresolved_count:
+            filter_notes.append(
+                f"{shown_threads} of {unresolved_count} unresolved threads after filters"
+            )
+        if shown_convo < total_convo:
+            filter_notes.append(
+                f"{shown_convo} of {total_convo} conversation comments after filters"
+            )
+        if filter_notes:
+            click.echo(f"({'; '.join(filter_notes)})")
+
+        # Pending reviews
+        pending_out = format_pending_reviews(pending)
+        if pending_out:
+            click.echo(f"\n{pending_out}")
+
+        # Review comments (top-level body on a review submission)
+        if review_bodies:
+            click.echo("\n--- review comments ---")
+            click.echo(format_review_bodies(review_bodies, max_body, no_bots))
+
+        # Review threads
+        click.echo("\n--- review threads ---")
+        click.echo(format_review_threads(threads, max_body, no_bots))
+
+        # Conversation comments
+        click.echo("\n--- conversation comments ---")
+        click.echo(format_conversation_comments(convo, max_body, no_bots))
+
+    except GhError as exc:
+        die(str(exc))

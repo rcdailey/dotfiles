@@ -124,6 +124,12 @@ Cross-reference other skills by name instead of duplicating. One excellent examp
 mediocre ones. Compress examples to minimal setups. See `agents-authoring` for RFC 2119 rule writing
 conventions.
 
+**Skills wrapping CLI tools:** Teach workflow and semantics; defer to `--help` for syntax. The skill
+covers what the tool cannot self-document: sequencing constraints, failure handling, non-obvious
+interactions between commands, and domain rules. Duplicating command usage creates drift risk and
+inflates context for zero value. Direct agents to run `--help` as the authoritative interface
+reference.
+
 ### Directory Structures
 
 Most skills are self-contained (`skill-name/SKILL.md`). Add subdirectories only when justified:
@@ -175,5 +181,5 @@ Reference from SKILL.md: "See `references/api-reference.md` for complete API doc
 - [ ] Skill registered in `AGENTS.md` or `opencode-primary-shared.md` with RFC 2119 trigger
 - [ ] Registration scoped correctly (primary-only skills in primary-shared)
 - [ ] Body opens with purpose statement (not a restated trigger)
-- [ ] Examples copy-pasteable without modification
-- [ ] Agent can act without discovery tool calls
+- [ ] Any examples present are copy-pasteable without modification
+- [ ] Agent can act without excessive discovery tool calls (one `--help` is acceptable)

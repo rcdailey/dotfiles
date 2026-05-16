@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .sanitize import is_bot, sanitize_bot_body, truncate_body
+from gh_review._sanitize import is_bot, sanitize_bot_body, truncate_body
 
 
 def _author_info(author: dict[str, Any] | None) -> tuple[str, str]:

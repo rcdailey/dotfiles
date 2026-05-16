@@ -12,7 +12,8 @@ description: >-
 # PR Review
 
 All PR comment operations (reading, writing, replying) MUST go through `gh-review`. Do NOT use raw
-`gh api` or `gh pr` for any review-related task.
+`gh api` or `gh pr` for any review-related task. Run `gh-review --help` and `gh-review <command>
+--help` for authoritative syntax; this skill covers workflow and semantics only.
 
 ## Critical Rules
 
@@ -47,136 +48,39 @@ Medium/low (only when explicitly requested): Organization, docs, test coverage, 
 Use `ctx7` and web search to verify unfamiliar patterns, best practices, and security implications
 before writing comments. Every technical claim must be verified.
 
-## Reading Comments
-
-Use `gh-review view` to read PR comments. It fetches review threads, conversation comments, and
-pending reviews in a single query with LLM-optimized prose output.
-
-### Default (unresolved threads only)
-
-```sh
-gh-review view owner/repo 42
-```
-
-### Threads needing attention (PR author hasn't replied last)
-
-```sh
-gh-review view owner/repo 42 --unanswered
-```
-
-### No bot noise
-
-```sh
-gh-review view owner/repo 42 --no-bots
-```
-
-### Recent comments only
-
-```sh
-gh-review view owner/repo 42 --since 2d
-```
-
-Accepts relative durations: `30m`, `1h`, `2d`, `1w`.
-
-### Show everything (including resolved)
-
-```sh
-gh-review view owner/repo 42 --all
-```
-
-Run `gh-review view --help` for all options and defaults.
-
-Bot comments are sanitized by default (HTML noise stripped, body truncated). Pass `--no-bots` to
-drop them entirely.
-
 ## Pending Review Workflow
 
-### Check for existing pending review
+1. `gh-review view` the PR. If the output includes a `PENDING REVIEWS` section, reuse that `PRR_...`
+   ID. Otherwise, `gh-review start` to create one.
+2. `gh-review comment` for each inline comment, passing the review ID.
+3. Stop. The user submits the review manually via the GitHub UI.
 
-```sh
-gh-review view owner/repo 42
-```
-
-If a pending review exists, the output shows a `PENDING REVIEWS` section with `PRR_...` IDs.
-
-### Start a pending review
-
-Only if no pending review exists. Returns the `PRR_...` review ID needed for `comment`.
-
-```sh
-gh-review start owner/repo 42
-```
-
-### Add comment (single line)
-
-```sh
-gh-review comment owner/repo 42 \
-  --review-id PRR_kwDOAAABbcdEFG12 \
-  --path internal/service.go \
-  --line 42 \
-  --body "nit: prefer helper"
-```
-
-### Add comment (multi-line)
-
-The `--line` is the end line; `--start-line` is the beginning.
-
-```sh
-gh-review comment owner/repo 42 \
-  --review-id PRR_kwDOAAABbcdEFG12 \
-  --path internal/service.go \
-  --start-line 10 \
-  --line 15 \
-  --body "Extract this block into a helper"
-```
-
-### Delete a pending review
-
-```sh
-gh-review delete PRR_kwDOAAABbcdEFG12
-```
+To discard a pending review: `gh-review delete PRR_...`.
 
 ## Replying to Comments
 
-Use `gh-review reply` to reply to existing comment threads. It auto-detects whether the comment is a
-review thread or conversation comment and routes to the correct API.
+`gh-review reply` posts to an existing thread. It auto-detects whether the target is a review thread
+or conversation comment and routes to the correct API.
 
-```sh
-gh-review reply owner/repo 42 COMMENT_ID --body "Fixed in abc123."
-```
+The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` output headers (e.g.
+`@reviewer (2026-05-14) #98765:`). Extract the number after `#`.
 
-The `COMMENT_ID` is the numeric database ID shown as `#ID` in `view` output comment headers (e.g.
-`@reviewer (2026-05-14) #98765:`). Extract the number after `#` from the comment you want to reply
-to.
+## Line Targeting
 
-## Line Targeting Constraints
+GitHub's API only supports comments on lines within diff hunks (changed lines plus surrounding
+context). Lines in the gap between hunks cannot be targeted.
 
-GitHub's API only supports comments on lines within diff hunks (changed lines plus a few lines of
-surrounding context). Lines in the gap between hunks cannot be targeted.
-
-When `comment` targets a non-diff line, it exits non-zero with:
-
-```txt
-error: path/file.cs L21 is outside the diff hunks. GitHub API does not support
-comments on non-diff lines. Post this comment manually through the GitHub UI.
-```
-
-**When this happens:**
+When `comment` targets a non-diff line, it exits non-zero. When this happens:
 
 1. Continue posting remaining comments that target valid lines.
 2. After all comments are posted, report the failures to the user with file, line, and the intended
    comment body so they can post manually.
 
-**When writing suggestion blocks:** The `--start-line` to `--line` range defines what GitHub
-replaces when a suggestion is applied. The range MUST exactly match the lines being replaced. Do NOT
-include surrounding context lines in the range; they will be deleted.
+**Suggestion blocks:** The `--start-line` to `--line` range defines what GitHub replaces when a
+suggestion is applied. The range MUST exactly match the lines being replaced. Do NOT include
+surrounding context lines in the range; they will be deleted.
 
 ## ID Formats
 
 - `PRR_...`: Review node ID (from `start` or `view`)
 - `PRRT_...`: Thread node ID (from `comment` or `view`)
-
-## Output
-
-- Plain text prose, not JSON (optimized for LLM consumption)
-- Errors go to stderr with non-zero exit

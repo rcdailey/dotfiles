@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import patch
 
-from gh_review.commands.view import run
+from click.testing import CliRunner
+
+from gh_review.cli import cli
 
 
 def _make_pr_data(
@@ -13,7 +15,7 @@ def _make_pr_data(
     convo: list[dict[str, Any]] | None = None,
     reviews: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Build a minimal GraphQL response for view.run()."""
+    """Build a minimal GraphQL response for the view command."""
     return {
         "data": {
             "repository": {
@@ -95,60 +97,6 @@ def _human_convo() -> dict[str, Any]:
     }
 
 
-class TestViewFilterNotes:
-    @patch("gh_review.commands.view.gh_graphql")
-    def test_no_bots_shows_thread_and_convo_filter_notes(self, mock_gql, capsys):
-        """--no-bots with bot-only threads and bot convo shows both filter notes."""
-        mock_gql.return_value = _make_pr_data(
-            threads=[_bot_thread(), _bot_thread()],
-            convo=[_bot_convo(), _human_convo()],
-        )
-        run("owner/repo", 1, no_bots=True)
-        output = capsys.readouterr().out
-
-        assert "0 of 2 unresolved threads after filters" in output
-        assert "1 of 2 conversation comments after filters" in output
-
-    @patch("gh_review.commands.view.gh_graphql")
-    def test_no_filter_note_when_nothing_filtered(self, mock_gql, capsys):
-        """No parenthetical when all items pass filters."""
-        mock_gql.return_value = _make_pr_data(
-            threads=[_human_thread()],
-            convo=[_human_convo()],
-        )
-        run("owner/repo", 1)
-        output = capsys.readouterr().out
-
-        # No filter note line
-        assert "after filters" not in output
-
-    @patch("gh_review.commands.view.gh_graphql")
-    def test_convo_only_filter_note(self, mock_gql, capsys):
-        """Filter note only for convo when threads are unaffected."""
-        mock_gql.return_value = _make_pr_data(
-            threads=[_human_thread()],
-            convo=[_bot_convo()],
-        )
-        run("owner/repo", 1, no_bots=True)
-        output = capsys.readouterr().out
-
-        assert "unresolved threads after filters" not in output
-        assert "0 of 1 conversation comments after filters" in output
-
-    @patch("gh_review.commands.view.gh_graphql")
-    def test_show_all_combined_with_convo_filter(self, mock_gql, capsys):
-        """--all + --no-bots: thread note uses 'showing all', convo note present."""
-        mock_gql.return_value = _make_pr_data(
-            threads=[_bot_thread(), _human_thread()],
-            convo=[_bot_convo()],
-        )
-        run("owner/repo", 1, show_all=True, no_bots=True)
-        output = capsys.readouterr().out
-
-        assert "showing all; 1 threads after filters" in output
-        assert "0 of 1 conversation comments after filters" in output
-
-
 def _review_with_body() -> dict[str, Any]:
     return {
         "id": "PRR_123",
@@ -171,48 +119,104 @@ def _review_no_body() -> dict[str, Any]:
     }
 
 
-class TestViewReviewBodies:
-    @patch("gh_review.commands.view.gh_graphql")
-    def test_review_body_shown(self, mock_gql, capsys):
+def test_no_bots_shows_thread_and_convo_filter_notes():
+    """--no-bots with bot-only threads and bot convo shows both filter notes."""
+    with patch("gh_review.view.gh_graphql") as mock_gql:
+        mock_gql.return_value = _make_pr_data(
+            threads=[_bot_thread(), _bot_thread()],
+            convo=[_bot_convo(), _human_convo()],
+        )
+        result = CliRunner().invoke(cli, ["view", "owner/repo", "1", "--no-bots"])
+
+    assert result.exit_code == 0
+    assert "0 of 2 unresolved threads after filters" in result.output
+    assert "1 of 2 conversation comments after filters" in result.output
+
+
+def test_no_filter_note_when_nothing_filtered():
+    """No parenthetical when all items pass filters."""
+    with patch("gh_review.view.gh_graphql") as mock_gql:
+        mock_gql.return_value = _make_pr_data(
+            threads=[_human_thread()],
+            convo=[_human_convo()],
+        )
+        result = CliRunner().invoke(cli, ["view", "owner/repo", "1"])
+
+    assert result.exit_code == 0
+    assert "after filters" not in result.output
+
+
+def test_convo_only_filter_note():
+    """Filter note only for convo when threads are unaffected."""
+    with patch("gh_review.view.gh_graphql") as mock_gql:
+        mock_gql.return_value = _make_pr_data(
+            threads=[_human_thread()],
+            convo=[_bot_convo()],
+        )
+        result = CliRunner().invoke(cli, ["view", "owner/repo", "1", "--no-bots"])
+
+    assert result.exit_code == 0
+    assert "unresolved threads after filters" not in result.output
+    assert "0 of 1 conversation comments after filters" in result.output
+
+
+def test_show_all_combined_with_convo_filter():
+    """--all + --no-bots: thread note uses 'showing all', convo note present."""
+    with patch("gh_review.view.gh_graphql") as mock_gql:
+        mock_gql.return_value = _make_pr_data(
+            threads=[_bot_thread(), _human_thread()],
+            convo=[_bot_convo()],
+        )
+        result = CliRunner().invoke(cli, ["view", "owner/repo", "1", "--all", "--no-bots"])
+
+    assert result.exit_code == 0
+    assert "showing all; 1 threads after filters" in result.output
+    assert "0 of 1 conversation comments after filters" in result.output
+
+
+def test_review_body_shown():
+    with patch("gh_review.view.gh_graphql") as mock_gql:
         mock_gql.return_value = _make_pr_data(reviews=[_review_with_body()])
-        run("owner/repo", 1)
-        output = capsys.readouterr().out
+        result = CliRunner().invoke(cli, ["view", "owner/repo", "1"])
 
-        assert "--- review comments ---" in output
-        assert "High level feedback." in output
-        assert "#4303794833" in output
+    assert result.exit_code == 0
+    assert "--- review comments ---" in result.output
+    assert "High level feedback." in result.output
+    assert "#4303794833" in result.output
 
-    @patch("gh_review.commands.view.gh_graphql")
-    def test_review_body_hidden_when_empty(self, mock_gql, capsys):
+
+def test_review_body_hidden_when_empty():
+    with patch("gh_review.view.gh_graphql") as mock_gql:
         mock_gql.return_value = _make_pr_data(reviews=[_review_no_body()])
-        run("owner/repo", 1)
-        output = capsys.readouterr().out
+        result = CliRunner().invoke(cli, ["view", "owner/repo", "1"])
 
-        assert "--- review comments ---" not in output
+    assert result.exit_code == 0
+    assert "--- review comments ---" not in result.output
 
-    @patch("gh_review.commands.view.gh_graphql")
-    def test_review_body_dropped_with_no_bots(self, mock_gql, capsys):
+
+def test_review_body_dropped_with_no_bots():
+    with patch("gh_review.view.gh_graphql") as mock_gql:
         mock_gql.return_value = _make_pr_data(reviews=[_review_with_body()])
-        run("owner/repo", 1, no_bots=True)
-        output = capsys.readouterr().out
+        result = CliRunner().invoke(cli, ["view", "owner/repo", "1", "--no-bots"])
 
-        assert "--- review comments ---" not in output
-        assert "High level feedback." not in output
+    assert result.exit_code == 0
+    assert "--- review comments ---" not in result.output
+    assert "High level feedback." not in result.output
 
 
-class TestViewDatabaseIds:
-    @patch("gh_review.commands.view.gh_graphql")
-    def test_thread_comment_shows_database_id(self, mock_gql, capsys):
+def test_thread_comment_shows_database_id():
+    with patch("gh_review.view.gh_graphql") as mock_gql:
         mock_gql.return_value = _make_pr_data(threads=[_human_thread()])
-        run("owner/repo", 1)
-        output = capsys.readouterr().out
+        result = CliRunner().invoke(cli, ["view", "owner/repo", "1"])
 
-        assert "#222" in output
+    assert result.exit_code == 0
+    assert "#222" in result.output
 
-    @patch("gh_review.commands.view.gh_graphql")
-    def test_convo_comment_shows_database_id(self, mock_gql, capsys):
+
+def test_convo_comment_shows_database_id():
+    with patch("gh_review.view.gh_graphql") as mock_gql:
         mock_gql.return_value = _make_pr_data(convo=[_human_convo()])
-        run("owner/repo", 1)
-        output = capsys.readouterr().out
+        result = CliRunner().invoke(cli, ["view", "owner/repo", "1"])
 
-        assert "#444" in output
+    assert result.exit_code == 0
+    assert "#444" in result.output

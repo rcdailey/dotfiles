@@ -5,20 +5,13 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
-import sys
-from typing import Any, NoReturn
+from typing import Any
 
-
-class GhError(Exception):
-    pass
-
-
-def die(message: str) -> NoReturn:
-    print(f"error: {message}", file=sys.stderr)
-    sys.exit(1)
+from gh_review._errors import GhError, die
 
 
 def check_deps() -> None:
+    """Verify gh CLI is installed and authenticated."""
     if not shutil.which("gh"):
         die("gh CLI not found")
     result = subprocess.run(["gh", "auth", "status"], capture_output=True)
@@ -27,6 +20,7 @@ def check_deps() -> None:
 
 
 def run_gh(*args: str) -> str:
+    """Run gh with args, return stdout. Raises GhError on failure."""
     result = subprocess.run(["gh", *args], capture_output=True, text=True)
     if result.returncode != 0:
         raise GhError(result.stderr.strip())
@@ -34,6 +28,7 @@ def run_gh(*args: str) -> str:
 
 
 def gh_graphql(query: str, **variables: str) -> Any:
+    """Execute a GraphQL query via gh CLI."""
     cmd = ["api", "graphql", "-f", f"query={query}"]
     for k, v in variables.items():
         cmd.extend(["-F", f"{k}={v}"])
@@ -64,7 +59,7 @@ def gh_rest(
     body: dict[str, Any] | None = None,
     jq: str | None = None,
 ) -> str:
-    """Execute a GitHub REST API call via gh cli."""
+    """Execute a GitHub REST API call via gh CLI."""
     cmd = ["api", "--method", method, endpoint]
     if body:
         for k, v in body.items():

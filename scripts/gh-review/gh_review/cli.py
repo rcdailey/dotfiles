@@ -1,111 +1,59 @@
-"""CLI argument parsing for gh-review."""
+"""Root CLI group with auto-discovery of subcommand modules."""
 
 from __future__ import annotations
 
-import argparse
+import importlib
+import pkgutil
+from pathlib import Path
 
-from . import DEFAULT_MAX_BODY
-from .duration import parse_duration
+import click
+
+from gh_review._click import HelpfulGroup
+from gh_review._gh import check_deps
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="gh-review",
-        description="LLM-optimized PR review tool wrapping GitHub CLI",
-    )
-    sub = parser.add_subparsers(dest="command", required=True)
+class _AutoGroup(HelpfulGroup):
+    """Click group that auto-discovers subcommand modules.
 
-    # --- view ---
-    p = sub.add_parser(
-        "view",
-        help="view PR comments with filtering",
-    )
-    p.add_argument("repo", help="owner/name")
-    p.add_argument("number", type=int, help="PR number")
-    p.add_argument(
-        "--all",
-        dest="show_all",
-        action="store_true",
-        help="show all threads (default: unresolved only)",
-    )
-    p.add_argument(
-        "--unanswered",
-        action="store_true",
-        help="only threads where PR author has not replied last",
-    )
-    p.add_argument(
-        "--since",
-        type=parse_duration,
-        metavar="DURATION",
-        help="relative time filter (e.g. 1h, 2d, 1w)",
-    )
-    p.add_argument(
-        "--no-bots",
-        action="store_true",
-        help="drop bot comments entirely",
-    )
-    p.add_argument(
-        "--max-body",
-        type=int,
-        default=DEFAULT_MAX_BODY,
-        metavar="N",
-        help=f"max comment body length (default: {DEFAULT_MAX_BODY})",
-    )
+    Any module in the package that exposes a ``cli`` attribute
+    (a click.Group or click.Command) is registered as a subcommand.
+    Modules whose names start with ``_`` are skipped (private helpers).
+    """
 
-    # --- start ---
-    p = sub.add_parser("start", help="start a pending review")
-    p.add_argument("repo", help="owner/name")
-    p.add_argument("number", type=int, help="PR number")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._loaded = False
 
-    # --- delete ---
-    p = sub.add_parser("delete", help="delete a pending review")
-    p.add_argument(
-        "review_id",
-        metavar="REVIEW_ID",
-        help="PRR_... node id",
-    )
+    def _load_plugins(self):
+        if self._loaded:
+            return
+        self._loaded = True
+        pkg_path = str(Path(__file__).parent)
+        for info in pkgutil.iter_modules([pkg_path]):
+            if info.name.startswith("_") or info.name == "cli":
+                continue
+            try:
+                mod = importlib.import_module(f"gh_review.{info.name}")
+            except Exception:
+                continue
+            cmd = getattr(mod, "cli", None)
+            if isinstance(cmd, click.Command):
+                self.add_command(cmd, info.name)
 
-    # --- comment ---
-    p = sub.add_parser(
-        "comment",
-        help="add inline comment to pending review",
-    )
-    p.add_argument("repo", help="owner/name")
-    p.add_argument("number", type=int, help="PR number")
-    p.add_argument("--review-id", required=True, help="PRR_... node id")
-    p.add_argument("--path", required=True, help="file path in the PR")
-    p.add_argument(
-        "--line",
-        type=int,
-        required=True,
-        help="line number (or end line for multi-line)",
-    )
-    p.add_argument(
-        "--start-line",
-        type=int,
-        help="start line for multi-line comments",
-    )
-    p.add_argument("--body", required=True, help="comment body")
-    p.add_argument(
-        "--side",
-        choices=["LEFT", "RIGHT"],
-        default="RIGHT",
-        help="diff side (default: RIGHT)",
-    )
-    p.add_argument(
-        "--start-side",
-        choices=["LEFT", "RIGHT"],
-        help="diff side for start line",
-    )
+    def list_commands(self, ctx):
+        self._load_plugins()
+        return super().list_commands(ctx)
 
-    # --- reply ---
-    p = sub.add_parser(
-        "reply",
-        help="reply to a review comment thread",
-    )
-    p.add_argument("repo", help="owner/name")
-    p.add_argument("number", type=int, help="PR number")
-    p.add_argument("comment_id", type=int, help="comment database ID")
-    p.add_argument("--body", required=True, help="reply body")
+    def get_command(self, ctx, cmd_name):
+        self._load_plugins()
+        return super().get_command(ctx, cmd_name)
 
-    return parser
+
+@click.group(
+    cls=_AutoGroup,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+@click.version_option(version=__import__("gh_review").__version__, prog_name="gh-review")
+def cli():
+    """LLM-optimized PR review tool wrapping GitHub CLI."""
+    check_deps()

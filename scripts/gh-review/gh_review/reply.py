@@ -4,10 +4,19 @@ from __future__ import annotations
 
 import json
 
-from ..gh import GhError, die, gh_rest
+import click
+
+from gh_review._errors import GhError, die
+from gh_review._gh import gh_rest
 
 
-def run(repo: str, number: int, comment_id: int, body: str) -> None:
+@click.command()
+@click.argument("repo")
+@click.argument("number", type=int)
+@click.argument("comment_id", type=int)
+@click.option("--body", required=True, help="reply body")
+def cli(repo: str, number: int, comment_id: int, body: str) -> None:
+    """Reply to a review comment thread."""
     # Try review comment reply first (most common case).
     try:
         raw = gh_rest(
@@ -17,8 +26,8 @@ def run(repo: str, number: int, comment_id: int, body: str) -> None:
             jq="{id, html_url}",
         )
         data = json.loads(raw)
-        print(f"id: {data['id']}")
-        print(f"url: {data['html_url']}")
+        click.echo(f"id: {data['id']}")
+        click.echo(f"url: {data['html_url']}")
         return
     except GhError:
         pass
@@ -32,7 +41,7 @@ def run(repo: str, number: int, comment_id: int, body: str) -> None:
             jq="{id, html_url}",
         )
         data = json.loads(raw)
-        print(f"id: {data['id']}")
-        print(f"url: {data['html_url']}")
+        click.echo(f"id: {data['id']}")
+        click.echo(f"url: {data['html_url']}")
     except GhError as exc:
         die(f"failed to post reply: {exc}")
