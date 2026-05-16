@@ -102,9 +102,10 @@ constants.
   raw `gh api` or `gh pr` for any review-related task. Commands: `view`, `start`, `delete`,
   `comment`, `reply`. The `view` command fetches review threads and conversation comments in a
   single query with filtering and LLM-optimized output.
-- `ctx7` is the CLI for Context7, a service that provides up-to-date library and framework
-  documentation to LLMs. MUST use `ctx7` for library and framework docs before webfetch or the
-  researcher subagent; fall back to the researcher only when `ctx7` lacks coverage:
+- `ctx7` (also called "context7") is the CLI for the Context7 documentation service; it provides
+  up-to-date library and framework docs to LLMs. MUST use `ctx7` for library and framework docs
+  before webfetch or the researcher subagent; fall back to the researcher only when `ctx7` lacks
+  coverage:
   - `ctx7 library <name> <query>` searches the index and returns library IDs
   - `ctx7 docs <libraryId> <query>` fetches docs for an ID (e.g. `/vercel/next.js`)
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
