@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import sys
-
 import click
+
+from research._errors import die  # noqa: F401
 
 
 def parse_repo(repo: str) -> tuple[str, str]:
@@ -13,9 +13,3 @@ def parse_repo(repo: str) -> tuple[str, str]:
     if len(parts) != 2:
         raise click.BadParameter(f"repo must be OWNER/REPO format, got: {repo}")
     return parts[0], parts[1]
-
-
-def die(msg: str, code: int = 1) -> None:
-    """Print `error: <msg>` to stderr and exit."""
-    click.echo(f"error: {msg}", err=True)
-    sys.exit(code)

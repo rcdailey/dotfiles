@@ -3,9 +3,17 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
-import sys
 from typing import Any
+
+from research._errors import die
+
+
+def check_deps() -> None:
+    """Verify gh CLI is available. Called once at startup."""
+    if not shutil.which("gh"):
+        die("gh not found; install the GitHub CLI first")
 
 
 def _run_gh(args: list[str], check: bool = True) -> subprocess.CompletedProcess:
@@ -18,8 +26,7 @@ def _run_gh(args: list[str], check: bool = True) -> subprocess.CompletedProcess:
             check=check,
         )
     except FileNotFoundError:
-        print("error: `gh` CLI not found in PATH", file=sys.stderr)
-        sys.exit(2)
+        die("`gh` CLI not found in PATH")
 
 
 def api(endpoint: str, method: str = "GET", params: dict[str, str] | None = None) -> dict | list:

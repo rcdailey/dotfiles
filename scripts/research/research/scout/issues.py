@@ -49,7 +49,7 @@ def issue(repo: str, number: str | None, search: str | None, state: str, limit: 
         try:
             n = int(number)
         except ValueError:
-            die(f"invalid issue number: {number}", code=2)
+            raise click.UsageError(f"invalid issue number: {number}")
         try:
             data = view_issue(owner, name, n)
         except APIError as e:
@@ -98,7 +98,7 @@ def pr(repo: str, number: str | None, search: str | None, state: str, limit: int
         try:
             n = int(number)
         except ValueError:
-            die(f"invalid PR number: {number}", code=2)
+            raise click.UsageError(f"invalid PR number: {number}")
         try:
             data = view_pr(owner, name, n)
         except APIError as e:
@@ -211,7 +211,7 @@ def discussion(repo: str, number: str | None, search: str | None, limit: int) ->
         try:
             n = int(number)
         except ValueError:
-            die(f"invalid discussion number: {number}", code=2)
+            raise click.UsageError(f"invalid discussion number: {number}")
         try:
             data = view_discussion(owner, name, n)
         except APIError as e:

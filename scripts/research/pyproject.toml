@@ -3,7 +3,7 @@ name = "research"
 version = "0.1.0"
 description = "LLM-optimized research CLI for web, GitHub repos, and PDFs"
 requires-python = ">=3.13"
-dependencies = ["click>=8.1", "httpx>=0.27", "linkup-sdk", "diskcache", "trafilatura"]
+dependencies = ["click>=8.1", "httpx>=0.27", "linkup-sdk>=0.2", "diskcache>=5.6", "trafilatura>=2.0"]
 
 [build-system]
 requires = ["hatchling"]
@@ -11,3 +11,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["research"]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib"]

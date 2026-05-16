@@ -6,12 +6,12 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from research._errors import die
+
 if TYPE_CHECKING:
     from diskcache import Cache
 
 _BASE_CACHE_DIR = Path("/tmp/.research-cache")
-_session_id = os.environ["RESEARCH_SESSION_ID"]
-CACHE_DIR = _BASE_CACHE_DIR / _session_id
 _URL_PREFIX = "url:"
 
 _cache_singleton: Cache | None = None
@@ -23,7 +23,10 @@ def get_cache() -> Cache:
     if _cache_singleton is None:
         from diskcache import Cache as _Cache
 
-        _cache_singleton = _Cache(str(CACHE_DIR))
+        session_id = os.environ.get("RESEARCH_SESSION_ID")
+        if not session_id:
+            die("RESEARCH_SESSION_ID is not set")
+        _cache_singleton = _Cache(str(_BASE_CACHE_DIR / session_id))
     return _cache_singleton
 
 

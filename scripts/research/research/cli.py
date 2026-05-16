@@ -23,7 +23,7 @@ class _AutoGroup(HelpfulGroup):
         super().__init__(*args, **kwargs)
         self._loaded = False
 
-    def _load_plugins(self):
+    def _load_plugins(self) -> None:
         if self._loaded:
             return
         self._loaded = True
@@ -39,11 +39,11 @@ class _AutoGroup(HelpfulGroup):
             if isinstance(cmd, click.Command):
                 self.add_command(cmd, info.name)
 
-    def list_commands(self, ctx):
+    def list_commands(self, ctx: click.Context) -> list[str]:
         self._load_plugins()
         return super().list_commands(ctx)
 
-    def get_command(self, ctx, cmd_name):
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         self._load_plugins()
         return super().get_command(ctx, cmd_name)
 
@@ -53,5 +53,5 @@ class _AutoGroup(HelpfulGroup):
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.version_option(version=__import__("research").__version__, prog_name="research")
-def cli():
+def cli() -> None:
     """LLM-optimized research CLI for web, GitHub repos, and PDFs."""

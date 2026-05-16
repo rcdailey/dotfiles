@@ -283,10 +283,10 @@ def blame(repo: str, path: str, ref: str | None) -> None:
 def diff_cmd(repo: str, spec: str, path: str | None) -> None:
     """Compare two refs: `scout diff REPO base..head`."""
     if ".." not in spec:
-        die("spec must be BASE..HEAD (e.g., v1.0..v2.0)", code=2)
+        raise click.UsageError("spec must be BASE..HEAD (e.g., v1.0..v2.0)")
     base, head = spec.split("..", 1)
     if not base or not head:
-        die("spec must be BASE..HEAD (e.g., v1.0..v2.0)", code=2)
+        raise click.UsageError("spec must be BASE..HEAD (e.g., v1.0..v2.0)")
 
     owner, name = parse_repo(repo)
     try:
@@ -326,10 +326,9 @@ def code_cmd(query: str, scopes: tuple[str, ...], limit: int) -> None:
     import json
 
     if _REGEX_META_RE.search(query):
-        die(
+        raise click.UsageError(
             'GitHub code search is literal, not regex; "|" is treated as a character. '
-            "Run separate searches for each term.",
-            code=2,
+            "Run separate searches for each term."
         )
     args = [
         "search",

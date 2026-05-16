@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-import sys
+
+import click
 
 
 def section_heading(title: str) -> str:
@@ -62,10 +63,9 @@ def apply_find(text: str, pattern: str, context: int) -> str:
 
 def reroute_message(url: str, new_command: str, reason: str) -> None:
     """Print a concise reroute banner to stderr."""
-    print(
+    click.echo(
         f"[reroute: {url} -> {new_command}; reason: {reason}; rerouted output follows]",
-        file=sys.stderr,
-        flush=True,
+        err=True,
     )
 
 

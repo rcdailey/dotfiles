@@ -1,6 +1,4 @@
-"""Entry point for research CLI."""
-
-from __future__ import annotations
+"""Entry point for `python -m research`."""
 
 from research.cli import cli
 

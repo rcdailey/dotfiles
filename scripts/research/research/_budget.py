@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
+import click
+
 if TYPE_CHECKING:
     from diskcache import Cache
 
@@ -61,10 +63,9 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
 
         if url_key and url_key in cache:
             remaining = MAX_CALLS - count
-            print(
+            click.echo(
                 f"\n[cache hit; budget unchanged at {count}/{MAX_CALLS} used, "
-                f"{remaining} remaining]",
-                flush=True,
+                f"{remaining} remaining]"
             )
             return
 
@@ -72,7 +73,7 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
         cache.set(_COUNT_KEY, count)
         if url_key:
             cache.set(url_key, True)
-        print(budget_message(count), flush=True)
+        click.echo(budget_message(count))
 
     if count > MAX_CALLS:
         sys.exit(1)
@@ -96,11 +97,10 @@ def budget_refund(cache: Cache, cached_url: str | None = None) -> None:
             cache.delete(url_key)
 
     remaining = MAX_CALLS - count
-    print(
+    click.echo(
         f"[refund: call failed; budget restored to {count}/{MAX_CALLS} used, "
         f"{remaining} remaining]",
-        file=sys.stderr,
-        flush=True,
+        err=True,
     )
 
 

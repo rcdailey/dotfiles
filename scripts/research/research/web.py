@@ -24,7 +24,7 @@ DEFAULT_MAX_CHARS = 20000
 
 
 @click.group(invoke_without_command=False)
-def cli():
+def cli() -> None:
     """Web search and page fetching via Linkup."""
 
 

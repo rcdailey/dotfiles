@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import subprocess
-import sys
 from typing import TYPE_CHECKING
+
+from research._errors import die
 
 if TYPE_CHECKING:
     from linkup import LinkupClient
@@ -37,16 +38,13 @@ def get_linkup_api_key() -> str:
             check=True,
         )
     except FileNotFoundError:
-        print("error: LINKUP_API_KEY not set and `rbw` binary not found", file=sys.stderr)
-        sys.exit(2)
+        die("LINKUP_API_KEY not set and `rbw` binary not found")
     except subprocess.CalledProcessError as e:
         msg = e.stderr.strip() or f"rbw exited {e.returncode}"
-        print(f"error: failed to read Linkup API key from rbw ({RBW_ITEM}): {msg}", file=sys.stderr)
-        sys.exit(2)
+        die(f"failed to read Linkup API key from rbw ({RBW_ITEM}): {msg}")
     key = result.stdout.strip()
     if not key:
-        print(f"error: rbw returned empty value for {RBW_ITEM}", file=sys.stderr)
-        sys.exit(2)
+        die(f"rbw returned empty value for {RBW_ITEM}")
     return key
 
 
