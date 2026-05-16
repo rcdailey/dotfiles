@@ -130,6 +130,8 @@ Per-skill triggers:
 - `subagent-authoring`: MUST load when creating, editing, or refactoring agent definitions.
 - `command-authoring`: MUST load when creating, editing, or refactoring OpenCode slash commands.
 - `git-hunks`: MUST load when staging individual hunks or partial file changes non-interactively.
+- `python-scripting`: MUST load when creating, editing, or reviewing modularized Python CLI script
+  projects (uv + hatchling + Click pattern).
 
 ## Agents
 
