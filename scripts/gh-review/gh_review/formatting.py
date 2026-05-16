@@ -163,6 +163,54 @@ def format_conversation_comments(
     return "\n".join(lines) if lines else "no conversation comments"
 
 
+def format_review_bodies(
+    reviews: list[dict[str, Any]],
+    max_body: int,
+    no_bots: bool,
+) -> str:
+    """Format top-level review body comments (the summary left on a review submission)."""
+    if not reviews:
+        return "no review comments"
+
+    lines: list[str] = []
+    for r in reviews:
+        login, typename = _author_info(r.get("author"))
+        raw_body = (r.get("body") or "").strip()
+        created = (r.get("createdAt") or "")[:10]
+        db_id = r.get("databaseId")
+        state = (r.get("state") or "").lower()
+
+        processed = _format_body(
+            raw_body,
+            login,
+            typename,
+            max_body,
+            no_bots,
+        )
+        if processed is None:
+            continue
+
+        bot = is_bot(login, typename)
+        bot_marker = " [bot, sanitized]" if bot else ""
+        state_marker = f" [{state}]" if state else ""
+        id_suffix = f" #{db_id}" if db_id else ""
+        header = f"@{login} ({created}){bot_marker}{state_marker}{id_suffix}:"
+
+        if not processed:
+            lines.append(header)
+            continue
+
+        body_lines = processed.splitlines()
+        if len(body_lines) == 1:
+            lines.append(f"{header} {body_lines[0]}")
+        else:
+            lines.append(header)
+            for bl in body_lines:
+                lines.append(f"  {bl}")
+
+    return "\n".join(lines) if lines else "no review comments"
+
+
 def format_pending_reviews(reviews: list[dict[str, Any]]) -> str:
     """Format pending review entries."""
     if not reviews:

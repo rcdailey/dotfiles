@@ -11,6 +11,7 @@ from gh_review.commands.view import run
 def _make_pr_data(
     threads: list[dict[str, Any]] | None = None,
     convo: list[dict[str, Any]] | None = None,
+    reviews: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build a minimal GraphQL response for view.run()."""
     return {
@@ -19,7 +20,7 @@ def _make_pr_data(
                 "pullRequest": {
                     "title": "test pr",
                     "author": {"login": "author"},
-                    "reviews": {"nodes": []},
+                    "reviews": {"nodes": reviews or []},
                     "reviewThreads": {"nodes": threads or []},
                     "comments": {"nodes": convo or []},
                 }
@@ -146,6 +147,57 @@ class TestViewFilterNotes:
 
         assert "showing all; 1 threads after filters" in output
         assert "0 of 1 conversation comments after filters" in output
+
+
+def _review_with_body() -> dict[str, Any]:
+    return {
+        "id": "PRR_123",
+        "databaseId": 4303794833,
+        "state": "COMMENTED",
+        "author": {"login": "sourcery-ai[bot]", "__typename": "Bot"},
+        "body": "High level feedback.",
+        "createdAt": "2026-05-16T10:00:00Z",
+    }
+
+
+def _review_no_body() -> dict[str, Any]:
+    return {
+        "id": "PRR_456",
+        "databaseId": 789,
+        "state": "APPROVED",
+        "author": {"login": "reviewer", "__typename": "User"},
+        "body": "",
+        "createdAt": "2026-05-16T11:00:00Z",
+    }
+
+
+class TestViewReviewBodies:
+    @patch("gh_review.commands.view.gh_graphql")
+    def test_review_body_shown(self, mock_gql, capsys):
+        mock_gql.return_value = _make_pr_data(reviews=[_review_with_body()])
+        run("owner/repo", 1)
+        output = capsys.readouterr().out
+
+        assert "--- review comments ---" in output
+        assert "High level feedback." in output
+        assert "#4303794833" in output
+
+    @patch("gh_review.commands.view.gh_graphql")
+    def test_review_body_hidden_when_empty(self, mock_gql, capsys):
+        mock_gql.return_value = _make_pr_data(reviews=[_review_no_body()])
+        run("owner/repo", 1)
+        output = capsys.readouterr().out
+
+        assert "--- review comments ---" not in output
+
+    @patch("gh_review.commands.view.gh_graphql")
+    def test_review_body_dropped_with_no_bots(self, mock_gql, capsys):
+        mock_gql.return_value = _make_pr_data(reviews=[_review_with_body()])
+        run("owner/repo", 1, no_bots=True)
+        output = capsys.readouterr().out
+
+        assert "--- review comments ---" not in output
+        assert "High level feedback." not in output
 
 
 class TestViewDatabaseIds:

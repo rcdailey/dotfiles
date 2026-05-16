@@ -6,9 +6,11 @@ import textwrap
 from datetime import datetime, timezone
 from typing import Any
 
+from .. import DEFAULT_MAX_BODY
 from ..formatting import (
     format_conversation_comments,
     format_pending_reviews,
+    format_review_bodies,
     format_review_threads,
 )
 from ..gh import gh_graphql, split_repo
@@ -22,8 +24,9 @@ _VIEW_QUERY = textwrap.dedent("""\
           author { login }
           reviews(first:50) {
             nodes {
-              id state
-              author { login }
+              id databaseId state
+              author { login __typename }
+              body createdAt
             }
           }
           reviewThreads(first:100) {
@@ -132,6 +135,32 @@ def _filter_conversation(
     return result
 
 
+def _filter_review_bodies(
+    reviews: list[dict[str, Any]],
+    *,
+    since: datetime | None,
+    no_bots: bool,
+) -> list[dict[str, Any]]:
+    """Filter reviews to those with a non-empty body, excluding pending."""
+    result = []
+    for r in reviews:
+        if r.get("state") == "PENDING":
+            continue
+        if not (r.get("body") or "").strip():
+            continue
+        if since:
+            created = _parse_iso(r.get("createdAt", ""))
+            if created < since:
+                continue
+        author = r.get("author") or {}
+        login = author.get("login", "")
+        typename = author.get("__typename", "")
+        if no_bots and is_bot(login, typename):
+            continue
+        result.append(r)
+    return result
+
+
 def run(
     repo: str,
     number: int,
@@ -140,7 +169,7 @@ def run(
     unanswered: bool = False,
     since: datetime | None = None,
     no_bots: bool = False,
-    max_body: int = 500,
+    max_body: int = DEFAULT_MAX_BODY,
 ) -> None:
     owner, name = split_repo(repo)
     data = gh_graphql(
@@ -158,9 +187,14 @@ def run(
     pr_author = (pr.get("author") or {}).get("login", "")
     title = pr.get("title", "")
 
-    # Pending reviews
+    # Reviews
     all_reviews = pr.get("reviews", {}).get("nodes", [])
     pending = [r for r in all_reviews if r["state"] == "PENDING"]
+    review_bodies = _filter_review_bodies(
+        all_reviews,
+        since=since,
+        no_bots=no_bots,
+    )
 
     # Review threads
     all_threads = pr.get("reviewThreads", {}).get("nodes", [])
@@ -209,6 +243,11 @@ def run(
     pending_out = format_pending_reviews(pending)
     if pending_out:
         print(f"\n{pending_out}")
+
+    # Review comments (top-level body on a review submission)
+    if review_bodies:
+        print("\n--- review comments ---")
+        print(format_review_bodies(review_bodies, max_body, no_bots))
 
     # Review threads
     print("\n--- review threads ---")

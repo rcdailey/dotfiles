@@ -98,6 +98,128 @@ class TestSanitizeBotBody:
         assert "Before." in result
         assert "After." in result
 
+    def test_strips_html_tables(self):
+        body = (
+            "Deploy successful!\n"
+            "<table><tr><td><strong>Status:</strong></td>"
+            "<td>OK</td></tr></table>\n"
+            "Done."
+        )
+        result = sanitize_bot_body(body)
+        assert "<table" not in result
+        assert "<td" not in result
+        assert "Deploy successful!" in result
+        assert "Done." in result
+
+    def test_strips_mermaid_blocks(self):
+        body = "## Summary\n\n```mermaid\nflowchart LR\n  A --> B\n```\n\nDetails here."
+        result = sanitize_bot_body(body)
+        assert "mermaid" not in result
+        assert "flowchart" not in result
+        assert "## Summary" in result
+        assert "Details here." in result
+
+    def test_strips_markdown_tables(self):
+        body = (
+            "Changes:\n\n"
+            "| File | Change |\n"
+            "| --- | --- |\n"
+            "| foo.py | Added |\n"
+            "| bar.py | Removed |\n\n"
+            "Summary."
+        )
+        result = sanitize_bot_body(body)
+        assert "| File" not in result
+        assert "| foo.py" not in result
+        assert "Changes:" in result
+        assert "Summary." in result
+
+    def test_strips_inline_html_keeps_text(self):
+        body = "Found <strong>3 issues</strong> in <code>main.py</code>."
+        result = sanitize_bot_body(body)
+        assert "<strong>" not in result
+        assert "<code>" not in result
+        assert "3 issues" in result
+        assert "main.py" in result
+
+    def test_strips_br_tags(self):
+        body = "Line one<br>Line two<br/>Line three"
+        result = sanitize_bot_body(body)
+        assert "<br" not in result
+        assert "Line one" in result
+        assert "Line two" in result
+
+    def test_strips_badge_links(self):
+        body = (
+            "Status: [![Build](https://img.shields.io/badge.svg)]"
+            "(https://example.com)\nReal content."
+        )
+        result = sanitize_bot_body(body)
+        assert "img.shields.io" not in result
+        assert "Real content." in result
+
+    def test_strips_image_markdown(self):
+        body = "See: ![screenshot](https://example.com/img.png)\nText."
+        result = sanitize_bot_body(body)
+        assert "![screenshot]" not in result
+        assert "Text." in result
+
+    def test_cloudflare_deploy_comment(self):
+        """Real-world github-actions deploy comment."""
+        body = (
+            "Deploying with Cloudflare Pages<br>"
+            "<table><tr><td><strong>Latest commit:</strong></td>"
+            "<td><code>abc123</code></td></tr>"
+            "<tr><td><strong>Status:</strong></td>"
+            "<td>Deploy successful!</td></tr>"
+            "<tr><td><strong>Preview URL:</strong></td>"
+            "<td><a href='https://example.pages.dev'>"
+            "https://example.pages.dev</a></td></tr></table>"
+        )
+        result = sanitize_bot_body(body)
+        assert "<table" not in result
+        assert "<strong>" not in result
+        assert "Deploying with Cloudflare Pages" in result
+
+    def test_sourcery_reviewer_guide(self):
+        """Real-world sourcery-ai comment structure."""
+        body = (
+            "## Reviewer's Guide\n\n"
+            "Summary of changes.\n\n"
+            "#### Flow diagram\n\n"
+            "```mermaid\nflowchart LR\n  A --> B\n```\n\n"
+            "### File-Level Changes\n\n"
+            "| Change | Details | Files |\n"
+            "| ------ | ------- | ----- |\n"
+            "| Harden workflow | Added perms | `deploy.yml` |\n\n"
+            "<details>\n<summary>Tips</summary>\n"
+            "Bot tips here.\n</details>"
+        )
+        result = sanitize_bot_body(body)
+        assert "## Reviewer's Guide" in result
+        assert "Summary of changes." in result
+        assert "mermaid" not in result
+        assert "flowchart" not in result
+        assert "| Change" not in result
+        assert "Tips" not in result
+
+    def test_markdown_table_with_html_in_cells(self):
+        """Table cells containing <br/> and <ul><li> tags."""
+        body = (
+            "### File-Level Changes\n\n"
+            "| Change | Details | Files |\n"
+            "| ------ | ------- | ----- |\n"
+            "| Tighten perms | <ul><li>Add read-only</li>"
+            "<li>Set persist-credentials</li></ul>"
+            " | `a.yml`<br/>`b.yml`<br/>`c.yml` |\n\n"
+            "Summary."
+        )
+        result = sanitize_bot_body(body)
+        assert "| Tighten" not in result
+        assert "| Change" not in result
+        assert "<ul>" not in result
+        assert "Summary." in result
+
 
 class TestTruncateBody:
     def test_short_body_unchanged(self):

@@ -3,6 +3,7 @@
 from gh_review.formatting import (
     format_conversation_comments,
     format_pending_reviews,
+    format_review_bodies,
     format_review_threads,
 )
 
@@ -270,6 +271,66 @@ class TestFormatConversationComments:
         ]
         result = format_conversation_comments(comments, 500, True)
         assert result == "no conversation comments"
+
+
+class TestFormatReviewBodies:
+    def test_empty(self):
+        assert format_review_bodies([], 500, False) == "no review comments"
+
+    def test_human_review_with_body(self):
+        reviews = [
+            {
+                "author": {"login": "reviewer", "__typename": "User"},
+                "body": "High level feedback here.",
+                "createdAt": "2026-05-16T10:00:00Z",
+                "databaseId": 12345,
+                "state": "COMMENTED",
+            }
+        ]
+        result = format_review_bodies(reviews, 500, False)
+        assert "@reviewer" in result
+        assert "[commented]" in result
+        assert "#12345" in result
+        assert "High level feedback here." in result
+
+    def test_bot_review_sanitized(self):
+        reviews = [
+            {
+                "author": {"login": "sourcery-ai[bot]", "__typename": "Bot"},
+                "body": ("Feedback.\n<details><summary>Prompt</summary>stuff</details>"),
+                "createdAt": "2026-05-16T10:00:00Z",
+                "databaseId": 99999,
+                "state": "COMMENTED",
+            }
+        ]
+        result = format_review_bodies(reviews, 500, False)
+        assert "[bot, sanitized]" in result
+        assert "Feedback." in result
+        assert "Prompt" not in result
+
+    def test_bot_dropped_with_no_bots(self):
+        reviews = [
+            {
+                "author": {"login": "sourcery-ai[bot]", "__typename": "Bot"},
+                "body": "Feedback.",
+                "createdAt": "2026-05-16T10:00:00Z",
+                "state": "COMMENTED",
+            }
+        ]
+        result = format_review_bodies(reviews, 500, True)
+        assert result == "no review comments"
+
+    def test_approved_state_shown(self):
+        reviews = [
+            {
+                "author": {"login": "reviewer"},
+                "body": "LGTM",
+                "createdAt": "2026-05-16T10:00:00Z",
+                "state": "APPROVED",
+            }
+        ]
+        result = format_review_bodies(reviews, 500, False)
+        assert "[approved]" in result
 
 
 class TestFormatPendingReviews:

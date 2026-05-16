@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 
+from . import DEFAULT_MAX_BODY
 from .duration import parse_duration
 
 
@@ -46,9 +47,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--max-body",
         type=int,
-        default=500,
+        default=DEFAULT_MAX_BODY,
         metavar="N",
-        help="max comment body length (default: 500)",
+        help=f"max comment body length (default: {DEFAULT_MAX_BODY})",
     )
 
     # --- start ---

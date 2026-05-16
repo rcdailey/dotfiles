@@ -84,16 +84,10 @@ Accepts relative durations: `30m`, `1h`, `2d`, `1w`.
 gh-review view owner/repo 42 --all
 ```
 
-### Options
+Run `gh-review view --help` for all options and defaults.
 
-- `--all`: show all threads (default: unresolved only)
-- `--unanswered`: threads where PR author has not replied last
-- `--since DURATION`: relative time filter (e.g. `1h`, `2d`, `1w`)
-- `--no-bots`: drop bot comments entirely (default: sanitize and keep)
-- `--max-body N`: cap comment body length (default: 500)
-
-Bot comments are sanitized by default: HTML details blocks, HTML comments, decorative separators are
-stripped, then truncated to `--max-body`. Pass `--no-bots` to drop them entirely.
+Bot comments are sanitized by default (HTML noise stripped, body truncated). Pass `--no-bots` to
+drop them entirely.
 
 ## Pending Review Workflow
 
@@ -107,17 +101,10 @@ If a pending review exists, the output shows a `PENDING REVIEWS` section with `P
 
 ### Start a pending review
 
-Only if no pending review exists.
+Only if no pending review exists. Returns the `PRR_...` review ID needed for `comment`.
 
 ```sh
 gh-review start owner/repo 42
-```
-
-Output:
-
-```txt
-id: PRR_kwDOAAABbcdEFG12
-state: PENDING
 ```
 
 ### Add comment (single line)
@@ -142,8 +129,6 @@ gh-review comment owner/repo 42 \
   --line 15 \
   --body "Extract this block into a helper"
 ```
-
-Optional flags: `--side LEFT|RIGHT` (default RIGHT), `--start-side LEFT|RIGHT`.
 
 ### Delete a pending review
 
