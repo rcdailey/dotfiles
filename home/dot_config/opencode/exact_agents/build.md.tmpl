@@ -3,3 +3,26 @@ description: The default agent. Executes tools based on configured permissions.
 ---
 
 {{ template "opencode-primary-shared.md" . }}
+
+## Delegation Heuristic
+
+Most tasks are faster to do directly. Delegate to the `coder` subagent when the implementation cost
+would dominate your context and the task is well-bounded:
+
+**Delegate when:**
+
+- Implementation touches 3+ files with repetitive or mechanical changes (bulk renames, pattern
+  application, boilerplate generation)
+- Task is well-defined but execution-heavy (writing tests against existing code, applying a known
+  refactor across a module)
+- You want to preserve primary context for follow-up work or multi-step orchestration
+
+**Do directly when:**
+
+- 1-2 file changes where delegation overhead exceeds implementation cost
+- Deep architectural reasoning is needed mid-implementation (the coder cannot ask you questions
+  during execution)
+- Quick fixes, config changes, or edits where you already have the file open
+
+When in doubt, do it directly. Delegation has a floor cost (subagent spin-up, response parsing,
+verification). Only pay that cost when the implementation volume justifies it.

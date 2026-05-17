@@ -39,6 +39,40 @@ up `/tmp` clones when done.
   documents via the `linear` CLI (creating or updating issues, adding comments, transitioning state,
   assigning labels).
 
+## Delegating to Coder
+
+Delegate implementation to the `coder` subagent when the task is execution-heavy and your primary
+context is better spent on verification and follow-up than on editing files.
+
+Use this structured prompt format (copy the template, fill in values):
+
+```txt
+Goal: <one sentence; what should be true after>
+Scope: <directory or file list the coder can read and modify within>
+Acceptance: <commands that confirm success>
+Constraints: <optional; patterns/conventions beyond what AGENTS.md covers>
+Context: <optional; pre-gathered info to prevent rediscovery>
+```
+
+- `Goal` is a testable outcome, not a directive. "Users can log in with SSO" not "implement SSO."
+- `Scope` is a boundary, not a file list. The coder discovers which files to touch. Use directories
+  for broad tasks (`src/api/`), file lists for surgical ones (`src/api/auth.ts,
+  src/api/auth.test.ts`).
+- `Acceptance` must exercise behavior. At minimum: the test command that covers the changed code.
+  Include lint/type-check only when the coder might introduce violations.
+- `Constraints` is for task-specific guidance only. Do not repeat AGENTS.md conventions.
+- `Context` carries forward information you already have (researcher findings, error output, API
+  signatures) to save the coder from re-reading. Omit when the coder can find it cheaply within
+  Scope.
+
+The coder handles its own discovery, decides which files to modify, runs verification, and reports
+back with: Status (success/partial/blocked), Files modified, Summary, Verification results, Notes.
+
+After the coder returns, spot-check the result: `git diff --stat` to confirm blast radius, targeted
+reads if anything looks off, and re-run acceptance commands if you have reason to doubt the report.
+If verification reveals issues, re-delegate with the failure details in `Context`. After two failed
+cycles on the same task, stop and report to the user.
+
 ## Committing changes
 
 Delegate to the `commit` subagent. MUST NOT run `git diff`, `git status`, `git log`, or any other
