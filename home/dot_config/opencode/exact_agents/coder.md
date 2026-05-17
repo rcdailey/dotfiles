@@ -23,6 +23,8 @@ permission:
     gh-gist: deny
     gh-pr-review: deny
     git-hunks: deny
+    linear-cli: deny
+    customize-opencode: deny
 ---
 
 ## Caller Protocol
