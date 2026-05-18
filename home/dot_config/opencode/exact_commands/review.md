@@ -126,6 +126,17 @@ separate paragraphs with blank lines. GitHub's UI wraps at render time, and hard
 produces awkward line breaks. Lists, code blocks, and `suggestion` blocks keep their normal line
 structure.
 
+Write like a colleague, not a measurement report. State findings and conclusions; omit the
+verification methodology that led to them. Avoid file sizes ("331 lines total"), match counts ("zero
+matches"), read counts ("two independent file reads"), and similar quantifiers. Say what you found,
+not how many operations it took to find it.
+
+Refer to code by the names a developer already knows: class names, method names, variable names. Use
+full file paths only in the **File** header and `suggestion` blocks. In comment prose, a bare name
+like `CaseRepository` is almost always sufficient; add a path only when the name is ambiguous (e.g.,
+two classes with the same name in different packages). Never include line ranges inline in prose;
+that detail belongs in **Lines** and Citations.
+
 ### 5. File Structure
 
 Write the review file to the **original repo root** (not the worktree).
@@ -157,10 +168,9 @@ the attempt and mark it `unverified`.
 
 ## Confidence
 
-Rate overall confidence in the review as `high`, `medium`, or `low`, then justify in one or two
-sentences. Address: how thoroughly sources backed each finding, whether any comment rests on
-pattern-matching rather than verified behavior, and the estimated hallucination risk. If confidence
-is not `high`, enumerate which comments are weakest and why.
+Rate overall confidence as `high`, `medium`, or `low` with a one or two sentence justification.
+Note whether any finding rests on assumption rather than confirmed behavior. If not `high`, name
+the weakest comments and why.
 ```
 
 If minor issues requested, add section before Citations:
