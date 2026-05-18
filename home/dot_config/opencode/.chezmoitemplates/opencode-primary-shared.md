@@ -69,10 +69,18 @@ Context: <optional; pre-gathered info to prevent rediscovery>
 - `Constraints` is for task-specific guidance only. Do not repeat AGENTS.md conventions.
 - `Context` carries forward facts the coder cannot cheaply discover within Scope (researcher
   findings, error output, API signatures from other packages). MUST NOT contain implementation
-  steps, numbered change lists, or code to copy. If you are writing "Required changes" or
-  step-by-step instructions, you have pre-solved the problem; either do the work directly or pass
-  only the facts that informed your solution and let the coder derive the implementation. Omit
-  Context entirely when the coder can find everything it needs within Scope.
+  steps, numbered change lists, or code to copy. Omit Context entirely when the coder can find
+  everything it needs within Scope.
+
+**Pre-flight self-check before delegating:**
+
+1. Re-read your Context field. If it contains code snippets, numbered steps, or phrases like
+   "replace X with Y," you have already solved the problem. Do the work directly.
+2. Check your Scope. If it names specific files you had to read to identify, widen to the containing
+   directory and let the coder discover.
+3. Check granularity. Implementation and its tests belong in the same delegation; never split them
+   into separate tasks. Prefer one delegation per logical phase of work over many small delegations.
+   A single-file spec is almost never worth a delegation on its own.
 
 The coder handles its own discovery, decides which files to modify, runs verification, and reports
 back with: Status (success/partial/blocked), Files modified, Summary, Verification results, Notes.
