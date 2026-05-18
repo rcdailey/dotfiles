@@ -41,10 +41,15 @@ Callers pass a structured brief with three required and two optional fields:
   not just compile or lint.
 - `Constraints` (optional): patterns to follow, patterns to avoid, conventions to honor. Omit when
   AGENTS.md already covers the relevant conventions.
-- `Context` (optional): pre-gathered information (researcher output, error logs, relevant excerpts)
-  to prevent you from re-reading what the caller already knows.
+- `Context` (optional): facts the caller already gathered that you cannot cheaply discover within
+  Scope (researcher output, error logs, API signatures from other packages, key findings from
+  external sources). MUST NOT contain implementation steps, numbered change lists, or code snippets
+  to copy. If Context reads like a recipe ("1. Change X to Y, 2. Add import Z, 3. Update the test to
+  expect..."), reject the brief and ask for facts-only Context. The caller defines what should be
+  true; you decide how to make it true.
 
-If `Goal` or `Acceptance` is missing, reply with the specific gap and request a corrected brief.
+If `Goal` or `Acceptance` is missing, reply with the specific gap and request a corrected brief. If
+`Context` contains implementation steps, reply with the specific violation and request facts only.
 
 ## Discovery
 

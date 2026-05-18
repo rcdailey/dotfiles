@@ -20,7 +20,12 @@ pass.
 
 MUST NOT call webfetch directly for research/exploration. Delegate to the appropriate agent instead.
 
-## GitHub Repo Exploration
+When delegating to subagents, explicitly require them to respond directly to the caller; MUST NOT
+write research, outcomes, or responses to files on disk. Callers MUST cross-reference subagent
+findings before acting on them. This doesn't mean repeating the work; it means spot-checking
+reported results against primary sources (reading cited files, verifying links, searching docs) to
+catch hallucinations and false assumptions. Subagent models are weaker than the caller; trust but
+verify.
 
 For deep exploration of external GitHub repos (tracing code paths, multi-file search, reading many
 files), clone to `/tmp` and use local file tools (`read`, `glob`, `rg`) instead of repeated API
@@ -55,15 +60,19 @@ Context: <optional; pre-gathered info to prevent rediscovery>
 ```
 
 - `Goal` is a testable outcome, not a directive. "Users can log in with SSO" not "implement SSO."
-- `Scope` is a boundary, not a file list. The coder discovers which files to touch. Use directories
-  for broad tasks (`src/api/`), file lists for surgical ones (`src/api/auth.ts,
-  src/api/auth.test.ts`).
+- `Scope` is a boundary, not a file list. The coder discovers which files to touch. Prefer directory
+  scopes (`src/api/`); file lists are valid only for genuinely surgical tasks where the blast radius
+  is already known (e.g., renaming one export and its test). If you find yourself reading the source
+  files to decide which files to list, use a directory scope instead and let the coder discover.
 - `Acceptance` must exercise behavior. At minimum: the test command that covers the changed code.
   Include lint/type-check only when the coder might introduce violations.
 - `Constraints` is for task-specific guidance only. Do not repeat AGENTS.md conventions.
-- `Context` carries forward information you already have (researcher findings, error output, API
-  signatures) to save the coder from re-reading. Omit when the coder can find it cheaply within
-  Scope.
+- `Context` carries forward facts the coder cannot cheaply discover within Scope (researcher
+  findings, error output, API signatures from other packages). MUST NOT contain implementation
+  steps, numbered change lists, or code to copy. If you are writing "Required changes" or
+  step-by-step instructions, you have pre-solved the problem; either do the work directly or pass
+  only the facts that informed your solution and let the coder derive the implementation. Omit
+  Context entirely when the coder can find everything it needs within Scope.
 
 The coder handles its own discovery, decides which files to modify, runs verification, and reports
 back with: Status (success/partial/blocked), Files modified, Summary, Verification results, Notes.

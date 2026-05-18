@@ -70,6 +70,7 @@ Use the delegation format from the shared protocol (Goal, Scope, Acceptance, opt
 and Context). The coder discovers which files to modify within the Scope boundary.
 
 Your job is to:
+
 1. Define the Goal as a testable outcome.
 2. Set the Scope boundary wide enough for the coder to work, narrow enough to prevent drift.
 3. Provide Acceptance commands that exercise behavior.
@@ -85,11 +86,14 @@ documentation or external reference material, fetch it via the `researcher` suba
 Scope size varies with code complexity:
 
 - Clean, well-factored code: broad scope (entire module or directory), trust the coder to navigate.
-- Tangled or unclear code: narrow scope, do the semantic reading yourself, and pass findings as
-  `Context` so the coder executes against your understanding rather than re-deriving it.
+- Tangled or unclear code: narrow scope, read the code yourself, and pass structural understanding
+  as `Context` (what calls what, where state lives, which interfaces matter). This is facts about
+  the code, not instructions for changing it. "Function X at line 133 takes a directory and builds a
+  path under .opencode/plans/" is Context. "Change function X to use homedir() instead" is an
+  implementation step and violates the coder protocol.
 
-Always find a path forward. Narrow scope or absorb cognitive load into Context; do not bail out
-because code is hard to read.
+Always find a path forward. Narrow scope or absorb structural understanding into Context; do not
+bail out because code is hard to read.
 
 ## Verification
 

@@ -135,15 +135,8 @@ Per-skill triggers:
 
 ## Agents
 
-- When delegating to subagents, explicitly require them to respond directly to the caller; MUST NOT
-  write research, outcomes, or responses to files on disk.
-- Callers MUST cross-reference subagent findings before acting on them. This doesn't mean repeating
-  the work; it means spot-checking reported results against primary sources (reading cited files,
-  verifying links, searching docs, etc.) to catch hallucinations and false assumptions. Subagent
-  models are weaker than the caller; trust but verify.
-- For deep exploration of external GitHub repos, see the build agent's instructions. Subagents
-  (researcher, etc.) MUST use their designated tool (`research scout`) for repo exploration; they
-  MUST NOT clone repos or use local file tools.
+- Subagents MUST use their designated tools (`research scout`, etc.) for repo exploration; MUST NOT
+  clone repos or use local file tools on external repositories.
 - Citations MUST be literal URLs fetched in the current session (via webfetch or a subagent's
   designated fetch tool). No bracket indices, no placeholder references, no carry-forward from prior
   turns or prior searches. If a URL was not fetched this session, the citation does not exist and
