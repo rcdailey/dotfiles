@@ -189,6 +189,8 @@ If all comments posted successfully, do not create a file.
 
 Output these sections in the conversation (not a file):
 
+**Verdict:** approve, request changes, or comment-only, with a one-sentence rationale.
+
 **Summary:**
 
 - **Blockers:** critical issues preventing merge
