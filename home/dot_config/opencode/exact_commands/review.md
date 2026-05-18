@@ -2,8 +2,8 @@
 description: Code review for PRs with GitHub-ready comments
 ---
 
-Review code and create `pr-{number}-review-comments.ignored.md` in repo root with GitHub-ready
-comments. Load the `gh-pr-review` skill for review etiquette and tooling reference.
+Review code for a pull request and post findings as a pending review via `gh-review`, without
+submitting it. MUST load the `gh-pr-review` skill before posting any comments.
 
 Focus on critical/high priority issues unless $ARGUMENTS includes "medium", "minor", "low", or
 "all". Bias toward fewer, higher-signal comments. A review with 2 critical findings is better than
@@ -73,7 +73,7 @@ each potential comment:
   Reference who raised it.
 - **Not yet raised:** Include it as a new comment.
 
-The review file should only contain comments that add value beyond what's already on the PR.
+Only post comments that add value beyond what's already on the PR.
 
 ### 3. Analyze
 
@@ -97,101 +97,132 @@ gap in Citations.
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.
 
-### 4. Write Comments
+### 4. Compose and Post Comments
 
-Load the `humanizer` skill before creating the review file (not in parallel with file creation).
-Apply the tone and etiquette guidelines from the `gh-pr-review` skill.
+Load the `humanizer` skill before composing comment bodies (not in parallel with posting). Apply the
+tone and etiquette guidelines from the `gh-pr-review` skill.
 
-**Format:**
+**Start or reuse a pending review:**
+
+Check the `gh-review view` output from step 1. If it includes a `PENDING REVIEWS` section, reuse
+that `PRR_...` ID. Otherwise start a new one:
+
+```bash
+gh-review start {owner}/{repo} {number}
+```
+
+**Compose each comment body as markdown:**
+
+Write like a colleague, not a measurement report. State findings and conclusions; omit the
+verification methodology that led to them. Avoid file sizes, match counts, read counts, and similar
+quantifiers. Say what you found, not how many operations it took to find it.
+
+Refer to code by names a developer already knows: class names, method names, variable names. In
+comment prose, a bare name like `CaseRepository` is almost always sufficient; add a path only when
+the name is ambiguous.
+
+Do not hard-wrap prose paragraphs. Each paragraph is a single unbroken line; separate paragraphs
+with blank lines. GitHub's UI wraps at render time.
+
+Include a `suggestion` block when a concrete fix exists:
 
 ````markdown
-## Comment {N}: {Brief title}
-
-**File:** `{path}`
-**Lines:** {start}-{end}
-
-{Conversational explanation of the issue and why it matters. End with suggestion.}
+{Explanation of the issue and why it matters. End with suggestion.}
 
 ```suggestion
-{verbatim replacement for lines start through end}
+{verbatim replacement for the targeted line range}
 ```
 ````
 
-The line range defines exactly which lines the suggestion block replaces. Do not include surrounding
-context lines; they would be deleted when the suggestion is applied. For single-line comments, use
-the same line for both start and end (e.g., `152-152`).
+**Post each comment using `gh-review comment`:**
 
-Do not hard-wrap prose paragraphs within a comment body. Each paragraph is a single unbroken line;
-separate paragraphs with blank lines. GitHub's UI wraps at render time, and hard-wrapped source
-produces awkward line breaks. Lists, code blocks, and `suggestion` blocks keep their normal line
-structure.
+Single-line (targets one line, no `--start-line`):
 
-Write like a colleague, not a measurement report. State findings and conclusions; omit the
-verification methodology that led to them. Avoid file sizes ("331 lines total"), match counts ("zero
-matches"), read counts ("two independent file reads"), and similar quantifiers. Say what you found,
-not how many operations it took to find it.
+```bash
+gh-review comment --review-id PRR_... --path {file} \
+  --line {N} --body '{body}'
+```
 
-Refer to code by the names a developer already knows: class names, method names, variable names. Use
-full file paths only in the **File** header and `suggestion` blocks. In comment prose, a bare name
-like `CaseRepository` is almost always sufficient; add a path only when the name is ambiguous (e.g.,
-two classes with the same name in different packages). Never include line ranges inline in prose;
-that detail belongs in **Lines** and Citations.
+Multi-line (targets a range):
 
-### 5. File Structure
+```bash
+gh-review comment --review-id PRR_... --path {file} \
+  --start-line {start} --line {end} --body '{body}'
+```
 
-Write the review file to the **original repo root** (not the worktree).
+Line range rules:
 
-```markdown
-# PR #{number} Review Comments
+- Single-line: `--line N` only. Do not pass `--start-line`.
+- Multi-line: `--start-line N --line M` where N < M.
+- The range defines what a `suggestion` block replaces when applied. Do not include surrounding
+  context lines; they would be deleted when the suggestion is applied.
+- When a single-line comment has a multi-line suggestion, use `--line N` only. The suggestion
+  content replaces that one line regardless of how many lines the replacement contains.
 
----
+When `comment` exits non-zero (line outside diff hunks), do not retry or relocate. Record the
+failure and continue posting remaining comments.
 
-## Comment 1: {title}
-{content}
+**Handle out-of-range failures:**
 
----
+After posting all comments, if any targeted lines outside the diff:
 
-## Summary
+1. Write only the failed comments to `pr-{number}-review-comments.ignored.md` in the repo root using
+   the same comment format:
 
-**Blockers:** {critical issues preventing merge}
+   ````markdown
+   # PR #{number}: Out-of-Range Comments
 
-**Should fix before production:** {serious but working issues}
+   These comments target lines outside the PR diff and could not be posted
+   via the API. Post them manually through the GitHub UI.
 
-**Recommendations:** {non-urgent improvements}
+   ---
 
-## Citations
+   ## Comment {N}: {title}
+
+   **File:** `{path}`
+   **Lines:** {start}-{end}
+
+   {comment body with suggestion block if applicable}
+
+   ---
+   ````
+
+2. Note in conversation output which comments were written to the file and why.
+
+If all comments posted successfully, do not create a file.
+
+### 5. Report
+
+Output these sections in the conversation (not a file):
+
+**Summary:**
+
+- **Blockers:** critical issues preventing merge
+- **Should fix before production:** serious but working issues
+- **Recommendations:** non-urgent improvements
+
+**Citations:**
 
 List every source consulted to back findings. Each entry: the `ctx7` library ID and query, a file
 path with line range from the worktree or repo, or a URL fetched via an approved tool this session.
-No bracket indices, no carry-forward from prior sessions. If a claim could not be verified, list
-the attempt and mark it `unverified`.
+No bracket indices, no carry-forward from prior sessions. If a claim could not be verified, list the
+attempt and mark it `unverified`.
 
-## Confidence
+**Confidence:**
 
-Rate overall confidence as `high`, `medium`, or `low` with a one or two sentence justification.
-Note whether any finding rests on assumption rather than confirmed behavior. If not `high`, name
-the weakest comments and why.
-```
+Rate overall confidence as `high`, `medium`, or `low` with a one or two sentence justification. Note
+whether any finding rests on assumption rather than confirmed behavior. If not `high`, name the
+weakest comments and why.
 
-If minor issues requested, add section before Citations:
-
-```markdown
----
-
-## Medium and Low Priority Issues
-
-### Medium Priority
-{comments}
-
-### Low Priority
-{comments}
-```
+If minor issues were requested, add a **Medium and Low Priority** section before Citations.
 
 ## Rules
 
-- Create markdown file with `.ignored.md` extension
-- Use ```` ```suggestion ```` format for code fixes
-- Include file paths and line numbers
+- MUST load the `gh-pr-review` skill before posting comments
+- Use ```` ```suggestion ```` format for code fixes inside comment bodies
+- Include file paths and line numbers for every comment
+- Do not submit the pending review; the user submits manually via GitHub UI
 - Do not use TodoWrite or task tracking
-- Do not clean up the worktree; leave it in `/tmp` for reference during comment posting
+- Do not clean up the worktree; leave it in `/tmp` for reference
+- Only create `pr-{number}-review-comments.ignored.md` for out-of-range comments
 - Citations and Confidence sections are mandatory; a review without them is incomplete
