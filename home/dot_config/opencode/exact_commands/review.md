@@ -52,28 +52,22 @@ specific finding later requires it (e.g., a type error you can't confirm statica
 Fetch existing comments using `gh-review view`:
 
 ```bash
-gh-review view {owner}/{repo} {number} --no-bots
+gh-review view {owner}/{repo} {number}
 ```
 
-This returns all unresolved review threads and conversation comments in a single query with
-LLM-optimized prose output. Bot comments are excluded; resolved threads are filtered out by default.
-To include bot comments (sanitized), drop the `--no-bots` flag.
+This returns all unresolved review threads and conversation comments (including bot comments) in a
+single query with LLM-optimized prose output. Resolved threads are filtered out by default.
 
 **For commits:** `git log {range} --oneline` and `git diff {range}`
 
 **For current changes:** `git status` and `git diff HEAD`
 
-### 2. Deduplicate Against Existing Comments
+### 2. Skip Already-Flagged Issues
 
-Before formulating feedback, cross-reference against the comment output from `gh-review view`. For
-each potential comment:
-
-- **Already covered adequately:** Omit it.
-- **Covered but incomplete or incorrect:** Affirm the existing comment and add missing context.
-  Reference who raised it.
-- **Not yet raised:** Include it as a new comment.
-
-Only post comments that add value beyond what's already on the PR.
+Before formulating feedback, cross-reference against the comment output from `gh-review view`. If a
+bot or human already flagged an issue, leave it alone; don't post a second comment even if the
+existing one is incomplete or could be improved. Only post comments that identify net new issues not
+raised anywhere on the PR.
 
 ### 3. Analyze
 
