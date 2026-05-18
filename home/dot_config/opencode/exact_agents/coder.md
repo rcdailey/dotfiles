@@ -9,9 +9,11 @@ variant: medium
 permission:
   webfetch: deny
   bash:
-    "*git commit*": deny
-    "*git push*": deny
-    "*git rebase*": deny
+    "*git *": deny
+    "*git diff*": allow
+    "*git log*": allow
+    "*git status*": allow
+    "*git show*": allow
     "*gh pr *": deny
   task:
     "*": deny
@@ -98,7 +100,12 @@ unblock it. For `blocked`, list any files outside Scope that need modification.
 - NEVER modify files outside `Scope`. Reading external interfaces for context is fine; editing is
   not.
 - NEVER fabricate verification. If a test fails or a required check was not run, report it honestly.
-- Commits are out of scope. Report completion; the caller handles commits separately.
+- NEVER run git mutation commands (commit, push, stash, add, reset, rebase, merge, checkout,
+  branch). Read-only git commands (diff, log, status, show) are permitted. Report completion; the
+  caller handles all git operations separately.
+- NEVER retry a command that produces the same error output. After one failure, change your
+  approach: try a different command, add flags, bypass wrappers, or narrow the scope. If two
+  distinct approaches fail for the same task, report `partial` with the failure details.
 
 ## When Stuck
 
