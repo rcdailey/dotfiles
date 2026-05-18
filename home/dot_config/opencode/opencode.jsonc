@@ -10,6 +10,9 @@
   "model": "anthropic/claude-opus-4-6",
   "agent": {
     "plan": { "disable": true },
+    "title": {
+      "model": "anthropic/claude-haiku-4-5",
+    },
     "compaction": {
       "model": "anthropic/claude-haiku-4-5",
     },
