@@ -60,7 +60,7 @@ def cli(
             textwrap.dedent("""\
                 mutation($input: AddPullRequestReviewThreadInput!) {
                   addPullRequestReviewThread(input: $input) {
-                    thread { id path isOutdated line startLine diffSide }
+                    thread { id path isOutdated line startLine diffSide comments(first: 1) { nodes { databaseId id } } }
                   }
                 }"""),
             {"input": mutation_input},
@@ -78,6 +78,10 @@ def cli(
         end = thread["line"]
         line_str = f"L{start}-{end}" if start and start != end else f"L{end}"
         click.echo(f"id: {thread['id']}")
+        comments = thread.get("comments", {}).get("nodes", [])
+        if comments:
+            click.echo(f"comment-id: {comments[0]['databaseId']}")
+            click.echo(f"comment-node-id: {comments[0]['id']}")
         click.echo(f"path: {thread['path']}")
         click.echo(f"line: {line_str}")
         if thread.get("isOutdated"):

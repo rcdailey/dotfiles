@@ -3,10 +3,12 @@ name: gh-pr-review
 description: >-
   Use when reading, posting, or managing PR review comments via the `gh-review` tool: viewing
   PR comments with filtering, leaving inline comments on specific diff lines, starting or
-  deleting pending reviews, replying to review threads. Triggers on phrases like "review this
-  PR", "check for comments", "leave a comment on line X", "add review feedback", "start a
-  pending review", "reply to the comment", or any task involving PR comments and code review.
-  Do NOT use for merging, approving via `gh pr review --approve`, or non-review PR operations.
+  deleting pending reviews, replying to review threads, editing or removing individual review
+  comments. Triggers on phrases like "review this PR", "check for comments", "leave a comment
+  on line X", "add review feedback", "start a pending review", "reply to the comment", "edit
+  the comment", "remove that comment", "delete that comment", "fix my comment", "move comment
+  to line X", or any task involving PR comments and code review. Do NOT use for merging,
+  approving via `gh pr review --approve`, or non-review PR operations.
 ---
 
 # PR Review
@@ -65,6 +67,21 @@ or conversation comment and routes to the correct API.
 The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` output headers (e.g.
 `@reviewer (2026-05-14) #98765:`). Extract the number after `#`.
 
+## Editing and Removing Comments
+
+`gh-review edit` modifies an existing review comment. Two paths depending on what changed:
+
+- **Body only** (no positioning args): patches the comment in place. One API call.
+- **Repositioning** (any of `--path`, `--line`, `--start-line`, `--side`, `--start-side`): deletes
+  the old comment and creates a new one on the same pending review. Requires `--review-id`. Omitted
+  fields are merged from the current comment.
+
+`gh-review remove` deletes a single review comment.
+
+Both commands take the comment node ID (`PRRC_...` from `comment` output's `comment-node-id` field).
+These commands operate on pending review comments only; published comments should be edited through
+the GitHub UI.
+
 ## Line Targeting
 
 GitHub's API only supports comments on lines within diff hunks (changed lines plus surrounding
@@ -84,3 +101,7 @@ surrounding context lines in the range; they will be deleted.
 
 - `PRR_...`: Review node ID (from `start` or `view`)
 - `PRRT_...`: Thread node ID (from `comment` or `view`)
+- `PRRC_...`: Comment node ID (from `comment` output's `comment-node-id` field); used by
+  `edit` and `remove`
+- `#NNN`: Numeric database ID (from `view` output or `comment` output's `comment-id` field);
+  used by `reply`
