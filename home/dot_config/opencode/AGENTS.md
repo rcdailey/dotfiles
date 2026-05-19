@@ -54,8 +54,10 @@
 - Prefer structured output (JSON + jq) over table/text for CLI tools that support it (aws, gh,
   kubectl, docker). Structured output is parseable, filterable, and scriptable.
 
-## Git Conflict Resolution
+## Git
 
+- When creating local branches, MUST NOT set a tracking branch initially (`git checkout -b` or `git
+  branch` without `-t`/`--track`). Tracking is set later via `git push -u`.
 - For UD/DU conflicts (file deleted on one side, modified on the other), MUST NOT blindly accept the
   deletion. Run `git diff REBASE_HEAD...HEAD -- <file>` to see the upstream modifications being
   discarded, then port any meaningful changes to the replacement files before resolving with `git
