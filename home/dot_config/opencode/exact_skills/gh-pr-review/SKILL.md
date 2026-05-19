@@ -21,9 +21,9 @@ All PR comment operations (reading, writing, replying) MUST go through `gh-revie
 
 - NEVER submit reviews. The user manually submits pending reviews via GitHub UI.
 - All new review comments MUST go through a pending review. Never post comments directly.
-- When any comment targets a line outside diff hunks (non-zero exit from `comment`), do NOT retry or
-  relocate it. Collect all failures and report them to the user so they can post those comments
-  manually through the GitHub UI.
+- When a line target is outside diff hunks, `comment` automatically retries as a file-level comment
+  on the same file. The output includes a `note:` line indicating the fallback. No manual retry or
+  relocation needed.
 
 ## Review Etiquette
 
@@ -84,24 +84,29 @@ the GitHub UI.
 
 ## Line Targeting
 
-GitHub's API only supports comments on lines within diff hunks (changed lines plus surrounding
-context). Lines in the gap between hunks cannot be targeted.
+GitHub's API only supports line-level comments on lines within diff hunks (changed lines plus
+surrounding context). Lines in the gap between hunks cannot be targeted as line comments.
 
-When `comment` targets a non-diff line, it exits non-zero. When this happens:
+When `comment` targets a non-diff line, it automatically falls back to a file-level comment on the
+same file (using `subjectType: FILE`). The output includes a `note:` field explaining the fallback.
+The comment still lands on the correct file; it just appears at the top of the file's diff rather
+than on a specific line.
 
-1. Continue posting remaining comments that target valid lines.
-2. After all comments are posted, report the failures to the user with file, line, and the intended
-   comment body so they can post manually.
+To post a file-level comment directly (skipping the line attempt), omit `--line`:
 
-**Suggestion blocks:** The `--start-line` to `--line` range defines what GitHub replaces when a
-suggestion is applied. The range MUST exactly match the lines being replaced. Do NOT include
-surrounding context lines in the range; they will be deleted.
+```bash
+gh-review comment --review-id PRR_... --path {file} --body '{body}'
+```
+
+**Suggestion blocks:** Suggestions only work on line-level comments. The `--start-line` to `--line`
+range defines what GitHub replaces when a suggestion is applied. The range MUST exactly match the
+lines being replaced. Do NOT include surrounding context lines in the range; they will be deleted.
 
 ## ID Formats
 
 - `PRR_...`: Review node ID (from `start` or `view`)
 - `PRRT_...`: Thread node ID (from `comment` or `view`)
-- `PRRC_...`: Comment node ID (from `comment` output's `comment-node-id` field); used by
-  `edit` and `remove`
-- `#NNN`: Numeric database ID (from `view` output or `comment` output's `comment-id` field);
-  used by `reply`
+- `PRRC_...`: Comment node ID (from `comment` output's `comment-node-id` field); used by `edit` and
+  `remove`
+- `#NNN`: Numeric database ID (from `view` output or `comment` output's `comment-id` field); used by
+  `reply`

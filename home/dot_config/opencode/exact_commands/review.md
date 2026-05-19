@@ -153,37 +153,18 @@ Line range rules:
 - When a single-line comment has a multi-line suggestion, use `--line N` only. The suggestion
   content replaces that one line regardless of how many lines the replacement contains.
 
-When `comment` exits non-zero (line outside diff hunks), do not retry or relocate. Record the
-failure and continue posting remaining comments.
+When a line target is outside the diff, `comment` automatically retries as a file-level comment on
+the same file. The output includes a `note:` field explaining the fallback. No manual retry needed;
+the comment still lands on the correct file. To target a file directly (skipping the line attempt),
+omit `--line`:
 
-**Handle out-of-range failures:**
+```bash
+gh-review comment --review-id PRR_... --path {file} --body '{body}'
+```
 
-After posting all comments, if any targeted lines outside the diff:
-
-1. Write only the failed comments to `pr-{number}-review-comments.ignored.md` in the repo root using
-   the same comment format:
-
-   ````markdown
-   # PR #{number}: Out-of-Range Comments
-
-   These comments target lines outside the PR diff and could not be posted
-   via the API. Post them manually through the GitHub UI.
-
-   ---
-
-   ## Comment {N}: {title}
-
-   **File:** `{path}`
-   **Lines:** {start}-{end}
-
-   {comment body with suggestion block if applicable}
-
-   ---
-   ````
-
-2. Note in conversation output which comments were written to the file and why.
-
-If all comments posted successfully, do not create a file.
+Note: file-level comments cannot carry `suggestion` blocks (suggestions need a line range). If a
+finding needs a suggestion and the target line is outside the diff, mention the file and line in the
+comment body instead.
 
 ### 5. Report
 
@@ -220,5 +201,5 @@ If minor issues were requested, add a **Medium and Low Priority** section before
 - Do not submit the pending review; the user submits manually via GitHub UI
 - Do not use TodoWrite or task tracking
 - Do not clean up the worktree; leave it in `/tmp` for reference
-- Only create `pr-{number}-review-comments.ignored.md` for out-of-range comments
+- Do not create `pr-{number}-review-comments.ignored.md`; file-level fallback handles out-of-range
 - Citations and Confidence sections are mandatory; a review without them is incomplete
