@@ -46,6 +46,9 @@ env_file = ".env"
 netrc = false
 node.verify = false
 
+[settings.github]
+credential_command = "gh auth token"
+
 [env]
 _.source = ["~/.config/mise/scripts/node-path.sh"]
 
