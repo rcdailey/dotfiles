@@ -118,13 +118,29 @@ the name is ambiguous.
 Do not hard-wrap prose paragraphs. Each paragraph is a single unbroken line; separate paragraphs
 with blank lines. GitHub's UI wraps at render time.
 
-Include a `suggestion` block when a concrete fix exists:
+Include a `suggestion` block when a concrete fix exists and the comment targets a line in the diff:
 
 ````markdown
 {Explanation of the issue and why it matters. End with suggestion.}
 
 ```suggestion
 {verbatim replacement for the targeted line range}
+```
+````
+
+When a comment falls back to file-level (target lines outside the diff), `suggestion` blocks do not
+render correctly. Use a `diff` block instead, with a `# L{start}-{end}` annotation and
+space-prefixed context lines for orientation:
+
+````markdown
+{Explanation of the issue and why it matters. End with suggested change.}
+
+```diff
+# L180-183
+ contextLine();
+-oldCode();
++newCode();
+ contextLine();
 ```
 ````
 
@@ -162,9 +178,8 @@ omit `--line`:
 gh-review comment --review-id PRR_... --path {file} --body '{body}'
 ```
 
-Note: file-level comments cannot carry `suggestion` blocks (suggestions need a line range). If a
-finding needs a suggestion and the target line is outside the diff, mention the file and line in the
-comment body instead.
+File-level comments cannot carry `suggestion` blocks (suggestions need a line range). Use a `diff`
+block with a line annotation instead, as described above.
 
 ### 5. Report
 
@@ -196,7 +211,8 @@ If minor issues were requested, add a **Medium and Low Priority** section before
 ## Rules
 
 - MUST load the `gh-pr-review` skill before posting comments
-- Use ```` ```suggestion ```` format for code fixes inside comment bodies
+- Use ```` ```suggestion ```` for code fixes on line-level comments; ```` ```diff ```` for
+  file-level
 - Include file paths and line numbers for every comment
 - Do not submit the pending review; the user submits manually via GitHub UI
 - Do not use TodoWrite or task tracking
