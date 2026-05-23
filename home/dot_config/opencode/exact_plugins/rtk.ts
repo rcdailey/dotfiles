@@ -24,7 +24,7 @@ export const RtkRewrite: Plugin = async ({ $ }) => {
       if (typeof command !== "string" || !command) return;
 
       // rg -> rtk grep loses rg-native flags (--type, -g), causing errors and loops
-      if (/^\s*rg\s/.test(command)) return;
+      if (/(?:^|[;&|]\s*)rg\s/.test(command)) return;
 
       try {
         const result = await $`rtk rewrite ${command}`.quiet().nothrow();
