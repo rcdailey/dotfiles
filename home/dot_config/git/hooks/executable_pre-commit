@@ -5,6 +5,11 @@
 # Ensure mise shims are in PATH for correct tool versions
 export PATH="$HOME/.local/share/mise/shims:$PATH"
 
+# Per-repo opt-out
+if [ -f .no-global-hooks ]; then
+    exit 0
+fi
+
 if [ -f .pre-commit-config.yaml ] && command -v pre-commit >/dev/null 2>&1; then
     exec pre-commit run --hook-stage pre-commit
 fi

@@ -4,13 +4,18 @@
 
 COMMIT_MSG_FILE="$1"
 
+# Per-repo opt-out
+if [ -f .no-global-hooks ]; then
+    exit 0
+fi
+
 # Run commitlint if available. A repo-local config takes precedence over the
 # global one: when commitlint finds a local config via cosmiconfig it uses
 # that config's rules (including custom type-enum overrides). When no local
 # config exists, we fall back to the explicit global config path because
 # cosmiconfig's global strategy uses env-paths which resolves to
 # ~/Library/Preferences/ on macOS instead of ~/.config/.
-if command -v commitlint >/dev/null 2>&1; then
+if command -v commitlint >/dev/null 2>&1 && [ ! -f .no-commitlint ]; then
     REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
     HAS_LOCAL_CONFIG=false
 
