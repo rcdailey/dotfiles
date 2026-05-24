@@ -36,6 +36,13 @@
 - Don't number markdown headings. Don't rely on trailing whitespace for line breaks (it gets
   stripped). Use blank lines, list syntax, or `<br>`.
 
+## Tool Use
+
+MUST batch independent tool calls into a single response. When editing multiple files that don't
+depend on each other's output, issue all edits in one response rather than one-per-turn. Sequential
+single-edit continuations re-send the full conversation history each time, causing quadratic token
+growth. Reserve sequential turns for edits where each depends on the result of the previous one.
+
 ## Development
 
 - Use latest stable versions of tools, languages, libraries, frameworks.
