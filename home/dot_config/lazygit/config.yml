@@ -23,12 +23,12 @@ keybinding:
     nextPage: <pgdown>
     scrollLeft: "<"
     scrollRight: ">"
-    gotoTop: "<disabled>"  # conflicts with scrollLeft
-    gotoBottom: "<disabled>"  # conflicts with scrollRight
+    gotoTop: "<ctrl+shift+f12>"  # conflicts with scrollLeft
+    gotoBottom: "<ctrl+shift+f12>"  # conflicts with scrollRight
     scrollUpMain: ","
     scrollDownMain: "."
-    nextItem-alt: "<disabled>"
-    prevItem-alt: "<disabled>"
+    nextItem-alt: "<ctrl+shift+f12>"
+    prevItem-alt: "<ctrl+shift+f12>"
     openRecentRepos: "`"
   commits:
     amendToCommit: a
@@ -41,8 +41,8 @@ keybinding:
   files:
     amendLastCommit: a
     toggleStagedAll: s
-    stashAllChanges: "<disabled>"
-    toggleTreeView: "<disabled>"
+    stashAllChanges: "<ctrl+shift+f12>"
+    toggleTreeView: "<ctrl+shift+f12>"
 
 customCommands:
 - key: D
