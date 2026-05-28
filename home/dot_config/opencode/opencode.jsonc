@@ -123,6 +123,9 @@
       "*gh api* --raw-field *": "ask",
       "*gh api* --input *": "ask",
     },
+    "skill": {
+      "customize-opencode": "deny",
+    },
     "read": {
       "*": "allow",
       "*.pdf": "deny", // use pdf2md instead
