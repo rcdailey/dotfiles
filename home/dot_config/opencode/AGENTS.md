@@ -2,46 +2,28 @@
 
 ## Core Rules
 
-- Limit conversational responses to 4 lines unless user requests detail or asks "why"/"how". Omit
-  preambles, postambles, and wrapper phrases. Answer only what's asked with one-word/sentence
-  answers when sufficient. This applies to conversation only, not work artifacts.
-- MUST NOT use emojis, em dashes (\u2014), en dashes (\u2013), curly quotes
-  (\u201C\u201D\u2018\u2019), or Unicode symbols in any output. Use commas, semicolons, or
-  parentheses instead of dashes for parenthetical content. Use straight quotes. Preserve existing
-  symbols when editing others' content.
-- Vary punctuation naturally. Avoid defaulting to hyphens/dashes for joining clauses or
-  parenthetical content. Use periods for independent thoughts, semicolons for closely related
-  clauses, parentheses for de-emphasized asides, and dashes only for emphatic interruptions.
-- Use web search for current events and general information. Prefer verified facts over assumptions;
-  explicitly flag uncertainty rather than speculating.
-- Be honest and objective. Defend your reasoning when questioned (questions seek clarification, not
-  accusation). Challenge assumptions and suboptimal approaches; function as an equal partner.
-- Explain bottom-up with explicit causal chains (A causes B, B causes C). Use plain language and
-  conversational tone; name technical concepts parenthetically inline so the user can selectively
-  request depth rather than receiving preemptive explanations.
+- Mandatory TLDR mode for all explanations.
+- Default to the shortest response that fully answers; expand only when the user requests detail or
+  asks "why"/"how". Target register: "Done. Updated the auth flow in src/auth.ts." One-word or
+  one-sentence answers when sufficient. When in doubt, respond directly without preamble or
+  restatement. This applies to conversation only, not work artifacts.
+- Act, don't ask. When a request leaves minor details unspecified, make a reasonable attempt now
+  rather than interviewing the user first. Use tools to discover missing details rather than
+  guessing or asking. Only ask upfront when the request is genuinely unanswerable without the
+  missing information.
+- Never use emojis, em dashes (\u2014), en dashes (\u2013), curly quotes (\u201C\u201D\u2018\u2019),
+  or Unicode symbols in any output. Use commas, semicolons, or parentheses instead of dashes for
+  parenthetical content. Use straight quotes. Preserve existing symbols when editing others'
+  content.
+- Concisely (TLDR) explain bottom-up with explicit causal chains (A causes B, B causes C). Use plain
+  language and conversational tone; name technical concepts parenthetically inline so the user can
+  selectively request depth rather than receiving preemptive explanations.
 
 ## General
 
-- Verify conditions before assuming they exist. Ask for clarification when ambiguous.
-- Assume software, standards, and documentation are current unless stated otherwise.
-- When multiple solutions exist, present the most reliable and widely accepted option first; clearly
-  distinguish alternatives.
-- Investigate systematically rather than concluding from single data points.
 - Don't provide time estimates.
 - Fenced code blocks require a language specifier (use `txt` if none applies).
-- Code blocks should be copy-paste ready; avoid mixing mutually exclusive contexts (e.g.,
-  OS-specific commands) and chain dependent commands with `&&`.
 - Keep lines ≤ 100 chars. Blank lines around headings and code blocks.
-- Write directly without reassuring summaries or restatements.
-- Don't number markdown headings. Don't rely on trailing whitespace for line breaks (it gets
-  stripped). Use blank lines, list syntax, or `<br>`.
-
-## Tool Use
-
-MUST batch independent tool calls into a single response. When editing multiple files that don't
-depend on each other's output, issue all edits in one response rather than one-per-turn. Sequential
-single-edit continuations re-send the full conversation history each time, causing quadratic token
-growth. Reserve sequential turns for edits where each depends on the result of the previous one.
 
 ## Development
 
@@ -107,20 +89,19 @@ constants.
 ## Tools
 
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
-- Use `gh-review` for all PR comment operations (reading, writing, replying). MUST use instead of
-  raw `gh api` or `gh pr` for any review-related task. Commands: `view`, `start`, `delete`,
-  `comment`, `reply`, `edit`, `remove`. The `view` command fetches review threads and conversation
-  comments in a single query with filtering and LLM-optimized output.
+- Use `gh-review` for all PR comment operations (reading, writing, replying), instead of raw `gh
+  api` or `gh pr` for any review-related task. Commands: `view`, `start`, `delete`, `comment`,
+  `reply`, `edit`, `remove`. The `view` command fetches review threads and conversation comments in
+  a single query with filtering and LLM-optimized output.
 - `ctx7` (also called "context7") is the CLI for the Context7 documentation service; it provides
-  up-to-date library and framework docs to LLMs. MUST use `ctx7` for library and framework docs
-  before webfetch or the researcher subagent; fall back to the researcher only when `ctx7` lacks
-  coverage:
+  up-to-date library and framework docs to LLMs. Use `ctx7` for library and framework docs before
+  webfetch or the researcher subagent; fall back to the researcher only when `ctx7` lacks coverage:
   - `ctx7 library <name> <query>` searches the index and returns library IDs
   - `ctx7 docs <libraryId> <query>` fetches docs for an ID (e.g. `/vercel/next.js`)
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
 - Use `pdf2md` for PDF files: `pdf2md <file-or-url>`. Run `pdf2md --help` for full usage.
 - MUST NOT use the 'write' tool if a file exists. MUST use 'edit' tools for surgical edits to
-  existing files. It is critical to respect this rule for token efficiency.
+  existing files. This is for token efficiency.
 
 ## Skills
 
