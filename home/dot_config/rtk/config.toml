@@ -1,3 +1,0 @@
-[hooks]
-# Exclude dotnet because for build, it excludes the file path which LLMs need
-exclude_commands = ["dotnet"]
