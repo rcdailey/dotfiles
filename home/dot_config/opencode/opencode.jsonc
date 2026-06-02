@@ -7,7 +7,7 @@
   "autoupdate": false,
   "share": "manual",
   "compaction": { "auto": false },
-  "model": "anthropic/claude-opus-4-8",
+  "model": "anthropic/claude-opus-4-6",
   "agent": {
     "plan": { "disable": true },
     "title": {
