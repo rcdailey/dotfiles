@@ -87,6 +87,14 @@ Fall back to `--description-file PATH` only when the body contains a literal `EO
 terminate the heredoc, or when the description has already been written to disk for unrelated
 reasons.
 
+## Flag value gotchas
+
+- `--project` and `--milestone` take display names (e.g. `"My Project"`, `"v2 Launch"`), not UUIDs.
+  If you fetched project data via `--json` and have the UUID, use the `name` field instead.
+- `-s` / `--state` on `issue query` takes state types (`triage`, `backlog`, `unstarted`, `started`,
+  `completed`, `canceled`), not display names like `"In Progress"` or `"Ready For Dev"`. Display
+  names work on `issue create` and `issue update`, not on `issue query`.
+
 ## Discovery before mutation
 
 Run `linear <group> <cmd> -h` to confirm current flags before assuming a field must be set via a
