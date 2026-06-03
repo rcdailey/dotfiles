@@ -79,8 +79,6 @@
       "*gh pr comment*": "ask",
       "*gh pr edit*": "ask",
       "*gh pr review*": "ask",
-      "*gh-review reply*": "ask",
-      "*gh-review delete*": "ask",
       "*gh pr ready*": "ask",
       "*gh issue create*": "ask",
       "*gh issue close*": "ask",
@@ -122,6 +120,11 @@
       "*gh api* --field *": "ask",
       "*gh api* --raw-field *": "ask",
       "*gh api* --input *": "ask",
+
+      // gh-review script
+      "*gh-review reply*": "ask",
+      "*gh-review delete*": "ask",
+      "*gh-review*--help": "allow",
     },
     "skill": {
       "customize-opencode": "deny",
