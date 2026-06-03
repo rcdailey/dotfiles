@@ -87,10 +87,14 @@ Fall back to `--description-file PATH` only when the body contains a literal `EO
 terminate the heredoc, or when the description has already been written to disk for unrelated
 reasons.
 
+## Output format
+
+NEVER use `--json` or any structured-output flag with `linear`. The CLI's prose output is the only
+supported format; parse it directly when needed.
+
 ## Flag value gotchas
 
 - `--project` and `--milestone` take display names (e.g. `"My Project"`, `"v2 Launch"`), not UUIDs.
-  If you fetched project data via `--json` and have the UUID, use the `name` field instead.
 - `-s` / `--state` on `issue query` takes state types (`triage`, `backlog`, `unstarted`, `started`,
   `completed`, `canceled`), not display names like `"In Progress"` or `"Ready For Dev"`. Display
   names work on `issue create` and `issue update`, not on `issue query`.
