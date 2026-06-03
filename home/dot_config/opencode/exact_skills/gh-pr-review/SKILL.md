@@ -17,6 +17,10 @@ All PR comment operations (reading, writing, replying) MUST go through `gh-revie
 `gh api` or `gh pr` for any review-related task. Run `gh-review --help` and `gh-review <command>
 --help` for authoritative syntax; this skill covers workflow and semantics only.
 
+Unlike `gh`, `gh-review` takes the repository as a positional `owner/repo` argument, NOT a `--repo`
+flag. The reading and review-creating commands share the shape `gh-review <command> owner/repo
+NUMBER` (e.g. `gh-review view sketchy/cortex-backend 2794`, `gh-review start owner/repo 42`).
+
 ## Critical Rules
 
 - NEVER submit reviews. The user manually submits pending reviews via GitHub UI.
@@ -73,8 +77,10 @@ The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` ou
 
 - **Body only** (no positioning args): patches the comment in place. One API call.
 - **Repositioning** (any of `--path`, `--line`, `--start-line`, `--side`, `--start-side`): deletes
-  the old comment and creates a new one on the same pending review. Requires `--review-id`. Omitted
-  fields are merged from the current comment.
+  the old comment and creates a new one on the same pending review. Requires both `--review-id` and
+  `--line`, even when only `--path` changes (the underlying comment node does not expose its line,
+  so it cannot be inferred). `--path` and `--body` are merged from the current comment when omitted;
+  `--side` defaults to `RIGHT` rather than being read from the existing comment.
 
 `gh-review remove` deletes a single review comment.
 
@@ -105,7 +111,7 @@ lines being replaced. Do NOT include surrounding context lines in the range; the
 ## ID Formats
 
 - `PRR_...`: Review node ID (from `start` or `view`)
-- `PRRT_...`: Thread node ID (from `comment` or `view`)
+- `PRRT_...`: Thread node ID (emitted as the `id:` field by `comment`; not surfaced by `view`)
 - `PRRC_...`: Comment node ID (from `comment` output's `comment-node-id` field); used by `edit` and
   `remove`
 - `#NNN`: Numeric database ID (from `view` output or `comment` output's `comment-id` field); used by
