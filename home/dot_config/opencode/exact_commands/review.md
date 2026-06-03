@@ -12,11 +12,40 @@ one with 8 comments where 6 are nits.
 ## Argument Parsing
 
 - PR number (e.g., `16` or `#16`): Review pull request
+- Repo path or name (e.g., `/path/to/repo`, `owner/repo`, or a bare repo name): Auto-select an open
+  PR the user has not reviewed (see step 0)
 - Commit range (e.g., `main..feature`): Review commits
 - No arguments: Review staged/unstaged changes
 - Include "medium", "minor", "low", "all": Add lower priority issues section
 
 ## Process
+
+### 0. Auto-Select a PR (repo path or name only)
+
+When the argument is a directory path or a repo name (not a PR number, commit range, or empty), pick
+an open PR the user has not reviewed instead of being handed a number.
+
+Resolve the repo target for `gh`:
+
+- Directory path: run subsequent `gh` commands with `--repo` resolved from that path, e.g.
+  `gh repo view --json nameWithOwner -q .nameWithOwner` executed in that directory, or pass the path
+  via the `workdir` of the call.
+- `owner/repo` or bare repo name: pass directly as `--repo {target}` (a bare name resolves against
+  the user's default owner).
+
+List open PRs the user has neither authored nor reviewed, oldest first:
+
+```bash
+gh pr list --repo {target} --state open --search "-author:@me -reviewed-by:@me" \
+  --json number,title,url,author,updatedAt
+```
+
+If the list is empty, STOP and report: no open PRs are awaiting the user's review in `{target}`. Do
+not fall back to reviewing local changes.
+
+Otherwise select the least-recently-updated PR (first entry by `updatedAt` ascending) and continue
+from step 1 using its number. State which PR was auto-selected and why before
+proceeding.
 
 ### 1. Gather Context
 
@@ -184,6 +213,9 @@ block with a line annotation instead, as described above.
 ### 5. Report
 
 Output these sections in the conversation (not a file):
+
+**PR:** use the `url` from the step 1 `gh pr view` JSON. Omit for commit-range and current-changes
+reviews, which have no PR.
 
 **Verdict:** approve, request changes, or comment-only, with a one-sentence rationale.
 
