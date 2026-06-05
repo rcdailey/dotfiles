@@ -1,0 +1,49 @@
+onboarding = false
+
+[theme]
+name = "dracula"
+
+[session]
+resume_agents_on_restore = true
+
+[ui]
+sidebar_width = 32
+confirm_close = true
+prompt_new_tab_name = false
+show_agent_labels_on_pane_borders = true
+
+[ui.toast]
+delivery = "terminal"
+
+[ui.sound]
+enabled = false
+
+# Keybindings: direct shortcuts matching tmux config muscle memory.
+# herdr prefix (ctrl+b) is kept as default for workspace/sidebar actions.
+# Direct ctrl+shift bindings mirror the tmux.conf direct bindings.
+[keys]
+# Splits (herdr horizontal = top/bottom, vertical = left/right)
+split_horizontal = ["prefix+minus", "ctrl+shift+e"]
+split_vertical = ["prefix+v", "ctrl+shift+o"]
+
+# Pane focus
+focus_pane_left = ["prefix+h", "ctrl+shift+left"]
+focus_pane_right = ["prefix+l", "ctrl+shift+right"]
+focus_pane_up = ["prefix+k", "ctrl+shift+up"]
+focus_pane_down = ["prefix+j", "ctrl+shift+down"]
+
+# Pane management
+close_pane = ["prefix+x", "ctrl+shift+w"]
+zoom = ["prefix+z", "ctrl+shift+z"]
+
+# Tabs (tmux windows)
+new_tab = ["prefix+c", "ctrl+shift+t"]
+previous_tab = ["prefix+p", "ctrl+alt+["]
+next_tab = ["prefix+n", "ctrl+alt+]"]
+rename_tab = ["prefix+shift+t", "f2"]
+
+[[keys.command]]
+key = "prefix+alt+g"
+type = "pane"
+command = "lazygit"
+description = "lazygit"

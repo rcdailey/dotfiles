@@ -1,8 +1,8 @@
 # Kitty Terminal Configuration
 # Migrated from Ghostty config
 
-# Use tmux as the shell - kitty closes when tmux exits
-shell zsh -lc 'exec tmux new-session'
+# Use herdr as the shell - kitty closes when herdr exits
+shell zsh -lc 'exec herdr'
 
 # Enable remote control for broadcasting commands to all windows
 # Used by `reload-all` alias to restart zsh in all windows
@@ -61,10 +61,10 @@ map ctrl+shift+, load_config_file
 # New window with current directory (ghostty: ctrl+shift+n)
 map ctrl+shift+n new_os_window_with_cwd
 
-# Pass keys to tmux - explicit unmapping required because kitty has built-in
+# Pass keys to herdr - explicit unmapping required because kitty has built-in
 # defaults for many of these (ctrl+shift+t=new_tab, ctrl+shift+w=close_window,
 # ctrl+page_up/down=tab navigation, etc). Without explicit unmapping, kitty
-# intercepts them before tmux sees them.
+# intercepts them before herdr sees them.
 map ctrl+shift+e
 map ctrl+shift+o
 map ctrl+shift+left
