@@ -43,6 +43,17 @@ _QUERY_COMMENT_RESPONSE: dict[str, Any] = {
         "node": {
             "body": "original body",
             "path": "src/main.ts",
+            "pullRequestReview": {"state": "PENDING"},
+        }
+    }
+}
+
+_QUERY_COMMENT_SUBMITTED: dict[str, Any] = {
+    "data": {
+        "node": {
+            "body": "original body",
+            "path": "src/main.ts",
+            "pullRequestReview": {"state": "COMMENTED"},
         }
     }
 }
@@ -52,7 +63,10 @@ _QUERY_COMMENT_RESPONSE: dict[str, Any] = {
 
 
 def test_body_only_edit():
-    with patch("gh_review.edit.gh_graphql_mutation", return_value=_UPDATE_RESPONSE) as mock_gql:
+    with (
+        patch("gh_review.edit.gh_graphql", return_value=_QUERY_COMMENT_RESPONSE),
+        patch("gh_review.edit.gh_graphql_mutation", return_value=_UPDATE_RESPONSE) as mock_gql,
+    ):
         result = CliRunner().invoke(cli, ["edit", "PRRC_abc", "--body", "new body"])
 
     assert result.exit_code == 0
@@ -63,14 +77,26 @@ def test_body_only_edit():
 
 
 def test_body_only_edit_error():
-    with patch(
-        "gh_review.edit.gh_graphql_mutation",
-        side_effect=GhError("Could not resolve to a node"),
+    with (
+        patch("gh_review.edit.gh_graphql", return_value=_QUERY_COMMENT_RESPONSE),
+        patch(
+            "gh_review.edit.gh_graphql_mutation",
+            side_effect=GhError("Could not resolve to a node"),
+        ),
     ):
         result = CliRunner().invoke(cli, ["edit", "PRRC_bad", "--body", "x"])
 
     assert result.exit_code == 1
     assert "Could not resolve to a node" in result.output
+
+
+def test_body_only_edit_rejects_published_comment():
+    with patch("gh_review.edit.gh_graphql", return_value=_QUERY_COMMENT_SUBMITTED):
+        result = CliRunner().invoke(cli, ["edit", "PRRC_abc", "--body", "new body"])
+
+    assert result.exit_code == 1
+    assert "COMMENTED review" in result.output
+    assert "only for PENDING reviews" in result.output
 
 
 # -- validation ----------------------------------------------------------------
@@ -175,6 +201,18 @@ def test_reposition_with_body_override():
     assert result.exit_code == 0
     create_input = mock_gql.call_args_list[1][0][1]["input"]
     assert create_input["body"] == "updated body"
+
+
+def test_reposition_rejects_published_comment():
+    with patch("gh_review.edit.gh_graphql", return_value=_QUERY_COMMENT_SUBMITTED):
+        result = CliRunner().invoke(
+            cli,
+            ["edit", "PRRC_abc", "--review-id", "PRR_xyz", "--line", "20"],
+        )
+
+    assert result.exit_code == 1
+    assert "COMMENTED review" in result.output
+    assert "only for PENDING reviews" in result.output
 
 
 def test_reposition_not_found():

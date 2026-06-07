@@ -41,6 +41,7 @@ _QUERY_COMMENT = textwrap.dedent("""\
         ... on PullRequestReviewComment {
           body
           path
+          pullRequestReview { state }
         }
       }
     }""")
@@ -91,8 +92,24 @@ def cli(
         _reposition_edit(comment_id, body, file_path, line, start_line, side, start_side, review_id)
 
 
+def _assert_pending(comment_id: str) -> dict[str, Any]:
+    """Query comment and verify its review is PENDING. Returns the node dict."""
+    try:
+        data = gh_graphql(_QUERY_COMMENT, id=comment_id)
+        node = data.get("data", {}).get("node")
+        if not node:
+            die(f"comment {comment_id} not found")
+    except GhError as exc:
+        die(str(exc))
+    state = node.get("pullRequestReview", {}).get("state", "")
+    if state != "PENDING":
+        die(f"comment belongs to a {state} review; edit is only for PENDING reviews")
+    return node
+
+
 def _body_only_edit(comment_id: str, body: str) -> None:
     """Update comment body via GraphQL."""
+    _assert_pending(comment_id)
     try:
         data = gh_graphql_mutation(
             _UPDATE_COMMENT_MUTATION,
@@ -117,14 +134,7 @@ def _reposition_edit(
     review_id: str,
 ) -> None:
     """Delete + recreate at new position via GraphQL."""
-    # Fetch current comment for field defaults.
-    try:
-        data = gh_graphql(_QUERY_COMMENT, id=comment_id)
-        node = data.get("data", {}).get("node")
-        if not node:
-            die(f"comment {comment_id} not found")
-    except GhError as exc:
-        die(str(exc))
+    node = _assert_pending(comment_id)
 
     # GraphQL comment has body and path but not line/side (those live on the thread).
     merged_body = body if body is not None else node["body"]
