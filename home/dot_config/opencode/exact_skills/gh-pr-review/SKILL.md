@@ -85,8 +85,9 @@ The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` ou
 `gh-review remove` deletes a single review comment.
 
 Both commands take the comment node ID (`PRRC_...` from `comment` output's `comment-node-id` field).
-These commands operate on pending review comments only; published comments should be edited through
-the GitHub UI.
+These commands operate on pending review comments only; `edit` will reject published comments with an
+error. When this happens, do NOT fall back to `reply` or any other command as a workaround. Published
+comments can only be edited through the GitHub UI; inform the user and stop.
 
 ## Line Targeting
 
