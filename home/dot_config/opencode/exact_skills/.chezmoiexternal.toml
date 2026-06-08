@@ -15,3 +15,17 @@
     stripComponents = 4
     include = ["*/skills/engineering/grill-with-docs/**"]
     refreshPeriod = "168h"
+
+["to-prd"]
+    type = "archive"
+    url = "https://github.com/mattpocock/skills/archive/main.tar.gz"
+    stripComponents = 4
+    include = ["*/skills/engineering/to-prd/**"]
+    refreshPeriod = "168h"
+
+["to-issues"]
+    type = "archive"
+    url = "https://github.com/mattpocock/skills/archive/main.tar.gz"
+    stripComponents = 4
+    include = ["*/skills/engineering/to-issues/**"]
+    refreshPeriod = "168h"

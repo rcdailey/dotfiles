@@ -22,6 +22,7 @@
     "session_list": "alt+l",
     "session_new": "alt+n",
     "display_thinking": "alt+t",
+    "prompt_skills": "alt+s",
 
     // these conflict with home/end keys above
     "messages_first": "ctrl+g",
