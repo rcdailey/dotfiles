@@ -1,0 +1,17 @@
+# Matt Pocock's engineering skills
+# https://github.com/mattpocock/skills/tree/main/skills/engineering
+# Same URL = single download (chezmoi caches by SHA256 of URL)
+
+["tdd"]
+    type = "archive"
+    url = "https://github.com/mattpocock/skills/archive/main.tar.gz"
+    stripComponents = 4
+    include = ["*/skills/engineering/tdd/**"]
+    refreshPeriod = "168h"
+
+["grill-with-docs"]
+    type = "archive"
+    url = "https://github.com/mattpocock/skills/archive/main.tar.gz"
+    stripComponents = 4
+    include = ["*/skills/engineering/grill-with-docs/**"]
+    refreshPeriod = "168h"
