@@ -29,6 +29,8 @@ keybinding:
     scrollDownMain: "."
     nextItem-alt: "<ctrl+shift+f12>"
     prevItem-alt: "<ctrl+shift+f12>"
+    nextTab: ["]", <s-right>]
+    prevTab: ["[", <s-left>]
     openRecentRepos: "`"
   commits:
     amendToCommit: a
