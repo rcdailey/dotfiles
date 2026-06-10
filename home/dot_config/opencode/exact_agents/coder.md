@@ -24,7 +24,6 @@ permission:
     skill-authoring: deny
     subagent-authoring: deny
     gh-api: deny
-    gh-gist: deny
     gh-pr-review: deny
     git-hunks: deny
     linear-cli: deny

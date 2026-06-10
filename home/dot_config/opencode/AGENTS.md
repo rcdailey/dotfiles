@@ -132,7 +132,6 @@ Per-skill triggers:
 - `humanizer`: MUST load when writing prose to files or through tool calls (docs, READMEs,
   changelogs, PR/issue bodies, release notes, gist content). MUST NOT load for conversational chat,
   code, commit messages, or structured data.
-- `csharp-coding`: MUST load when writing, editing, or reviewing C# / .NET code or project files.
 - `agents-authoring`: MUST load when creating, editing, or reviewing AGENTS.md files.
 - `skill-authoring`: MUST load when creating, editing, or reviewing SKILL.md files.
 - `subagent-authoring`: MUST load when creating, editing, or refactoring agent definitions.

@@ -39,7 +39,6 @@ up `/tmp` clones when done.
   review threads, or any PR comment workflow via `gh-review`.
 - `gh-api`: MUST load when using raw `gh api` for draft PRs, Discussions, or endpoints not covered
   by higher-level `gh` subcommands. Do NOT use for PR review operations; use `gh-review` instead.
-- `gh-gist`: MUST load when creating, updating, or iterating on GitHub gists.
 - `linear-cli`: MUST load when operating on Linear issues, projects, milestones, labels, or
   documents via the `linear` CLI (creating or updating issues, adding comments, transitioning state,
   assigning labels).
