@@ -1,0 +1,13 @@
+{
+  "app.session.tree": "alt+z",
+  "app.session.fork": "alt+f",
+  "app.session.new": "alt+n",
+  "app.session.resume": "alt+l",
+  "app.model.select": "alt+m",
+  "app.thinking.toggle": "alt+t",
+  "tui.editor.undo": "alt+u",
+  "tui.input.copy": ["ctrl+c", "alt+c"],
+  "tui.editor.cursorLineStart": "home",
+  "tui.editor.cursorLineEnd": "end",
+  "app.editor.external": "ctrl+alt+g"
+}
