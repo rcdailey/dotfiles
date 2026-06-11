@@ -100,9 +100,19 @@ If within the cap, continue.
 git push -u origin HEAD
 ```
 
-Use the ticket title as the PR title. Write the PR body as: one-paragraph summary of what changed
-and why, followed by `Closes $1` on its own line. Do not create a draft; automated reviewers skip
-drafts. Target the base branch explicitly:
+Use the ticket title as the PR title. Write the PR body as:
+
+1. One-paragraph summary of what changed and why.
+2. A `## Design notes` section capturing what a reviewer cannot infer from the diff: constraints
+   that drove the design, alternatives considered and rejected (with why), and approaches tried that
+   failed. Skip entries that do not apply; never pad. Feedback iterations run in fresh sessions with
+   no memory of this one; this section is what they get instead.
+3. `Closes $1` on its own line.
+
+The design notes section intentionally overrides the global "keep PR descriptions high-level"
+directive; dispatched PRs carry their own context.
+
+Do not create a draft; automated reviewers skip drafts. Target the base branch explicitly:
 
 ```bash
 gh pr create --base <base> --title "<ticket title>" --body "<body>"

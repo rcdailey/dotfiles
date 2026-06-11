@@ -45,9 +45,10 @@ Artifacts (all in this repo):
 
 1. `home/dot_config/opencode/exact_commands/ticket.md`: slash command holding the dispatch prompt
    template (read Linear ticket, move to In Progress, implement test-first, run checks until green,
-   repo-wide grep sweep for overlooked references, push, `gh pr create`, move to In Review, comment
-   PR link, ~400 line diff cap with split-and-stop escape hatch). This template is where supervision
-   lives; iterate on it after every dispatched ticket.
+   repo-wide grep sweep for overlooked references, push, `gh pr create` with a design-notes PR body
+   (constraints, rejected alternatives, dead ends; the memory for later feedback iterations), move
+   to In Review, comment PR link, ~400 line diff cap with split-and-stop escape hatch). This
+   template is where supervision lives; iterate on it after every dispatched ticket.
 2. `home/dot_config/exact_zsh/functions/dispatch`: worktree add + tmux window + `opencode run
    --command ticket <ID>`. Companion `dispatch-done` removes the worktree and kills the window.
 3. `home/dot_config/opencode/exact_plugins/notify.ts`: `notify-send` on `session.idle`, only for
@@ -59,18 +60,19 @@ Artifacts (all in this repo):
    comments on the PR when a failure isn't addressable from the branch. Reads unresolved PR comments
    (`gh-review view`), triages rather than obeys (bot nitpicks get evaluated; disagreements get a
    reply explaining why, never a silent skip), fixes, pushes, replies to each comment with what was
-   done. Works in the original session (`--session <id>`) or fresh (reads the PR diff first; rung 2+
-   won't always have the session).
+   done. Always runs fresh: the PR is the memory (design-notes body from the ticket command, reply
+   threads from prior iterations), so no session state needs to survive between iterations.
 5. CodeRabbit GitHub App on recyclarr (full Pro tier is free for public repos). Supplements, not
    replaces, the human pass at this rung. Tune `.coderabbit.yaml` early; expect most comments to be
    nitpicks and tune until the signal is worth reading.
 
 Daily flow: write/refine tickets in Linear (`to-issues`), `dispatch ENG-123`, keep doing interactive
 work, get notified, wait for CI + CodeRabbit, review the PR line-by-line as today. Feedback goes on
-the PR as review comments, then one trigger from the ticket's tmux window: `opencode run --session
-<id> --command pr-feedback <PR>`. The same trigger handles red CI runs; the command picks up failing
-checks even when there are no comments. Trivia gets fixed by hand. Merge, `dispatch-done`, then
-record what the ticket template should have said to prevent whatever went wrong.
+the PR as review comments, then one trigger from the ticket's tmux window: `opencode run --command
+pr-feedback <PR>` (fresh session; the PR body and reply threads carry the context). The same trigger
+handles red CI runs; the command picks up failing checks even when there are no comments. Trivia
+gets fixed by hand. Merge, `dispatch-done`, then record what the ticket template should have said to
+prevent whatever went wrong.
 
 The human review pass stays full-depth until CodeRabbit's findings demonstrably overlap with it
 (roughly a dozen PRs of evidence); only then does the human pass demote to a skim.
@@ -100,8 +102,9 @@ polling replaces typing it, SSE replaces checking on it.
 ## Rung 3: the feedback loop
 
 After PR creation the dispatcher polls CI status and review comments (`gh pr checks`, `gh-review
-view`). On failure or feedback it resumes the same session with the details and lets the agent
-iterate until green. Tickets land in "Ready for human review" only when checks pass.
+view`). On failure or feedback it runs `pr-feedback` in a fresh session against the PR; the PR body
+and reply threads carry the context (no session state to persist across dispatcher restarts).
+Tickets land in "Ready for human review" only when checks pass.
 
 ## Rung 4: shrink the human review
 
@@ -159,6 +162,19 @@ practical stack would be Argo Workflows + Jobs running `opencode run` with an AP
   pull failing logs via `gh run view --log-failed`, and triage: fix failures the PR caused, rerun
   flaky or infra failures once, comment on the PR when a failure isn't addressable from the branch.
   This is rung 3's CI loop with the human as the poller, same as the comment loop.
+- 2026-06-11: settled the session-state question: PR-as-memory, fresh session per feedback
+  iteration. The dispatcher at rung 2+ can restart, so fresh sessions must work regardless; reuse
+  would only add sunk-cost bias toward defending the original code and context-window degradation.
+  Instead the ticket command writes a design-notes PR body (constraints, rejected alternatives, dead
+  ends; the things a fresh session cannot infer from the diff) and pr-feedback reads the PR body
+  plus prior reply threads before triaging. The design-notes body intentionally overrides the global
+  "keep PR descriptions high-level" directive; rung 3's "resume the same session" wording is
+  superseded by this (resume the same PR, not the same session).
+- 2026-06-11: pr-feedback comment handling tightened. The "bot noise: skip silently" bucket is gone;
+  every comment gets a reply, and bot replies are neutral, factual, and conclusive (review bots like
+  CodeRabbit learn from responses). Verified against recyclarr PR 859 that GitHub code scanning
+  findings arrive as review threads from `github-advanced-security[bot]`, so `gh-review view`
+  already surfaces them; no tool change needed, the silent-skip bucket was the only gap.
 - 2026-06-11: ticket command gained a sweep step before the diff gate: repo-wide `rg` for every
   symbol, config key, flag, or string the change touched, plus the old terminology on behavior
   changes. Agents kept updating only the files they edited and missing call sites and stale docs.

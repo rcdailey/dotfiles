@@ -11,25 +11,30 @@ worktree.
 
 Parse $ARGUMENTS:
 
-- Bare number or `#N`: run `gh pr view N --json number,headRefName,baseRefName,url,title` from the
-  current directory to get repo context.
+- Bare number or `#N`: run `gh pr view N --json number,headRefName,baseRefName,url,title,body` from
+  the current directory to get repo context.
 - `owner/repo N`: run `gh pr view N --repo owner/repo --json
-  number,headRefName,baseRefName,url,title`.
+  number,headRefName,baseRefName,url,title,body`.
 
 Capture: PR number, head ref, base ref, PR URL, repo (in `owner/repo` form via `gh repo view --json
 nameWithOwner -q .nameWithOwner`).
 
-## Step 2: Orient to the diff (fresh session only)
+## Step 2: Orient
 
-If this is a fresh session without prior context on these changes, read the diff before triaging
-comments:
+This command runs in a fresh session; the PR carries the context. Read, in order:
+
+1. The PR body, especially its `## Design notes` section (constraints, rejected alternatives, dead
+   ends from the original implementation). Weigh these when triaging; a reviewer suggestion may
+   already be a rejected alternative.
+2. The diff:
 
 ```bash
 git fetch origin <headRef>
 git diff origin/<baseRef>...origin/<headRef>
 ```
 
-This provides the change context needed to evaluate comment validity.
+Threads from earlier iterations (step 4 output) include prior replies recording past decisions; do
+not relitigate a decision already explained unless the reviewer has added a new argument.
 
 ## Step 3: Check CI status
 
@@ -70,15 +75,18 @@ For each comment, decide one of:
 - **Disagree**: the suggested change is incorrect, unnecessary, or conflicts with project
   conventions; reply explaining why, then leave the code as-is.
 - **Nitpick accepted**: style or formatting feedback that is valid; implement it.
-- **Bot noise**: automated comment that adds no signal (duplicate, off-topic, outdated lint); skip
-  silently.
+- **Not applicable**: automated comment that adds no signal (duplicate, off-topic, outdated lint);
+  no code change, but still gets a one-line factual reply stating why.
+
+GitHub code scanning findings arrive as review threads from `github-advanced-security[bot]`; triage
+them like any other bot comment (fix genuine findings, explain false positives in the reply).
 
 Triage criteria:
 
 - Evaluate correctness against the codebase and the language/framework behavior, not just the
   comment's phrasing.
 - Do not apply a change simply because a reviewer requested it; apply it because it is correct.
-- Disagreements MUST get an explicit reply; silent skips are not allowed.
+- Every comment gets a reply, human or bot; silent skips are not allowed.
 
 ## Step 6: Implement fixes
 
@@ -95,7 +103,7 @@ git push
 
 ## Step 8: Reply to comments
 
-For each comment that was addressed (fixed, disagreed, or nitpick accepted), reply via:
+For every triaged comment (fixed, disagreed, nitpick accepted, or not applicable), reply via:
 
 ```bash
 gh-review reply <owner/repo> <number> <comment-node-id> --body "<reply>"
@@ -108,14 +116,20 @@ Reply bodies:
 - Disagreed: clear explanation of why the change was not applied; reference specific code or docs if
   relevant.
 - Nitpick accepted: brief acknowledgement (e.g., "Done.")
-- Bot noise: no reply.
+- Not applicable: one-line factual reason (e.g., "Not applicable: duplicate of the thread on
+  src/foo.ts.").
+
+Bot authors (`[bot]` suffix, CodeRabbit, github-advanced-security, CI tools): neutral, factual
+statements describing what was done and why, or why nothing will be done. Never address the bot
+conversationally. Review bots learn from replies, so every bot comment gets one, and it is
+conclusive: state the decision once, do not invite follow-up.
 
 ## Rules
 
-- MUST evaluate each comment on its merits; never silently skip a human comment.
+- MUST evaluate each comment on its merits; never silently skip any comment, human or bot.
 - MUST NOT rerun a flaky check more than once; after that, comment on the PR and move on.
 - MUST run the full check suite green before pushing.
-- MUST reply to every non-noise comment, including disagreements.
+- MUST reply to every comment, including disagreements; replies to bots are conclusive.
 - MUST NOT merge the PR; the human merges after reviewing replies.
 - MUST NOT use TodoWrite or task tracking.
 - Do not create or modify files outside the worktree.
