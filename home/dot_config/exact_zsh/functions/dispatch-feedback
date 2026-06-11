@@ -1,0 +1,33 @@
+#!/usr/bin/env zsh
+# Trigger a pr-feedback iteration for a dispatched ticket in its tmux window.
+# Usage: dispatch-feedback <TICKET-ID> [PR-NUMBER]    e.g. dispatch-feedback ENG-123
+# PR number defaults to the PR for the worktree's branch (gh pr view).
+
+local ticket_id="${1:?Usage: dispatch-feedback <TICKET-ID> [PR-NUMBER]}"
+local pr_number="$2"
+local repo_root
+repo_root=$(git rev-parse --show-toplevel) || return 1
+
+local repo_name="${repo_root:t}"
+local branch_name="${ticket_id:l}"
+local worktree_path="${repo_root:h}/${repo_name}-${branch_name}"
+
+if [[ ! -d "$worktree_path" ]]; then
+  print -u2 "dispatch-feedback: worktree not found: $worktree_path"
+  return 1
+fi
+
+if [[ -z "$pr_number" ]]; then
+  pr_number=$(cd "$worktree_path" && gh pr view --json number -q .number) || {
+    print -u2 "dispatch-feedback: no PR found for branch $branch_name"
+    return 1
+  }
+fi
+
+local run_cmd="opencode run --command pr-feedback $pr_number"
+if tmux list-windows -F '#{window_name}' | grep -qx "$ticket_id"; then
+  tmux send-keys -t "$ticket_id" "$run_cmd" Enter
+else
+  tmux new-window -d -n "$ticket_id" -c "$worktree_path" -e OPENCODE_DISPATCH=1 \
+    "$run_cmd; exec zsh"
+fi

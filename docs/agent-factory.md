@@ -4,7 +4,8 @@ Status: rung 1 in progress. Testbed: recyclarr.
 
 A staged plan for moving from interactive TUI sessions to supervised, ticket-driven agent workflows
 on a local workstation. Each rung removes one piece of manual involvement; the climb stops wherever
-trust runs out. This file is the living version of the plan; iterate here.
+trust runs out. This file holds the plan and durable decisions; behavior details live in the
+artifacts themselves, and history lives in git.
 
 ## Background
 
@@ -41,38 +42,26 @@ You trigger everything, you review everything. The deliverable is calibration, n
 ~10 tickets, know the agents' failure patterns, the ticket-writing quality bar, and whether PRs
 deserve a lighter touch.
 
-Artifacts (all in this repo):
+Artifacts (all in this repo; each file is the authoritative spec of its own behavior):
 
-1. `home/dot_config/opencode/exact_commands/ticket.md`: slash command holding the dispatch prompt
-   template (read Linear ticket, move to In Progress, implement test-first, run checks until green,
-   repo-wide grep sweep for overlooked references, push, `gh pr create` with a design-notes PR body
-   (constraints, rejected alternatives, dead ends; the memory for later feedback iterations), move
-   to In Review, comment PR link, ~400 line diff cap with split-and-stop escape hatch). This
-   template is where supervision lives; iterate on it after every dispatched ticket.
-2. `home/dot_config/exact_zsh/functions/dispatch`: worktree add + tmux window + `opencode run
-   --command ticket <ID>`. Companion `dispatch-done` removes the worktree and kills the window.
-3. `home/dot_config/opencode/exact_plugins/notify.ts`: `notify-send` on `session.idle`, only for
-   dispatched sessions (gated on `OPENCODE_DISPATCH=1`, set on the tmux window by `dispatch`) and
-   only for top-level sessions (subagent idles are skipped via `parentID`).
-4. `home/dot_config/opencode/exact_commands/pr-feedback.md`: slash command for feedback iterations,
-   covering both review comments and CI failures. Checks `gh pr checks` and pulls failing run logs
-   (`gh run view --log-failed`); fixes failures caused by the PR, reruns flaky checks once, and
-   comments on the PR when a failure isn't addressable from the branch. Reads unresolved PR comments
-   (`gh-review view`), triages rather than obeys (bot nitpicks get evaluated; disagreements get a
-   reply explaining why, never a silent skip), fixes, pushes, replies to each comment with what was
-   done. Always runs fresh: the PR is the memory (design-notes body from the ticket command, reply
-   threads from prior iterations), so no session state needs to survive between iterations.
+1. `home/dot_config/opencode/exact_commands/ticket.md`: the dispatch prompt template (Linear
+   lifecycle, test-first implementation, repo-wide sweep, diff cap, PR creation). This template is
+   where supervision lives; iterate on it after every dispatched ticket.
+2. `home/dot_config/exact_zsh/functions/`: `dispatch <ID> [BASE]` (worktree + tmux window + headless
+   run), `dispatch-feedback <ID> [PR]` (trigger a feedback iteration), `dispatch-done <ID>`
+   (teardown).
+3. `home/dot_config/opencode/exact_plugins/notify.ts`: `notify-send` on idle, dispatched top-level
+   sessions only.
+4. `home/dot_config/opencode/exact_commands/pr-feedback.md`: feedback iteration; triages and
+   addresses failing CI checks and review comments, replies to every comment.
 5. CodeRabbit GitHub App on recyclarr (full Pro tier is free for public repos). Supplements, not
-   replaces, the human pass at this rung. Tune `.coderabbit.yaml` early; expect most comments to be
-   nitpicks and tune until the signal is worth reading.
+   replaces, the human pass at this rung. Tune `.coderabbit.yaml` until the signal is worth reading.
 
 Daily flow: write/refine tickets in Linear (`to-issues`), `dispatch ENG-123`, keep doing interactive
 work, get notified, wait for CI + CodeRabbit, review the PR line-by-line as today. Feedback goes on
-the PR as review comments, then one trigger from the ticket's tmux window: `opencode run --command
-pr-feedback <PR>` (fresh session; the PR body and reply threads carry the context). The same trigger
-handles red CI runs; the command picks up failing checks even when there are no comments. Trivia
-gets fixed by hand. Merge, `dispatch-done`, then record what the ticket template should have said to
-prevent whatever went wrong.
+the PR as review comments, then `dispatch-feedback ENG-123` (also the trigger for red CI runs).
+Trivia gets fixed by hand. Merge, `dispatch-done`, then record what the ticket template should have
+said to prevent whatever went wrong.
 
 The human review pass stays full-depth until CodeRabbit's findings demonstrably overlap with it
 (roughly a dozen PRs of evidence); only then does the human pass demote to a skim.
@@ -121,60 +110,27 @@ box. No mature open-source k8s operator for the full ticket-to-merge cycle exist
 practical stack would be Argo Workflows + Jobs running `opencode run` with an API key Secret.
 `kubernetes-sigs/agent-sandbox` is the primitive to watch. Everything from rungs 2-3 ports directly.
 
-## Log
+## Decisions
 
-- 2026-06-10: plan created. Rung 1 scoped; recyclarr chosen as testbed.
-- 2026-06-10: rung 1 expanded: CodeRabbit on recyclarr (free for public repos; verified against
-  pricing pages, best OSS terms vs Greptile/Qodo/Graphite/BugBot) and a `pr-feedback` command as the
-  human-triggered feedback loop (rung 3's loop with the human as poller).
-- 2026-06-10: rung 1 artifacts built (`ticket`, `pr-feedback`, `dispatch`/`dispatch-done`,
-  `notify.ts`). Audit fixes: tmux window keeps a shell after `opencode run` exits (preserves
-  transcript and session resume), PRs created non-draft (CodeRabbit skips drafts), diff cap measured
-  via `--shortstat`. Known tradeoffs: `notify.ts` fires for interactive sessions too (filter by
-  session later if noisy); `gh pr create` will trigger a permission ask in headless runs, surfaced
-  by the urgent notification, approve it in the ticket's tmux window or allow it in config once
-  trusted.
-- 2026-06-11: ticket command no longer hardcodes Linear state names ("In Review" doesn't exist on
-  every team). It queries the team's workflow states once, maps an ACTIVE and an optional REVIEW
-  state by type and name, and skips the review transition when no review state exists.
-- 2026-06-11: first dispatch run failed on permission asks: headless `opencode run` auto-rejects
-  them, it does not stall. The "approve in the tmux window" assumption from 2026-06-10 was wrong,
-  and `notify.ts`'s urgent `permission.asked` notification is moot for dispatched sessions. Fix: new
-  hidden primary agent `dispatch` (`exact_agents/dispatch.md.tmpl`), wired via `agent: dispatch` in
-  the `ticket` and `pr-feedback` commands. Zero-ask permission surface: every global "ask" pattern
-  resolved to allow (worktree-local git/file ops, `git push`, `gh pr create`) or deny (sudo, repo
-  mutations, merges). File tools confined to the worktree via `external_directory: deny`; bash is
-  the remaining escape hatch, accepted at this rung since PR review covers every output. OS-level
-  sandboxing (bubblewrap around `opencode run`) is the upgrade path if that stops feeling
-  comfortable.
-- 2026-06-10: optional base branch arg: `dispatch <ID> [BASE]` bases the worktree on `origin/BASE`
-  and the ticket command diffs against and targets it (`gh pr create --base`). Default remains
-  origin's default branch. Motivation: long-lived topic branches (recyclarr `http-server`). Caveat:
-  tickets stacked on a moving topic branch may need rebases; serialize them when possible.
-- 2026-06-11: notify.ts was too noisy in practice: it fired for interactive TUI sessions and once
-  per subagent idle. Reworked: notifications only when `OPENCODE_DISPATCH=1` (set via `tmux
-  new-window -e` in `dispatch`, so the env survives into the post-run shell for `pr-feedback`
-  reruns), subagent sessions filtered by `parentID`, and the `permission.asked` notification dropped
-  entirely (moot for dispatch since the zero-ask agent; interactive sessions have the user at the
-  keyboard).
-- 2026-06-11: rung 1 testing surfaced a gap: a failed CI run with no review comments had no handler
-  (`pr-feedback` read only comments and stopped). Extended `pr-feedback` to check `gh pr checks`,
-  pull failing logs via `gh run view --log-failed`, and triage: fix failures the PR caused, rerun
-  flaky or infra failures once, comment on the PR when a failure isn't addressable from the branch.
-  This is rung 3's CI loop with the human as the poller, same as the comment loop.
-- 2026-06-11: settled the session-state question: PR-as-memory, fresh session per feedback
-  iteration. The dispatcher at rung 2+ can restart, so fresh sessions must work regardless; reuse
-  would only add sunk-cost bias toward defending the original code and context-window degradation.
-  Instead the ticket command writes a design-notes PR body (constraints, rejected alternatives, dead
-  ends; the things a fresh session cannot infer from the diff) and pr-feedback reads the PR body
-  plus prior reply threads before triaging. The design-notes body intentionally overrides the global
-  "keep PR descriptions high-level" directive; rung 3's "resume the same session" wording is
-  superseded by this (resume the same PR, not the same session).
-- 2026-06-11: pr-feedback comment handling tightened. The "bot noise: skip silently" bucket is gone;
-  every comment gets a reply, and bot replies are neutral, factual, and conclusive (review bots like
-  CodeRabbit learn from responses). Verified against recyclarr PR 859 that GitHub code scanning
-  findings arrive as review threads from `github-advanced-security[bot]`, so `gh-review view`
-  already surfaces them; no tool change needed, the silent-skip bucket was the only gap.
-- 2026-06-11: ticket command gained a sweep step before the diff gate: repo-wide `rg` for every
-  symbol, config key, flag, or string the change touched, plus the old terminology on behavior
-  changes. Agents kept updating only the files they edited and missing call sites and stale docs.
+Durable rationale that the artifacts cannot explain on their own. Chronology lives in git history.
+
+- Headless `opencode run` auto-rejects permission asks; it does not stall waiting for approval.
+  Hence the hidden `dispatch` primary agent (`exact_agents/dispatch.md.tmpl`) with a zero-ask
+  permission surface: worktree-local ops, `git push`, and `gh pr create` allowed; sudo, repo
+  mutations, and merges denied; file tools confined to the worktree. Bash remains the escape hatch,
+  acceptable while every output goes through PR review; OS-level sandboxing (bubblewrap) is the
+  upgrade path if that stops feeling comfortable.
+- PR-as-memory: every feedback iteration runs in a fresh session. The dispatcher at rung 2+ can
+  restart, so fresh sessions must work regardless; session reuse would only add sunk-cost bias
+  toward defending the original code plus context-window degradation. The ticket command writes
+  design notes into the PR body (constraints, rejected alternatives, dead ends; what a fresh session
+  cannot infer from the diff), and reply threads record per-comment decisions across iterations. The
+  design-notes body intentionally overrides the global "keep PR descriptions high-level" directive.
+- Every comment gets a reply, bots included: review bots like CodeRabbit learn from responses. Bot
+  replies are neutral, factual, and conclusive; human threads can keep arguing. GitHub code scanning
+  findings arrive as ordinary review threads (`github-advanced-security[bot]`, verified on recyclarr
+  PR 859), so the comment loop covers them without extra tooling.
+- CodeRabbit picked over Greptile/Qodo/Graphite/BugBot: best terms for public OSS repos (full Pro
+  free).
+- Stacked tickets on a moving topic branch (`dispatch <ID> <BASE>`) may need rebases; serialize them
+  when possible.
