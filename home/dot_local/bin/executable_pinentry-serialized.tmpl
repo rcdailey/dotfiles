@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Serializing pinentry wrapper. rbw-agent spawns concurrent pinentry processes
-# when multiple SSH operations trigger unlock simultaneously. This wrapper uses
-# flock so only one pinentry dialog appears; others block until it completes.
+# when multiple operations trigger unlock simultaneously. This wrapper uses flock
+# so only one pinentry dialog appears; processes that acquire the lock after the
+# vault is already unlocked respond with a protocol cancel instead of prompting.
 
 {{- if eq .chezmoi.os "darwin" }}
 PINENTRY=/usr/local/bin/pinentry-mac
@@ -10,4 +11,20 @@ PINENTRY=/usr/bin/pinentry-qt
 {{- end }}
 
 LOCK_DIR="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
-exec flock "$LOCK_DIR/pinentry-serialized.lock" "$PINENTRY" "$@"
+exec 9>"$LOCK_DIR/pinentry-serialized.lock"
+flock 9
+
+# Vault unlocked while we waited; cancel without prompting
+if timeout 2 rbw unlocked 2>/dev/null; then
+    echo "OK Pleased to meet you"
+    while IFS= read -r line; do
+        case "${line%% *}" in
+            GETPIN) echo "ERR 83886179 Operation cancelled" ;;
+            BYE)    echo "OK closing connection"; exit 0 ;;
+            *)      echo "OK" ;;
+        esac
+    done
+    exit 0
+fi
+
+exec "$PINENTRY" "$@"
