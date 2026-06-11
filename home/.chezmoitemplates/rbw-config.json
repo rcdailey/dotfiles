@@ -6,9 +6,5 @@
   "lock_timeout": 28800,
 {{- end }}
   "sync_interval": 3600,
-{{- if eq .chezmoi.os "darwin" }}
-  "pinentry": "pinentry-mac"
-{{- else }}
-  "pinentry": "pinentry-qt"
-{{- end }}
+  "pinentry": "pinentry-serialized"
 }
