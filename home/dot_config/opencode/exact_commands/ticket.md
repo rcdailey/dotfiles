@@ -1,5 +1,6 @@
 ---
 description: Implement a Linear ticket end-to-end (test-first, PR, Linear state transitions)
+agent: dispatch
 ---
 
 Implement Linear ticket $1 in the current worktree. This runs headless; do not ask the user for
@@ -51,6 +52,12 @@ Follow the acceptance criteria from the ticket:
 1. Write failing tests that cover the acceptance criteria before writing production code.
 2. Implement until the failing tests pass.
 3. Run the full check suite; iterate until every check is green.
+4. Prune scaffolding tests. Re-read every test added in this session and delete any that only
+   served to drive the implementation and carry no long-term value: granular unit tests coupled to
+   internal structure, tests that duplicate coverage already provided by a higher-level test, tests
+   asserting mock interactions rather than outcomes. Keep a test only if it verifies behavior
+   through a public interface and would survive an internal refactor. Re-run the check suite after
+   pruning.
 
 Commit logical units of work with concise conventional-commit messages. Do not add AI attribution or
 co-author trailers.

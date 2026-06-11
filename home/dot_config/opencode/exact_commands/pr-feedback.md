@@ -1,5 +1,6 @@
 ---
 description: Address PR review comments (triage, fix, push, reply to each comment)
+agent: dispatch
 ---
 
 Address review comments on pull request $ARGUMENTS. Argument format: PR number (e.g., `42`) or

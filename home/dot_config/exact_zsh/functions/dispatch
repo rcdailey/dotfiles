@@ -24,5 +24,5 @@ fi
 git fetch origin "$base_branch" || return 1
 git worktree add -b "$branch_name" "$worktree_path" "origin/$base_branch" || return 1
 
-tmux new-window -d -n "$ticket_id" -c "$worktree_path" \
+tmux new-window -d -n "$ticket_id" -c "$worktree_path" -e OPENCODE_DISPATCH=1 \
   "opencode run --command ticket $ticket_id $base_branch; exec zsh"

@@ -50,8 +50,9 @@ Artifacts (all in this repo):
    ticket.
 2. `home/dot_config/exact_zsh/functions/dispatch`: worktree add + tmux window + `opencode run
    --command ticket <ID>`. Companion `dispatch-done` removes the worktree and kills the window.
-3. `home/dot_config/opencode/exact_plugins/notify.ts`: `notify-send` on `session.idle` and (urgent)
-   on `permission.asked`. The permission case is the main stall mode for background sessions.
+3. `home/dot_config/opencode/exact_plugins/notify.ts`: `notify-send` on `session.idle`, only for
+   dispatched sessions (gated on `OPENCODE_DISPATCH=1`, set on the tmux window by `dispatch`) and
+   only for top-level sessions (subagent idles are skipped via `parentID`).
 4. `home/dot_config/opencode/exact_commands/pr-feedback.md`: slash command for feedback iterations.
    Reads unresolved PR comments (`gh-review view`), triages rather than obeys (bot nitpicks get
    evaluated; disagreements get a reply explaining why, never a silent skip), fixes, pushes, replies
@@ -126,7 +127,26 @@ practical stack would be Argo Workflows + Jobs running `opencode run` with an AP
   session later if noisy); `gh pr create` will trigger a permission ask in headless runs, surfaced
   by the urgent notification, approve it in the ticket's tmux window or allow it in config once
   trusted.
+- 2026-06-11: ticket command no longer hardcodes Linear state names ("In Review" doesn't exist on
+  every team). It queries the team's workflow states once, maps an ACTIVE and an optional REVIEW
+  state by type and name, and skips the review transition when no review state exists.
+- 2026-06-11: first dispatch run failed on permission asks: headless `opencode run` auto-rejects
+  them, it does not stall. The "approve in the tmux window" assumption from 2026-06-10 was wrong,
+  and `notify.ts`'s urgent `permission.asked` notification is moot for dispatched sessions. Fix: new
+  hidden primary agent `dispatch` (`exact_agents/dispatch.md.tmpl`), wired via `agent: dispatch` in
+  the `ticket` and `pr-feedback` commands. Zero-ask permission surface: every global "ask" pattern
+  resolved to allow (worktree-local git/file ops, `git push`, `gh pr create`) or deny (sudo, repo
+  mutations, merges). File tools confined to the worktree via `external_directory: deny`; bash is
+  the remaining escape hatch, accepted at this rung since PR review covers every output. OS-level
+  sandboxing (bubblewrap around `opencode run`) is the upgrade path if that stops feeling
+  comfortable.
 - 2026-06-10: optional base branch arg: `dispatch <ID> [BASE]` bases the worktree on `origin/BASE`
   and the ticket command diffs against and targets it (`gh pr create --base`). Default remains
   origin's default branch. Motivation: long-lived topic branches (recyclarr `http-server`). Caveat:
   tickets stacked on a moving topic branch may need rebases; serialize them when possible.
+- 2026-06-11: notify.ts was too noisy in practice: it fired for interactive TUI sessions and once
+  per subagent idle. Reworked: notifications only when `OPENCODE_DISPATCH=1` (set via `tmux
+  new-window -e` in `dispatch`, so the env survives into the post-run shell for `pr-feedback`
+  reruns), subagent sessions filtered by `parentID`, and the `permission.asked` notification
+  dropped entirely (moot for dispatch since the zero-ask agent; interactive sessions have the user
+  at the keyboard).

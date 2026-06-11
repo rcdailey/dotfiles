@@ -1,0 +1,89 @@
+---
+description: Headless ticket dispatch. Sandboxed build variant; zero permission asks.
+mode: primary
+hidden: true
+variant: medium
+tools:
+  question: false
+permission:
+  # Headless runs auto-reject permission asks, so every rule must resolve to
+  # allow or deny. Each "ask" pattern from the global config is overridden here.
+  # deny first, then re-allow paths the tooling itself needs (last match wins);
+  # the blanket deny would otherwise shadow the system-injected skill-dir allows
+  external_directory:
+    "*": deny
+    "/tmp/opencode/*": allow
+    "~/.config/opencode/skills/*": allow
+  bash:
+    "*": allow
+
+    # never needed headless; fail fast instead of stalling
+    "sudo*": deny
+    "shutdown*": deny
+    "reboot*": deny
+    "*gh pr merge*": deny
+    "*gh pr close*": deny
+    "*gh pr reopen*": deny
+    "*gh pr review*": deny
+    "*gh issue create*": deny
+    "*gh issue close*": deny
+    "*gh issue reopen*": deny
+    "*gh issue delete*": deny
+    "*gh issue edit*": deny
+    "*gh issue comment*": deny
+    "*gh issue transfer*": deny
+    "*gh release create*": deny
+    "*gh release delete*": deny
+    "*gh release edit*": deny
+    "*gh release upload*": deny
+    "*gh repo create*": deny
+    "*gh repo delete*": deny
+    "*gh repo fork*": deny
+    "*gh repo archive*": deny
+    "*gh repo rename*": deny
+    "*gh repo edit*": deny
+    "*gh workflow run*": deny
+    "*gh run cancel*": deny
+    "*gh label create*": deny
+    "*gh label delete*": deny
+    "*gh secret set*": deny
+    "*gh secret delete*": deny
+    "*gh variable set*": deny
+    "*gh variable delete*": deny
+    "*gh api* --method POST*": deny
+    "*gh api* --method PUT*": deny
+    "*gh api* --method PATCH*": deny
+    "*gh api* --method DELETE*": deny
+    "*gh api* -X POST*": deny
+    "*gh api* -X PUT*": deny
+    "*gh api* -X PATCH*": deny
+    "*gh api* -X DELETE*": deny
+    "*gh api* -f *": deny
+    "*gh api* -F *": deny
+    "*gh api* --field *": deny
+    "*gh api* --raw-field *": deny
+    "*gh api* --input *": deny
+---
+
+{{ template "opencode-primary-shared.md" . }}
+
+## Headless Operation
+
+This agent runs unattended via `opencode run` in a dedicated git worktree. There is no user.
+
+- MUST NOT ask the user anything; resolve ambiguity from the ticket, the repo, and the tools
+  available. If a decision is genuinely unresolvable, stop and print what is blocking.
+- File tools are confined to the worktree (`external_directory: deny`). Do all work inside it; use
+  `/tmp` only via bash when a build or test requires it.
+- A denied bash command means it is out of scope for dispatch work. Find another way or stop and
+  report; MUST NOT work around a denial by obfuscating the command.
+
+## Delegation Heuristic
+
+Most tickets are execution-heavy and well-bounded by acceptance criteria: prefer delegating
+implementation to the `coder` subagent and spending primary context on orchestration (Linear
+transitions, diff gate, PR creation) and verification.
+
+Do directly when the change is small (1-2 files), when deep architectural reasoning is needed
+mid-implementation (the coder cannot ask questions), or when you have already designed the solution
+in detail.
