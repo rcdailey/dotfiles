@@ -1,0 +1,28 @@
+#!/usr/bin/env zsh
+# Dispatch a Linear ticket: create worktree, open tmux window, run opencode headless.
+# Usage: dispatch <TICKET-ID> [BASE-BRANCH]    e.g. dispatch ENG-123 http-server
+# BASE-BRANCH defaults to origin's default branch; it is both the worktree base
+# and the PR target.
+
+local ticket_id="${1:?Usage: dispatch <TICKET-ID> [BASE-BRANCH]}"
+local base_branch="$2"
+local repo_root
+repo_root=$(git rev-parse --show-toplevel) || return 1
+
+local repo_name="${repo_root:t}"
+local branch_name="${ticket_id:l}"
+local worktree_path="${repo_root:h}/${repo_name}-${branch_name}"
+
+if [[ -z "$base_branch" ]]; then
+  base_branch=$(git remote show origin | awk '/HEAD branch:/{print $3}')
+fi
+if [[ -z "$base_branch" ]]; then
+  print -u2 "dispatch: cannot detect origin default branch"
+  return 1
+fi
+
+git fetch origin "$base_branch" || return 1
+git worktree add -b "$branch_name" "$worktree_path" "origin/$base_branch" || return 1
+
+tmux new-window -d -n "$ticket_id" -c "$worktree_path" \
+  "opencode run --command ticket $ticket_id $base_branch; exec zsh"
