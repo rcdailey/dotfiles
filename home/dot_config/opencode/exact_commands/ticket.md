@@ -30,7 +30,7 @@ linear api 'query { issue(id: "$1") { team { states { nodes { name type position
 - ACTIVE state: the `started`-type state representing active implementation (prefer a name matching
   "In Progress" or "Doing"; otherwise the lowest-position `started` state).
 - REVIEW state: the `started`-type state whose name contains "review" (e.g. "In Review", "Code
-  Review"). If none exists, there is no REVIEW state; step 7 is skipped.
+  Review"). If none exists, there is no REVIEW state; step 8 is skipped.
 
 Then:
 
@@ -52,17 +52,30 @@ Follow the acceptance criteria from the ticket:
 1. Write failing tests that cover the acceptance criteria before writing production code.
 2. Implement until the failing tests pass.
 3. Run the full check suite; iterate until every check is green.
-4. Prune scaffolding tests. Re-read every test added in this session and delete any that only
-   served to drive the implementation and carry no long-term value: granular unit tests coupled to
-   internal structure, tests that duplicate coverage already provided by a higher-level test, tests
-   asserting mock interactions rather than outcomes. Keep a test only if it verifies behavior
-   through a public interface and would survive an internal refactor. Re-run the check suite after
-   pruning.
+4. Prune scaffolding tests. Re-read every test added in this session and delete any that only served
+   to drive the implementation and carry no long-term value: granular unit tests coupled to internal
+   structure, tests that duplicate coverage already provided by a higher-level test, tests asserting
+   mock interactions rather than outcomes. Keep a test only if it verifies behavior through a public
+   interface and would survive an internal refactor. Re-run the check suite after pruning.
 
 Commit logical units of work with concise conventional-commit messages. Do not add AI attribution or
 co-author trailers.
 
-## Step 5: Diff size gate
+## Step 5: Sweep for overlooked areas
+
+The diff is not the blast radius. For every public symbol, config key, CLI flag, file path, or
+user-facing string the change added, renamed, or removed, grep the whole repo:
+
+```bash
+rg '<term>'
+```
+
+Inspect every hit outside the files already edited: call sites, docs, READMEs, config samples, CI
+workflows, scripts, tests. Update genuine references; skip coincidental matches. If the ticket
+describes a behavior change, also grep for the old behavior's terminology to catch stale docs. If
+anything changed, re-run the full check suite.
+
+## Step 6: Diff size gate
 
 After checks are green, measure the diff against the base branch:
 
@@ -81,7 +94,7 @@ then continue from there.
 
 If within the cap, continue.
 
-## Step 6: Create the PR
+## Step 7: Create the PR
 
 ```bash
 git push -u origin HEAD
@@ -97,7 +110,7 @@ gh pr create --base <base> --title "<ticket title>" --body "<body>"
 
 Capture the PR URL from the output.
 
-## Step 7: Move to review
+## Step 8: Move to review
 
 If a REVIEW state was found in step 2:
 
@@ -105,9 +118,9 @@ If a REVIEW state was found in step 2:
 linear issue update $1 --state "<REVIEW>"
 ```
 
-If not, leave the issue in the ACTIVE state; the PR comment in step 8 is the review signal.
+If not, leave the issue in the ACTIVE state; the PR comment in step 9 is the review signal.
 
-## Step 8: Comment PR link on ticket
+## Step 9: Comment PR link on ticket
 
 ```bash
 linear issue comment add $1 --body "PR: <pr_url>"
@@ -116,6 +129,8 @@ linear issue comment add $1 --body "PR: <pr_url>"
 ## Rules
 
 - MUST run the full check suite and confirm all checks pass before creating the PR.
+- MUST run the repo-wide grep sweep (step 5) before the diff gate; references outside the edited
+  files count as part of the ticket.
 - MUST NOT create the PR when the diff exceeds 400 lines; split instead.
 - MUST NOT skip the Linear state transitions (except step 7 when the team has no review state).
 - MUST NOT guess state names; use the discovered states from step 2.

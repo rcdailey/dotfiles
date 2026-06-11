@@ -1,10 +1,11 @@
 ---
-description: Address PR review comments (triage, fix, push, reply to each comment)
+description: Address PR feedback (failing CI checks and review comments; triage, fix, push, reply)
 agent: dispatch
 ---
 
-Address review comments on pull request $ARGUMENTS. Argument format: PR number (e.g., `42`) or
-`owner/repo PR-number` when running outside the PR's worktree.
+Address feedback on pull request $ARGUMENTS: failing CI checks and unresolved review comments.
+Argument format: PR number (e.g., `42`) or `owner/repo PR-number` when running outside the PR's
+worktree.
 
 ## Step 1: Resolve the PR
 
@@ -30,16 +31,38 @@ git diff origin/<baseRef>...origin/<headRef>
 
 This provides the change context needed to evaluate comment validity.
 
-## Step 3: Read unresolved comments
+## Step 3: Check CI status
+
+```bash
+gh pr checks <number> --repo <owner/repo> --json name,state,bucket,link
+```
+
+For each check in the `fail` bucket, extract the run ID from `link` and fetch only the failing
+output:
+
+```bash
+gh run view <run-id> --repo <owner/repo> --log-failed
+```
+
+Logs can be long; extract the failing test names, assertion output, or error messages rather than
+keeping the full log. Triage each failure:
+
+- **Caused by this PR**: reproduce locally if possible, fix it.
+- **Flaky or infrastructure** (network timeout, runner error, failure clearly unrelated to the
+  diff): rerun once with `gh run rerun <run-id> --repo <owner/repo> --failed`. If it fails again for
+  the same unrelated reason, leave a PR comment describing the failure and why it is not addressable
+  from this PR; do not churn on it.
+
+## Step 4: Read unresolved comments
 
 ```bash
 gh-review view <owner/repo> <number>
 ```
 
 This returns all unresolved review threads and conversation comments. If there are no unresolved
-comments, print "No unresolved comments." and stop.
+comments and no failing checks, print "Nothing to address." and stop.
 
-## Step 4: Triage
+## Step 5: Triage comments
 
 For each comment, decide one of:
 
@@ -57,18 +80,20 @@ Triage criteria:
 - Do not apply a change simply because a reviewer requested it; apply it because it is correct.
 - Disagreements MUST get an explicit reply; silent skips are not allowed.
 
-## Step 5: Implement fixes
+## Step 6: Implement fixes
 
-Apply all accepted fixes. Run the project's full check suite and confirm it is green before pushing.
-If checks fail, fix them before proceeding.
+Apply all accepted fixes (CI failures and comments). Run the project's full check suite and confirm
+it is green before pushing. If checks fail, fix them before proceeding.
 
-## Step 6: Push
+## Step 7: Push
+
+If any commits were made:
 
 ```bash
 git push
 ```
 
-## Step 7: Reply to comments
+## Step 8: Reply to comments
 
 For each comment that was addressed (fixed, disagreed, or nitpick accepted), reply via:
 
@@ -88,6 +113,7 @@ Reply bodies:
 ## Rules
 
 - MUST evaluate each comment on its merits; never silently skip a human comment.
+- MUST NOT rerun a flaky check more than once; after that, comment on the PR and move on.
 - MUST run the full check suite green before pushing.
 - MUST reply to every non-noise comment, including disagreements.
 - MUST NOT merge the PR; the human merges after reviewing replies.
