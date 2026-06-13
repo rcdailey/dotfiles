@@ -26,6 +26,24 @@ artifacts themselves, and history lives in git.
   automated/headless services and enforced this in Jan 2026; tokens also expire too fast for
   unattended pods. Any future containerized factory runs on `ANTHROPIC_API_KEY` and per-token
   billing. Budget accordingly.
+- Industry baseline (researched Jun 2026, primary sources): interactive use dominates; autonomous
+  ticket-to-PR agents are a real but minority workflow (agent traces in ~16-23% of GitHub projects,
+  a fraction of commits within those; arxiv.org/html/2601.18341v1). Hosted products (Copilot coding
+  agent, Codex cloud, Jules) converged on ticket-as-trigger, PR-comments-as-iteration; Devin's
+  persistent-session alternative shows the worst outcome data (54% of its unmerged PRs died of
+  inactivity; arxiv.org/html/2602.00164v1), which validates the fresh-session/PR-as-memory choice.
+  No credible practitioner endorses merge-on-AC without human review for production code; the
+  spectrum runs from Willison's "explain every line"
+  (simonwillison.net/2025/Mar/19/vibe-coding/) to Ronacher's harness-engineering stance, all on the
+  review side. Defect data points the same way: AI-co-authored PRs carry ~1.7x more issues, and AI
+  review tools top out near 50-60% F1 (Martian Code Review Bench), so they remain a first-pass
+  filter, not a gate. Steering an agent mid-task degrades output (Cognition's own Devin guidance);
+  front-load the spec, iterate after it finishes.
+- Skill formation is a deliberate trade (Anthropic research, Feb 2026: AI assistance measurably
+  hurts comprehension when learning new libraries). Hashimoto's framing applies here: delegate the
+  slam dunks, keep working manually on whatever you want to stay sharp at
+  (mitchellh.com/writing/my-ai-adoption-journey). This is the basis for the verdict-vs-question
+  routing rule below.
 
 ## Workflow rules
 
@@ -33,6 +51,10 @@ artifacts themselves, and history lives in git.
   main (review happened synchronously). Dispatched tickets always go through a branch and PR (review
   happens asynchronously).
 - Tickets exist only as dispatch fuel. No ticket regime for interactive work.
+- Routing signal for dispatch vs interactive: can the review be given in verdicts? If feedback
+  would mostly be questions (new library, unformed taste), the learning is the work; do it
+  interactively, or dispatch a first draft and pull it into a TUI session in the worktree. PR
+  comments carry verdicts well and dialogue poorly (evidence: recyclarr PR 859 / REC-151).
 - Solo repos: no branch protection or required approvals. The PR is an inspection surface, not a
   gate; merge stays one keystroke after a green skim.
 
