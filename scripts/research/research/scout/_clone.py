@@ -14,6 +14,7 @@ import click
 
 CLONE_BASE = Path("/tmp/research-repos")
 STALE_SECONDS = 3600  # 1 hour
+CLONE_MAX_AGE = 7 * 24 * 3600  # 7 days before a clone is pruned
 MARKER = ".last_fetched"
 
 
@@ -85,6 +86,31 @@ def _is_ready(repo_dir: Path) -> bool:
     return (repo_dir / MARKER).exists()
 
 
+def _cleanup_stale_clones(skip_owner: str, skip_repo: str) -> None:
+    """Remove repo clones whose marker is older than CLONE_MAX_AGE."""
+    import shutil
+
+    if not CLONE_BASE.exists():
+        return
+    now = time.time()
+    for owner_dir in CLONE_BASE.iterdir():
+        if not owner_dir.is_dir():
+            continue
+        for repo_dir in owner_dir.iterdir():
+            if not repo_dir.is_dir():
+                continue
+            if owner_dir.name == skip_owner and repo_dir.name == skip_repo:
+                continue
+            marker = repo_dir / MARKER
+            if not marker.exists():
+                continue
+            try:
+                if now - marker.stat().st_mtime > CLONE_MAX_AGE:
+                    shutil.rmtree(repo_dir, ignore_errors=True)
+            except OSError:
+                pass
+
+
 def ensure_repo(owner: str, repo: str) -> Path:
     """Ensure repo is cloned and fresh; return local path.
 
@@ -96,6 +122,9 @@ def ensure_repo(owner: str, repo: str) -> Path:
     Readiness is determined by the marker file, not directory existence,
     because ``git clone`` creates the target directory before it finishes
     populating files.
+
+    Opportunistically removes sibling clones whose marker is older than
+    ``CLONE_MAX_AGE`` (7 days) without blocking the caller.
     """
     repo_dir = _repo_dir(owner, repo)
 
@@ -105,12 +134,14 @@ def ensure_repo(owner: str, repo: str) -> Path:
         if age > STALE_SECONDS:
             with _repo_lock(owner, repo):
                 _do_pull_if_stale(repo_dir, owner, repo)
+        _cleanup_stale_clones(owner, repo)
         return repo_dir
 
     # Clone needed; re-check under lock (another process may have won).
     with _repo_lock(owner, repo):
         if not _is_ready(repo_dir):
             _do_clone(repo_dir, owner, repo)
+    _cleanup_stale_clones(owner, repo)
     return repo_dir
 
 

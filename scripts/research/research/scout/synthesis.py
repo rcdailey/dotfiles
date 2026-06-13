@@ -14,6 +14,31 @@ from research.scout import cli
 from research.scout._common import parse_repo
 
 
+def _filter_changelog(content: str, since: str | None) -> str:
+    """Return content trimmed to start at the heading containing since tag."""
+    if not since:
+        return content
+    since_lower = since.lower()
+    lines = content.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped.startswith("#") and since_lower in line.lower():
+            return "".join(lines[i:])
+    return content  # tag not found; return full content
+
+
+def _filter_releases_since(releases: list[dict], since: str) -> list[dict]:
+    """Return releases published strictly after the since tag's publish date."""
+    since_date: str = ""
+    for r in releases:
+        if r.get("tagName") == since:
+            since_date = r.get("publishedAt", "")
+            break
+    if not since_date:
+        return releases
+    return [r for r in releases if r.get("publishedAt", "") > since_date]
+
+
 @cli.command()
 @click.argument("repo")
 @click.option("--days", type=int, default=7)
@@ -40,7 +65,7 @@ def activity(repo: str, days: int) -> None:
         issues = [
             i
             for i in list_issues(owner, name, state="closed", limit=30)
-            if i.get("createdAt") and i["createdAt"] >= since
+            if i.get("closedAt") and i["closedAt"] >= since
         ]
     except APIError:
         issues = []
@@ -77,7 +102,7 @@ def activity(repo: str, days: int) -> None:
         for i in issues:
             click.echo(
                 format_list_item(
-                    i["number"], i["state"], i.get("createdAt", ""), i.get("title", "N/A")
+                    i["number"], i["state"], i.get("closedAt", ""), i.get("title", "N/A")
                 )
             )
 
@@ -110,13 +135,16 @@ def changelog(repo: str, since: str | None) -> None:
 
     if content:
         click.echo(sub_heading(f"From {source_name}"))
-        click.echo(truncate_output(content, 8000))
+        click.echo(truncate_output(_filter_changelog(content, since), 8000))
         click.echo("")
 
     try:
         releases = list_releases(owner, name, limit=10)
     except APIError:
         releases = []
+
+    if since:
+        releases = _filter_releases_since(releases, since)
 
     if releases:
         click.echo(sub_heading("Recent Releases"))
@@ -132,5 +160,3 @@ def changelog(repo: str, since: str | None) -> None:
             click.echo(f"- **{tag}** ({published}){flag_str}")
             if r.get("name"):
                 click.echo(f"  {r['name']}")
-
-    _ = since

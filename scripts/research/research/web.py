@@ -11,6 +11,7 @@ from research._cache import get_cache, read_cached_content, write_cached_content
 from research._fetch import FetchError, fetch_markdown
 from research._linkup import SearchError, format_search_results
 from research._render import (
+    DEFAULT_MAX_CHARS,
     apply_find,
     is_github_url,
     is_pdf_url,
@@ -20,7 +21,6 @@ from research._render import (
 )
 
 DEFAULT_MAX_RESULTS = 5
-DEFAULT_MAX_CHARS = 20000
 
 
 @click.group(invoke_without_command=False)

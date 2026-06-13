@@ -9,9 +9,7 @@ import click
 
 from research._budget import budget_refund, budget_reserve
 from research._cache import get_cache, read_cached_content, write_cached_content
-from research._render import apply_find, truncate_output
-
-DEFAULT_MAX_CHARS = 20000
+from research._render import DEFAULT_MAX_CHARS, apply_find, truncate_output
 
 
 @click.command()

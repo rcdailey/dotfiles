@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from typing import TYPE_CHECKING
 
@@ -10,12 +11,12 @@ import click
 if TYPE_CHECKING:
     from diskcache import Cache
 
-MAX_CALLS = 20
-CHECKPOINT_AT = MAX_CALLS // 2  # mid-session assessment
-WARNING_AT = MAX_CALLS - 3  # final warning
+MAX_CALLS: int = int(os.environ.get("RESEARCH_BUDGET_LIMIT") or 15)
+CHECKPOINT_AT: int = MAX_CALLS // 2  # mid-session assessment
+WARNING_AT: int = MAX_CALLS - 3  # final warning
 
-_COUNT_KEY = "count"
-_URL_PREFIX = "url:"
+_COUNT_KEY = "budget:count"
+_SEEN_PREFIX = "seen:"
 
 
 def budget_message(count: int) -> str:
@@ -56,12 +57,12 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
     If cached_url was already seen this session, no slot is consumed.
     On budget exhaustion, prints the message then exits 1.
     """
-    url_key = f"{_URL_PREFIX}{cached_url}" if cached_url else None
+    seen_key = f"{_SEEN_PREFIX}{cached_url}" if cached_url else None
 
     with cache.transact():
         count = cache.get(_COUNT_KEY, 0)
 
-        if url_key and url_key in cache:
+        if seen_key and seen_key in cache:
             remaining = MAX_CALLS - count
             click.echo(
                 f"\n[cache hit; budget unchanged at {count}/{MAX_CALLS} used, "
@@ -71,8 +72,8 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
 
         count += 1
         cache.set(_COUNT_KEY, count)
-        if url_key:
-            cache.set(url_key, True)
+        if seen_key:
+            cache.set(seen_key, True)
         click.echo(budget_message(count))
 
     if count > MAX_CALLS:
@@ -82,10 +83,10 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
 def budget_refund(cache: Cache, cached_url: str | None = None) -> None:
     """Return a budget slot after a failed tool call.
 
-    Reverses a prior budget_reserve: decrements count and removes the URL
+    Reverses a prior budget_reserve: decrements count and removes the seen
     key if one was recorded. Prints a notice to stderr so the agent sees it.
     """
-    url_key = f"{_URL_PREFIX}{cached_url}" if cached_url else None
+    seen_key = f"{_SEEN_PREFIX}{cached_url}" if cached_url else None
 
     with cache.transact():
         count = cache.get(_COUNT_KEY, 0)
@@ -93,8 +94,8 @@ def budget_refund(cache: Cache, cached_url: str | None = None) -> None:
             return
         count -= 1
         cache.set(_COUNT_KEY, count)
-        if url_key and url_key in cache:
-            cache.delete(url_key)
+        if seen_key and seen_key in cache:
+            cache.delete(seen_key)
 
     remaining = MAX_CALLS - count
     click.echo(
@@ -114,7 +115,7 @@ def format_status(cache: Cache) -> str:
     count = cache.get(_COUNT_KEY, 0)
     remaining = MAX_CALLS - count
     lines = [f"{count}/{MAX_CALLS} calls used, {remaining} remaining"]
-    url_count = sum(1 for k in cache if isinstance(k, str) and k.startswith(_URL_PREFIX))
+    url_count = sum(1 for k in cache if isinstance(k, str) and k.startswith(_SEEN_PREFIX))
     if url_count:
         lines.append(f"cached URLs: {url_count}")
     return "\n".join(lines)

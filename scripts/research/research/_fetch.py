@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from urllib.parse import urlparse, urlunparse
 
 import httpx
@@ -9,6 +10,7 @@ import trafilatura
 from lxml import html as lxml_html
 
 _TIMEOUT = 15.0
+_RETRY_DELAY = 1.5  # seconds before retry attempt
 _USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
@@ -80,22 +82,34 @@ def _extract_reddit(html_text: str) -> str:
 
 
 def _fetch_response(url: str) -> httpx.Response:
-    """Fetch URL and return response; raises FetchError on failure."""
-    try:
-        response = httpx.get(
-            url,
-            follow_redirects=True,
-            timeout=_TIMEOUT,
-            headers={"User-Agent": _USER_AGENT},
-        )
-        response.raise_for_status()
-    except httpx.TimeoutException as e:
-        raise FetchError("timeout") from e
-    except httpx.HTTPStatusError as e:
-        raise FetchError(f"HTTP {e.response.status_code}") from e
-    except httpx.HTTPError as e:
-        raise FetchError(f"URL unreachable: {e}") from e
-    return response
+    """Fetch URL and return response; raises FetchError on failure.
+
+    Retries once after a short delay on timeout or HTTP 5xx. Non-retryable
+    errors (4xx, connection refused) fail immediately.
+    """
+    for attempt in range(2):
+        try:
+            response = httpx.get(
+                url,
+                follow_redirects=True,
+                timeout=_TIMEOUT,
+                headers={"User-Agent": _USER_AGENT},
+            )
+            response.raise_for_status()
+            return response
+        except httpx.TimeoutException as e:
+            if attempt == 0:
+                time.sleep(_RETRY_DELAY)
+                continue
+            raise FetchError("timeout") from e
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code >= 500 and attempt == 0:
+                time.sleep(_RETRY_DELAY)
+                continue
+            raise FetchError(f"HTTP {e.response.status_code}") from e
+        except httpx.HTTPError as e:
+            raise FetchError(f"URL unreachable: {e}") from e
+    raise FetchError("timeout")  # unreachable; satisfies type checker
 
 
 def fetch_markdown(url: str) -> str:

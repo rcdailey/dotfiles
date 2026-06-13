@@ -32,7 +32,10 @@ def fenced_code(content: str, language: str = "") -> str:
     return f"\n```{language}\n{content}\n```\n"
 
 
-def truncate_output(text: str, max_chars: int, default_max: int = 20000) -> str:
+DEFAULT_MAX_CHARS = 20000
+
+
+def truncate_output(text: str, max_chars: int) -> str:
     """Truncate text with helpful message.
 
     max_chars <= 0 disables truncation.
@@ -47,12 +50,23 @@ def truncate_output(text: str, max_chars: int, default_max: int = 20000) -> str:
 
 
 def apply_find(text: str, pattern: str, context: int) -> str:
-    """Return paragraphs matching pattern with context paragraphs around them."""
+    """Return paragraphs matching pattern with context paragraphs around them.
+
+    Pattern is tried as a case-insensitive regex. Falls back to literal
+    substring matching when the pattern is not valid regex.
+    """
     paragraphs = text.split("\n\n")
-    needle = pattern.lower()
+
+    try:
+        compiled = re.compile(pattern, re.IGNORECASE)
+        matches = compiled.search
+    except re.error:
+        needle = pattern.lower()
+        matches = lambda para: needle in para.lower()  # noqa: E731
+
     keep: set[int] = set()
     for i, para in enumerate(paragraphs):
-        if needle in para.lower():
+        if matches(para):
             lo = max(0, i - context)
             hi = min(len(paragraphs), i + context + 1)
             keep.update(range(lo, hi))

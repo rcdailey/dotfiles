@@ -107,7 +107,7 @@ def list_issues(
     args = ["issue", "list", "-R", f"{owner}/{repo}", "-s", state, "-L", str(limit)]
     if search:
         args.extend(["-S", search])
-    args.extend(["--json", "number,title,state,createdAt"])
+    args.extend(["--json", "number,title,state,createdAt,closedAt"])
 
     result = _run_gh(args, check=False)
     if result.returncode != 0:
@@ -223,6 +223,23 @@ def view_release(owner: str, repo: str, tag: str) -> dict:
         raise APIError(f"invalid JSON: {e}") from e
 
 
+def _parse_paginated(text: str) -> list:
+    """Parse concatenated JSON arrays output by gh api --paginate."""
+    decoder = json.JSONDecoder()
+    items: list = []
+    pos = 0
+    text = text.strip()
+    while pos < len(text):
+        while pos < len(text) and text[pos] in " \n\r\t":
+            pos += 1
+        if pos >= len(text):
+            break
+        obj, pos = decoder.raw_decode(text, pos)
+        if isinstance(obj, list):
+            items.extend(obj)
+    return items
+
+
 def list_commits(
     owner: str,
     repo: str,
@@ -232,8 +249,12 @@ def list_commits(
     author: str | None = None,
     limit: int = 30,
 ) -> list[dict]:
-    """List commits in a repository."""
-    params: dict[str, str] = {"per_page": str(limit)}
+    """List commits in a repository.
+
+    When limit > 100, uses gh --paginate (GitHub REST caps per_page at 100)
+    and truncates the result to limit items.
+    """
+    params: dict[str, str] = {}
     if since:
         params["since"] = since
     if until:
@@ -244,11 +265,26 @@ def list_commits(
         params["author"] = author
 
     endpoint = f"repos/{owner}/{repo}/commits"
-    if params:
-        query = "&".join(f"{k}={v}" for k, v in params.items())
-        endpoint += f"?{query}"
 
-    data = api(endpoint)
+    if limit > 100:
+        params["per_page"] = "100"
+        query = "&".join(f"{k}={v}" for k, v in params.items())
+        ep = f"{endpoint}?{query}" if query else endpoint
+        result = _run_gh(["api", "--paginate", ep], check=False)
+        if result.returncode != 0:
+            raise APIError(result.stderr.strip() or "failed to list commits")
+        try:
+            data = _parse_paginated(result.stdout)
+        except (json.JSONDecodeError, ValueError) as e:
+            raise APIError(f"invalid JSON: {e}") from e
+        if not isinstance(data, list):
+            raise APIError("unexpected response type from commits API")
+        return data[:limit]
+
+    params["per_page"] = str(limit)
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    ep = f"{endpoint}?{query}" if query else endpoint
+    data = api(ep)
     if not isinstance(data, list):
         raise APIError("unexpected response type from commits API")
     return data
