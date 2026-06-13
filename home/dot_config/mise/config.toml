@@ -35,6 +35,16 @@ node = "latest"
 # Use: curl -fsSL https://opencode.ai/install | bash
 # opencode = "latest"
 
+# Release assets are bare binaries; plannotator-paste-* assets make autodetection
+# ambiguous, so pin the asset per platform
+[tools."github:backnotprop/plannotator"]
+version = "latest"
+bin = "plannotator"
+
+[tools."github:backnotprop/plannotator".platforms]
+linux-x64 = { asset_pattern = "plannotator-linux-x64" }
+macos-arm64 = { asset_pattern = "plannotator-darwin-arm64" }
+
 [settings]
 activate_aggressive = true
 auto_install = true
