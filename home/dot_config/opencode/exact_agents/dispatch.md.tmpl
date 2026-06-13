@@ -7,7 +7,7 @@ permission:
   question: deny
   # plannotator is registered for all agents; plan review is interactive and
   # would block a headless run waiting for browser annotation
-  plannotator_submit_plan: deny
+  "*submit_plan": deny
   # Headless runs auto-reject permission asks, so every rule must resolve to
   # allow or deny. Each "ask" pattern from the global config is overridden here.
   # deny first, then re-allow paths the tooling itself needs (last match wins);
