@@ -19,9 +19,16 @@ permission:
     "rg *": allow
     "gh pr view *": allow
     "gh pr checks *": allow
+    "gh pr diff *": allow
     "git log*": allow
     "git diff*": allow
     "git show*": allow
+    "git branch*": allow
+    "git status": allow
+    "head *": allow
+    "tail *": allow
+    "echo *": allow
+    "wc *": allow
 ---
 
 You research dependency upgrades and return structured findings. Read-only; investigate and report.
@@ -56,6 +63,10 @@ research status                                # budget usage
 ```
 
 **Quoting:** Search queries must be a single quoted string. Never nest quotes inside the query.
+
+**Do not pipe research commands.** Research commands handle their own output formatting and
+truncation. NEVER append `| head`, `| tail`, `| grep`, `2>&1`, or `2>/dev/null` to research
+commands. Use `--find` for filtering and `--limit` for truncation where available.
 
 **Budget:** `research web` commands are budget-tracked (default limit: 15). Scout commands have no
 budget limit. Prefer scout for GitHub-hosted content. Repeated `web fetch` calls to the same URL
