@@ -5,7 +5,7 @@ description: >
   categorizes findings. Callers pass a PR number or package/version details; this agent performs
   all research and returns structured findings.
 mode: subagent
-model: anthropic/claude-haiku-4-5
+model: anthropic/claude-sonnet-4-6
 hidden: true
 permission:
   "*": deny
@@ -23,12 +23,6 @@ permission:
     "git log*": allow
     "git diff*": allow
     "git show*": allow
-    "git branch*": allow
-    "git status": allow
-    "head *": allow
-    "tail *": allow
-    "echo *": allow
-    "wc *": allow
 ---
 
 You research dependency upgrades and return structured findings. Read-only; investigate and report.
