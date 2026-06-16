@@ -27,9 +27,9 @@ an open PR the user has not reviewed instead of being handed a number.
 
 Resolve the repo target for `gh`:
 
-- Directory path: run subsequent `gh` commands with `--repo` resolved from that path, e.g.
-  `gh repo view --json nameWithOwner -q .nameWithOwner` executed in that directory, or pass the path
-  via the `workdir` of the call.
+- Directory path: run subsequent `gh` commands with `--repo` resolved from that path, e.g. `gh repo
+  view --json nameWithOwner -q .nameWithOwner` executed in that directory, or pass the path via the
+  `workdir` of the call.
 - `owner/repo` or bare repo name: pass directly as `--repo {target}` (a bare name resolves against
   the user's default owner).
 
@@ -44,8 +44,7 @@ If the list is empty, STOP and report: no open PRs are awaiting the user's revie
 not fall back to reviewing local changes.
 
 Otherwise select the least-recently-updated PR (first entry by `updatedAt` ascending) and continue
-from step 1 using its number. State which PR was auto-selected and why before
-proceeding.
+from step 1 using its number. State which PR was auto-selected and why before proceeding.
 
 ### 1. Gather Context
 
@@ -91,14 +90,28 @@ single query with LLM-optimized prose output. Resolved threads are filtered out 
 
 **For current changes:** `git status` and `git diff HEAD`
 
-### 2. Skip Already-Flagged Issues
+### 2. Rename Session
+
+Rename the session using `session_rename` so it's identifiable in the session list.
+
+Format: `PR #N: TICKET-ID short description` where TICKET-ID is a Linear or GitHub issue key
+referenced in the PR title, body, or branch name. If no ticket ID is found, omit it: `PR #N: short
+description`. The description should be under 10 words and capture the PR's purpose.
+
+Examples:
+
+- `PR #42: ENG-318 add rate limiting to auth endpoints`
+- `PR #16: fix null pointer in session cleanup`
+- `PR #88: OPS-12 migrate Redis to cluster mode`
+
+### 3. Skip Already-Flagged Issues
 
 Before formulating feedback, cross-reference against the comment output from `gh-review view`. If a
 bot or human already flagged an issue, leave it alone; don't post a second comment even if the
 existing one is incomplete or could be improved. Only post comments that identify net new issues not
 raised anywhere on the PR.
 
-### 3. Analyze
+### 4. Analyze
 
 Read the changed files from the worktree path (or current working copy for non-PR reviews). Read at
 most 2-3 directly relevant callsites per finding to understand how the changed code is used. Do not
@@ -120,7 +133,7 @@ gap in Citations.
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.
 
-### 4. Compose and Post Comments
+### 5. Compose and Post Comments
 
 Load the `humanizer` skill before composing comment bodies (not in parallel with posting). Apply the
 tone and etiquette guidelines from the `gh-pr-review` skill.
@@ -210,7 +223,7 @@ gh-review comment --review-id PRR_... --path {file} --body '{body}'
 File-level comments cannot carry `suggestion` blocks (suggestions need a line range). Use a `diff`
 block with a line annotation instead, as described above.
 
-### 5. Report
+### 6. Report
 
 Output these sections in the conversation (not a file):
 

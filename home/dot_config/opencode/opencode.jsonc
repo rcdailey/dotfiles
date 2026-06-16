@@ -12,7 +12,6 @@
     "plan": { "disable": true },
     "title": {
       "model": "anthropic/claude-haiku-4-5",
-      "prompt": "{file:prompts/title.txt}",
     },
     "compaction": {
       "model": "anthropic/claude-haiku-4-5",
