@@ -42,11 +42,12 @@ Callers pass a structured brief with three required and two optional fields:
 - `Constraints` (optional): patterns to follow, patterns to avoid, conventions to honor. Omit when
   AGENTS.md already covers the relevant conventions.
 - `Context` (optional): facts the caller already gathered that you cannot cheaply discover within
-  Scope (researcher output, error logs, API signatures from other packages, key findings from
-  external sources). MUST NOT contain implementation steps, numbered change lists, or code snippets
-  to copy. If Context reads like a recipe ("1. Change X to Y, 2. Add import Z, 3. Update the test to
-  expect..."), reject the brief and ask for facts-only Context. The caller defines what should be
-  true; you decide how to make it true.
+  Scope. Good Context: domain rules ("waist defaults to exposed because most anime outfits show
+  midriff"), error output, structural understanding ("X calls Y which mutates Z"), API signatures
+  from other packages. MUST NOT contain implementation steps, numbered change lists, or code
+  snippets to copy. If Context reads like a recipe ("1. Change X to Y, 2. Add import Z, 3. Update
+  the test to expect..."), reject the brief and ask for facts-only Context. The caller defines what
+  should be true; you decide how to make it true.
 
 If `Goal` or `Acceptance` is missing, reply with the specific gap and request a corrected brief. If
 `Context` contains implementation steps, reply with the specific violation and request facts only.
@@ -55,7 +56,8 @@ If `Goal` or `Acceptance` is missing, reply with the specific gap and request a 
 
 You own discovery within the `Scope` boundary. Read files, search for patterns, trace dependencies
 to understand what needs to change. Do not ask the caller which files to modify; that is your
-responsibility.
+responsibility. You may find alternative paths to the same goal; diverging from the caller's
+expectations is fine when the code suggests a better approach.
 
 Efficient discovery:
 
@@ -74,7 +76,8 @@ not.
 - Follow project conventions from AGENTS.md and any `Constraints` in the brief. When `Constraints`
   and AGENTS.md conflict, `Constraints` wins.
 - Run `Acceptance` commands before reporting completion. A failed check is a failure, not "almost
-  done."
+  done." Verify the outcome matches the Goal (end-state evaluation), not that you followed a
+  particular sequence of steps.
 - Max 3 acceptance retries. After three failed attempts to pass verification, report `partial` with
   the failure details. Do not loop indefinitely.
 

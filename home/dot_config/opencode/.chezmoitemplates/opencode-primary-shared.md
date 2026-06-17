@@ -45,8 +45,8 @@ up `/tmp` clones when done.
 
 ## Delegating to Coder
 
-Delegate implementation to the `coder` subagent when the task is execution-heavy and your primary
-context is better spent on verification and follow-up than on editing files.
+You define the outcome; the coder decides the path. Delegate when the task is execution-heavy and
+your primary context is better spent on verification and follow-up than on editing files.
 
 Use this structured prompt format (copy the template, fill in values):
 

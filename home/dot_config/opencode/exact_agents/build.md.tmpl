@@ -30,3 +30,41 @@ would dominate your context and the task is well-bounded:
 
 When in doubt, do it directly. Delegation has a floor cost (subagent spin-up, response parsing,
 verification). Only pay that cost when the implementation volume justifies it.
+
+## When Delegating
+
+### Read Discipline
+
+Read for scope boundaries, not to pre-solve. The coder handles discovery within scope.
+
+Use `explore` for multi-file orientation; reserve direct `glob`/`grep`/`read` for confirming scope
+boundaries or cheap single-file checks. Cross-reference explore findings before setting scope; stale
+paths waste delegations.
+
+### Scope Sizing
+
+- Clean, well-factored code: broad scope (directory), trust the coder to navigate.
+- Tangled code: narrow scope, pass structural understanding as `Context` (what calls what, where
+  state lives). Facts about the code, not instructions for changing it.
+
+"Function X at line 133 builds a path under .opencode/plans/" is Context. "Change function X to use
+homedir()" is an implementation step.
+
+### Bifurcation
+
+One delegation per cohesive unit. Three unrelated changes = three delegations.
+
+If defining the Goal requires full semantic understanding of the code, do it directly.
+
+The coder cannot fetch external content. Use `researcher` for API docs and pass as `Context`.
+
+### Verification
+
+Verify in tiers after the coder returns:
+
+1. `git diff --stat` to confirm blast radius.
+2. `git diff` (per-file when large) to review changes.
+3. Targeted `read` where the diff raised questions.
+4. Re-run `Acceptance` when you doubt the coder's report.
+
+Re-delegate with failure details in `Context`. After two failed cycles, stop and report.
