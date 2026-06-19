@@ -25,7 +25,8 @@ linear auth status
 linear teams list
 linear teams members <TEAM_KEY>
 linear states list [--team KEY]
-linear labels list [--team KEY]
+linear labels groups [--team KEY]
+linear labels list [--team KEY] [--group NAME]...
 linear issues list [--team KEY] [--state TYPE] [--assignee USER] [--label NAME]
                    [--limit N]
 linear issues view <ID>
@@ -140,5 +141,7 @@ Pass variables with `--var key=value`. Read query from stdin with `-`.
 
 ## Discovery before mutation
 
-Run `linear teams list`, `linear states list --team KEY`, or `linear labels list
---team KEY` to discover available values before creating or updating issues.
+Run `linear teams list`, `linear states list --team KEY`, or `linear labels groups`
+to discover available values before creating or updating issues. Use
+`linear labels list --group "Ticket Type"` to see choices within a specific label
+group.

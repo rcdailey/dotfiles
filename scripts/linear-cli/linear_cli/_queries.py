@@ -57,8 +57,12 @@ query States($filter: WorkflowStateFilter) {
 """
 
 LABELS_QUERY = """
-query Labels($filter: IssueLabelFilter) {
-  issueLabels(filter: $filter) {
+query Labels($filter: IssueLabelFilter, $first: Int, $after: String) {
+  issueLabels(filter: $filter, first: $first, after: $after) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
     nodes {
       id
       name
@@ -68,13 +72,30 @@ query Labels($filter: IssueLabelFilter) {
         id
         name
       }
-      children {
-        nodes {
-          id
-          name
-          color
-        }
-      }
+    }
+  }
+}
+"""
+
+LABEL_GROUPS_QUERY = """
+query LabelGroups($filter: IssueLabelFilter) {
+  issueLabels(filter: $filter) {
+    nodes {
+      id
+      name
+      color
+    }
+  }
+}
+"""
+
+LABEL_CHILDREN_QUERY = """
+query LabelChildren($filter: IssueLabelFilter) {
+  issueLabels(filter: $filter) {
+    nodes {
+      id
+      name
+      color
     }
   }
 }
