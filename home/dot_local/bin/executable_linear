@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+exec uv run --quiet \
+  --project "$(chezmoi source-path)/../scripts/linear-cli" \
+  -m linear_cli "$@"

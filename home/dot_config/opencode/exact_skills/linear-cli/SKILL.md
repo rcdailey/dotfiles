@@ -1,81 +1,104 @@
 ---
 name: linear-cli
 description: >-
-  Use when operating on the Linear issue tracker via the `linear` CLI: creating, viewing, querying,
-  or updating issues, projects, milestones, labels, or documents; adding or editing issue comments;
-  assigning, labeling, or transitioning issues; listing team members. Triggers on phrases like
-  "create a Linear issue", "file a ticket", "update ENG-###", "move to Ready For Dev", "add a
-  comment to the Linear issue", or any task naming Linear, a Linear issue key (`ENG-`, `OPS-`,
-  etc.), a Linear project, or a Linear milestone. Do NOT use for GitHub Issues, Jira, or other
-  trackers.
+  Use when operating on the Linear issue tracker via the `linear` CLI: creating,
+  viewing, querying, or updating issues, projects, or documents; adding or editing
+  issue comments; managing relations, links, labels, and teams; assigning,
+  labeling, or transitioning issues. Triggers on phrases like "create a Linear
+  issue", "file a ticket", "update ENG-###", "move to Ready For Dev", "add a
+  comment to the Linear issue", "link a PR to the issue", "block ENG-42", or any
+  task naming Linear, a Linear issue key (`ENG-`, `OPS-`, etc.), a Linear project,
+  or a Linear document. Do NOT use for GitHub Issues, Jira, or other trackers.
 ---
 
 # Linear CLI
 
-Use `linear` for Linear issue tracker operations. Lines below are usage signatures (not examples):
-`<required>`, `[optional]`. Run `linear <group> <cmd> -h` for the full flag set.
-
-- Groups: `issue`, `team`, `project`, `milestone`, `label`, `document`
+Python CLI wrapping the Linear GraphQL API. Authenticates via stored OAuth token
+(`linear auth login`) or `LINEAR_API_KEY` env var. Run `linear <group> <cmd> -h`
+for the full flag set.
 
 ```txt
-linear team members [teamKey]
-linear project list [--all-teams] [--team KEY] [--status NAME]
-linear label list [--all | --team KEY | --workspace]
-linear issue view [ID] [-w]
-linear issue query [--search TERM] [-s STATE] [--project NAME] [--assignee USER] [--limit N]
-linear issue create <-t title> <-d desc> [-s STATE] [--project NAME] [--milestone NAME]
-                    [-l LABEL]... [--estimate N] [--assignee self|USER] [--no-interactive]
-linear issue update <ID> [-t title] [-d desc] [-s state] [--priority 1-4] [-a assignee]
-                    [-l LABEL]... [--parent ID]
-linear issue comment add [ID] <-b body> [-p parent-comment-id]
-linear issue comment update <commentId> <-b body>
-linear issue comment list [ID]
-linear issue relation add <ID> <blocked-by|blocks|related|duplicate> <relatedID>
-linear issue relation delete <ID> <relationType> <relatedID>
-linear issue relation list [ID]
-linear issue link <urlOrID> [url] [-t TITLE]
+linear me
+linear auth login [--oauth | --api-key] [--port N]
+linear auth logout
+linear auth status
+linear teams list
+linear teams members <TEAM_KEY>
+linear states list [--team KEY]
+linear labels list [--team KEY]
+linear issues list [--team KEY] [--state TYPE] [--assignee USER] [--label NAME]
+                   [--limit N]
+linear issues view <ID>
+linear issues create --title TEXT --team KEY [--description TEXT] [--state NAME]
+                     [--priority 0-4] [--assignee USER] [--label NAME]...
+                     [--parent ID] [--estimate N] [--project NAME]
+linear issues update <ID> [--title TEXT] [--state NAME] [--priority 0-4]
+                     [--assignee USER] [--add-label NAME]...
+                     [--remove-label NAME]... [--estimate N] [--project NAME]
+linear comments list <ISSUE_ID>
+linear comments add <ISSUE_ID> --body TEXT [--parent COMMENT_ID]
+linear comments edit <COMMENT_ID> --body TEXT
+linear relations list <ISSUE_ID>
+linear relations add <ISSUE_ID> <TYPE> <RELATED_ID>
+linear relations remove <ISSUE_ID> <TYPE> <RELATED_ID>
+linear links list <ISSUE_ID>
+linear links add <ISSUE_ID> <URL> [--title TEXT]
+linear links remove <LINK_ID>
+linear projects list [--team KEY]
+linear projects view <ID_OR_NAME>
+linear documents list [--project NAME]
+linear documents view <ID>
+linear api <QUERY> [--var key=value]...
 ```
 
-## Linking issues
+## Auth
 
-Three distinct mechanisms; pick by intent:
+`linear auth login` opens the browser for OAuth (when `LINEAR_CLIENT_ID` is set)
+or prompts for an API key. Tokens are stored at
+`~/.local/state/linear-cli/tokens.json`. `LINEAR_API_KEY` env var overrides
+stored credentials when set.
 
-- `linear issue relation add` for issue-to-issue semantics (`blocked-by`, `blocks`, `related`,
-  `duplicate`). Use for dependency graphs and duplicate merges.
-- `linear issue update <ID> --parent <parentID>` for parent/child hierarchy (sub-issues).
-- `linear issue link` for issue-to-URL attachments (GitHub PRs, design docs, external refs); `-t`
-  sets a custom display title.
+## Identifier resolution
+
+The CLI resolves human-readable names to UUIDs internally. Never pass UUIDs for
+teams, states, or labels; use display names or keys instead.
+
+- `--team` takes a team key (e.g. `ENG`), not a UUID
+- `--state` on `issues list` takes a state type (`triage`, `backlog`, `unstarted`,
+  `started`, `completed`, `canceled`)
+- `--state` on `issues create` and `issues update` takes a display name
+  (e.g. `"Ready For Dev"`, `"In Progress"`)
+- `--assignee` accepts `me` (resolves via viewer query) or a user UUID
+- `--label` takes a label display name, case-insensitive
+- `--project` takes a project display name
 
 ## Create in one shot
 
-`linear issue create` accepts every field the issue needs at birth. Gather title, state, labels,
-project, milestone, estimate, assignee, and description, then issue one `create` call. Do NOT create
-a bare issue and patch it with follow-up `linear issue update` invocations to set state or labels;
+`linear issues create` accepts every field the issue needs at birth. Gather title,
+state, labels, assignee, and description, then issue one `create` call. Do NOT
+create a bare issue and patch it with `linear issues update` to set state or labels;
 that is the failure mode this skill exists to prevent.
 
 Checklist before calling `create`:
 
-- Title (including any template prefix such as `BE:`, `FE:`)
-- `-s` state (e.g. `Ready For Dev`) if the issue should not land in Triage
-- `-l` labels (repeat the flag per label) if the template requires them
-- `--project` and `--milestone` when applicable
-- `--estimate` and `--assignee` when known
-- `--no-interactive` for scripted/agent use
+- `--title` (including any template prefix such as `BE:`, `FE:`)
+- `--state` display name if the issue should not land in Triage
+- `--label` (repeat per label) if the template requires them
+- `--priority`, `--assignee`, `--estimate` when known
+- `--project` when applicable
+- `--description` for the issue body (markdown)
 
-Pass the description inline via `-d` with a quoted heredoc; this keeps creation to a single tool
-turn and avoids a temp-file round trip. Quote the delimiter (`'EOF'`) so `$`, backticks, and
-backslashes in the markdown pass through literally.
-
-Place `-d` last so the flag block stays compact and the body trails:
+Pass the description inline with a quoted heredoc:
 
 ```bash
-linear issue create \
-  -t "BE: Medscape OIDC processor and client config" \
-  -s "Ready For Dev" \
-  --project "Medscape" --milestone "SSO" \
-  -l "Product" -l "Feature Work" -l "Back end" \
-  --estimate 3 --assignee self --no-interactive \
-  -d "$(cat <<'EOF'
+linear issues create \
+  --title "BE: Medscape OIDC processor and client config" \
+  --team ENG \
+  --state "Ready For Dev" \
+  --label "Product" --label "Feature Work" --label "Back end" \
+  --priority 2 --assignee me --estimate 3 \
+  --project "Sprint 42" \
+  --description "$(cat <<'EOF'
 ## Goal
 
 Multi-line markdown body goes here.
@@ -83,30 +106,39 @@ EOF
 )"
 ```
 
-Fall back to `--description-file PATH` only when the body contains a literal `EOF` line that would
-terminate the heredoc, or when the description has already been written to disk for unrelated
-reasons.
+## Priority values
 
-## Output format
+0 = No priority, 1 = Urgent, 2 = High, 3 = Medium, 4 = Low.
 
-NEVER use `--json` or any structured-output flag with `linear`. The CLI's prose output is the only
-supported format; parse it directly when needed.
+## Relations
 
-## Flag value gotchas
+Relation types for `linear relations add/remove`: `blocks`, `blocked-by`,
+`related`, `duplicate`.
 
-- `--project` and `--milestone` take display names (e.g. `"My Project"`, `"v2 Launch"`), not UUIDs.
-- `-s` / `--state` on `issue query` takes state types (`triage`, `backlog`, `unstarted`, `started`,
-  `completed`, `canceled`), not display names like `"In Progress"` or `"Ready For Dev"`. Display
-  names work on `issue create` and `issue update`, not on `issue query`.
+## Linking issues
 
-## Discovery before mutation
+Three distinct mechanisms; pick by intent:
 
-Run `linear <group> <cmd> -h` to confirm current flags before assuming a field must be set via a
-follow-up command. Most "missing" capabilities on `create` and `update` are just flags that were not
-checked first.
+- `linear relations add` for issue-to-issue semantics (`blocked-by`, `blocks`,
+  `related`, `duplicate`). Use for dependency graphs and duplicate merges.
+- `linear issues update <ID> --parent <parentID>` for parent/child hierarchy
+  (sub-issues).
+- `linear links add` for issue-to-URL attachments (GitHub PRs, design docs,
+  external refs).
 
 ## Comments and updates
 
-Use `linear issue comment add` for new threads and `-p <parent-comment-id>` to reply. Reach for
-`linear issue update` only for fields that genuinely change after creation (state transitions
-mid-work, reassignments, parent linkage), not to finish configuring a newly created issue.
+Use `linear comments add` for new threads and `--parent` to reply to an existing
+comment. `linear comments edit` updates an existing comment's body. Use
+`linear issues update` only for fields that change after creation (state
+transitions, reassignments, label changes, parent linkage).
+
+## Raw API access
+
+`linear api` executes arbitrary GraphQL queries and mutations. Output is JSON.
+Pass variables with `--var key=value`. Read query from stdin with `-`.
+
+## Discovery before mutation
+
+Run `linear teams list`, `linear states list --team KEY`, or `linear labels list
+--team KEY` to discover available values before creating or updating issues.
