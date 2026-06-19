@@ -79,6 +79,16 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Prefer composition (O(n+m)) over inheritance hierarchies (O(n×m)).
 - Document architectural constraints prominently; make violations obvious at design-time.
 
+## Authoring
+
+Applies when producing AGENTS.md, SKILL.md, agent definitions, or command files.
+
+- MUST use minimum tokens. Every word earns its place; bullet lists over paragraphs.
+- MUST NOT introduce redundancies with existing content at any scope.
+- MUST generalize from the concrete task. Extract the underlying principle; strip scenario-specific
+  details (file types, domain objects, tool names) that won't apply to future work.
+- One minimal example beats three detailed ones.
+
 ## Testing
 
 SHOULD write a failing test before implementing features and fixes (test-first). Test at the highest

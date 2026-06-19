@@ -8,7 +8,8 @@ description: >-
 
 # Skill Authoring
 
-Conventions for SKILL.md files. Omissions intentional.
+Conventions for SKILL.md files. Omissions intentional. All authored content MUST follow the
+Authoring rules in global AGENTS.md.
 
 ## Skills vs. AGENTS.md
 
@@ -18,12 +19,8 @@ that apply every session.
 
 Litmus test: would this apply even when you're not thinking about it? Yes = AGENTS.md. No = skill.
 
-Examples:
-
-- "Never commit `.env` files" -> AGENTS.md (invariant)
-- "When writing tests, follow these NUnit patterns" -> skill (procedure)
-- "Use `const` by default" -> AGENTS.md (convention)
-- "When creating decision records, follow this template" -> skill (infrequent workflow)
+Examples: "Never commit `.env` files" -> AGENTS.md (invariant). "When creating decision records,
+follow this template" -> skill (infrequent workflow).
 
 ## Progressive Disclosure
 
@@ -58,17 +55,9 @@ description: Use when [triggering conditions]
 
 ## Description: The Sole Selection Signal
 
-The description is the ONLY signal that decides loading. File name, directory structure, and body
-content are not consulted at selection time. A great body is useless if the description does not
-trigger.
-
-**Bias toward pushy, comprehensive descriptions.** The model undertriggers by default. Missed
-invocations are silent; over-triggers surface as visible misfires the user can correct. When in
-doubt, add more triggers.
-
-**Describe triggers, not workflow.** Descriptions summarizing capabilities cause the model to treat
-the description as a shortcut and skip the body (The Shortcut failure mode). Capability lists and
-"this skill does X" phrasing belong in the body, never the description.
+The description is the ONLY signal for loading. Body content is not consulted at selection time.
+Bias toward pushy descriptions: missed invocations are silent; over-triggers are visible and
+correctable. Describe triggers, not workflow (avoids The Shortcut failure mode).
 
 Required trigger coverage:
 
@@ -101,34 +90,24 @@ description: >-
 
 ## Triggering Reliability
 
-Description tuning alone is insufficient for consistent invocation. Empirical testing shows skills
-relying on frontmatter alone trigger roughly half as often as skills with reinforcing AGENTS.md
-directives. Past a minimum clarity bar, adding description length yields diminishing returns;
-specificity of trigger phrases beats verbosity.
+Frontmatter alone triggers roughly half as often as skills with reinforcing AGENTS.md directives.
 
-- Every skill MUST be registered in `AGENTS.md` (all agents) or `opencode-primary-shared.md`
-  (primary-only scope) with an imperative trigger using RFC 2119 keywords.
-- Primary-only skills (GitHub publishing, PR review) MUST live in the primary-shared partial to
-  avoid subagent context bloat.
-- For deterministic workflows (commit, deploy), `disable-model-invocation: true` in frontmatter
-  eliminates undertriggering by forcing explicit `/skill-name` invocation.
+- Every skill MUST be registered in `AGENTS.md` or `opencode-primary-shared.md` (primary-only scope)
+  with an imperative RFC 2119 trigger.
+- Primary-only skills MUST live in the primary-shared partial to avoid subagent context bloat.
+- For deterministic workflows, `disable-model-invocation: true` forces explicit `/skill-name`
+  invocation.
 
 ## Body Content
 
-Open with a brief purpose statement, then actionable content. Address (not necessarily as separate
-sections): inputs needed before starting, the procedure, verification, when to pause and ask the
-human, what to do if a check fails.
+Open with purpose, then actionable content. Cover: inputs, procedure, verification, when to ask the
+human, failure handling.
 
-Guiding principle: if the agent needs it every load, put it in SKILL.md; otherwise, referenced file.
-Cross-reference other skills by name instead of duplicating. One excellent example beats three
-mediocre ones. Compress examples to minimal setups. See `agents-authoring` for RFC 2119 rule writing
-conventions.
-
-**Skills wrapping CLI tools:** Teach workflow and semantics; defer to `--help` for syntax. The skill
-covers what the tool cannot self-document: sequencing constraints, failure handling, non-obvious
-interactions between commands, and domain rules. Duplicating command usage creates drift risk and
-inflates context for zero value. Direct agents to run `--help` as the authoritative interface
-reference.
+- If the agent needs it every load, put it in SKILL.md; otherwise, referenced file.
+- Cross-reference other skills by name instead of duplicating.
+- See `agents-authoring` for RFC 2119 rule writing conventions.
+- **CLI tool skills**: teach workflow and semantics; defer to `--help` for syntax. Cover what the
+  tool cannot self-document: sequencing, failure handling, non-obvious interactions.
 
 ### Directory Structures
 
@@ -147,23 +126,16 @@ Reference from SKILL.md: "See `references/api-reference.md` for complete API doc
 
 ## Failure Modes
 
-- **The Ghost** (undertriggering): description too narrow or single-phrased. Fix: expand trigger
-  coverage; add phrasings, extensions, synonyms.
-- **The Orphan**: description is solid but no reinforcing directive in AGENTS.md or primary-shared,
-  so invocation is inconsistent. Fix: register the skill at the correct scope with an RFC 2119
-  imperative trigger.
-- **The Shortcut**: description summarizes workflow; model skips loading the body. Fix: strip the
-  summary; state only when to load.
-- **The Everything Bagel**: applies to every task (it's a rule, not a procedure). Fix: move to
-  AGENTS.md.
-- **The Fragile Skill**: breaks when the repo changes. Fix: move specifics to referenced files.
-- **The Skeleton**: agent wastes tool calls on discovery during execution. Fix: inline the reference
-  material.
-- **The Echo**: body opener restates the trigger. Fix: state purpose, not loading instructions.
-- **The Reserved Name**: name starts with `claude` or `anthropic` (reserved). Fix: rename.
-- **The Imposter**: `README.md` in the skill directory; OpenCode loads `SKILL.md` only. Fix: rename
-  or remove.
-- **The Escape**: raw `<` or `>` in frontmatter `description`. Fix: rephrase.
+- **Ghost** (undertriggering): too narrow. Fix: more phrasings, extensions, synonyms.
+- **Orphan**: no AGENTS.md reinforcement. Fix: register with RFC 2119 trigger.
+- **Shortcut**: description summarizes workflow; model skips body. Fix: triggers only.
+- **Everything Bagel**: applies every task. Fix: move to AGENTS.md.
+- **Fragile**: breaks when repo changes. Fix: move specifics to referenced files.
+- **Skeleton**: agent wastes tool calls on discovery. Fix: inline reference material.
+- **Echo**: body opener restates trigger. Fix: state purpose instead.
+- **Reserved Name**: starts with `claude`/`anthropic`. Fix: rename.
+- **Imposter**: `README.md` instead of `SKILL.md`. Fix: rename.
+- **Escape**: raw `<`/`>` in frontmatter. Fix: rephrase.
 
 ## Validation Checklist
 

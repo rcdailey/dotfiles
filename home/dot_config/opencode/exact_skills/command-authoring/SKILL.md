@@ -10,7 +10,8 @@ description: >-
 
 # Command Authoring
 
-Conventions and patterns for OpenCode custom commands. Omissions are intentional.
+Conventions for OpenCode custom commands. Omissions intentional. All authored content MUST follow
+the Authoring rules in global AGENTS.md.
 
 ## Command Anatomy
 
@@ -87,33 +88,24 @@ Not every command needs all sections. A 3-line command is fine for simple tasks.
 
 ### Prompt Engineering Principles
 
-- **Present a complete world, concisely.** The template is the agent's entire understanding. Include
-  what it needs (tool names, skill references, constraints) but keep prose tight.
-- **Be specific.** "Analyze carefully" is useless. "Run `npm test`, parse failures, correlate with
-  `git blame`" is actionable.
-- **Constraints over examples.** Examples risk overfitting. When necessary, one excellent example
-  beats three mediocre ones.
-- **Front-load the directive.** Models attend most to the beginning and end. State purpose first.
+- **Complete but concise.** Include what the agent needs; omit everything else.
+- **Specific.** "Run `npm test`, parse failures, correlate with `git blame`" not "analyze
+  carefully."
+- **Front-load the directive.** State purpose first; models attend most to beginning and end.
 
 ### Context Pollution Awareness
 
-Every command runs in the main context window by default. Long outputs accumulate and degrade
-performance.
-
-- Commands generating large output (test runners, log analyzers) SHOULD use `subtask: true` or
-  delegate to a subagent
-- Commands producing concise output (commit prep, quick analysis) work fine inline
-- If shell commands produce verbose output, have the command summarize rather than dump raw text
+Every command runs in the main context window by default. Commands generating large output SHOULD
+use `subtask: true` or delegate to a subagent.
 
 ### Argument Handling
 
-Design commands to degrade gracefully when arguments are missing. State fallback behavior
-explicitly: `Review $ARGUMENTS (or infer from recent discussion if not provided).`
+State fallback behavior explicitly: `Review $ARGUMENTS (or infer from recent discussion if not
+provided).`
 
 ### Shell Output Injection
 
-Use `` !`command` `` for dynamic context. Commands run in the project root. Avoid commands with
-massive output (pipe through `head` or summarize).
+Use `` !`command` `` for dynamic context. Commands run in the project root. Bound output size.
 
 ```markdown
 Current branch status:
@@ -124,8 +116,7 @@ Based on these changes, prepare a commit message.
 
 ### Referencing Skills and Files
 
-Reference skills by name when the command enters a covered domain. Avoid duplicating skill content.
-Use `@path/to/file` to include file contents in the prompt.
+Reference skills by name; do not duplicate. Use `@path/to/file` to include file contents.
 
 ## Command Categories
 
@@ -158,25 +149,9 @@ Markdown release notes with categories and PR references.
 
 ## Personas
 
-Giving the agent a role identity helps for specialist tasks (security audit, architecture review)
-and adversarial perspectives (devil's advocate, risk analysis). Unnecessary for simple operational
-tasks or when the directive is already specific enough.
-
-When using a persona, establish it in the opening line with specific expertise and a stance: `You
-are a senior application security engineer. You think like an attacker.`
-
-Anti-pattern: "You are a helpful AI assistant." (says nothing actionable)
-
-## Common Mistakes
-
-- Vague directive: use specific verbs and named tools.
-- Verbose output inline: use `subtask: true` or summarize.
-- Duplicating skill content: reference the skill by name.
-- No argument fallback: state fallback behavior explicitly.
-- Overengineered persona: persona is framing, not the task.
-- Missing constraints: add a `Rules` section.
-- Too many commands: consolidate and use arguments.
-- Belongs in AGENTS.md: move persistent rules to AGENTS.md.
+Useful for specialist tasks (security audit, architecture review) and adversarial perspectives.
+Establish in the opening line with specific expertise: `You are a senior application security
+engineer. You think like an attacker.` Anti-pattern: "You are a helpful AI assistant."
 
 ## Validation Checklist
 

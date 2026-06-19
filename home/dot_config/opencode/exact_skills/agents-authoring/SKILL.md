@@ -9,7 +9,8 @@ description: >-
 
 # AGENTS.md Authoring
 
-Conventions for AGENTS.md files. Omissions intentional.
+Conventions for AGENTS.md files. Omissions intentional. All authored content MUST follow the
+Authoring rules in global AGENTS.md.
 
 ## Core Concept
 
@@ -102,11 +103,8 @@ directory to the git worktree root; closer files take precedence. Global rules i
 
 ## Context Engineering
 
-**Position sensitivity**: Models attend more to the beginning and end of context. Place critical
-rules at the top; checklists work at the end.
-
-**Completeness without bloat**: Include what the agent needs to act without guessing. Terse rules,
-compressed examples, no filler. Consistent formatting across sections.
+- **Position sensitivity**: critical rules at the top; checklists at the end.
+- **Completeness without bloat**: terse rules, compressed examples, no filler.
 
 ## Rule Writing
 
@@ -118,32 +116,20 @@ requirement levels, producing measurably higher compliance than softer phrasing.
 - `SHOULD` / `SHOULD NOT`: strong preference; exceptions require justification
 - `MAY`: truly discretionary; usually omit instead
 
-**Constraint + consequence.** Bad: "Don't commit to main." Good: "MUST NOT commit directly to main;
-use feature branches and PRs."
-
-**Positive framing.** Bad: "MUST NOT use var." Good: "MUST use `const` by default, `let` when
-reassignment needed (NEVER `var`)."
-
-**Specific.** Bad: "Be careful with error handling." Good: "All async functions MUST have try/catch;
-unhandled rejections crash the process."
-
-**Examples over adjectives.** Bad: "Write concise commit messages." Good: "Format: `fix(auth):
-handle expired tokens`."
+- **Constraint + consequence.** Bad: "Don't commit to main." Good: "MUST NOT commit directly to
+  main; use feature branches and PRs."
+- **Specific over vague.** Bad: "Be careful with error handling." Good: "All async functions MUST
+  have try/catch; unhandled rejections crash the process."
 
 ## Antipatterns
 
 - Repeated rules across files: single authoritative location.
 - Vague adjectives: replace with concrete criteria or examples.
 - Prohibitions without alternatives: include the correct approach.
-- Verbose explanations: terse rule plus one example.
-- Multi-header structures for simple related constraints: one dense paragraph.
-- Restating structural enforcement: if denied via permissions, skip the prose rule. Positive
-  instructions ("use X") suffice.
-- Duplicated routing: document delegation in one location. The Agents section is authoritative for
-  delegation; do not duplicate in the Tools section.
-- Unscoped delegation: AGENTS.md is inherited by ALL agents with no filtering. Delegation directives
-  ("use subagent X") MUST scope to primary agents when subagents have direct access to the same
-  tools; otherwise subagents receive directives to delegate to agents they cannot invoke.
+- Restating structural enforcement: if denied via permissions, skip the prose rule.
+- Duplicated routing: document delegation in one location (Agents section is authoritative).
+- Unscoped delegation: AGENTS.md is inherited by ALL agents. Delegation directives MUST scope to
+  primary agents; otherwise subagents receive directives to delegate to agents they cannot invoke.
 
 ## Validation Checklist
 

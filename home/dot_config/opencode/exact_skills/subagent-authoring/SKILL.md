@@ -8,7 +8,8 @@ description: >-
 
 # Subagent Authoring
 
-Conventions for OpenCode agent definitions. Omissions intentional.
+Conventions for OpenCode agent definitions. Omissions intentional. All authored content MUST follow
+the Authoring rules in global AGENTS.md.
 
 ## What Agents Are
 
@@ -25,15 +26,13 @@ markdown.
 
 ### Core
 
-| Field         | Type    | Description                                      |
-| ------------- | ------- | ------------------------------------------------ |
-| `name`        | string  | Agent identifier (defaults to filename)          |
-| `description` | string  | Drives caller delegation (required; see below)   |
-| `mode`        | string  | `primary`, `subagent`, or `all` (default: `all`) |
-| `model`       | string  | Provider/model identifier                        |
-| `variant`     | string  | Reasoning variant (see table below)              |
-| `prompt`      | string  | System prompt (or `@./path.txt` to include file) |
-| `hidden`      | boolean | Hide from @ menu (subagent only)                 |
+- `name` (string): agent identifier (defaults to filename)
+- `description` (string): drives caller delegation (required; see below)
+- `mode` (string): `primary`, `subagent`, or `all` (default: `all`)
+- `model` (string): provider/model identifier
+- `variant` (string): reasoning variant (see below)
+- `prompt` (string): system prompt (or `@./path.txt` to include file)
+- `hidden` (boolean): hide from @ menu (subagent only)
 
 ### Permissions
 
@@ -60,51 +59,30 @@ The deprecated `tools` field converts to permissions internally; prefer `permiss
 
 ### Writing the Description
 
-For subagents, the description is the caller's sole signal for delegation via the Task tool. Same
-trigger-coverage discipline as skill descriptions (see `skill-authoring`): multiple phrasings,
-explicit scope, negative triggers for fuzzy boundaries. Routing reinforcement for subagents lives in
-the caller's `AGENTS.md` (primary agents delegate), not in the subagent's own file.
+Same trigger-coverage discipline as skill descriptions (see `skill-authoring`). Routing
+reinforcement lives in the caller's `AGENTS.md`, not the subagent's own file.
 
 Subagent descriptions additionally MUST specify:
 
-- **Caller protocol**: what the caller MUST pass (required inputs, structured format) and MUST NOT
-  pass (context the agent infers). Thin protocols cause callers to over-specify defensively or
-  under-specify and misroute.
-- **Return contract**: what the caller should expect back (single message, structured report,
-  success/failure shape, whether output is trustworthy without verification).
+- **Caller protocol**: what to pass and what to omit (required inputs, structured format).
+- **Return contract**: what the caller gets back (shape, trustworthiness).
 
-Primary agents have looser requirements; their description is surfaced in the TUI for the user, not
-for programmatic routing.
-
-Example (subagent):
-
-```yaml
-description: >-
-  Reviews code for security, performance, and maintainability issues. Use when finalizing a PR,
-  auditing a new module, or responding to review requests. Callers MUST pass: the file paths or
-  PR number to review, the scope (security only, full review, etc.). MUST NOT pass: the diff
-  itself (the agent reads it). Returns a single message with findings as bullets; no file
-  writes. Do NOT use for style/lint concerns (use the linter) or commit message review.
-```
+Primary agent descriptions are looser; surfaced in TUI for humans, not programmatic routing.
 
 ### Behavior Options
 
-| Field         | Type    | Description                                       |
-| ------------- | ------- | ------------------------------------------------- |
-| `steps`       | integer | Max agentic iterations (`maxSteps` is deprecated) |
-| `disable`     | boolean | Set `true` to disable the agent                   |
-| `temperature` | number  | LLM randomness (0.0-1.0)                          |
-| `top_p`       | number  | Response diversity (0.0-1.0)                      |
-| `color`       | string  | `#hex` or theme name (primary, accent, error)     |
+- `steps` (integer): max agentic iterations (`maxSteps` is deprecated)
+- `disable` (boolean): set `true` to disable
+- `temperature` (number): LLM randomness (0.0-1.0)
+- `top_p` (number): response diversity (0.0-1.0)
+- `color` (string): `#hex` or theme name (primary, accent, error)
 
 ### Reasoning Variants
 
-| Provider/Model      | Variants                                            |
-| ------------------- | --------------------------------------------------- |
-| Anthropic Opus 4.6  | `low`, `medium`, `high`, `max` (adaptive)           |
-| Anthropic (other)   | `high`, `max` (fixed token budget)                  |
-| OpenAI GPT-5 family | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
-| Google Gemini 3     | `low`, `high`                                       |
+- Anthropic Opus 4.6: `low`, `medium`, `high`, `max` (adaptive)
+- Anthropic (other): `high`, `max` (fixed token budget)
+- OpenAI GPT-5 family: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`
+- Google Gemini 3: `low`, `high`
 
 Variant takes highest priority in the options merge chain. Unknown frontmatter fields pass through
 as provider-specific model `options`.
@@ -119,45 +97,14 @@ Set `hidden: true` on subagents that should only be called by other agents.
 
 ## Prompt Structure
 
-A well-structured prompt includes (not all required):
-
-- **Workflow/prerequisites**: mandatory steps before starting
-- **Domain ownership**: paths or concerns the agent handles
-- **Hard constraints**: RFC 2119 rules (see `agents-authoring` for rule-writing conventions). Do not
-  restate constraints already enforced by permissions.
-- **Verification commands**: how to validate work
-- **Output format**: what the agent produces (critical when callers consume the response)
-- **When stuck**: escape hatch for uncertainty
-
-Example:
-
-````markdown
-## Workflow
-
-1. Read the full diff before commenting
-2. Check existing review comments to avoid duplicates
-
-## Constraints
-
-NEVER approve PRs with failing CI. MUST request changes for security issues.
-MUST NOT comment on style if linter passes.
-
-## Output
-
-Return a single message: summary (1-2 sentences), findings as bullets, recommended next steps.
-Do not write results to files.
-
-## When Stuck
-
-Ask a clarifying question. Propose alternatives with tradeoffs. Do not guess at intent.
-````
+Cover (not all required): workflow/prerequisites, domain ownership, hard constraints (RFC 2119; see
+`agents-authoring`), verification commands, output format, when stuck. Do not restate constraints
+already enforced by permissions.
 
 ### Reference Material
 
-Include tool command signatures the agent needs to act without discovery calls. Keep concise:
-signatures and key flags. Standalone subagents (no companion skill) MUST have reference material
-inline; extracting into a skill only one agent uses adds indirection without value. When a companion
-skill exists, reference it by name instead of duplicating.
+Include tool command signatures the agent needs to act without discovery calls. Standalone subagents
+MUST have reference inline; when a companion skill exists, reference by name instead.
 
 The test: can the agent do its job from the prompt alone? If not, add the missing reference.
 
