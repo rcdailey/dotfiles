@@ -1,6 +1,7 @@
 [tools]
 age = "latest"
 cosign = "latest"
+d2 = "latest"
 delta = "latest"
 fzf = "latest"
 git-filter-repo = "latest"
