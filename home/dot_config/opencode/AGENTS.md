@@ -88,6 +88,10 @@ Applies when producing AGENTS.md, SKILL.md, agent definitions, or command files.
 - MUST generalize from the concrete task. Extract the underlying principle; strip scenario-specific
   details (file types, domain objects, tool names) that won't apply to future work.
 - One minimal example beats three detailed ones.
+- MUST cross-reference existing guidance instead of restating. One authoritative location per
+  concept; lower scopes reference higher scopes.
+- MUST self-review authored content against these rules before finalizing. If a draft violates any
+  rule, tighten before writing.
 
 ## Testing
 

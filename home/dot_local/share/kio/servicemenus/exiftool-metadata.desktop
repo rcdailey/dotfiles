@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Service
+MimeType=image/*;video/*;audio/*;application/pdf;
+Actions=viewMetadata
+
+[Desktop Action viewMetadata]
+Name=View Metadata (exiftool)
+Icon=document-properties
+Exec=bash -c 'if ! command -v exiftool &>/dev/null; then kdialog --error "exiftool not found.\nInstall with: sudo dnf install perl-Image-ExifTool"; exit 1; fi; tmp=$(mktemp); exiftool -a -u -g1 "$1" > "$tmp" 2>&1; kdialog --textbox "$tmp" 800 600 --title "Metadata: $(basename "$1")"; rm -f "$tmp"' _ %f
