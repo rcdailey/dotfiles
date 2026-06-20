@@ -1,7 +1,0 @@
-#!/usr/bin/env zsh
-# Tear down a task: remove worktree, delete branch, kill tmux window.
-# Usage: wt done [branch]    (defaults to current worktree)
-# For local ff-merge + cleanup in one step, use: wt merge
-
-wt remove "$@"
-tmux kill-window 2>/dev/null || true
