@@ -1,18 +1,29 @@
 #!/usr/bin/env bash
 # Serializing pinentry wrapper. rbw-agent spawns concurrent pinentry processes
-# when multiple operations trigger unlock simultaneously. This wrapper uses flock
-# so only one pinentry dialog appears; processes that acquire the lock after the
-# vault is already unlocked respond with a protocol cancel instead of prompting.
+# when multiple operations trigger unlock simultaneously. This wrapper uses
+# mkdir-based locking (POSIX-portable) so only one pinentry dialog appears;
+# processes that acquire the lock after the vault is already unlocked respond
+# with a protocol cancel instead of prompting.
 
 {{- if eq .chezmoi.os "darwin" }}
-PINENTRY=/usr/local/bin/pinentry-mac
+PINENTRY="{{ output "brew" "--prefix" "pinentry-mac" | trim }}/bin/pinentry-mac"
 {{- else }}
 PINENTRY=/usr/bin/pinentry-qt
 {{- end }}
 
 LOCK_DIR="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
-exec 9>"$LOCK_DIR/pinentry-serialized.lock"
-flock 9
+LOCK_PATH="$LOCK_DIR/pinentry-serialized.lock"
+
+cleanup() { rmdir "$LOCK_PATH" 2>/dev/null; }
+
+# Clean up non-directory lock left by older flock-based version
+[[ -e "$LOCK_PATH" && ! -d "$LOCK_PATH" ]] && rm -f "$LOCK_PATH"
+
+# Spin until we acquire the lock (mkdir is atomic on POSIX)
+while ! mkdir "$LOCK_PATH" 2>/dev/null; do
+    sleep 0.1
+done
+trap cleanup EXIT
 
 # Vault unlocked while we waited; cancel without prompting
 if timeout 2 rbw unlocked 2>/dev/null; then
