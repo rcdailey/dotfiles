@@ -18,6 +18,7 @@ slsa-verifier = "latest"
 task = "latest"
 tmux = "latest"
 uv = "latest"
+worktrunk = "latest"
 yamllint = "latest"
 yq = "latest"
 bun = "latest"
@@ -49,7 +50,7 @@ macos-arm64 = { asset_pattern = "plannotator-darwin-arm64" }
 activate_aggressive = true
 auto_install = true
 jobs = 4
-trusted_config_paths = ["~/.config/mise"]
+trusted_config_paths = ["~/.config/mise", "~"]
 experimental = true
 env_file = ".env"
 netrc = false

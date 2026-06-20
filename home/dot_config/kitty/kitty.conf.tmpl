@@ -6,7 +6,9 @@ shell zsh -lc 'exec tmux new-session'
 
 # Enable remote control for broadcasting commands to all windows
 # Used by `reload-all` alias to restart zsh in all windows
+# listen_on provides a Unix socket so kitty @ works from inside tmux
 allow_remote_control yes
+listen_on unix:/tmp/kitty-{kitty_pid}
 
 # macOS: treat Option as Alt for keybindings (ignored on Linux)
 macos_option_as_alt yes

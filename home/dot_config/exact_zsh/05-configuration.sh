@@ -111,6 +111,11 @@ if command -v mise >/dev/null 2>&1; then
     eval "$(mise activate zsh)" 2>/dev/null
 fi
 
+# worktrunk shell integration (directory switching + completions)
+if command -v wt >/dev/null 2>&1; then
+    eval "$(wt config shell init zsh)"
+fi
+
 # Dynamic talosctl completion (loaded when mise makes it available on cd)
 _talosctl_completion_loaded=0
 _maybe_load_talosctl_completion() {

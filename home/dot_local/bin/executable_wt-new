@@ -1,0 +1,31 @@
+#!/usr/bin/env zsh
+# Create a worktree for a parallel task and open a kitty window.
+# Usage: wt new <branch> [base]
+# Base defaults to the default branch. Path follows wt config.
+# The new kitty window auto-starts tmux per kitty.conf.
+
+set -euo pipefail
+
+branch="${1:?Usage: wt new <branch> [base]}"
+args=(--create "$branch")
+[[ -n "${2-}" ]] && args+=(--base "$2")
+
+wt_path=$(wt switch "${args[@]}" --no-cd --format json 2>/dev/null | jq -r '.path') || exit 1
+
+if [[ -z "$wt_path" || ! -d "$wt_path" ]]; then
+  print -u2 "wt-new: worktree creation failed"
+  exit 1
+fi
+
+kitty_socket="${KITTY_LISTEN_ON-}"
+if [[ -z "$kitty_socket" ]]; then
+  # Env var missing (stale tmux session); find the socket directly
+  local -a socks=(/tmp/kitty-*(N))
+  if (( ${#socks} == 0 )); then
+    print -u2 "wt-new: no kitty socket found; kitty needs listen_on in kitty.conf"
+    exit 1
+  fi
+  kitty_socket="unix:${socks[-1]}"
+fi
+
+kitty @ --to="$kitty_socket" launch --type=os-window --cwd="$wt_path"
