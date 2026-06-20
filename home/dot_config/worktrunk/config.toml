@@ -1,2 +1,6 @@
+skip-commit-generation-prompt = true
+
 [merge]
 squash = false
+
+[projects]
