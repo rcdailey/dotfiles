@@ -6,6 +6,7 @@ description: >
   all research and returns structured findings.
 mode: subagent
 model: anthropic/claude-sonnet-4-6
+variant: medium
 hidden: true
 permission:
   "*": deny
