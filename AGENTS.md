@@ -59,19 +59,22 @@ under `~/.config/opencode/` do not have these prefixes.
 - `dcp.jsonc`, `tui.jsonc` - Additional config files
 - `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory
   contains a `SKILL.md`. Some are managed via `.chezmoiexternal.toml` in this directory.
-- `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). The primary
-  agents (`build`, `dispatch`) are chezmoi templates that include a shared partial via `{{ template
-  "opencode-primary-shared.md" . }}`. `dispatch` is `hidden: true` (headless ticket work only;
-  zero-ask permission surface because headless runs auto-reject permission asks). The partial holds
-  directives that apply to every primary agent but MUST NOT leak to subagents. OpenCode loads
-  AGENTS.md into every agent context regardless of mode (verified against source; no mode-based
-  filter exists), so shared primary-only content cannot live in AGENTS.md and the template partial
-  is the workaround.
+- `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). Coding agents
+  (`build`, `dispatch`, `coder`, `general`) are chezmoi templates that include
+  `opencode-coding-directives.md` for coding-specific rules (chat style, development conventions,
+  testing, tools). Primary agents (`build`, `dispatch`) additionally include
+  `opencode-primary-shared.md` for delegation and commit protocols. `dispatch` is `hidden: true`
+  (headless ticket work only; zero-ask permission surface because headless runs auto-reject
+  permission asks). Non-coding agents (`commit`, `researcher`, `upgrade-analyst`) are plain markdown
+  with self-contained protocols. This split keeps coding directives out of non-coding contexts
+  (e.g., a writing agent in another repo receives only the universal AGENTS.md).
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
 - `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`)
 - `.chezmoitemplates/` - Reusable template partials scoped to OpenCode config. Template names share
   a global namespace across all `.chezmoitemplates/` directories in the source state; prefix names
-  with `opencode-` to avoid collisions. Current partials: `opencode-primary-shared.md`.
+  with `opencode-` to avoid collisions. Current partials: `opencode-coding-directives.md` (coding
+  chat style, development, testing, tools, git, architecture, authoring),
+  `opencode-primary-shared.md` (delegation protocols, commit protocols, primary-only skills).
 
 **Tool configs:** `home/dot_config/` contains per-tool configuration directories (git, kitty, mise,
 tmux, lazygit, etc.). Browse the directory to discover what's managed.
