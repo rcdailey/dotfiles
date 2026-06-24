@@ -11,6 +11,7 @@ from linear_cli._models import Issue, priority_label
 from linear_cli._queries import (
     ISSUE_CREATE_MUTATION,
     ISSUE_QUERY,
+    ISSUE_SEARCH_QUERY,
     ISSUE_UPDATE_MUTATION,
     ISSUES_QUERY,
 )
@@ -83,6 +84,63 @@ def list_issues(
     }
     try:
         nodes = paginate(ISSUES_QUERY, variables, ["issues"])
+    except LinearError as exc:
+        die(str(exc))
+
+    nodes = nodes[:limit]
+    if not nodes:
+        click.echo("no issues found")
+        return
+    for node in nodes:
+        _print_issue(Issue.from_graphql(node))
+
+
+@cli.command("search")
+@click.argument("query")
+@click.option("--team", "team_key", default=None, help="Team key (e.g. ENG).")
+@click.option(
+    "--state",
+    "state_type",
+    default=None,
+    type=click.Choice(
+        ["triage", "backlog", "unstarted", "started", "completed", "canceled"],
+        case_sensitive=False,
+    ),
+    help="Filter by state type.",
+)
+@click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
+@click.option("--label", default=None, help="Label name to filter by.")
+@click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
+def search(
+    query: str,
+    team_key: str | None,
+    state_type: str | None,
+    assignee: str | None,
+    label: str | None,
+    limit: int,
+) -> None:
+    """Full-text search across issue titles, descriptions, and comments."""
+    team_id = resolve_team_id(team_key) if team_key else None
+    assignee_id = resolve_assignee_id(assignee) if assignee else None
+
+    filt: dict = {}
+    if team_id:
+        filt["team"] = {"id": {"eq": team_id}}
+    if state_type:
+        filt["state"] = {"type": {"eq": state_type}}
+    if assignee_id:
+        filt["assignee"] = {"id": {"eq": assignee_id}}
+    if label:
+        filt["labels"] = {"name": {"eq": label}}
+
+    variables: dict = {
+        "query": query,
+        "filter": filt or None,
+        "first": min(limit, 250),
+        "after": None,
+    }
+    try:
+        nodes = paginate(ISSUE_SEARCH_QUERY, variables, ["issueSearch"])
     except LinearError as exc:
         die(str(exc))
 

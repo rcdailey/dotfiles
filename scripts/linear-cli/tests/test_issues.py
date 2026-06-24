@@ -88,6 +88,42 @@ def test_issues_view_not_found():
     assert result.exit_code != 0
 
 
+def test_issues_search_returns_results():
+    with patch("linear_cli.issues.paginate", return_value=[_issue_node()]):
+        result = CliRunner().invoke(cli, ["issues", "search", "fix the thing"])
+
+    assert result.exit_code == 0
+    assert "ENG-1" in result.output
+    assert "Fix the thing" in result.output
+
+
+def test_issues_search_with_team_filter():
+    with (
+        patch(
+            "linear_cli._resolve.execute",
+            return_value={
+                "teams": {"nodes": [{"id": "team-uuid", "key": "ENG", "name": "Engineering"}]}
+            },
+        ),
+        patch("linear_cli.issues.paginate", return_value=[_issue_node()]) as mock_pag,
+    ):
+        result = CliRunner().invoke(cli, ["issues", "search", "fix the thing", "--team", "ENG"])
+
+    assert result.exit_code == 0
+    assert "ENG-1" in result.output
+    call_vars = mock_pag.call_args[0][1]
+    assert call_vars["query"] == "fix the thing"
+    assert call_vars["filter"]["team"]["id"]["eq"] == "team-uuid"
+
+
+def test_issues_search_empty():
+    with patch("linear_cli.issues.paginate", return_value=[]):
+        result = CliRunner().invoke(cli, ["issues", "search", "nonexistent"])
+
+    assert result.exit_code == 0
+    assert "no issues found" in result.output
+
+
 def test_issues_list_priority_labels():
     nodes = [_issue_node(priority=0), _issue_node(identifier="ENG-2", priority=1)]
     with patch("linear_cli.issues.paginate", return_value=nodes):

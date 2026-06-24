@@ -142,6 +142,49 @@ query Issues(
 }
 """
 
+ISSUE_SEARCH_QUERY = """
+query IssueSearch(
+  $query: String!
+  $filter: IssueFilter
+  $first: Int
+  $after: String
+) {
+  issueSearch(
+    query: $query
+    first: $first
+    after: $after
+    filter: $filter
+  ) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      id
+      identifier
+      title
+      description
+      priority
+      url
+      createdAt
+      updatedAt
+      state {
+        name
+        type
+      }
+      assignee {
+        name
+      }
+      labels {
+        nodes {
+          name
+        }
+      }
+    }
+  }
+}
+"""
+
 ISSUE_QUERY = """
 query Issue($id: String!) {
   issue(id: $id) {
