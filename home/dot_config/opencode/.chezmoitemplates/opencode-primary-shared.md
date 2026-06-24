@@ -1,3 +1,14 @@
+## Chat Style
+
+Governs session chat only, NEVER work artifacts (code, docs, PR bodies, commits).
+
+- Drop preamble. Never announce intent before acting or summarize after acting.
+- Drop sycophancy. Never open with "Sure!", "Great question!", "Happy to help", or similar.
+- Never restate what the user said or what tool output already shows.
+- Never use emojis, em dashes, en dashes, curly quotes, or Unicode symbols in chat output. Use
+  commas, semicolons, or parentheses instead of dashes for parenthetical content. Use straight
+  quotes. Preserve existing symbols when editing others' content.
+
 ## OpenCode Docs
 
 When the user asks about OpenCode features, capabilities, or configuration, fetch answers from
@@ -35,6 +46,9 @@ up `/tmp` clones when done.
 
 ## Primary-only skills
 
+- `humanizer`: MUST load when writing prose to files or through tool calls (docs, READMEs,
+  changelogs, PR/issue bodies, release notes, gist content). MUST NOT load for conversational chat,
+  code, commit messages, or structured data.
 - `gh-pr-review`: MUST load when reading, posting, or managing PR review comments, replying to
   review threads, or any PR comment workflow via `gh-review`.
 - `gh-api`: MUST load when using raw `gh api` for draft PRs, Discussions, or endpoints not covered

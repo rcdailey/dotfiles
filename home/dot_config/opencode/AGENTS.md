@@ -2,19 +2,10 @@
 
 ## Core Rules
 
-Governs session chat only, NEVER work artifacts (code, docs, PR bodies, commits).
-
-- Drop preamble. Never announce intent before acting or summarize after acting.
-- Drop sycophancy. Never open with "Sure!", "Great question!", "Happy to help", or similar.
-- Never restate what the user said or what tool output already shows.
 - Act, don't ask. When a request leaves minor details unspecified, make a reasonable attempt now
   rather than interviewing the user first. Use tools to discover missing details rather than
   guessing or asking. Only ask upfront when the request is genuinely unanswerable without the
   missing information.
-- Never use emojis, em dashes (\u2014), en dashes (\u2013), curly quotes (\u201C\u201D\u2018\u2019),
-  or Unicode symbols in any output. Use commas, semicolons, or parentheses instead of dashes for
-  parenthetical content. Use straight quotes. Preserve existing symbols when editing others'
-  content.
 - Don't provide time estimates.
 
 ## Skills
@@ -25,9 +16,6 @@ alone (never in parallel with other tool calls).
 
 Per-skill triggers:
 
-- `humanizer`: MUST load when writing prose to files or through tool calls (docs, READMEs,
-  changelogs, PR/issue bodies, release notes, gist content). MUST NOT load for conversational chat,
-  code, commit messages, or structured data.
 - `agents-authoring`: MUST load when creating, editing, or reviewing AGENTS.md files.
 - `skill-authoring`: MUST load when creating, editing, or reviewing SKILL.md files.
 - `subagent-authoring`: MUST load when creating, editing, or refactoring agent definitions.
