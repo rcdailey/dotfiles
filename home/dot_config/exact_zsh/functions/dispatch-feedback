@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# Trigger a pr-feedback iteration for a dispatched ticket in its tmux window.
+# Trigger a pr-feedback iteration for a dispatched ticket in its kitty tab.
 # Usage: dispatch-feedback <TICKET-ID> [PR-NUMBER]    e.g. dispatch-feedback ENG-123
 # PR number defaults to the PR for the worktree's branch (gh pr view).
 
@@ -25,9 +25,11 @@ if [[ -z "$pr_number" ]]; then
 fi
 
 local run_cmd="opencode run --command pr-feedback $pr_number"
-if tmux list-windows -F '#{window_name}' | grep -qx "$ticket_id"; then
-  tmux send-keys -t "$ticket_id" "$run_cmd" Enter
+if kitty @ ls 2>/dev/null | jq -e --arg t "$ticket_id" \
+  '[.[].tabs[] | select(.title == $t)] | length > 0' >/dev/null 2>&1; then
+  kitty @ send-text --match "title:^${ticket_id}$" "$run_cmd\n"
 else
-  tmux new-window -d -n "$ticket_id" -c "$worktree_path" -e OPENCODE_DISPATCH=1 \
-    "$run_cmd; exec zsh"
+  kitty @ launch --type=tab --tab-title "$ticket_id" --keep-focus \
+    --cwd="$worktree_path" --env OPENCODE_DISPATCH=1 \
+    sh -c "$run_cmd; exec zsh"
 fi

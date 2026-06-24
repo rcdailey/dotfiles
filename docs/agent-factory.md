@@ -69,7 +69,7 @@ Artifacts (all in this repo; each file is the authoritative spec of its own beha
 1. `home/dot_config/opencode/exact_commands/ticket.md`: the dispatch prompt template (Linear
    lifecycle, test-first implementation, repo-wide sweep, diff cap, PR creation). This template is
    where supervision lives; iterate on it after every dispatched ticket.
-2. `home/dot_config/exact_zsh/functions/`: `dispatch <ID> [BASE]` (worktree + tmux window + headless
+2. `home/dot_config/exact_zsh/functions/`: `dispatch <ID> [BASE]` (worktree + kitty tab + headless
    run), `dispatch-feedback <ID> [PR]` (trigger a feedback iteration), `dispatch-done <ID>`
    (teardown).
 3. `home/dot_config/opencode/exact_plugins/notify.ts`: `notify-send` on idle, dispatched top-level

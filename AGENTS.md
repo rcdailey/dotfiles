@@ -77,7 +77,7 @@ under `~/.config/opencode/` do not have these prefixes.
   `opencode-primary-shared.md` (delegation protocols, commit protocols, primary-only skills).
 
 **Tool configs:** `home/dot_config/` contains per-tool configuration directories (git, kitty, mise,
-tmux, lazygit, etc.). Browse the directory to discover what's managed.
+lazygit, etc.). Browse the directory to discover what's managed.
 
 ## Conventions
 

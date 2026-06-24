@@ -1,12 +1,6 @@
 # Kitty Terminal Configuration
-# Migrated from Ghostty config
 
-# Use tmux as the shell - kitty closes when tmux exits
-shell zsh -lc 'exec tmux new-session'
-
-# Enable remote control for broadcasting commands to all windows
-# Used by `reload-all` alias to restart zsh in all windows
-# listen_on provides a Unix socket so kitty @ works from inside tmux
+# Remote control for scripting (dispatch functions, reload-all alias)
 allow_remote_control yes
 listen_on unix:/tmp/kitty-{kitty_pid}
 
@@ -20,10 +14,6 @@ italic_font auto
 bold_italic_font auto
 font_size {{ .terminal.fontSize }}
 
-# Theme - use built-in themes kitten or include dracula
-# Run: kitty +kitten themes  (select Dracula)
-# Or: include dracula.conf
-
 # Window management
 confirm_os_window_close 0
 remember_window_size no
@@ -31,58 +21,67 @@ initial_window_width 872
 initial_window_height 782
 remember_window_position yes
 
-# Copy on select (like ghostty's copy-on-select = clipboard)
 copy_on_select clipboard
-
-# Disable audio bell (ghostty: app-notifications = false equivalent)
 enable_audio_bell no
-
-# Unfocused window opacity (ghostty: unfocused-split-opacity = 0.7)
 inactive_text_alpha 0.7
+mouse_hide_wait 3.0
+window_padding_width 2
+scrollback_lines 50000
 
-# Window border/divider color (ghostty: split-divider-color = #ff79c6)
+# Splits and pane borders
+enabled_layouts splits:equalize_on_close=true,stack
 active_border_color #ff79c6
 inactive_border_color #44475a
 
-# Window padding
-window_padding_width 2
-
-# Enable splits layout (required for split panes)
-enabled_layouts splits,stack
-
-# Mouse cursor hides after inactivity
-mouse_hide_wait 3.0
+# Tab bar (Dracula theme)
+tab_bar_style powerline
+tab_title_template "{index}: {title}"
+active_tab_foreground #282a36
+active_tab_background #ff79c6
+active_tab_font_style bold
+inactive_tab_foreground #f8f8f2
+inactive_tab_background #282a36
 
 #
-# Keybindings - mapped from your Ghostty config
+# Keybindings
 #
 
-# Reload config (ghostty: ctrl+shift+comma)
+# Splits
+map ctrl+shift+e launch --location=hsplit --cwd=current
+map ctrl+shift+o launch --location=vsplit --cwd=current
+
+# Navigate panes
+map ctrl+shift+left neighboring_window left
+map ctrl+shift+right neighboring_window right
+map ctrl+shift+up neighboring_window up
+map ctrl+shift+down neighboring_window down
+
+# Close pane
+map ctrl+shift+w close_window
+
+# Swap pane
+map alt+shift+s swap_with_window
+
+# Tabs
+map ctrl+shift+t new_tab_with_cwd
+map ctrl+page_up previous_tab
+map ctrl+page_down next_tab
+map f2 set_tab_title
+
+# Zoom (toggle between splits and stack layouts)
+map ctrl+shift+z toggle_layout stack
+
+# Resize panes
+map ctrl+alt+left resize_window narrower 2
+map ctrl+alt+right resize_window wider 2
+map ctrl+alt+up resize_window taller 2
+map ctrl+alt+down resize_window shorter 2
+
+# Reload config
 map ctrl+shift+, load_config_file
 
-# New window with current directory (ghostty: ctrl+shift+n)
+# New OS window
 map ctrl+shift+n new_os_window_with_cwd
 
-# Pass keys to tmux - explicit unmapping required because kitty has built-in
-# defaults for many of these (ctrl+shift+t=new_tab, ctrl+shift+w=close_window,
-# ctrl+page_up/down=tab navigation, etc). Without explicit unmapping, kitty
-# intercepts them before tmux sees them.
-map ctrl+shift+e
-map ctrl+shift+o
-map ctrl+shift+left
-map ctrl+shift+right
-map ctrl+shift+up
-map ctrl+shift+down
-map ctrl+shift+w
-map ctrl+shift+t
-map ctrl+page_up
-map ctrl+page_down
-map ctrl+shift+r
-map ctrl+alt+left
-map ctrl+alt+right
-map ctrl+alt+up
-map ctrl+alt+down
-map ctrl+shift+z
-
-# Insert newline without executing (ghostty: shift+enter)
+# Insert newline without executing
 map shift+enter send_text all \n

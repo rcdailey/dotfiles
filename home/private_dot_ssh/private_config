@@ -10,7 +10,7 @@ ServerAliveInterval 120
 RequestTTY auto
 
 # Override TERM to ensure compatibility with remote systems
-# Prevents errors when local terminal (kitty, tmux-256color) lacks remote terminfo
+# Prevents errors when local terminal (xterm-kitty) lacks remote terminfo
 SetEnv TERM=xterm-256color
 
 # Load additional SSH configurations from modular config files

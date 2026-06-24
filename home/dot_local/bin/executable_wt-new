@@ -2,7 +2,7 @@
 # Create a worktree for a parallel task and open a kitty window.
 # Usage: wt new <branch> [base]
 # Base defaults to the default branch. Path follows wt config.
-# The new kitty window auto-starts tmux per kitty.conf.
+# Opens a new kitty OS window at the worktree path.
 
 set -euo pipefail
 
@@ -19,7 +19,7 @@ fi
 
 kitty_socket="${KITTY_LISTEN_ON-}"
 if [[ -z "$kitty_socket" ]]; then
-  # Env var missing (stale tmux session); find the socket directly
+  # Env var missing; find the socket directly
   local -a socks=(/tmp/kitty-*(N))
   if (( ${#socks} == 0 )); then
     print -u2 "wt-new: no kitty socket found; kitty needs listen_on in kitty.conf"
