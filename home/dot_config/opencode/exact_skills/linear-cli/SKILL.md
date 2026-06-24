@@ -2,13 +2,14 @@
 name: linear-cli
 description: >-
   Use when operating on the Linear issue tracker via the `linear` CLI: creating,
-  viewing, querying, or updating issues, projects, or documents; adding or editing
-  issue comments; managing relations, links, labels, and teams; assigning,
-  labeling, or transitioning issues. Triggers on phrases like "create a Linear
-  issue", "file a ticket", "update ENG-###", "move to Ready For Dev", "add a
-  comment to the Linear issue", "link a PR to the issue", "block ENG-42", or any
-  task naming Linear, a Linear issue key (`ENG-`, `OPS-`, etc.), a Linear project,
-  or a Linear document. Do NOT use for GitHub Issues, Jira, or other trackers.
+  viewing, searching, querying, or updating issues, projects, or documents; adding
+  or editing issue comments; managing relations, links, labels, and teams;
+  assigning, labeling, or transitioning issues. Triggers on phrases like "create a
+  Linear issue", "file a ticket", "update ENG-###", "move to Ready For Dev",
+  "search for issues", "find issues about X", "add a comment to the Linear issue",
+  "link a PR to the issue", "block ENG-42", or any task naming Linear, a Linear
+  issue key (`ENG-`, `OPS-`, etc.), a Linear project, or a Linear document. Do NOT
+  use for GitHub Issues, Jira, or other trackers.
 ---
 
 # Linear CLI
@@ -29,6 +30,8 @@ linear labels groups [--team KEY]
 linear labels list [--team KEY] [--group NAME]...
 linear issues list [--team KEY] [--state TYPE] [--assignee USER] [--label NAME]
                    [--limit N]
+linear issues search <QUERY> [--team KEY] [--state TYPE] [--assignee USER]
+                     [--label NAME] [--limit N]
 linear issues view <ID>
 linear issues create --title TEXT --team KEY [--description TEXT] [--state NAME]
                      [--priority 0-4] [--assignee USER] [--label NAME]...
@@ -138,6 +141,17 @@ transitions, reassignments, label changes, parent linkage).
 
 `linear api` executes arbitrary GraphQL queries and mutations. Output is JSON.
 Pass variables with `--var key=value`. Read query from stdin with `-`.
+
+## Searching vs listing
+
+`linear issues search` does full-text relevance-ranked search across titles,
+descriptions, and comments via Linear's `issueSearch` API. Use it to find issues
+by keyword. `linear issues list` filters by structured fields (team, state,
+assignee, label) without text matching. Combine search with filters:
+
+```bash
+linear issues search "multiple images" --team ENG --state started
+```
 
 ## Discovery before mutation
 
