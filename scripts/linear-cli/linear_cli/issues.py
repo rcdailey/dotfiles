@@ -134,13 +134,13 @@ def search(
         filt["labels"] = {"name": {"eq": label}}
 
     variables: dict = {
-        "query": query,
+        "term": query,
         "filter": filt or None,
         "first": min(limit, 250),
         "after": None,
     }
     try:
-        nodes = paginate(ISSUE_SEARCH_QUERY, variables, ["issueSearch"])
+        nodes = paginate(ISSUE_SEARCH_QUERY, variables, ["searchIssues"])
     except LinearError as exc:
         die(str(exc))
 

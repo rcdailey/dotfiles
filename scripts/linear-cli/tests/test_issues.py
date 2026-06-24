@@ -112,7 +112,7 @@ def test_issues_search_with_team_filter():
     assert result.exit_code == 0
     assert "ENG-1" in result.output
     call_vars = mock_pag.call_args[0][1]
-    assert call_vars["query"] == "fix the thing"
+    assert call_vars["term"] == "fix the thing"
     assert call_vars["filter"]["team"]["id"]["eq"] == "team-uuid"
 
 

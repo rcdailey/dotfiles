@@ -143,17 +143,19 @@ query Issues(
 """
 
 ISSUE_SEARCH_QUERY = """
-query IssueSearch(
-  $query: String!
+query SearchIssues(
+  $term: String!
   $filter: IssueFilter
   $first: Int
   $after: String
+  $includeComments: Boolean
 ) {
-  issueSearch(
-    query: $query
+  searchIssues(
+    term: $term
     first: $first
     after: $after
     filter: $filter
+    includeComments: $includeComments
   ) {
     pageInfo {
       hasNextPage
