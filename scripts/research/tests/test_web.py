@@ -60,7 +60,7 @@ def test_fetch_cmd_cache_hit_skips_network() -> None:
     runner = CliRunner()
     with (
         patch("research._cache.get_cache", return_value=_make_cache(store)),
-        patch("research._fetch.httpx.get") as mock_http,
+        patch("research._fetch._http_get") as mock_http,
     ):
         result = runner.invoke(
             cli,
@@ -85,7 +85,7 @@ def test_fetch_cmd_fetches_and_caches() -> None:
     with (
         patch("research._cache.get_cache", return_value=_make_cache(store)),
         patch("research._budget.budget_reserve"),
-        patch("research._fetch.httpx.get", return_value=mock_response),
+        patch("research._fetch._http_get", return_value=mock_response),
         patch("trafilatura.extract", return_value="Hello world"),
     ):
         result = runner.invoke(
