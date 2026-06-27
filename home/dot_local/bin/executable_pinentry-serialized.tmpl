@@ -14,16 +14,27 @@ PINENTRY=/usr/bin/pinentry-qt
 LOCK_DIR="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
 LOCK_PATH="$LOCK_DIR/pinentry-serialized.lock"
 
-cleanup() { rmdir "$LOCK_PATH" 2>/dev/null; }
+cleanup() { rm -rf "$LOCK_PATH" 2>/dev/null; }
 
 # Clean up non-directory lock left by older flock-based version
 [[ -e "$LOCK_PATH" && ! -d "$LOCK_PATH" ]] && rm -f "$LOCK_PATH"
 
 # Spin until we acquire the lock (mkdir is atomic on POSIX)
+# Detect stale locks via PID file; break after 30s to avoid infinite spin
+tries=0
 while ! mkdir "$LOCK_PATH" 2>/dev/null; do
+    if [[ -f "$LOCK_PATH/pid" ]]; then
+        lock_pid=$(<"$LOCK_PATH/pid")
+        if ! kill -0 "$lock_pid" 2>/dev/null; then
+            rm -rf "$LOCK_PATH"
+            continue
+        fi
+    fi
+    (( ++tries > 300 )) && { rm -rf "$LOCK_PATH"; continue; }
     sleep 0.1
 done
 trap cleanup EXIT
+echo $$ > "$LOCK_PATH/pid"
 
 # Vault unlocked while we waited; cancel without prompting
 if timeout 2 rbw unlocked 2>/dev/null; then
@@ -38,4 +49,4 @@ if timeout 2 rbw unlocked 2>/dev/null; then
     exit 0
 fi
 
-exec "$PINENTRY" "$@"
+"$PINENTRY" "$@"
