@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import atexit
+import subprocess
+import sys
+from pathlib import Path
 
 from playwright.sync_api import Browser, Playwright, sync_playwright
 from playwright_stealth import Stealth
@@ -16,10 +19,18 @@ _stealth = Stealth()
 
 
 def _get_browser() -> Browser:
-    """Return a singleton browser instance, launching on first call."""
+    """Return a singleton browser instance, launching on first call.
+
+    Auto-installs Chromium on first use if the binary is missing.
+    """
     global _pw, _browser
     if _browser is None or not _browser.is_connected():
         _pw = sync_playwright().start()
+        if not Path(_pw.chromium.executable_path).exists():
+            subprocess.run(
+                [sys.executable, "-m", "playwright", "install", "chromium"],
+                check=True,
+            )
         _browser = _pw.chromium.launch(headless=True)
         atexit.register(_shutdown)
     return _browser
@@ -40,7 +51,7 @@ def fetch_with_browser(url: str) -> str:
 
     Uses a singleton browser process (launched once, reused across calls).
     Applies stealth patches to avoid bot detection of headless Chromium.
-    Requires Playwright's Chromium (``playwright install chromium``).
+    Chromium is auto-installed on first use if missing.
     """
     browser = _get_browser()
     context = browser.new_context()
