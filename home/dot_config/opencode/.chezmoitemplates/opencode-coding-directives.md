@@ -113,5 +113,7 @@ constants.
   - `ctx7 docs <libraryId> <query>` fetches docs for an ID (e.g. `/vercel/next.js`)
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
 - Use `pdf2md` for PDF files: `pdf2md <file-or-url>`. Run `pdf2md --help` for full usage.
+- The Glob tool skips dot-directories (`.github/`, `.vscode/`, etc.). For those, use bash:
+  `rg --files --hidden -g "pattern" --glob '!**/.git/**'`.
 - MUST NOT use the 'write' tool if a file exists. MUST use 'edit' tools for surgical edits to
   existing files. This is for token efficiency.
