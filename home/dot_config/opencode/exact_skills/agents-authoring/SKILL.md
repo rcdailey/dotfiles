@@ -38,36 +38,44 @@ Cover these areas (not necessarily as separate sections):
 
 Compressed example:
 
-````markdown
+```markdown
 ## Do
+
 - use TypeScript strict mode
 - default to small, focused diffs
 
 ## Don't
+
 - no hard-coded colors; use design tokens
 - no new dependencies without approval
 
 ## Commands
-npm run tsc --noEmit path/to/file.tsx    # type check single file
-npm run eslint --fix path/to/file.tsx    # lint single file
+
+npm run tsc --noEmit path/to/file.tsx # type check single file
+npm run eslint --fix path/to/file.tsx # lint single file
 
 ## Permissions
+
 Allowed: read, type check, lint, single unit tests. Ask first: installs, push, deletes, full build.
 
 ## Structure
+
 - routes: `src/App.tsx`
 - components: `src/components/`
 - design tokens: `src/lib/theme/tokens.ts`
 
 ## Examples
+
 Copy: `src/components/UserForm.tsx` (forms). Avoid: `src/legacy/Admin.tsx` (class component).
 
 ## When stuck
+
 Ask a clarifying question, propose a plan, or open a draft PR. Do not push speculative changes.
 
 ## PR checklist
+
 lint + type check + tests green; diff small and focused; summary of what and why.
-````
+```
 
 ## Skill Routing
 
@@ -103,8 +111,11 @@ directory to the git worktree root; closer files take precedence. Global rules i
 
 ## Context Engineering
 
-- **Position sensitivity**: critical rules at the top; checklists at the end.
+- **Position sensitivity**: critical rules at the top; checklists at the end. Middle content
+  receives the least model attention (U-shaped attention curve).
 - **Completeness without bloat**: terse rules, compressed examples, no filler.
+- **Subtraction test**: periodically remove rules and test whether behavior degrades. Rules that
+  survive removal were noise; removing them improves signal density.
 
 ## Rule Writing
 
@@ -120,6 +131,10 @@ requirement levels, producing measurably higher compliance than softer phrasing.
   main; use feature branches and PRs."
 - **Specific over vague.** Bad: "Be careful with error handling." Good: "All async functions MUST
   have try/catch; unhandled rejections crash the process."
+- **Declarative for dense constraints.** Stacking multiple imperative chains ("when X, don't do Y;
+  also don't Z unless W") is measurably more fragile than flat declarative statements ("X: disabled.
+  Y: required."). Use RFC 2119 imperatives for individual rules; prefer declarative state-setting
+  for multi-condition constraint lists and configuration-like blocks.
 
 ## Antipatterns
 

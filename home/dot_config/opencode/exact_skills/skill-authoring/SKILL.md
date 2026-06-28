@@ -109,6 +109,25 @@ human, failure handling.
 - **CLI tool skills**: teach workflow and semantics; defer to `--help` for syntax. Cover what the
   tool cannot self-document: sequencing, failure handling, non-obvious interactions.
 
+### Content Effectiveness
+
+Research shows only ~40% of typical skill body content is actionable; removing the rest measurably
+improves agent performance through reduced attention dilution.
+
+- **Earned complexity.** Every rule MUST trace to a concrete failure mode. If you cannot name the
+  failure it prevents, delete it.
+- **Subtraction test.** Periodically remove rules and test whether behavior changes. Rules that
+  survive removal were not doing anything; removing them makes the skill more robust.
+- **Examples vs rules.** One good example replaces 3-5 rule sentences for format, tone, and
+  edge-case handling. More than 3-5 examples hits diminishing returns. Use examples for output
+  structure and style; use rules for hard prohibitions and safety constraints.
+- **Attention curve.** Models attend strongly to the beginning and end of loaded content, with a
+  blind spot in the middle. Front-load critical behavioral rules; place reference material
+  (schemas, field catalogs, YAML examples) in the middle; put verification steps at the end.
+- **Prose vs structure.** Prose for nuanced judgment calls; bullet lists for binary constraints and
+  enumerable rules. The hybrid (prose framing, then bullets, then one example) consistently
+  outperforms either alone.
+
 ### Directory Structures
 
 Most skills are self-contained (`skill-name/SKILL.md`). Add subdirectories only when justified:

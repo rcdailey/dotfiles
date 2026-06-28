@@ -99,7 +99,20 @@ Set `hidden: true` on subagents that should only be called by other agents.
 
 Cover (not all required): workflow/prerequisites, domain ownership, hard constraints (RFC 2119; see
 `agents-authoring`), verification commands, output format, when stuck. Do not restate constraints
-already enforced by permissions.
+already enforced by permissions. Do not restate rules from skills the agent will load; duplication
+dilutes attention without improving compliance.
+
+### Calibration Overrides
+
+When overriding model defaults, match the framing to the override type:
+
+- **Fighting training priors** (model defaults to X, you want Y): state the override + one-line
+  rationale. The rationale helps the model generalize to edge cases. Example: "Use parallel tool
+  calls when independent; sequential wastes user time."
+- **Environment constraints** (tool unavailable, format restriction): state the fact only. No
+  rationale needed; the model has no conflicting prior.
+- **Hard stops** (safety, scope boundaries): state the boundary + redirect to a safe path. Prevents
+  the model from treating the boundary as a puzzle to route around.
 
 ### Reference Material
 
