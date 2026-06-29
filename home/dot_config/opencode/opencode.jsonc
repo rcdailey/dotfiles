@@ -26,6 +26,13 @@
       "permission": {
         "edit": "deny",
         "question": "deny",
+        "session_rename": "deny",
+        "bash": {
+          "*": "allow",
+          "*> /*": "deny",
+          "*>> /*": "deny",
+          "*tee /*": "deny",
+        },
       },
     },
   },
