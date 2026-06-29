@@ -29,8 +29,9 @@ def cli(repo: str, number: int, comment_id: int, body: str) -> None:
         click.echo(f"id: {data['id']}")
         click.echo(f"url: {data['html_url']}")
         return
-    except GhError:
-        pass
+    except GhError as exc:
+        if exc.status != 404:
+            die(f"failed to post reply: {exc}")
 
     # Fall back to issue comment reply (conversation comment).
     try:

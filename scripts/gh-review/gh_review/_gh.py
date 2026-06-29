@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 from typing import Any
@@ -19,11 +20,17 @@ def check_deps() -> None:
         die("gh not authenticated; run 'gh auth login'")
 
 
+def _parse_status(stderr: str) -> int:
+    """Extract HTTP status code from gh CLI stderr, e.g. '(HTTP 404)'."""
+    m = re.search(r"\(HTTP (\d+)\)", stderr)
+    return int(m.group(1)) if m else 0
+
+
 def run_gh(*args: str) -> str:
     """Run gh with args, return stdout. Raises GhError on failure."""
     result = subprocess.run(["gh", *args], capture_output=True, text=True)
     if result.returncode != 0:
-        raise GhError(result.stderr.strip())
+        raise GhError(result.stderr.strip(), status=_parse_status(result.stderr))
     return result.stdout
 
 
