@@ -30,19 +30,9 @@ def cli(repo: str, number: int, comment_id: int, body: str) -> None:
         click.echo(f"url: {data['html_url']}")
         return
     except GhError as exc:
-        if exc.status != 404:
-            die(f"failed to post reply: {exc}")
-
-    # Fall back to issue comment reply (conversation comment).
-    try:
-        raw = gh_rest(
-            "POST",
-            f"repos/{repo}/issues/{number}/comments",
-            body={"body": body},
-            jq="{id, html_url}",
-        )
-        data = json.loads(raw)
-        click.echo(f"id: {data['id']}")
-        click.echo(f"url: {data['html_url']}")
-    except GhError as exc:
+        if exc.status == 404:
+            die(
+                f"comment {comment_id} is not a review comment "
+                "(conversation comments do not support threaded replies)"
+            )
         die(f"failed to post reply: {exc}")
