@@ -71,7 +71,10 @@ def _is_challenge_page(text: str) -> bool:
 
 def _extract_reddit(html_text: str) -> str:
     """Extract post and comments from old.reddit.com HTML as markdown."""
-    tree = lxml_html.fromstring(html_text)
+    try:
+        tree = lxml_html.fromstring(html_text)
+    except Exception:
+        return ""
     parts: list[str] = []
 
     # Post title

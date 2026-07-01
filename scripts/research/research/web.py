@@ -62,6 +62,11 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int) -> None:
         # Skip orgs/ paths (org-level discussions, profiles) since scout
         # cannot access those; let them fall through to web fetch.
         if len(parts) >= 2 and parts[0] != "orgs":
+            # Reroutes to scout burn a budget slot so agents learn to call
+            # the correct tool directly next time.
+            cache = get_cache()
+            budget_reserve(cache, url.split("?")[0].split("#")[0])
+
             owner, repo = parts[0], parts[1]
 
             # Detect owner/repo/discussions/N and reroute to scout discussion

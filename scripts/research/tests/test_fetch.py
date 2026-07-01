@@ -10,7 +10,13 @@ from curl_cffi.requests.exceptions import (
     Timeout,
 )
 
-from research._fetch import FetchError, _fetch_response, _is_challenge_page, fetch_markdown
+from research._fetch import (
+    FetchError,
+    _extract_reddit,
+    _fetch_response,
+    _is_challenge_page,
+    fetch_markdown,
+)
 
 
 def _mock_response(status_code: int = 200, text: str = "ok") -> MagicMock:
@@ -19,6 +25,16 @@ def _mock_response(status_code: int = 200, text: str = "ok") -> MagicMock:
     resp.text = text
     resp.headers = {}
     return resp
+
+
+# ---------------------------------------------------------------------------
+# _extract_reddit: malformed HTML handling
+# ---------------------------------------------------------------------------
+
+
+def test_extract_reddit_returns_empty_on_malformed_html() -> None:
+    """Malformed HTML that lxml cannot parse returns empty string instead of raising."""
+    assert _extract_reddit("<not valid html at all {{{}>") == ""
 
 
 # ---------------------------------------------------------------------------

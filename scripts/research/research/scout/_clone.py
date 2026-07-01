@@ -6,6 +6,7 @@ import contextlib
 import fcntl
 import subprocess
 import sys
+import threading
 import time
 from collections.abc import Generator
 from pathlib import Path
@@ -68,16 +69,26 @@ def _do_pull_if_stale(repo_dir: Path, owner: str, repo: str) -> None:
         return
     click.echo(f"[updating {owner}/{repo} (stale: {int(age)}s)]", err=True)
     result = subprocess.run(
-        ["git", "pull", "--ff-only", "-q"],
+        ["git", "fetch", "--depth=1", "-q", "origin"],
         cwd=repo_dir,
         capture_output=True,
         text=True,
     )
     if result.returncode != 0:
         click.echo(
-            f"warning: git pull failed: {result.stderr.strip()}",
+            f"warning: git fetch failed: {result.stderr.strip()}",
             err=True,
         )
+        marker.touch()
+        return
+    # Reset to fetched HEAD; safe for read-only clones and robust against
+    # force-pushes that break --ff-only on shallow histories.
+    subprocess.run(
+        ["git", "reset", "--hard", "FETCH_HEAD"],
+        cwd=repo_dir,
+        capture_output=True,
+        text=True,
+    )
     marker.touch()
 
 
@@ -134,14 +145,14 @@ def ensure_repo(owner: str, repo: str) -> Path:
         if age > STALE_SECONDS:
             with _repo_lock(owner, repo):
                 _do_pull_if_stale(repo_dir, owner, repo)
-        _cleanup_stale_clones(owner, repo)
+        threading.Thread(target=_cleanup_stale_clones, args=(owner, repo), daemon=True).start()
         return repo_dir
 
     # Clone needed; re-check under lock (another process may have won).
     with _repo_lock(owner, repo):
         if not _is_ready(repo_dir):
             _do_clone(repo_dir, owner, repo)
-    _cleanup_stale_clones(owner, repo)
+    threading.Thread(target=_cleanup_stale_clones, args=(owner, repo), daemon=True).start()
     return repo_dir
 
 

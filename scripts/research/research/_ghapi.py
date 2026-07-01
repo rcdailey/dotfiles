@@ -306,7 +306,13 @@ def list_discussions(
     search: str | None = None,
     limit: int = 30,
 ) -> list[dict]:
-    """List discussions in a repository via GraphQL."""
+    """List discussions in a repository via GraphQL.
+
+    GitHub Discussions GraphQL has no server-side search filter, so when
+    ``search`` is provided we fetch a larger batch (up to 100) and filter
+    client-side, then truncate to ``limit``.
+    """
+    fetch_limit = min(limit * 3, 100) if search else limit
     query = """\
 query($owner:String!,$repo:String!,$limit:Int!) {
   repository(owner:$owner,name:$repo) {
@@ -316,14 +322,14 @@ query($owner:String!,$repo:String!,$limit:Int!) {
   }
 }"""
     try:
-        data = graphql(query, owner=owner, repo=repo, limit=str(limit))
+        data = graphql(query, owner=owner, repo=repo, limit=str(fetch_limit))
     except APIError as e:
         raise APIError(f"failed to list discussions: {e}") from e
 
     nodes = data.get("data", {}).get("repository", {}).get("discussions", {}).get("nodes", [])
     if search:
         needle = search.lower()
-        nodes = [n for n in nodes if needle in n.get("title", "").lower()]
+        nodes = [n for n in nodes if needle in n.get("title", "").lower()][:limit]
     return nodes
 
 

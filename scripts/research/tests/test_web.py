@@ -72,6 +72,54 @@ def test_fetch_cmd_cache_hit_skips_network() -> None:
     assert result.exit_code == 0
 
 
+def test_fetch_cmd_github_url_calls_budget_reserve() -> None:
+    """GitHub repo reroute charges budget before delegating to scout orient."""
+    runner = CliRunner()
+    with (
+        patch("research._cache.get_cache", return_value=_make_cache()),
+        patch("research.web.budget_reserve") as mock_reserve,
+        patch("research.scout.explore._render_orient"),
+    ):
+        result = runner.invoke(
+            cli,
+            ["web", "fetch", "https://github.com/owner/repo"],
+            env=ENV,
+        )
+    mock_reserve.assert_called_once_with(
+        mock_reserve.call_args[0][0], "https://github.com/owner/repo"
+    )
+    assert result.exit_code == 0
+
+
+def test_fetch_cmd_github_discussion_url_calls_budget_reserve() -> None:
+    """GitHub discussion reroute charges budget before delegating to scout discussion."""
+    runner = CliRunner()
+    discussion_data = {
+        "number": 1,
+        "title": "Test Discussion",
+        "body": "body",
+        "createdAt": "2024-01-01T00:00:00Z",
+        "category": {"name": "General"},
+        "comments": [],
+    }
+    with (
+        patch("research._cache.get_cache", return_value=_make_cache()),
+        patch("research.web.budget_reserve") as mock_reserve,
+        patch("research._ghapi.view_discussion", return_value=discussion_data),
+        patch("research.scout.issues._render_comments"),
+    ):
+        result = runner.invoke(
+            cli,
+            ["web", "fetch", "https://github.com/owner/repo/discussions/1"],
+            env=ENV,
+        )
+    mock_reserve.assert_called_once_with(
+        mock_reserve.call_args[0][0],
+        "https://github.com/owner/repo/discussions/1",
+    )
+    assert result.exit_code == 0
+
+
 def test_fetch_cmd_fetches_and_caches() -> None:
     """Uncached URL fetches content and stores it."""
     store: dict = {}
