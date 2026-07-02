@@ -18,6 +18,7 @@ permission:
     "*": deny
     "research *": allow
     "rg *": allow
+    "gh run view *": allow
     "gh pr view *": allow
     "gh pr checks *": allow
     "gh pr diff *": allow
