@@ -116,7 +116,7 @@ def _fetch_response(url: str) -> object:
         try:
             response = _http_get(
                 url,
-                impersonate="chrome",
+                impersonate="safari",
                 allow_redirects=True,
                 timeout=_TIMEOUT,
             )
