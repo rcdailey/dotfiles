@@ -209,6 +209,24 @@ def test_browser_fallback_raises_when_browser_fails() -> None:
             fetch_markdown("https://example.com")
 
 
+def test_browser_fallback_raises_when_browser_also_challenge() -> None:
+    """FetchError raised when browser returns another challenge page."""
+    challenge_html = "<html><title>Just a moment...</title></html>"
+    browser_challenge = "<html>Performing security verification to continue.</html>"
+    resp = _mock_response(200, challenge_html)
+
+    with (
+        patch("research._fetch._http_get", return_value=resp),
+        patch("research._fetch.fetch_with_browser", return_value=browser_challenge),
+        patch("research._fetch.trafilatura.extract") as mock_extract,
+        patch("research._fetch.click.echo"),
+    ):
+        with pytest.raises(FetchError, match="still a challenge page"):
+            fetch_markdown("https://example.com")
+
+    mock_extract.assert_not_called()
+
+
 def test_browser_fallback_raises_when_no_content_extracted() -> None:
     """FetchError raised when browser renders page but trafilatura finds nothing."""
     challenge_html = "<html><title>Just a moment...</title></html>"

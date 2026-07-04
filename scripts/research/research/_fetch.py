@@ -167,6 +167,8 @@ def fetch_markdown(url: str) -> str:
             html = fetch_with_browser(url)
         except Exception as e:
             raise FetchError(f"browser fallback failed: {e}") from e
+        if _is_challenge_page(html):
+            raise FetchError("browser fallback failed: still a challenge page")
         markdown = trafilatura.extract(
             html,
             output_format="markdown",
