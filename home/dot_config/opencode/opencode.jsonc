@@ -13,7 +13,7 @@
       "model": "anthropic/claude-haiku-4-5",
     },
     "compaction": {
-      "model": "anthropic/claude-sonnet-4-6",
+      "model": "opencode/deepseek-v4-flash",
     },
     "general": {
       "tools": { "question": false },
