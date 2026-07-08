@@ -17,6 +17,7 @@ def _issue_node(
     priority: int = 2,
     assignee_name: str | None = "Bob",
     labels: list[str] | None = None,
+    estimate: float | None = None,
 ) -> dict:
     return {
         "id": "issue-uuid-1",
@@ -24,6 +25,7 @@ def _issue_node(
         "title": title,
         "description": "Some description",
         "priority": priority,
+        "estimate": estimate,
         "url": "https://linear.app/team/issue/ENG-1",
         "createdAt": "2026-01-01T00:00:00Z",
         "updatedAt": "2026-01-02T00:00:00Z",
@@ -131,3 +133,70 @@ def test_issues_list_priority_labels():
 
     assert "None" in result.output
     assert "Urgent" in result.output
+
+
+def test_issues_list_shows_estimate():
+    with patch("linear_cli.issues.paginate", return_value=[_issue_node(estimate=3.0)]):
+        result = CliRunner().invoke(cli, ["issues", "list"])
+
+    assert result.exit_code == 0
+    assert "estimate: 3" in result.output
+
+
+def test_issues_list_estimate_none_shown_as_dash():
+    with patch("linear_cli.issues.paginate", return_value=[_issue_node(estimate=None)]):
+        result = CliRunner().invoke(cli, ["issues", "list"])
+
+    assert result.exit_code == 0
+    assert "estimate: -" in result.output
+
+
+def test_issues_list_with_cycle_filter():
+    with (
+        patch(
+            "linear_cli.issues.resolve_team_id",
+            return_value="team-uuid",
+        ),
+        patch(
+            "linear_cli.issues.resolve_cycle_number",
+            return_value=5,
+        ),
+        patch("linear_cli.issues.paginate", return_value=[_issue_node()]) as mock_pag,
+    ):
+        result = CliRunner().invoke(cli, ["issues", "list", "--team", "ENG", "--cycle", "active"])
+
+    assert result.exit_code == 0
+    call_vars = mock_pag.call_args[0][1]
+    assert call_vars["filter"]["cycle"] == {"number": {"eq": 5}}
+
+
+def test_issues_list_cycle_requires_team():
+    result = CliRunner().invoke(cli, ["issues", "list", "--cycle", "active"])
+
+    assert result.exit_code != 0
+    assert "error: --cycle requires --team" in result.output
+
+
+def test_issues_list_with_estimate_none_filter():
+    with patch("linear_cli.issues.paginate", return_value=[]) as mock_pag:
+        CliRunner().invoke(cli, ["issues", "list", "--estimate", "none"])
+
+    call_vars = mock_pag.call_args[0][1]
+    assert call_vars["filter"]["estimate"] == {"null": True}
+
+
+def test_issues_list_with_estimate_value_filter():
+    with patch("linear_cli.issues.paginate", return_value=[]) as mock_pag:
+        CliRunner().invoke(cli, ["issues", "list", "--estimate", "5"])
+
+    call_vars = mock_pag.call_args[0][1]
+    assert call_vars["filter"]["estimate"] == {"eq": 5.0}
+
+
+def test_issues_view_shows_estimate():
+    issue_data = {"issue": _issue_node(estimate=5.0)}
+    with patch("linear_cli.issues.execute", return_value=issue_data):
+        result = CliRunner().invoke(cli, ["issues", "view", "ENG-1"])
+
+    assert result.exit_code == 0
+    assert "estimate:    5" in result.output

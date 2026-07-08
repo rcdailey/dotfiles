@@ -122,6 +122,7 @@ query Issues(
       title
       description
       priority
+      estimate
       url
       createdAt
       updatedAt
@@ -167,6 +168,7 @@ query SearchIssues(
       title
       description
       priority
+      estimate
       url
       createdAt
       updatedAt
@@ -187,6 +189,16 @@ query SearchIssues(
 }
 """
 
+TEAM_ACTIVE_CYCLE_QUERY = """
+query Team($id: String!) {
+  team(id: $id) {
+    activeCycle {
+      number
+    }
+  }
+}
+"""
+
 ISSUE_QUERY = """
 query Issue($id: String!) {
   issue(id: $id) {
@@ -195,6 +207,7 @@ query Issue($id: String!) {
     title
     description
     priority
+    estimate
     url
     createdAt
     updatedAt

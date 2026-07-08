@@ -8,6 +8,7 @@ from linear_cli._queries import (
     LABELS_QUERY,
     PROJECTS_QUERY,
     STATES_QUERY,
+    TEAM_ACTIVE_CYCLE_QUERY,
     TEAMS_QUERY,
     VIEWER_QUERY,
 )
@@ -65,6 +66,27 @@ def resolve_project_id(project_name: str) -> str:
         if node.get("name", "").lower() == project_name.lower():
             return node["id"]
     die(f"project '{project_name}' not found")
+
+
+def resolve_cycle_number(cycle: str, team_id: str | None) -> int:
+    """Resolve 'active', 'previous', or a digit string to a cycle number."""
+    if cycle.isdigit():
+        return int(cycle)
+    if not team_id:
+        die("error: --cycle requires --team")
+    try:
+        data = execute(TEAM_ACTIVE_CYCLE_QUERY, {"id": team_id})
+    except LinearError as exc:
+        die(str(exc))
+    active_cycle = (data.get("team") or {}).get("activeCycle")
+    if not active_cycle:
+        die("no active cycle found for team")
+    number: int = int(active_cycle["number"])
+    if cycle == "active":
+        return number
+    if cycle == "previous":
+        return number - 1
+    die(f"unknown cycle value '{cycle}'; expected 'active', 'previous', or an integer")
 
 
 def resolve_assignee_id(assignee: str) -> str:

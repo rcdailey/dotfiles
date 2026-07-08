@@ -113,12 +113,14 @@ class Issue:
     created_at: str | None = None
     updated_at: str | None = None
     url: str | None = None
+    estimate: float | None = None
 
     @classmethod
     def from_graphql(cls, data: dict) -> Self:
         state = data.get("state") or {}
         assignee = data.get("assignee") or {}
         label_nodes = (data.get("labels") or {}).get("nodes", [])
+        raw_estimate = data.get("estimate")
         return cls(
             id=data.get("id"),
             identifier=data.get("identifier"),
@@ -132,6 +134,7 @@ class Issue:
             created_at=data.get("createdAt"),
             updated_at=data.get("updatedAt"),
             url=data.get("url"),
+            estimate=float(raw_estimate) if raw_estimate is not None else None,
         )
 
 

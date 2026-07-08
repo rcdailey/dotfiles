@@ -29,9 +29,9 @@ linear states list [--team KEY]
 linear labels groups [--team KEY]
 linear labels list [--team KEY] [--group NAME]...
 linear issues list [--team KEY] [--state TYPE] [--assignee USER] [--label NAME]
-                   [--limit N]
+                   [--cycle CYCLE] [--estimate EST] [--limit N]
 linear issues search <QUERY> [--team KEY] [--state TYPE] [--assignee USER]
-                     [--label NAME] [--limit N]
+                     [--label NAME] [--cycle CYCLE] [--estimate EST] [--limit N]
 linear issues view <ID>
 linear issues create --title TEXT --team KEY [--description TEXT] [--state NAME]
                      [--priority 0-4] [--assignee USER] [--label NAME]...
@@ -75,6 +75,8 @@ teams, states, or labels; use display names or keys instead.
 - `--assignee` accepts `me` (resolves via viewer query) or a user UUID
 - `--label` takes a label display name, case-insensitive
 - `--project` takes a project display name
+- `--cycle` takes `active`, `previous`, or an integer cycle number; requires `--team`
+- `--estimate` takes `none` (unestimated) or a numeric value
 
 ## Create in one shot
 

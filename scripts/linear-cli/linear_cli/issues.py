@@ -17,11 +17,18 @@ from linear_cli._queries import (
 )
 from linear_cli._resolve import (
     resolve_assignee_id,
+    resolve_cycle_number,
     resolve_label_id,
     resolve_project_id,
     resolve_state_id,
     resolve_team_id,
 )
+
+
+def _estimate_str(estimate: float | None) -> str:
+    if estimate is None:
+        return "-"
+    return str(int(estimate)) if estimate == int(estimate) else str(estimate)
 
 
 def _print_issue(issue: Issue) -> None:
@@ -33,6 +40,7 @@ def _print_issue(issue: Issue) -> None:
         parts.append(f"assignee: {issue.assignee_name}")
     if labels:
         parts.append(f"labels: {labels}")
+    parts.append(f"estimate: {_estimate_str(issue.estimate)}")
     click.echo("  ".join(parts))
 
 
@@ -55,15 +63,23 @@ def cli() -> None:
 )
 @click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
 @click.option("--label", default=None, help="Label name to filter by.")
+@click.option("--cycle", default=None, type=str, help="Cycle: 'active', 'previous', or number.")
+@click.option(
+    "--estimate", "estimate_filter", default=None, type=str, help="Estimate: 'none' or a number."
+)
 @click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
 def list_issues(
     team_key: str | None,
     state_type: str | None,
     assignee: str | None,
     label: str | None,
+    cycle: str | None,
+    estimate_filter: str | None,
     limit: int,
 ) -> None:
     """List issues with optional filters."""
+    if cycle and not team_key:
+        raise SystemExit("error: --cycle requires --team")
     team_id = resolve_team_id(team_key) if team_key else None
     assignee_id = resolve_assignee_id(assignee) if assignee else None
 
@@ -76,6 +92,14 @@ def list_issues(
         filt["assignee"] = {"id": {"eq": assignee_id}}
     if label:
         filt["labels"] = {"name": {"eq": label}}
+    if cycle:
+        cycle_number = resolve_cycle_number(cycle, team_id)
+        filt["cycle"] = {"number": {"eq": cycle_number}}
+    if estimate_filter is not None:
+        if estimate_filter.lower() == "none":
+            filt["estimate"] = {"null": True}
+        else:
+            filt["estimate"] = {"eq": float(estimate_filter)}
 
     variables: dict = {
         "filter": filt or None,
@@ -110,6 +134,10 @@ def list_issues(
 )
 @click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
 @click.option("--label", default=None, help="Label name to filter by.")
+@click.option("--cycle", default=None, type=str, help="Cycle: 'active', 'previous', or number.")
+@click.option(
+    "--estimate", "estimate_filter", default=None, type=str, help="Estimate: 'none' or a number."
+)
 @click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
 def search(
     query: str,
@@ -117,9 +145,13 @@ def search(
     state_type: str | None,
     assignee: str | None,
     label: str | None,
+    cycle: str | None,
+    estimate_filter: str | None,
     limit: int,
 ) -> None:
     """Full-text search across issue titles, descriptions, and comments."""
+    if cycle and not team_key:
+        raise SystemExit("error: --cycle requires --team")
     team_id = resolve_team_id(team_key) if team_key else None
     assignee_id = resolve_assignee_id(assignee) if assignee else None
 
@@ -132,6 +164,14 @@ def search(
         filt["assignee"] = {"id": {"eq": assignee_id}}
     if label:
         filt["labels"] = {"name": {"eq": label}}
+    if cycle:
+        cycle_number = resolve_cycle_number(cycle, team_id)
+        filt["cycle"] = {"number": {"eq": cycle_number}}
+    if estimate_filter is not None:
+        if estimate_filter.lower() == "none":
+            filt["estimate"] = {"null": True}
+        else:
+            filt["estimate"] = {"eq": float(estimate_filter)}
 
     variables: dict = {
         "term": query,
@@ -173,6 +213,7 @@ def view(issue_id: str) -> None:
     click.echo(f"priority:    {pri}")
     click.echo(f"assignee:    {issue.assignee_name or 'unassigned'}")
     click.echo(f"labels:      {', '.join(issue.labels) if issue.labels else 'none'}")
+    click.echo(f"estimate:    {_estimate_str(issue.estimate)}")
     click.echo(f"url:         {issue.url}")
     click.echo(f"created:     {issue.created_at}")
     click.echo(f"updated:     {issue.updated_at}")
