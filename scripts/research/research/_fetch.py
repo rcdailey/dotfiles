@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 from urllib.parse import urlparse, urlunparse
 
@@ -34,8 +35,20 @@ _FILE_CONTENT_TYPES = (
 
 _REDDIT_HOSTS = ("www.reddit.com", "reddit.com", "old.reddit.com")
 
-# Text markers that indicate a bot-challenge page.
-_CHALLENGE_MARKERS = (
+# Title markers that indicate a bot-challenge interstitial; checked on any page.
+_CHALLENGE_TITLE_MARKERS = (
+    "just a moment",
+    "attention required",
+    "security verification",
+    "checking your browser",
+    "ddos-guard",
+)
+
+# Body markers that indicate a bot-challenge page. Only checked on small
+# documents: real content pages routinely contain these substrings in JS
+# bundles and i18n strings (e.g. "CaptchaProvider", "Captcha verification
+# failed"), while challenge interstitials are small standalone pages.
+_CHALLENGE_BODY_MARKERS = (
     "security verification",
     "checking your browser",
     "just a moment",
@@ -45,6 +58,9 @@ _CHALLENGE_MARKERS = (
     "captcha",
     "ddos-guard",
 )
+_CHALLENGE_BODY_MAX_CHARS = 50_000
+
+_TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 
 
 class FetchError(Exception):
@@ -65,8 +81,15 @@ def _to_old_reddit(url: str) -> str:
 
 def _is_challenge_page(text: str) -> bool:
     """Return True if the response body looks like a bot-challenge page."""
+    match = _TITLE_RE.search(text)
+    if match:
+        title = match.group(1).lower()
+        if any(marker in title for marker in _CHALLENGE_TITLE_MARKERS):
+            return True
+    if len(text) > _CHALLENGE_BODY_MAX_CHARS:
+        return False
     lower = text.lower()
-    return any(marker in lower for marker in _CHALLENGE_MARKERS)
+    return any(marker in lower for marker in _CHALLENGE_BODY_MARKERS)
 
 
 def _extract_reddit(html_text: str) -> str:

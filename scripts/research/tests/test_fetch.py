@@ -162,6 +162,28 @@ def test_challenge_detection_case_insensitive() -> None:
     assert _is_challenge_page("CHECKING YOUR BROWSER")
 
 
+def test_challenge_not_detected_large_page_with_incidental_captcha() -> None:
+    """Real content pages whose JS bundles mention captcha are not challenges.
+
+    Regression: docs.fireworks.ai (Mintlify) ships "CaptchaProvider" in its
+    Next.js bundle; deepinfra.com ships "Captcha verification failed" i18n
+    strings. Both are full 200 pages, not interstitials.
+    """
+    filler = "<p>real documentation content</p>" * 3000
+    page = f'<html><title>Serverless Pricing</title><body>{filler}<script>"CaptchaProvider"</script></body></html>'
+    assert not _is_challenge_page(page)
+
+
+def test_challenge_detected_by_title_even_on_large_page() -> None:
+    filler = "<p>obfuscated js</p>" * 3000
+    page = f"<html><title>Just a moment...</title><body>{filler}</body></html>"
+    assert _is_challenge_page(page)
+
+
+def test_challenge_detected_attention_required_title() -> None:
+    assert _is_challenge_page("<html><title>Attention Required! | Cloudflare</title></html>")
+
+
 # ---------------------------------------------------------------------------
 # fetch_markdown: browser fallback integration
 # ---------------------------------------------------------------------------
