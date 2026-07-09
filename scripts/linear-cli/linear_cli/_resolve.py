@@ -41,17 +41,20 @@ def resolve_state_id(state_name: str, team_id: str | None) -> str:
     die(f"state '{state_name}' not found")
 
 
-def resolve_label_id(label_name: str, team_id: str | None) -> str:
-    """Resolve a label name to its UUID."""
+def resolve_label_id(label_name: str) -> str:
+    """Resolve a label name to its UUID.
+
+    Filters by exact name server-side to avoid pagination issues with large
+    label sets. Labels are workspace-scoped; no team filter applied.
+    """
     try:
-        filt = {"team": {"id": {"eq": team_id}}} if team_id else None
+        filt = {"name": {"eqIgnoreCase": label_name}}
         data = execute(LABELS_QUERY, {"filter": filt})
     except LinearError as exc:
         die(str(exc))
     nodes = (data.get("issueLabels") or {}).get("nodes", [])
-    for node in nodes:
-        if node.get("name", "").lower() == label_name.lower():
-            return node["id"]
+    if nodes:
+        return nodes[0]["id"]
     die(f"label '{label_name}' not found")
 
 

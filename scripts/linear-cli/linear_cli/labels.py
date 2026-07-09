@@ -9,7 +9,6 @@ from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute, paginate
 from linear_cli._models import Label
 from linear_cli._queries import LABEL_CHILDREN_QUERY, LABEL_GROUPS_QUERY, LABELS_QUERY
-from linear_cli._resolve import resolve_team_id
 
 
 @click.group(cls=HelpfulGroup)
@@ -18,13 +17,9 @@ def cli() -> None:
 
 
 @cli.command("groups")
-@click.option("--team", "team_key", default=None, help="Team key (e.g. ENG).")
-def list_groups(team_key: str | None) -> None:
+def list_groups() -> None:
     """List label group names, one per line."""
-    team_id = resolve_team_id(team_key) if team_key else None
     filt: dict = {"isGroup": {"eq": True}}
-    if team_id:
-        filt["team"] = {"id": {"eq": team_id}}
     try:
         data = execute(LABEL_GROUPS_QUERY, {"filter": filt})
     except LinearError as exc:
@@ -42,32 +37,26 @@ def list_groups(team_key: str | None) -> None:
 
 
 @cli.command("list")
-@click.option("--team", "team_key", default=None, help="Team key (e.g. ENG).")
 @click.option(
     "--group",
     "groups",
     multiple=True,
     help="Expand children of this group (repeatable).",
 )
-def list_labels(team_key: str | None, groups: tuple[str, ...]) -> None:
+def list_labels(groups: tuple[str, ...]) -> None:
     """List issue labels. Groups shown with (group) suffix; children collapsed by default.
 
     Use --group NAME to expand children of a specific group.
     """
-    team_id = resolve_team_id(team_key) if team_key else None
-
     if groups:
-        _list_with_groups(groups, team_id)
+        _list_with_groups(groups)
     else:
-        _list_all(team_id)
+        _list_all()
 
 
-def _list_all(team_id: str | None) -> None:
+def _list_all() -> None:
     """Fetch all labels via pagination and partition into groups vs ungrouped."""
-    filt: dict | None = None
-    if team_id:
-        filt = {"team": {"id": {"eq": team_id}}}
-    variables: dict = {"filter": filt, "first": 250, "after": None}
+    variables: dict = {"filter": None, "first": 250, "after": None}
     try:
         nodes = paginate(LABELS_QUERY, variables, ["issueLabels"])
     except LinearError as exc:
@@ -88,12 +77,10 @@ def _list_all(team_id: str | None) -> None:
         click.echo(label.name)
 
 
-def _list_with_groups(group_names: tuple[str, ...], team_id: str | None) -> None:
+def _list_with_groups(group_names: tuple[str, ...]) -> None:
     """For each named group, fetch children server-side and display indented."""
     for group_name in group_names:
         filt: dict = {"parent": {"name": {"eq": group_name}}}
-        if team_id:
-            filt["team"] = {"id": {"eq": team_id}}
         try:
             data = execute(LABEL_CHILDREN_QUERY, {"filter": filt})
         except LinearError as exc:

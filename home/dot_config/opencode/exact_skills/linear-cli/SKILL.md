@@ -26,8 +26,8 @@ linear auth status
 linear teams list
 linear teams members <TEAM_KEY>
 linear states list [--team KEY]
-linear labels groups [--team KEY]
-linear labels list [--team KEY] [--group NAME]...
+linear labels groups
+linear labels list [--group NAME]...
 linear issues list [--team KEY] [--state TYPE] [--assignee USER] [--label NAME]
                    [--cycle CYCLE] [--estimate EST] [--limit N]
 linear issues search <QUERY> [--team KEY] [--state TYPE] [--assignee USER]
@@ -158,6 +158,6 @@ linear issues search "multiple images" --team ENG --state started
 ## Discovery before mutation
 
 Run `linear teams list`, `linear states list --team KEY`, or `linear labels groups`
-to discover available values before creating or updating issues. Use
-`linear labels list --group "Ticket Type"` to see choices within a specific label
-group.
+to discover available values before creating or updating issues. Labels are
+workspace-scoped (no `--team` filter). Use `linear labels list --group "Ticket Type"`
+to see choices within a specific label group.

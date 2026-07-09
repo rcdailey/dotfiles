@@ -46,19 +46,6 @@ def test_labels_groups_lists_group_names():
     assert "(group)" not in result.output
 
 
-def test_labels_groups_with_team_resolves_team_id():
-    teams_data = {"teams": {"nodes": [{"id": "team-uuid", "key": "ENG", "name": "Engineering"}]}}
-    labels_data = {"issueLabels": {"nodes": [_group_node("Ticket Type")]}}
-    with (
-        patch("linear_cli._resolve.execute", return_value=teams_data),
-        patch("linear_cli.labels.execute", return_value=labels_data),
-    ):
-        result = CliRunner().invoke(cli, ["labels", "groups", "--team", "ENG"])
-
-    assert result.exit_code == 0
-    assert "Ticket Type" in result.output
-
-
 def test_labels_groups_no_groups_found():
     data = {"issueLabels": {"nodes": []}}
     with patch("linear_cli.labels.execute", return_value=data):
@@ -96,19 +83,6 @@ def test_labels_list_default_no_labels():
 
     assert result.exit_code == 0
     assert "no labels found" in result.output
-
-
-def test_labels_list_default_with_team_resolves_team_id():
-    teams_data = {"teams": {"nodes": [{"id": "team-uuid", "key": "ENG", "name": "Engineering"}]}}
-    nodes = [_label_node("Bug", is_group=False, parent_name=None)]
-    with (
-        patch("linear_cli._resolve.execute", return_value=teams_data),
-        patch("linear_cli.labels.paginate", return_value=nodes),
-    ):
-        result = CliRunner().invoke(cli, ["labels", "list", "--team", "ENG"])
-
-    assert result.exit_code == 0
-    assert "Bug" in result.output
 
 
 # --- labels list --group ---
@@ -157,19 +131,3 @@ def test_labels_list_group_empty_group_shows_header_only():
     assert "Empty (group)" in result.output
     # No indented children
     assert "  " not in result.output
-
-
-def test_labels_list_group_with_team_resolves_team_id():
-    teams_data = {"teams": {"nodes": [{"id": "team-uuid", "key": "ENG", "name": "Engineering"}]}}
-    children_data = {"issueLabels": {"nodes": [_child_node("Bug")]}}
-    with (
-        patch("linear_cli._resolve.execute", return_value=teams_data),
-        patch("linear_cli.labels.execute", return_value=children_data),
-    ):
-        result = CliRunner().invoke(
-            cli, ["labels", "list", "--team", "ENG", "--group", "Ticket Type"]
-        )
-
-    assert result.exit_code == 0
-    assert "Ticket Type (group)" in result.output
-    assert "  Bug" in result.output

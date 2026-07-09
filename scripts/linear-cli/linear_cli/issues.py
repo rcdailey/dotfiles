@@ -256,7 +256,7 @@ def create(
     if assignee:
         input_data["assigneeId"] = resolve_assignee_id(assignee)
     if label_names:
-        input_data["labelIds"] = [resolve_label_id(ln, team_id) for ln in label_names]
+        input_data["labelIds"] = [resolve_label_id(ln) for ln in label_names]
     if parent_id:
         input_data["parentId"] = parent_id
     if estimate is not None:
@@ -331,11 +331,11 @@ def update(
 
         if add_labels:
             for ln in add_labels:
-                lid = resolve_label_id(ln, team_id)
+                lid = resolve_label_id(ln)
                 current_ids.add(lid)
         if remove_labels:
             for ln in remove_labels:
-                lid = resolve_label_id(ln, team_id)
+                lid = resolve_label_id(ln)
                 current_ids.discard(lid)
 
         input_data["labelIds"] = list(current_ids)
