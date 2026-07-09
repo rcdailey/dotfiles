@@ -1,0 +1,38 @@
+# Topgrade configuration
+# Reference: topgrade --config-reference
+
+[misc]
+assume_yes = true
+cleanup = true
+
+# cache sudo credentials at start and refresh during the run,
+# so long runs prompt for the password exactly once
+pre_sudo = true
+sudo_loop = true
+
+# every brew invocation runs `sudo --reset-timestamp` (brew.sh), wiping the
+# cached credentials; run brew last so sudo-needing steps (dnf, snap,
+# firmware) finish while the cache is still warm
+last = ["brew_formula", "brew_cask"]
+
+# topgrade itself is managed by mise
+no_self_update = true
+
+disable = [
+  # pulls every local docker image, including pinned versions and test tags
+  "containers",
+  # managed by mise; self-update fails on mise-installed binary
+  "uv",
+  # python is mise-managed; user-site pip upgrade is pointless
+  "pip3",
+  # runs `git pull` + apply on the dotfiles repo; risky with in-progress work
+  "chezmoi",
+  # topgrade's zinit step re-sources .zshrc, tripping the re-source guard;
+  # replaced by the custom "zinit" command below
+  "shell",
+]
+
+# `-i ` prefix runs in an interactive $SHELL, which loads .zshrc once
+# (no explicit re-source, unlike topgrade's built-in zinit step)
+[commands]
+"zinit" = "-i zinit self-update && zinit update --all"

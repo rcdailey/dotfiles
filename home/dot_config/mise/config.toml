@@ -30,23 +30,19 @@ node = "latest"
 "npm:@commitlint/cli" = "latest"
 "npm:@commitlint/config-conventional" = "latest"
 "npm:ctx7" = "latest"
+topgrade = "latest"
 
 # Don't use this because it doesn't update frequently enough
 # Use: curl -fsSL https://opencode.ai/install | bash
 # opencode = "latest"
 
-# Release assets are bare binaries; plannotator-paste-* assets make autodetection
-# ambiguous, so pin the asset per platform
-[tools."github:backnotprop/plannotator"]
-version = "latest"
-bin = "plannotator"
-
-[tools."github:backnotprop/plannotator".platforms]
-linux-x64 = { asset_pattern = "plannotator-linux-x64" }
-macos-arm64 = { asset_pattern = "plannotator-darwin-arm64" }
-
 [settings]
-activate_aggressive = true
+# both must be off so hook-env strips the shims dir from interactive PATH
+# (src/path_env.rs); shims list every installed tool, active or not, which
+# breaks PATH-based tool discovery (topgrade, editors) outside project dirs.
+# non-interactive shells still get shims via .zshenv (mise activate --shims).
+activate_aggressive = false
+not_found_auto_install = false
 auto_install = true
 jobs = 4
 trusted_config_paths = ["~/.config/mise", "~"]

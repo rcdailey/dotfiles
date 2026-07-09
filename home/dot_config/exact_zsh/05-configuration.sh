@@ -21,7 +21,7 @@ if [ -d "$HOME/.local/bin" ]; then
 fi
 
 # Append additional directories
-export PATH="$PATH:$HOME:$HOME/git-scripts"
+export PATH="$PATH:$HOME/git-scripts"
 
 # PATH modifications for Go tools (needed in all interactive shells)
 # Add Go tools to PATH if go is installed
