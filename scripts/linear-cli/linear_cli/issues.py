@@ -214,9 +214,32 @@ def view(issue_id: str) -> None:
     click.echo(f"assignee:    {issue.assignee_name or 'unassigned'}")
     click.echo(f"labels:      {', '.join(issue.labels) if issue.labels else 'none'}")
     click.echo(f"estimate:    {_estimate_str(issue.estimate)}")
+    if issue.parent_identifier:
+        click.echo(f"parent:      {issue.parent_identifier}  {issue.parent_title}")
     click.echo(f"url:         {issue.url}")
     click.echo(f"created:     {issue.created_at}")
     click.echo(f"updated:     {issue.updated_at}")
+    if issue.children:
+        click.echo("")
+        click.echo(f"sub-issues ({len(issue.children)}):")
+        for child in issue.children:
+            c_state = (child.get("state") or {}).get("name", "")
+            c_pri = priority_label(int(child.get("priority", 0)))
+            c_assignee = (child.get("assignee") or {}).get("name")
+            c_labels_nodes = (child.get("labels") or {}).get("nodes", [])
+            c_labels = ", ".join(ln.get("name", "") for ln in c_labels_nodes if ln.get("name"))
+            c_est = _estimate_str(
+                float(child["estimate"]) if child.get("estimate") is not None else None
+            )
+            parts = [
+                f"  {child.get('identifier')}  {c_state}  [{c_pri}]  {child.get('title')}",
+            ]
+            if c_assignee:
+                parts.append(f"assignee: {c_assignee}")
+            if c_labels:
+                parts.append(f"labels: {c_labels}")
+            parts.append(f"estimate: {c_est}")
+            click.echo("  ".join(parts))
     if issue.description:
         click.echo("")
         click.echo(issue.description)
@@ -289,6 +312,7 @@ def create(
     "--remove-label", "remove_labels", multiple=True, help="Label name to remove (repeatable)."
 )
 @click.option("--estimate", default=None, type=float, help="Story point estimate.")
+@click.option("--parent", "parent_id", default=None, help="Parent issue ID or identifier.")
 @click.option("--project", "project_name", default=None, help="Project name to assign.")
 def update(
     issue_id: str,
@@ -299,6 +323,7 @@ def update(
     add_labels: tuple[str, ...],
     remove_labels: tuple[str, ...],
     estimate: float | None,
+    parent_id: str | None,
     project_name: str | None,
 ) -> None:
     """Update an existing issue."""
@@ -342,6 +367,8 @@ def update(
 
     if estimate is not None:
         input_data["estimate"] = estimate
+    if parent_id:
+        input_data["parentId"] = parent_id
     if project_name:
         input_data["projectId"] = resolve_project_id(project_name)
 

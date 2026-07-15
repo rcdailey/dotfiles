@@ -7,7 +7,6 @@ description: >
 mode: subagent
 model: anthropic/claude-sonnet-4-6
 variant: medium
-hidden: true
 permission:
   "*": deny
   grep: allow

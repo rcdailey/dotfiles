@@ -18,6 +18,8 @@ def _issue_node(
     assignee_name: str | None = "Bob",
     labels: list[str] | None = None,
     estimate: float | None = None,
+    parent: dict | None = None,
+    children: list[dict] | None = None,
 ) -> dict:
     return {
         "id": "issue-uuid-1",
@@ -32,6 +34,8 @@ def _issue_node(
         "state": {"name": state_name, "type": state_type},
         "assignee": {"name": assignee_name} if assignee_name else None,
         "labels": {"nodes": [{"name": ln} for ln in (labels or [])]},
+        "parent": parent,
+        "children": {"nodes": children or []},
     }
 
 
@@ -200,3 +204,53 @@ def test_issues_view_shows_estimate():
 
     assert result.exit_code == 0
     assert "estimate:    5" in result.output
+
+
+def test_issues_view_shows_parent():
+    node = _issue_node(parent={"identifier": "ENG-100", "title": "Epic task"})
+    with patch("linear_cli.issues.execute", return_value={"issue": node}):
+        result = CliRunner().invoke(cli, ["issues", "view", "ENG-1"])
+
+    assert result.exit_code == 0
+    assert "parent:      ENG-100  Epic task" in result.output
+
+
+def test_issues_view_shows_children():
+    children = [
+        {
+            "identifier": "ENG-2",
+            "title": "Sub-task A",
+            "state": {"name": "Todo"},
+            "priority": 3,
+            "assignee": {"name": "Alice"},
+            "labels": {"nodes": [{"name": "Backend"}]},
+            "estimate": 2.0,
+        },
+        {
+            "identifier": "ENG-3",
+            "title": "Sub-task B",
+            "state": {"name": "Done"},
+            "priority": 4,
+            "assignee": None,
+            "labels": {"nodes": []},
+            "estimate": None,
+        },
+    ]
+    node = _issue_node(children=children)
+    with patch("linear_cli.issues.execute", return_value={"issue": node}):
+        result = CliRunner().invoke(cli, ["issues", "view", "ENG-1"])
+
+    assert result.exit_code == 0
+    assert "sub-issues (2):" in result.output
+    assert "ENG-2" in result.output
+    assert "Sub-task A" in result.output
+    assert "ENG-3" in result.output
+    assert "Sub-task B" in result.output
+
+
+def test_issues_view_no_children_omits_section():
+    with patch("linear_cli.issues.execute", return_value={"issue": _issue_node()}):
+        result = CliRunner().invoke(cli, ["issues", "view", "ENG-1"])
+
+    assert result.exit_code == 0
+    assert "sub-issues" not in result.output

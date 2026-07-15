@@ -228,6 +228,21 @@ query Issue($id: String!) {
       id
       key
     }
+    parent {
+      identifier
+      title
+    }
+    children {
+      nodes {
+        identifier
+        title
+        state { name }
+        priority
+        assignee { name }
+        labels { nodes { name } }
+        estimate
+      }
+    }
   }
 }
 """

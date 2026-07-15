@@ -114,6 +114,9 @@ class Issue:
     updated_at: str | None = None
     url: str | None = None
     estimate: float | None = None
+    parent_identifier: str | None = None
+    parent_title: str | None = None
+    children: list[dict] = field(default_factory=list)
 
     @classmethod
     def from_graphql(cls, data: dict) -> Self:
@@ -121,6 +124,8 @@ class Issue:
         assignee = data.get("assignee") or {}
         label_nodes = (data.get("labels") or {}).get("nodes", [])
         raw_estimate = data.get("estimate")
+        parent = data.get("parent") or {}
+        child_nodes = (data.get("children") or {}).get("nodes", [])
         return cls(
             id=data.get("id"),
             identifier=data.get("identifier"),
@@ -135,6 +140,9 @@ class Issue:
             updated_at=data.get("updatedAt"),
             url=data.get("url"),
             estimate=float(raw_estimate) if raw_estimate is not None else None,
+            parent_identifier=parent.get("identifier"),
+            parent_title=parent.get("title"),
+            children=child_nodes,
         )
 
 

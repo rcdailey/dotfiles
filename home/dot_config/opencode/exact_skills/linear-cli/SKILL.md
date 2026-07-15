@@ -38,7 +38,8 @@ linear issues create --title TEXT --team KEY [--description TEXT] [--state NAME]
                      [--parent ID] [--estimate N] [--project NAME]
 linear issues update <ID> [--title TEXT] [--state NAME] [--priority 0-4]
                      [--assignee USER] [--add-label NAME]...
-                     [--remove-label NAME]... [--estimate N] [--project NAME]
+                     [--remove-label NAME]... [--estimate N] [--parent ID]
+                     [--project NAME]
 linear comments list <ISSUE_ID>
 linear comments add <ISSUE_ID> --body TEXT [--parent COMMENT_ID]
 linear comments edit <COMMENT_ID> --body TEXT
@@ -120,6 +121,12 @@ EOF
 
 Relation types for `linear relations add/remove`: `blocks`, `blocked-by`,
 `related`, `duplicate`.
+
+## Sub-issues
+
+`linear issues view` shows parent and sub-issues inline. Parent appears as a
+field; children appear as a summary list with state, priority, assignee, labels,
+and estimate. Use `--parent` on `create` or `update` to set the hierarchy.
 
 ## Linking issues
 
