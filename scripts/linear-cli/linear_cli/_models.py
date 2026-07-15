@@ -217,11 +217,13 @@ class Project:
     description: str | None = None
     members: list[str] = field(default_factory=list)
     issues: list[dict] = field(default_factory=list)
+    milestones: list[dict] = field(default_factory=list)
 
     @classmethod
     def from_graphql(cls, data: dict) -> Self:
         member_nodes = (data.get("members") or {}).get("nodes", [])
         issue_nodes = (data.get("issues") or {}).get("nodes", [])
+        milestone_nodes = (data.get("projectMilestones") or {}).get("nodes", [])
         return cls(
             id=data.get("id"),
             name=data.get("name"),
@@ -231,6 +233,34 @@ class Project:
             description=data.get("description"),
             members=[m.get("name", "") for m in member_nodes if m.get("name")],
             issues=issue_nodes,
+            milestones=milestone_nodes,
+        )
+
+
+@dataclass
+class Milestone:
+    """Linear project milestone."""
+
+    id: str | None
+    name: str | None
+    description: str | None
+    target_date: str | None
+    status: str | None
+    progress: float | None
+    project_name: str | None
+
+    @classmethod
+    def from_graphql(cls, data: dict) -> Self:
+        project = data.get("project") or {}
+        raw_progress = data.get("progress")
+        return cls(
+            id=data.get("id"),
+            name=data.get("name"),
+            description=data.get("description"),
+            target_date=data.get("targetDate"),
+            status=data.get("status"),
+            progress=float(raw_progress) if raw_progress is not None else None,
+            project_name=project.get("name"),
         )
 
 

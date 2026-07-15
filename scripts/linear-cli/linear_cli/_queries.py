@@ -432,6 +432,66 @@ query Project($id: String!) {
         }
       }
     }
+    projectMilestones {
+      nodes {
+        id
+        name
+        targetDate
+        status
+        progress
+      }
+    }
+  }
+}
+"""
+
+MILESTONES_QUERY = """
+query ProjectMilestones($filter: ProjectMilestoneFilter) {
+  projectMilestones(filter: $filter) {
+    nodes {
+      id
+      name
+      description
+      targetDate
+      status
+      progress
+      project {
+        id
+        name
+      }
+    }
+  }
+}
+"""
+
+MILESTONE_CREATE_MUTATION = """
+mutation ProjectMilestoneCreate($input: ProjectMilestoneCreateInput!) {
+  projectMilestoneCreate(input: $input) {
+    success
+    projectMilestone {
+      id
+      name
+    }
+  }
+}
+"""
+
+MILESTONE_UPDATE_MUTATION = """
+mutation ProjectMilestoneUpdate($id: String!, $input: ProjectMilestoneUpdateInput!) {
+  projectMilestoneUpdate(id: $id, input: $input) {
+    success
+    projectMilestone {
+      id
+      name
+    }
+  }
+}
+"""
+
+MILESTONE_DELETE_MUTATION = """
+mutation ProjectMilestoneDelete($id: String!) {
+  projectMilestoneDelete(id: $id) {
+    success
   }
 }
 """

@@ -91,3 +91,12 @@ def view_project(id_or_name: str) -> None:
         for issue in proj.issues:
             state_name = (issue.get("state") or {}).get("name", "")
             click.echo(f"  {issue.get('identifier')}  [{state_name}]  {issue.get('title')}")
+    if proj.milestones:
+        click.echo("")
+        click.echo("milestones:")
+        for ms in proj.milestones:
+            status = ms.get("status") or "unknown"
+            date = ms.get("targetDate") or "no date"
+            raw_progress = ms.get("progress")
+            pct = f"{raw_progress * 100:.0f}%" if raw_progress is not None else "0%"
+            click.echo(f"  {ms.get('name')}  [{status}]  target: {date}  progress: {pct}")

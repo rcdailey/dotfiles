@@ -1,14 +1,10 @@
 ---
 name: linear-cli
 description: >-
-  Use when operating on the Linear issue tracker via the `linear` CLI: creating,
-  viewing, searching, querying, or updating issues, projects, or documents; adding
-  or editing issue comments; managing relations, links, labels, and teams;
-  assigning, labeling, or transitioning issues. Triggers on phrases like "create a
-  Linear issue", "file a ticket", "update ENG-###", "move to Ready For Dev",
-  "search for issues", "find issues about X", "add a comment to the Linear issue",
-  "link a PR to the issue", "block ENG-42", or any task naming Linear, a Linear
-  issue key (`ENG-`, `OPS-`, etc.), a Linear project, or a Linear document. Do NOT
+  Use when operating on Linear via the `linear` CLI: issues, projects, milestones,
+  documents, comments, relations, links, labels, teams, states. Triggers on Linear
+  issue keys (`ENG-`, `OPS-`), "file a ticket", "create/update/search issues",
+  "list milestones", "link a PR to the issue", or any task naming Linear. Do NOT
   use for GitHub Issues, Jira, or other trackers.
 ---
 
@@ -51,6 +47,12 @@ linear links add <ISSUE_ID> <URL> [--title TEXT]
 linear links remove <LINK_ID>
 linear projects list [--team KEY]
 linear projects view <ID_OR_NAME>
+linear milestones list --project <NAME_OR_UUID>
+linear milestones create --project <NAME_OR_UUID> --name TEXT [--description TEXT]
+                         [--target-date YYYY-MM-DD]
+linear milestones update <ID> [--name TEXT] [--description TEXT]
+                         [--target-date YYYY-MM-DD]
+linear milestones delete <ID>
 linear documents list [--project NAME]
 linear documents view <ID>
 linear api <QUERY> [--var key=value]...
@@ -127,6 +129,12 @@ Relation types for `linear relations add/remove`: `blocks`, `blocked-by`,
 `linear issues view` shows parent and sub-issues inline. Parent appears as a
 field; children appear as a summary list with state, priority, assignee, labels,
 and estimate. Use `--parent` on `create` or `update` to set the hierarchy.
+
+## Milestones
+
+Milestones are scoped to a project. `--project` accepts a display name or UUID.
+`projects view` includes milestones inline. Milestone IDs (UUIDs) are required for
+`update` and `delete`; get them from `milestones list` output or `linear api`.
 
 ## Linking issues
 
