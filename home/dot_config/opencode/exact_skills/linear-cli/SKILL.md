@@ -32,10 +32,11 @@ linear issues view <ID>
 linear issues create --title TEXT --team KEY [--description TEXT] [--state NAME]
                      [--priority 0-4] [--assignee USER] [--label NAME]...
                      [--parent ID] [--estimate N] [--project NAME]
+                     [--milestone NAME]
 linear issues update <ID> [--title TEXT] [--state NAME] [--priority 0-4]
                      [--assignee USER] [--add-label NAME]...
                      [--remove-label NAME]... [--estimate N] [--parent ID]
-                     [--project NAME]
+                     [--project NAME] [--milestone NAME]
 linear comments list <ISSUE_ID>
 linear comments add <ISSUE_ID> --body TEXT [--parent COMMENT_ID]
 linear comments edit <COMMENT_ID> --body TEXT
@@ -78,6 +79,7 @@ teams, states, or labels; use display names or keys instead.
 - `--assignee` accepts `me` (resolves via viewer query) or a user UUID
 - `--label` takes a label display name, case-insensitive
 - `--project` takes a project display name
+- `--milestone` takes a milestone display name, resolved within the project
 - `--cycle` takes `active`, `previous`, or an integer cycle number; requires `--team`
 - `--estimate` takes `none` (unestimated) or a numeric value
 
@@ -95,6 +97,7 @@ Checklist before calling `create`:
 - `--label` (repeat per label) if the template requires them
 - `--priority`, `--assignee`, `--estimate` when known
 - `--project` when applicable
+- `--milestone` when the project has milestones (requires `--project`)
 - `--description` for the issue body (markdown)
 
 Pass the description inline with a quoted heredoc:
