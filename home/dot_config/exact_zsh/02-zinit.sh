@@ -7,3 +7,6 @@ if [[ ! -f "$ZINIT_HOME/zinit.zsh" ]]; then
   command git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME" >/dev/null 2>&1
 fi
 source "$ZINIT_HOME/zinit.zsh"
+
+# Disable interactive pager for zinit output (e.g. changelogs during self-update)
+ZINIT[NO_PAGER]=1
