@@ -29,6 +29,7 @@ ruff = "latest"
 node = "latest"
 "npm:@commitlint/cli" = "latest"
 "npm:@commitlint/config-conventional" = "latest"
+"npm:@openchamber/web" = "latest"
 "npm:ctx7" = "latest"
 topgrade = "latest"
 
