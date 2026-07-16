@@ -228,6 +228,10 @@ query Issue($id: String!) {
       id
       key
     }
+    project {
+      id
+      name
+    }
     parent {
       identifier
       title

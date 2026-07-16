@@ -19,6 +19,7 @@ from linear_cli._resolve import (
     resolve_assignee_id,
     resolve_cycle_number,
     resolve_label_id,
+    resolve_milestone_id,
     resolve_project_id,
     resolve_state_id,
     resolve_team_id,
@@ -256,6 +257,9 @@ def view(issue_id: str) -> None:
 @click.option("--parent", "parent_id", default=None, help="Parent issue UUID.")
 @click.option("--estimate", default=None, type=float, help="Story point estimate.")
 @click.option("--project", "project_name", default=None, help="Project name to assign.")
+@click.option(
+    "--milestone", "milestone_name", default=None, help="Milestone name (requires --project)."
+)
 def create(
     title: str,
     team_key: str,
@@ -267,8 +271,12 @@ def create(
     parent_id: str | None,
     estimate: float | None,
     project_name: str | None,
+    milestone_name: str | None,
 ) -> None:
     """Create a new issue."""
+    if milestone_name and not project_name:
+        die("--milestone requires --project")
+
     team_id = resolve_team_id(team_key)
     input_data: dict = {"title": title, "teamId": team_id, "priority": priority}
 
@@ -285,7 +293,10 @@ def create(
     if estimate is not None:
         input_data["estimate"] = estimate
     if project_name:
-        input_data["projectId"] = resolve_project_id(project_name)
+        project_id = resolve_project_id(project_name)
+        input_data["projectId"] = project_id
+        if milestone_name:
+            input_data["projectMilestoneId"] = resolve_milestone_id(milestone_name, project_id)
 
     try:
         data = execute(ISSUE_CREATE_MUTATION, {"input": input_data})
@@ -314,6 +325,9 @@ def create(
 @click.option("--estimate", default=None, type=float, help="Story point estimate.")
 @click.option("--parent", "parent_id", default=None, help="Parent issue ID or identifier.")
 @click.option("--project", "project_name", default=None, help="Project name to assign.")
+@click.option(
+    "--milestone", "milestone_name", default=None, help="Milestone name within the issue's project."
+)
 def update(
     issue_id: str,
     title: str | None,
@@ -325,6 +339,7 @@ def update(
     estimate: float | None,
     parent_id: str | None,
     project_name: str | None,
+    milestone_name: str | None,
 ) -> None:
     """Update an existing issue."""
     # Fetch current issue to get team context for label/state resolution.
@@ -370,7 +385,16 @@ def update(
     if parent_id:
         input_data["parentId"] = parent_id
     if project_name:
-        input_data["projectId"] = resolve_project_id(project_name)
+        project_id = resolve_project_id(project_name)
+        input_data["projectId"] = project_id
+        if milestone_name:
+            input_data["projectMilestoneId"] = resolve_milestone_id(milestone_name, project_id)
+    elif milestone_name:
+        project_data = node.get("project") or {}
+        project_id = project_data.get("id")
+        if not project_id:
+            die("--milestone requires the issue to be in a project (or pass --project)")
+        input_data["projectMilestoneId"] = resolve_milestone_id(milestone_name, project_id)
 
     if not input_data:
         die("no updates specified")

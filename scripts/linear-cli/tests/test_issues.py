@@ -254,3 +254,107 @@ def test_issues_view_no_children_omits_section():
 
     assert result.exit_code == 0
     assert "sub-issues" not in result.output
+
+
+def test_issues_create_with_milestone():
+    with (
+        patch(
+            "linear_cli._resolve.execute",
+            side_effect=[
+                {"teams": {"nodes": [{"id": "team-uuid", "key": "ENG", "name": "Engineering"}]}},
+                {"projects": {"nodes": [{"id": "proj-uuid", "name": "Sprint 42"}]}},
+                {
+                    "projectMilestones": {
+                        "nodes": [{"id": "ms-uuid", "name": "Beta Launch", "project": {}}]
+                    }
+                },
+            ],
+        ),
+        patch(
+            "linear_cli.issues.execute",
+            return_value={
+                "issueCreate": {
+                    "success": True,
+                    "issue": {
+                        "id": "issue-uuid",
+                        "identifier": "ENG-99",
+                        "title": "Test",
+                        "url": "https://linear.app/ENG-99",
+                    },
+                }
+            },
+        ) as mock_exec,
+    ):
+        result = CliRunner().invoke(
+            cli,
+            [
+                "issues",
+                "create",
+                "--title",
+                "Test",
+                "--team",
+                "ENG",
+                "--project",
+                "Sprint 42",
+                "--milestone",
+                "Beta Launch",
+            ],
+        )
+
+    assert result.exit_code == 0
+    assert "ENG-99" in result.output
+    call_args = mock_exec.call_args[0]
+    call_input = call_args[1]["input"]
+    assert call_input["projectMilestoneId"] == "ms-uuid"
+
+
+def test_issues_create_milestone_requires_project():
+    with patch(
+        "linear_cli._resolve.execute",
+        return_value={
+            "teams": {"nodes": [{"id": "team-uuid", "key": "ENG", "name": "Engineering"}]}
+        },
+    ):
+        result = CliRunner().invoke(
+            cli,
+            ["issues", "create", "--title", "Test", "--team", "ENG", "--milestone", "Beta"],
+        )
+
+    assert result.exit_code != 0
+
+
+def test_issues_update_with_milestone():
+    issue_node = {
+        **_issue_node(),
+        "team": {"id": "team-uuid", "key": "ENG"},
+        "project": {"id": "proj-uuid", "name": "Sprint 42"},
+        "labels": {"nodes": []},
+    }
+    with (
+        patch(
+            "linear_cli.issues.execute",
+            side_effect=[
+                {"issue": issue_node},
+                {
+                    "issueUpdate": {
+                        "success": True,
+                        "issue": {"id": "issue-uuid", "identifier": "ENG-1", "title": "Fix"},
+                    }
+                },
+            ],
+        ),
+        patch(
+            "linear_cli._resolve.execute",
+            return_value={
+                "projectMilestones": {
+                    "nodes": [{"id": "ms-uuid", "name": "Beta Launch", "project": {}}]
+                }
+            },
+        ),
+    ):
+        result = CliRunner().invoke(
+            cli, ["issues", "update", "ENG-1", "--milestone", "Beta Launch"]
+        )
+
+    assert result.exit_code == 0
+    assert "updated" in result.output

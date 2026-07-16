@@ -6,6 +6,7 @@ from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute
 from linear_cli._queries import (
     LABELS_QUERY,
+    MILESTONES_QUERY,
     PROJECTS_QUERY,
     STATES_QUERY,
     TEAM_ACTIVE_CYCLE_QUERY,
@@ -69,6 +70,20 @@ def resolve_project_id(project_name: str) -> str:
         if node.get("name", "").lower() == project_name.lower():
             return node["id"]
     die(f"project '{project_name}' not found")
+
+
+def resolve_milestone_id(milestone_name: str, project_id: str) -> str:
+    """Resolve a milestone name to its UUID within a project."""
+    try:
+        filt = {"project": {"id": {"eq": project_id}}}
+        data = execute(MILESTONES_QUERY, {"filter": filt})
+    except LinearError as exc:
+        die(str(exc))
+    nodes = (data.get("projectMilestones") or {}).get("nodes", [])
+    for node in nodes:
+        if (node.get("name") or "").lower() == milestone_name.lower():
+            return node["id"]
+    die(f"milestone '{milestone_name}' not found in project")
 
 
 def resolve_cycle_number(cycle: str, team_id: str | None) -> int:
