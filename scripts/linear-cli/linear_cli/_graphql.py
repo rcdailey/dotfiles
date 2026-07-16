@@ -12,6 +12,7 @@ from linear_cli._config import LINEAR_BASE_URL
 from linear_cli._errors import LinearError, die
 
 _RATE_LIMIT_WARN_THRESHOLD = 100
+_TIMEOUT = httpx.Timeout(10.0, connect=15.0)
 
 
 def _get_auth_header() -> dict:
@@ -47,7 +48,7 @@ def execute(query: str, variables: dict | None = None) -> dict:
     if variables:
         payload["variables"] = variables
 
-    response = httpx.post(LINEAR_BASE_URL, json=payload, headers=headers)
+    response = httpx.post(LINEAR_BASE_URL, json=payload, headers=headers, timeout=_TIMEOUT)
 
     if response.status_code == 401:
         tokens = _auth.load_tokens()
@@ -55,7 +56,9 @@ def execute(query: str, variables: dict | None = None) -> dict:
             try:
                 new_tokens = _auth.refresh_access_token(tokens)
                 headers["Authorization"] = f"Bearer {new_tokens['access_token']}"
-                response = httpx.post(LINEAR_BASE_URL, json=payload, headers=headers)
+                response = httpx.post(
+                    LINEAR_BASE_URL, json=payload, headers=headers, timeout=_TIMEOUT
+                )
             except Exception:
                 pass
 
