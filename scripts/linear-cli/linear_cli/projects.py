@@ -7,7 +7,7 @@ import click
 from linear_cli._click import HelpfulGroup
 from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute
-from linear_cli._models import Project
+from linear_cli._models import Project, ProjectUpdate
 from linear_cli._queries import PROJECT_QUERY, PROJECTS_QUERY
 from linear_cli._resolve import resolve_team_id
 
@@ -100,3 +100,15 @@ def view_project(id_or_name: str) -> None:
             raw_progress = ms.get("progress")
             pct = f"{raw_progress * 100:.0f}%" if raw_progress is not None else "0%"
             click.echo(f"  {ms.get('name')}  [{status}]  target: {date}  progress: {pct}")
+    if proj.project_updates:
+        click.echo("")
+        click.echo(f"recent updates ({len(proj.project_updates)}):")
+        _preview_len = 200
+        for node in proj.project_updates:
+            update = ProjectUpdate.from_graphql(node)
+            preview = (update.body or "")[:_preview_len]
+            if len(update.body or "") > _preview_len:
+                preview += "..."
+            click.echo(f"  [{update.health}] {update.created_at} by {update.user_name}")
+            if preview:
+                click.echo(f"    {preview}")

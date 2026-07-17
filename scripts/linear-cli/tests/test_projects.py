@@ -29,8 +29,9 @@ def _project_detail_node(
     proj_id: str = "proj-uuid-1",
     name: str = "Alpha",
     state: str = "started",
+    include_updates: bool = False,
 ) -> dict:
-    return {
+    node: dict = {
         "id": proj_id,
         "name": name,
         "state": state,
@@ -44,6 +45,26 @@ def _project_detail_node(
             ]
         },
     }
+    if include_updates:
+        node["projectUpdates"] = {
+            "nodes": [
+                {
+                    "id": "upd-uuid-1",
+                    "body": "Progress is good.",
+                    "health": "onTrack",
+                    "createdAt": "2026-07-10T09:00:00Z",
+                    "user": {"name": "Alice"},
+                },
+                {
+                    "id": "upd-uuid-2",
+                    "body": "Blocked on design review.",
+                    "health": "atRisk",
+                    "createdAt": "2026-07-05T08:00:00Z",
+                    "user": {"name": "Bob"},
+                },
+            ]
+        }
+    return node
 
 
 def test_projects_list_shows_names():
@@ -99,6 +120,32 @@ def test_projects_view_by_id():
     assert "Alpha" in result.output
     assert "Alice" in result.output
     assert "ENG-1" in result.output
+
+
+def test_projects_view_shows_recent_updates():
+    with patch(
+        "linear_cli.projects.execute",
+        return_value={"project": _project_detail_node(include_updates=True)},
+    ):
+        result = CliRunner().invoke(cli, ["projects", "view", "proj-uuid-1"])
+
+    assert result.exit_code == 0
+    assert "recent updates (2):" in result.output
+    assert "onTrack" in result.output
+    assert "Progress is good." in result.output
+    assert "atRisk" in result.output
+    assert "Blocked on design review." in result.output
+
+
+def test_projects_view_no_updates_section_when_empty():
+    with patch(
+        "linear_cli.projects.execute",
+        return_value={"project": _project_detail_node()},
+    ):
+        result = CliRunner().invoke(cli, ["projects", "view", "proj-uuid-1"])
+
+    assert result.exit_code == 0
+    assert "recent updates" not in result.output
 
 
 def test_projects_view_by_name_fallback():

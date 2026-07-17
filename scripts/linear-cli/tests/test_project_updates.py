@@ -17,14 +17,18 @@ def _update_node(
     health: str = "onTrack",
     created_at: str = "2026-07-01T10:00:00Z",
     user_name: str = "Alice",
+    project_name: str | None = None,
 ) -> dict:
-    return {
+    node: dict = {
         "id": update_id,
         "body": body,
         "health": health,
         "createdAt": created_at,
         "user": {"name": user_name},
     }
+    if project_name is not None:
+        node["project"] = {"name": project_name}
+    return node
 
 
 def _project_updates_response(nodes: list) -> dict:
@@ -94,6 +98,31 @@ def test_list_updates_truncates_long_body():
     assert "..." in result.output
     # Preview should not exceed 200 chars + ellipsis
     assert "x" * 201 not in result.output
+
+
+def test_list_updates_workspace_wide():
+    nodes = [
+        _update_node(body="All good.", health="onTrack", user_name="Alice", project_name="Alpha"),
+        _update_node(
+            update_id="upd-uuid-2",
+            body="Delayed.",
+            health="atRisk",
+            user_name="Bob",
+            project_name="Beta",
+        ),
+    ]
+    with patch(
+        "linear_cli.project_updates.execute",
+        return_value={"projectUpdates": {"pageInfo": {"hasNextPage": False}, "nodes": nodes}},
+    ):
+        result = CliRunner().invoke(cli, ["project-updates", "list"])
+
+    assert result.exit_code == 0
+    assert "onTrack" in result.output
+    assert "Alice" in result.output
+    assert "(Alpha)" in result.output
+    assert "atRisk" in result.output
+    assert "(Beta)" in result.output
 
 
 def test_add_update_success():

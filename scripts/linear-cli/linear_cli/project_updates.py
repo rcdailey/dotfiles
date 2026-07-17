@@ -8,7 +8,11 @@ from linear_cli._click import HelpfulGroup
 from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute
 from linear_cli._models import ProjectUpdate
-from linear_cli._queries import PROJECT_UPDATE_CREATE_MUTATION, PROJECT_UPDATES_QUERY
+from linear_cli._queries import (
+    PROJECT_UPDATE_CREATE_MUTATION,
+    PROJECT_UPDATES_ALL_QUERY,
+    PROJECT_UPDATES_QUERY,
+)
 from linear_cli._resolve import resolve_project_id
 
 _HEALTH_CHOICES = ["onTrack", "atRisk", "offTrack"]
@@ -21,18 +25,24 @@ def cli() -> None:
 
 
 @cli.command("list")
-@click.argument("project_id_or_name")
-def list_updates(project_id_or_name: str) -> None:
-    """List project updates for a project (ID or name)."""
-    project_id = _resolve_id(project_id_or_name)
+@click.argument("project_id_or_name", required=False, default=None)
+def list_updates(project_id_or_name: str | None) -> None:
+    """List project updates. Omit project to list all recent workspace updates."""
+    if project_id_or_name is None:
+        try:
+            data = execute(PROJECT_UPDATES_ALL_QUERY, {"first": 50})
+        except LinearError as exc:
+            die(str(exc))
+        nodes = (data.get("projectUpdates") or {}).get("nodes", [])
+    else:
+        project_id = _resolve_id(project_id_or_name)
+        try:
+            data = execute(PROJECT_UPDATES_QUERY, {"id": project_id, "first": 50})
+        except LinearError as exc:
+            die(str(exc))
+        project = data.get("project") or {}
+        nodes = (project.get("projectUpdates") or {}).get("nodes", [])
 
-    try:
-        data = execute(PROJECT_UPDATES_QUERY, {"id": project_id, "first": 50})
-    except LinearError as exc:
-        die(str(exc))
-
-    project = data.get("project") or {}
-    nodes = (project.get("projectUpdates") or {}).get("nodes", [])
     if not nodes:
         click.echo("no project updates found")
         return
@@ -42,7 +52,8 @@ def list_updates(project_id_or_name: str) -> None:
         preview = (update.body or "")[:_PREVIEW_LEN]
         if len(update.body or "") > _PREVIEW_LEN:
             preview += "..."
-        click.echo(f"[{update.health}] {update.created_at} by {update.user_name}")
+        suffix = f" ({update.project_name})" if update.project_name else ""
+        click.echo(f"[{update.health}] {update.created_at} by {update.user_name}{suffix}")
         if preview:
             click.echo(f"  {preview}")
 

@@ -448,6 +448,15 @@ query Project($id: String!) {
         progress
       }
     }
+    projectUpdates(first: 3, orderBy: createdAt) {
+      nodes {
+        id
+        body
+        health
+        createdAt
+        user { name }
+      }
+    }
   }
 }
 """
@@ -499,6 +508,22 @@ MILESTONE_DELETE_MUTATION = """
 mutation ProjectMilestoneDelete($id: String!) {
   projectMilestoneDelete(id: $id) {
     success
+  }
+}
+"""
+
+PROJECT_UPDATES_ALL_QUERY = """
+query ProjectUpdatesAll($first: Int, $after: String) {
+  projectUpdates(first: $first, after: $after, orderBy: createdAt) {
+    pageInfo { hasNextPage endCursor }
+    nodes {
+      id
+      body
+      health
+      createdAt
+      user { name }
+      project { name }
+    }
   }
 }
 """

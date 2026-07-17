@@ -49,7 +49,7 @@ linear links add <ISSUE_ID> <URL> [--title TEXT]
 linear links remove <LINK_ID>
 linear projects list [--team KEY]
 linear projects view <ID_OR_NAME>
-linear project-updates list <PROJECT_ID_OR_NAME>
+linear project-updates list [PROJECT_ID_OR_NAME]
 linear project-updates add <PROJECT_ID_OR_NAME> --body TEXT [--health onTrack|atRisk|offTrack]
 linear milestones list --project <NAME_OR_UUID>
 linear milestones create --project <NAME_OR_UUID> --name TEXT [--description TEXT]
@@ -164,9 +164,13 @@ transitions, reassignments, label changes, parent linkage).
 ## Project updates
 
 `linear project-updates list` shows health, author, date, and a body preview for
-each update. `linear project-updates add` creates a new update with `--body` and
-optional `--health` (defaults to `onTrack`; also `atRisk`, `offTrack`). Both accept
-a project name or UUID.
+each update. Omit the project argument to list all recent updates across the
+workspace (output includes the project name per entry). `linear project-updates add`
+creates a new update with `--body` and optional `--health` (defaults to `onTrack`;
+also `atRisk`, `offTrack`). Both accept a project name or UUID.
+
+`projects view` includes the 3 most recent project updates inline after the
+milestones section.
 
 ## Raw API access
 
