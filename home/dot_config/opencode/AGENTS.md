@@ -24,6 +24,23 @@ Per-skill triggers:
 - `python-scripting`: MUST load when creating, editing, or reviewing modularized Python CLI script
   projects (uv + hatchling + Click pattern).
 
+## Shell Search
+
+MUST use `rg` (ripgrep) over `grep`. MUST use `rg --files -g` over `find -name`. Both are enforced
+by tool guards that reject the blocked commands.
+
+ripgrep is recursive by default. `-r` means `--replace`, not recursive. MUST NOT use `-r` or `-rl`
+when intending recursive search (it silently replaces matched text in output). Common patterns:
+
+```sh
+rg "pattern" path/              # recursive content search (default)
+rg -n "pattern" path/           # with line numbers
+rg -l "pattern" path/           # files containing matches
+rg -c "pattern" path/           # match count per file
+rg --files -g "*.yaml" path/    # find files by glob (replaces find -name)
+rg -g "*.py" "pattern" path/    # search within file type
+```
+
 ## Agents
 
 - Subagents MUST use their designated tools (`research scout`, etc.) for repo exploration; MUST NOT
