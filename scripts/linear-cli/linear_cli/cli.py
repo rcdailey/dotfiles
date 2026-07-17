@@ -37,7 +37,7 @@ class _AutoGroup(HelpfulGroup):
                 continue
             cmd = getattr(mod, "cli", None)
             if isinstance(cmd, click.Command):
-                self.add_command(cmd, info.name)
+                self.add_command(cmd, info.name.replace("_", "-"))
 
     def list_commands(self, ctx):
         self._load_plugins()

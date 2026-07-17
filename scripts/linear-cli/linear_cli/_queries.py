@@ -247,6 +247,9 @@ query Issue($id: String!) {
         estimate
       }
     }
+    comments {
+      totalCount
+    }
   }
 }
 """
@@ -510,6 +513,37 @@ query Documents {
       project {
         name
       }
+    }
+  }
+}
+"""
+
+PROJECT_UPDATES_QUERY = """
+query ProjectUpdates($id: String!, $first: Int, $after: String) {
+  project(id: $id) {
+    projectUpdates(first: $first, after: $after, orderBy: createdAt) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        id
+        body
+        health
+        createdAt
+        user { name }
+      }
+    }
+  }
+}
+"""
+
+PROJECT_UPDATE_CREATE_MUTATION = """
+mutation ProjectUpdateCreate($input: ProjectUpdateCreateInput!) {
+  projectUpdateCreate(input: $input) {
+    success
+    projectUpdate {
+      id
+      health
+      createdAt
+      url
     }
   }
 }

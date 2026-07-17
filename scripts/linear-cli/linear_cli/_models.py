@@ -117,6 +117,7 @@ class Issue:
     parent_identifier: str | None = None
     parent_title: str | None = None
     children: list[dict] = field(default_factory=list)
+    comment_count: int = 0
 
     @classmethod
     def from_graphql(cls, data: dict) -> Self:
@@ -126,6 +127,7 @@ class Issue:
         raw_estimate = data.get("estimate")
         parent = data.get("parent") or {}
         child_nodes = (data.get("children") or {}).get("nodes", [])
+        comment_count = (data.get("comments") or {}).get("totalCount", 0)
         return cls(
             id=data.get("id"),
             identifier=data.get("identifier"),
@@ -143,6 +145,7 @@ class Issue:
             parent_identifier=parent.get("identifier"),
             parent_title=parent.get("title"),
             children=child_nodes,
+            comment_count=comment_count,
         )
 
 
@@ -286,4 +289,26 @@ class Document:
             updated_at=data.get("updatedAt"),
             project_name=project.get("name"),
             creator_name=creator.get("name"),
+        )
+
+
+@dataclass
+class ProjectUpdate:
+    """Linear project update."""
+
+    id: str | None
+    body: str | None
+    health: str | None
+    created_at: str | None
+    user_name: str | None
+
+    @classmethod
+    def from_graphql(cls, data: dict) -> Self:
+        user = data.get("user") or {}
+        return cls(
+            id=data.get("id"),
+            body=data.get("body"),
+            health=data.get("health"),
+            created_at=data.get("createdAt"),
+            user_name=user.get("name"),
         )

@@ -215,6 +215,7 @@ def view(issue_id: str) -> None:
     click.echo(f"assignee:    {issue.assignee_name or 'unassigned'}")
     click.echo(f"labels:      {', '.join(issue.labels) if issue.labels else 'none'}")
     click.echo(f"estimate:    {_estimate_str(issue.estimate)}")
+    click.echo(f"comments:    {issue.comment_count}")
     if issue.parent_identifier:
         click.echo(f"parent:      {issue.parent_identifier}  {issue.parent_title}")
     click.echo(f"url:         {issue.url}")

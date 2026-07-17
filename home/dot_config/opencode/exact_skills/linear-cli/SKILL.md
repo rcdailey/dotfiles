@@ -2,10 +2,11 @@
 name: linear-cli
 description: >-
   Use when operating on Linear via the `linear` CLI: issues, projects, milestones,
-  documents, comments, relations, links, labels, teams, states. Triggers on Linear
-  issue keys (`ENG-`, `OPS-`), "file a ticket", "create/update/search issues",
-  "list milestones", "link a PR to the issue", or any task naming Linear. Do NOT
-  use for GitHub Issues, Jira, or other trackers.
+  project updates, documents, comments, relations, links, labels, teams, states.
+  Triggers on Linear issue keys (`ENG-`, `OPS-`), "file a ticket",
+  "create/update/search issues", "list milestones", "project update",
+  "link a PR to the issue", or any task naming Linear. Do NOT use for GitHub Issues,
+  Jira, or other trackers.
 ---
 
 # Linear CLI
@@ -48,6 +49,8 @@ linear links add <ISSUE_ID> <URL> [--title TEXT]
 linear links remove <LINK_ID>
 linear projects list [--team KEY]
 linear projects view <ID_OR_NAME>
+linear project-updates list <PROJECT_ID_OR_NAME>
+linear project-updates add <PROJECT_ID_OR_NAME> --body TEXT [--health onTrack|atRisk|offTrack]
 linear milestones list --project <NAME_OR_UUID>
 linear milestones create --project <NAME_OR_UUID> --name TEXT [--description TEXT]
                          [--target-date YYYY-MM-DD]
@@ -152,10 +155,18 @@ Three distinct mechanisms; pick by intent:
 
 ## Comments and updates
 
-Use `linear comments add` for new threads and `--parent` to reply to an existing
-comment. `linear comments edit` updates an existing comment's body. Use
+`linear issues view` shows a comment count. Use `linear comments list` to read them
+when relevant. `linear comments add` for new threads and `--parent` to reply to an
+existing comment. `linear comments edit` updates an existing comment's body. Use
 `linear issues update` only for fields that change after creation (state
 transitions, reassignments, label changes, parent linkage).
+
+## Project updates
+
+`linear project-updates list` shows health, author, date, and a body preview for
+each update. `linear project-updates add` creates a new update with `--body` and
+optional `--health` (defaults to `onTrack`; also `atRisk`, `offTrack`). Both accept
+a project name or UUID.
 
 ## Raw API access
 

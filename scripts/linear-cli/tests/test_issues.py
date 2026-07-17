@@ -20,6 +20,7 @@ def _issue_node(
     estimate: float | None = None,
     parent: dict | None = None,
     children: list[dict] | None = None,
+    comment_count: int = 0,
 ) -> dict:
     return {
         "id": "issue-uuid-1",
@@ -36,6 +37,7 @@ def _issue_node(
         "labels": {"nodes": [{"name": ln} for ln in (labels or [])]},
         "parent": parent,
         "children": {"nodes": children or []},
+        "comments": {"totalCount": comment_count},
     }
 
 
@@ -85,6 +87,15 @@ def test_issues_view_shows_detail():
     assert "Fix the thing" in result.output
     assert "In Progress" in result.output
     assert "High" in result.output  # priority 2 = High
+
+
+def test_issues_view_shows_comment_count():
+    issue_data = {"issue": _issue_node(comment_count=5)}
+    with patch("linear_cli.issues.execute", return_value=issue_data):
+        result = CliRunner().invoke(cli, ["issues", "view", "ENG-1"])
+
+    assert result.exit_code == 0
+    assert "comments:    5" in result.output
 
 
 def test_issues_view_not_found():
