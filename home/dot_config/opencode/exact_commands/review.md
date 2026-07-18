@@ -56,19 +56,30 @@ Fetch PR metadata with specific fields only:
 gh pr view {number} --json title,body,labels,baseRefName,headRefName,url
 ```
 
-Fetch the PR head ref and create a detached worktree. If a worktree from a previous review of the
-same PR exists, remove it first:
+Resolve which local remote hosts the PR. The PR may live on `origin` (single-remote repos) or
+`upstream` (fork-based contributions). Match the PR's repository URL against `git remote -v`:
+
+```bash
+pr_repo=$(gh pr view {number} --json url -q '.url' \
+  | sed 's|https://github.com/||;s|/pull/.*||')
+remote=$(git remote -v | awk -v repo="$pr_repo" \
+  '$2 ~ repo && $3 == "(fetch)" {print $1; exit}')
+```
+
+If no remote matches (e.g., the PR is from a third-party fork not configured locally), fall back to
+`gh pr diff` for the diff and skip the worktree. Otherwise, fetch the PR head ref and create a
+detached worktree. If a worktree from a previous review of the same PR exists, remove it first:
 
 ```bash
 git worktree remove --force /tmp/pr-review-{number} 2>/dev/null
-git fetch origin pull/{number}/head &&
+git fetch "$remote" pull/{number}/head &&
   git worktree add --detach /tmp/pr-review-{number} FETCH_HEAD
 ```
 
 Get the changed file list using local git (not `gh pr diff`):
 
 ```bash
-git diff --name-only FETCH_HEAD...$(git merge-base FETCH_HEAD origin/{base})
+git diff --name-only "$remote"/{base}...FETCH_HEAD
 ```
 
 Note the worktree path (`/tmp/pr-review-{number}`) for file reads in the analysis step. The worktree
