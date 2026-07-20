@@ -369,3 +369,71 @@ def test_issues_update_with_milestone():
 
     assert result.exit_code == 0
     assert "updated" in result.output
+
+
+def _projects_response(proj_id: str = "proj-uuid-1", name: str = "Alpha") -> dict:
+    return {
+        "projects": {
+            "nodes": [
+                {
+                    "id": proj_id,
+                    "name": name,
+                    "state": "started",
+                    "startDate": None,
+                    "targetDate": None,
+                }
+            ]
+        }
+    }
+
+
+def _milestones_response(ms_id: str = "ms-uuid-1", name: str = "Beta Launch") -> dict:
+    return {
+        "projectMilestones": {
+            "nodes": [
+                {"id": ms_id, "name": name, "project": {"id": "proj-uuid-1", "name": "Alpha"}}
+            ]
+        }
+    }
+
+
+def test_issues_list_with_milestone_filter():
+    with (
+        patch(
+            "linear_cli._resolve.execute",
+            side_effect=[_projects_response(), _milestones_response()],
+        ),
+        patch("linear_cli.issues.paginate", return_value=[_issue_node()]) as mock_paginate,
+    ):
+        result = CliRunner().invoke(
+            cli, ["issues", "list", "--project", "Alpha", "--milestone", "Beta Launch"]
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "ENG-1" in result.output
+    call_variables = mock_paginate.call_args[0][1]
+    assert call_variables["filter"]["projectMilestone"] == {"id": {"eq": "ms-uuid-1"}}
+
+
+def test_issues_list_milestone_without_project_fails():
+    result = CliRunner().invoke(cli, ["issues", "list", "--milestone", "Beta Launch"])
+    assert result.exit_code != 0
+
+
+def test_issues_search_with_milestone_filter():
+    with (
+        patch(
+            "linear_cli._resolve.execute",
+            side_effect=[_projects_response(), _milestones_response()],
+        ),
+        patch("linear_cli.issues.paginate", return_value=[_issue_node()]) as mock_paginate,
+    ):
+        result = CliRunner().invoke(
+            cli,
+            ["issues", "search", "fix", "--project", "Alpha", "--milestone", "Beta Launch"],
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "ENG-1" in result.output
+    call_variables = mock_paginate.call_args[0][1]
+    assert call_variables["filter"]["projectMilestone"] == {"id": {"eq": "ms-uuid-1"}}

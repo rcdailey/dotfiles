@@ -26,9 +26,11 @@ linear states list [--team KEY]
 linear labels groups
 linear labels list [--group NAME]...
 linear issues list [--team KEY] [--state TYPE] [--assignee USER] [--label NAME]
-                   [--cycle CYCLE] [--estimate EST] [--limit N]
+                   [--cycle CYCLE] [--estimate EST] [--project NAME]
+                   [--milestone NAME] [--limit N]
 linear issues search <QUERY> [--team KEY] [--state TYPE] [--assignee USER]
-                     [--label NAME] [--cycle CYCLE] [--estimate EST] [--limit N]
+                     [--label NAME] [--cycle CYCLE] [--estimate EST]
+                     [--project NAME] [--milestone NAME] [--limit N]
 linear issues view <ID>
 linear issues create --title TEXT --team KEY [--description TEXT] [--state NAME]
                      [--priority 0-4] [--assignee USER] [--label NAME]...
@@ -52,6 +54,7 @@ linear projects view <ID_OR_NAME>
 linear project-updates list [PROJECT_ID_OR_NAME]
 linear project-updates add <PROJECT_ID_OR_NAME> --body TEXT [--health onTrack|atRisk|offTrack]
 linear milestones list --project <NAME_OR_UUID>
+linear milestones view <MILESTONE_NAME> --project <NAME_OR_UUID>
 linear milestones create --project <NAME_OR_UUID> --name TEXT [--description TEXT]
                          [--target-date YYYY-MM-DD]
 linear milestones update <ID> [--name TEXT] [--description TEXT]
@@ -139,8 +142,16 @@ and estimate. Use `--parent` on `create` or `update` to set the hierarchy.
 ## Milestones
 
 Milestones are scoped to a project. `--project` accepts a display name or UUID.
-`projects view` includes milestones inline. Milestone IDs (UUIDs) are required for
-`update` and `delete`; get them from `milestones list` output or `linear api`.
+`milestones view` shows milestone details and its issues in one call. `projects view`
+includes milestones inline. Milestone IDs (UUIDs) are required for `update` and
+`delete`; get them from `milestones list` output or `linear api`.
+
+`issues list` and `issues search` accept `--milestone` (with `--project`) to filter
+by milestone:
+
+```bash
+linear issues list --project "LTI Integration" --milestone "LTI Foundation"
+```
 
 ## Linking issues
 

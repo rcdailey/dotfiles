@@ -68,6 +68,10 @@ def cli() -> None:
 @click.option(
     "--estimate", "estimate_filter", default=None, type=str, help="Estimate: 'none' or a number."
 )
+@click.option("--project", "project_name", default=None, help="Project name or UUID.")
+@click.option(
+    "--milestone", "milestone_name", default=None, help="Milestone name (requires --project)."
+)
 @click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
 def list_issues(
     team_key: str | None,
@@ -76,11 +80,15 @@ def list_issues(
     label: str | None,
     cycle: str | None,
     estimate_filter: str | None,
+    project_name: str | None,
+    milestone_name: str | None,
     limit: int,
 ) -> None:
     """List issues with optional filters."""
     if cycle and not team_key:
         raise SystemExit("error: --cycle requires --team")
+    if milestone_name and not project_name:
+        raise SystemExit("error: --milestone requires --project")
     team_id = resolve_team_id(team_key) if team_key else None
     assignee_id = resolve_assignee_id(assignee) if assignee else None
 
@@ -101,6 +109,10 @@ def list_issues(
             filt["estimate"] = {"null": True}
         else:
             filt["estimate"] = {"eq": float(estimate_filter)}
+    if milestone_name:
+        project_id = resolve_project_id(project_name)
+        milestone_id = resolve_milestone_id(milestone_name, project_id)
+        filt["projectMilestone"] = {"id": {"eq": milestone_id}}
 
     variables: dict = {
         "filter": filt or None,
@@ -139,6 +151,10 @@ def list_issues(
 @click.option(
     "--estimate", "estimate_filter", default=None, type=str, help="Estimate: 'none' or a number."
 )
+@click.option("--project", "project_name", default=None, help="Project name or UUID.")
+@click.option(
+    "--milestone", "milestone_name", default=None, help="Milestone name (requires --project)."
+)
 @click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
 def search(
     query: str,
@@ -148,11 +164,15 @@ def search(
     label: str | None,
     cycle: str | None,
     estimate_filter: str | None,
+    project_name: str | None,
+    milestone_name: str | None,
     limit: int,
 ) -> None:
     """Full-text search across issue titles, descriptions, and comments."""
     if cycle and not team_key:
         raise SystemExit("error: --cycle requires --team")
+    if milestone_name and not project_name:
+        raise SystemExit("error: --milestone requires --project")
     team_id = resolve_team_id(team_key) if team_key else None
     assignee_id = resolve_assignee_id(assignee) if assignee else None
 
@@ -173,6 +193,10 @@ def search(
             filt["estimate"] = {"null": True}
         else:
             filt["estimate"] = {"eq": float(estimate_filter)}
+    if milestone_name:
+        project_id = resolve_project_id(project_name)
+        milestone_id = resolve_milestone_id(milestone_name, project_id)
+        filt["projectMilestone"] = {"id": {"eq": milestone_id}}
 
     variables: dict = {
         "term": query,

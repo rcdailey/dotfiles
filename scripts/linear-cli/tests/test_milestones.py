@@ -16,7 +16,7 @@ def _milestone_node(
     name: str = "Beta Launch",
     status: str = "inProgress",
     target_date: str | None = "2026-06-01",
-    progress: float = 0.5,
+    progress: float = 50.0,
 ) -> dict:
     return {
         "id": ms_id,
@@ -190,3 +190,74 @@ def test_milestones_delete():
     assert result.exit_code == 0
     assert "milestone deleted" in result.output
     assert "ms-uuid-1" in result.output
+
+
+def _issue_node(
+    identifier: str = "ENG-1",
+    title: str = "Fix the thing",
+    state_name: str = "In Progress",
+    priority: int = 2,
+) -> dict:
+    return {
+        "id": "issue-uuid-1",
+        "identifier": identifier,
+        "title": title,
+        "description": None,
+        "priority": priority,
+        "estimate": None,
+        "url": "https://linear.app/team/issue/ENG-1",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "updatedAt": "2026-01-02T00:00:00Z",
+        "state": {"name": state_name, "type": "started"},
+        "assignee": None,
+        "labels": {"nodes": []},
+        "parent": None,
+        "children": {"nodes": []},
+        "comments": {"nodes": []},
+    }
+
+
+def _milestones_response(ms_id: str = "ms-uuid-1") -> dict:
+    return {"projectMilestones": {"nodes": [_milestone_node(ms_id=ms_id)]}}
+
+
+def test_milestones_view_shows_details():
+    # _resolve.execute: projects (name→id), then milestones (resolve_milestone_id)
+    # milestones.execute: milestones (view_milestone body)
+    with (
+        patch(
+            "linear_cli._resolve.execute",
+            side_effect=[_projects_response(), _milestones_response()],
+        ),
+        patch("linear_cli.milestones.execute", return_value=_milestones_response()),
+        patch("linear_cli.milestones.paginate", return_value=[_issue_node()]),
+    ):
+        result = CliRunner().invoke(
+            cli, ["milestones", "view", "Beta Launch", "--project", "Alpha"]
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "Beta Launch" in result.output
+    assert "inProgress" in result.output
+    assert "50%" in result.output
+    assert "2026-06-01" in result.output
+    assert "Ship the beta" in result.output
+    assert "ENG-1" in result.output
+    assert "Fix the thing" in result.output
+
+
+def test_milestones_view_no_issues():
+    with (
+        patch(
+            "linear_cli._resolve.execute",
+            side_effect=[_projects_response(), _milestones_response()],
+        ),
+        patch("linear_cli.milestones.execute", return_value=_milestones_response()),
+        patch("linear_cli.milestones.paginate", return_value=[]),
+    ):
+        result = CliRunner().invoke(
+            cli, ["milestones", "view", "Beta Launch", "--project", "Alpha"]
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "no issues in this milestone" in result.output

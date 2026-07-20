@@ -8,15 +8,16 @@ import click
 
 from linear_cli._click import HelpfulGroup
 from linear_cli._errors import LinearError, die
-from linear_cli._graphql import execute
-from linear_cli._models import Milestone
+from linear_cli._graphql import execute, paginate
+from linear_cli._models import Issue, Milestone, priority_label
 from linear_cli._queries import (
+    ISSUES_QUERY,
     MILESTONE_CREATE_MUTATION,
     MILESTONE_DELETE_MUTATION,
     MILESTONE_UPDATE_MUTATION,
     MILESTONES_QUERY,
 )
-from linear_cli._resolve import resolve_project_id
+from linear_cli._resolve import resolve_milestone_id, resolve_project_id
 
 _UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 
@@ -52,8 +53,72 @@ def list_milestones(project: str) -> None:
         m = Milestone.from_graphql(node)
         status = m.status or "unknown"
         date = m.target_date or "no date"
-        pct = f"{m.progress * 100:.0f}%" if m.progress is not None else "0%"
+        pct = f"{m.progress:.0f}%" if m.progress is not None else "0%"
         click.echo(f"{m.name}  [{status}]  target: {date}  progress: {pct}")
+
+
+@cli.command("view")
+@click.argument("milestone_name")
+@click.option("--project", required=True, help="Project name or UUID.")
+def view_milestone(milestone_name: str, project: str) -> None:
+    """View a milestone and its issues."""
+    project_id = _to_project_id(project)
+    milestone_id = resolve_milestone_id(milestone_name, project_id)
+
+    filt = {"project": {"id": {"eq": project_id}}}
+    try:
+        ms_data = execute(MILESTONES_QUERY, {"filter": filt})
+    except LinearError as exc:
+        die(str(exc))
+
+    nodes = (ms_data.get("projectMilestones") or {}).get("nodes", [])
+    ms_node = next((n for n in nodes if n.get("id") == milestone_id), None)
+    if not ms_node:
+        die(f"milestone '{milestone_name}' not found")
+
+    m = Milestone.from_graphql(ms_node)
+    pct = f"{m.progress:.0f}%" if m.progress is not None else "0%"
+    click.echo(f"name:     {m.name}")
+    click.echo(f"status:   {m.status or 'unknown'}")
+    click.echo(f"target:   {m.target_date or 'no date'}")
+    click.echo(f"progress: {pct}")
+    if m.description:
+        click.echo("")
+        click.echo(m.description)
+
+    issue_filt = {"projectMilestone": {"id": {"eq": milestone_id}}}
+    variables: dict = {"filter": issue_filt, "first": 250, "after": None}
+    try:
+        issue_nodes = paginate(ISSUES_QUERY, variables, ["issues"])
+    except LinearError as exc:
+        die(str(exc))
+
+    if issue_nodes:
+        click.echo("")
+        click.echo(f"issues ({len(issue_nodes)}):")
+        for node in issue_nodes:
+            issue = Issue.from_graphql(node)
+            pri = priority_label(issue.priority)
+            labels = ", ".join(issue.labels) if issue.labels else ""
+            parts = [f"  {issue.identifier}  {issue.state_name}  [{pri}]  {issue.title}"]
+            if issue.assignee_name:
+                parts.append(f"assignee: {issue.assignee_name}")
+            if labels:
+                parts.append(f"labels: {labels}")
+            est = (
+                "-"
+                if issue.estimate is None
+                else (
+                    str(int(issue.estimate))
+                    if issue.estimate == int(issue.estimate)
+                    else str(issue.estimate)
+                )
+            )
+            parts.append(f"estimate: {est}")
+            click.echo("  ".join(parts))
+    else:
+        click.echo("")
+        click.echo("no issues in this milestone")
 
 
 @cli.command("create")
