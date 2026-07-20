@@ -37,7 +37,7 @@ def _issue_node(
         "labels": {"nodes": [{"name": ln} for ln in (labels or [])]},
         "parent": parent,
         "children": {"nodes": children or []},
-        "comments": {"totalCount": comment_count},
+        "comments": {"nodes": [{"id": str(i)} for i in range(comment_count)]},
     }
 
 

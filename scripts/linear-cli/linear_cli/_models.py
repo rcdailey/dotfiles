@@ -127,7 +127,8 @@ class Issue:
         raw_estimate = data.get("estimate")
         parent = data.get("parent") or {}
         child_nodes = (data.get("children") or {}).get("nodes", [])
-        comment_count = (data.get("comments") or {}).get("totalCount", 0)
+        comment_nodes = (data.get("comments") or {}).get("nodes", [])
+        comment_count = len(comment_nodes)
         return cls(
             id=data.get("id"),
             identifier=data.get("identifier"),

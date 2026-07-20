@@ -248,7 +248,7 @@ query Issue($id: String!) {
       }
     }
     comments {
-      totalCount
+      nodes { id }
     }
   }
 }
