@@ -9,7 +9,7 @@ description: >-
 # Subagent Authoring
 
 Conventions for OpenCode agent definitions. Omissions intentional. All authored content MUST follow
-the Authoring rules in global AGENTS.md.
+the Authoring rules in your system prompt (Authoring section).
 
 ## What Agents Are
 

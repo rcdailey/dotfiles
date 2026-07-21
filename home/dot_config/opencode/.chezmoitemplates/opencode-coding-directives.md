@@ -1,24 +1,3 @@
-## Chat Style
-
-Governs session chat only, NEVER work artifacts (code, docs, PR bodies, commits).
-
-- Drop filler words: just, really, basically, actually, certainly, of course, essentially,
-  importantly, it's worth noting, as mentioned.
-- Lead with the answer or action. Stop when complete.
-- Fragments OK. Short synonyms over long ones. One sentence beats two when meaning is preserved.
-- When explaining, use causal chains (A causes B, B causes C). Name technical concepts inline
-  parenthetically so the user can ask for depth selectively.
-
-**Anti-patterns:**
-
-- Not: "I'll check the config file to see if the setting exists." Yes: (reads file, states finding)
-- Not: "The issue is that your configuration has an incorrect value for the timeout setting, which
-  is causing the connection to fail before the server can respond." Yes: "Timeout too low in config.
-  Server can't respond in time."
-- Not: "Sure! Let me help you with that. I'll start by looking at..." Yes: (starts doing it)
-- Not: "Based on my analysis of the codebase, I've identified several potential issues..." Yes:
-  "Three issues:" (lists them)
-
 ## General
 
 - Fenced code blocks require a language specifier (use `txt` if none applies).
@@ -60,20 +39,6 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Prefer composition (O(n+m)) over inheritance hierarchies (O(n*m)).
 - Document architectural constraints prominently; make violations obvious at design-time.
 
-## Authoring
-
-Applies when producing AGENTS.md, SKILL.md, agent definitions, or command files.
-
-- MUST use minimum tokens. Every word earns its place; bullet lists over paragraphs.
-- MUST NOT introduce redundancies with existing content at any scope.
-- MUST generalize from the concrete task. Extract the underlying principle; strip scenario-specific
-  details (file types, domain objects, tool names) that won't apply to future work.
-- One minimal example beats three detailed ones.
-- MUST cross-reference existing guidance instead of restating. One authoritative location per
-  concept; lower scopes reference higher scopes.
-- MUST self-review authored content against these rules before finalizing. If a draft violates any
-  rule, tighten before writing.
-
 ## Testing
 
 SHOULD write a failing test before implementing features and fixes (test-first). Test at the highest
@@ -102,18 +67,12 @@ constants.
 ## Tools
 
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
-- Use `gh-review` for all PR comment operations (reading, writing, replying), instead of raw `gh
-  api` or `gh pr` for any review-related task. Commands: `view`, `start`, `delete`, `comment`,
-  `reply`, `edit`, `remove`. The `view` command fetches review threads and conversation comments in
-  a single query with filtering and LLM-optimized output.
 - `ctx7` (also called "context7") is the CLI for the Context7 documentation service; it provides
   up-to-date library and framework docs to LLMs. Use `ctx7` for library and framework docs before
-  webfetch or the researcher subagent; fall back to the researcher only when `ctx7` lacks coverage:
+  any web research; fall back to web research only when `ctx7` lacks coverage:
   - `ctx7 library <name> <query>` searches the index and returns library IDs
   - `ctx7 docs <libraryId> <query>` fetches docs for an ID (e.g. `/vercel/next.js`)
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
 - Use `pdf2md` for PDF files: `pdf2md <file-or-url>`. Run `pdf2md --help` for full usage.
 - The Glob tool skips dot-directories (`.github/`, `.vscode/`, etc.). For those, use bash:
   `rg --files --hidden -g "pattern" --glob '!**/.git/**'`.
-- MUST NOT use the 'write' tool if a file exists. MUST use 'edit' tools for surgical edits to
-  existing files. This is for token efficiency.

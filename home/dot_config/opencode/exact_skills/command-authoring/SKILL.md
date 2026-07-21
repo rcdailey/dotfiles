@@ -11,7 +11,7 @@ description: >-
 # Command Authoring
 
 Conventions for OpenCode custom commands. Omissions intentional. All authored content MUST follow
-the Authoring rules in global AGENTS.md.
+the Authoring rules in your system prompt (Authoring section).
 
 ## Command Anatomy
 

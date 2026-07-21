@@ -10,7 +10,7 @@ description: >-
 # AGENTS.md Authoring
 
 Conventions for AGENTS.md files. Omissions intentional. All authored content MUST follow the
-Authoring rules in global AGENTS.md.
+Authoring rules in your system prompt (Authoring section).
 
 ## Core Concept
 

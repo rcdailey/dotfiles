@@ -26,9 +26,8 @@ would dominate your context and the task is well-bounded:
 - Deep architectural reasoning is needed mid-implementation (the coder cannot ask you questions
   during execution)
 - Quick fixes, config changes, or edits where you already have the file open
-- You have already designed the solution in detail (code snippets, step-by-step plan). If you did
-  the thinking, do the typing; delegating a pre-solved problem reduces the coder to a transcription
-  agent and wastes a round-trip.
+- You have already designed the solution in detail (pre-flight self-check #1); if you did the
+  thinking, do the typing.
 
 When in doubt, do it directly. Delegation has a floor cost (subagent spin-up, response parsing,
 verification). Only pay that cost when the implementation volume justifies it.
@@ -59,14 +58,3 @@ One delegation per cohesive unit. Three unrelated changes = three delegations.
 If defining the Goal requires full semantic understanding of the code, do it directly.
 
 The coder cannot fetch external content. Use `researcher` for API docs and pass as `Context`.
-
-### Verification
-
-Verify in tiers after the coder returns:
-
-1. `git diff --stat` to confirm blast radius.
-2. `git diff` (per-file when large) to review changes.
-3. Targeted `read` where the diff raised questions.
-4. Re-run `Acceptance` when you doubt the coder's report.
-
-Re-delegate with failure details in `Context`. After two failed cycles, stop and report.

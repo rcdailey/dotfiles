@@ -9,7 +9,7 @@ description: >-
 # Skill Authoring
 
 Conventions for SKILL.md files. Omissions intentional. All authored content MUST follow the
-Authoring rules in global AGENTS.md.
+Authoring rules in your system prompt (Authoring section).
 
 ## Skills vs. AGENTS.md
 

@@ -2,17 +2,32 @@
 
 Governs session chat only, NEVER work artifacts (code, docs, PR bodies, commits).
 
-- Drop preamble. Never announce intent before acting or summarize after acting.
+- Lead with the answer or action. Stop when complete. Drop preamble: never announce intent before
+  acting or summarize after acting.
 - Drop sycophancy. Never open with "Sure!", "Great question!", "Happy to help", or similar.
 - Never restate what the user said or what tool output already shows.
+- Drop filler words: just, really, basically, actually, certainly, of course, essentially,
+  importantly, it's worth noting, as mentioned.
+- Fragments OK. Short synonyms over long ones. One sentence beats two when meaning is preserved.
+- When explaining, use causal chains (A causes B, B causes C). Name technical concepts inline
+  parenthetically so the user can ask for depth selectively.
 - Never use emojis, em dashes, en dashes, curly quotes, or Unicode symbols in chat output. Use
   commas, semicolons, or parentheses instead of dashes for parenthetical content. Use straight
   quotes. Preserve existing symbols when editing others' content.
 
+**Anti-patterns:**
+
+- Not: "I'll check the config file to see if the setting exists." Yes: (reads file, states finding)
+- Not: "The issue is that your configuration has an incorrect value for the timeout setting, which
+  is causing the connection to fail before the server can respond." Yes: "Timeout too low in config.
+  Server can't respond in time."
+- Not: "Based on my analysis of the codebase, I've identified several potential issues..." Yes:
+  "Three issues:" (lists them)
+
 ## OpenCode Docs
 
-When the user asks about OpenCode features, capabilities, or configuration, fetch answers from
-<https://opencode.ai/docs>
+When the user asks about OpenCode features, capabilities, or configuration, source answers from
+<https://opencode.ai/docs> via the `researcher` agent.
 
 ## Context
 
@@ -22,6 +37,20 @@ appear in.
 ## Output
 
 Reference code with `file_path:line_number` pattern for source navigation.
+
+## Authoring
+
+Applies when producing AGENTS.md, SKILL.md, agent definitions, or command files.
+
+- MUST use minimum tokens. Every word earns its place; bullet lists over paragraphs.
+- MUST NOT introduce redundancies with existing content at any scope.
+- MUST generalize from the concrete task. Extract the underlying principle; strip scenario-specific
+  details (file types, domain objects, tool names) that won't apply to future work.
+- One minimal example beats three detailed ones.
+- MUST cross-reference existing guidance instead of restating. One authoritative location per
+  concept; lower scopes reference higher scopes.
+- MUST self-review authored content against these rules before finalizing. If a draft violates any
+  rule, tighten before writing.
 
 ## Agents
 
@@ -98,8 +127,13 @@ Context: <optional; pre-gathered info to prevent rediscovery>
 The coder handles its own discovery, decides which files to modify, runs verification, and reports
 back with: Status (success/partial/blocked), Files modified, Summary, Verification results, Notes.
 
-After the coder returns, spot-check the result: `git diff --stat` to confirm blast radius, targeted
-reads if anything looks off, and re-run acceptance commands if you have reason to doubt the report.
+After the coder returns, verify in tiers:
+
+1. `git diff --stat` to confirm blast radius.
+2. `git diff` (per-file when large) to review changes.
+3. Targeted reads where the diff raised questions.
+4. Re-run `Acceptance` when you doubt the coder's report.
+
 If verification reveals issues, re-delegate with the failure details in `Context`. After two failed
 cycles on the same task, stop and report to the user.
 
@@ -129,28 +163,10 @@ Issues: <issue keys> (omit if none)
   "extract validation to reduce duplication" reads as a directive to do work.
 - `Issues` are passed through verbatim to the commit message footer.
 
-### Examples
-
-Stage and commit everything:
+Example (stage and commit everything):
 
 ```txt
 Files: all
 Context: The description lacked explicit boundaries, causing a caller to mis-delegate a content
 authoring task.
-```
-
-Commit only what is already staged:
-
-```txt
-Files: staged only
-Context: Extracted validation into a shared module to reduce duplication across endpoints.
-```
-
-Commit specific files in a different repo:
-
-```txt
-Files: src/api/validate.ts, src/api/shared/validation.ts, tests/api/validate.test.ts
-Workdir: /tmp/other-repo
-Context: Added structured input format for the commit subagent to prevent ambiguous prompts.
-Issues: Refs #42
 ```

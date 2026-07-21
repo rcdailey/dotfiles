@@ -7,6 +7,8 @@
   guessing or asking. Only ask upfront when the request is genuinely unanswerable without the
   missing information.
 - Don't provide time estimates.
+- MUST NOT use the 'write' tool on an existing file; use 'edit' tools for surgical edits. Full-file
+  rewrites waste tokens and risk clobbering unseen content.
 
 ## Skills
 
