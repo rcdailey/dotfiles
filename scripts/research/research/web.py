@@ -13,6 +13,7 @@ from research._fetch import FetchError, fetch_markdown
 from research._linkup import SearchError, format_search_results
 from research._render import (
     DEFAULT_MAX_CHARS,
+    apply_find,
     is_github_url,
     is_pdf_url,
     reroute_message,
@@ -178,8 +179,6 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int) -> None:
                     sys.exit(1)
                 content = result_proc.stdout
                 if find:
-                    from research._render import apply_find
-
                     output = apply_find(content, find, context)
                 else:
                     output = content
