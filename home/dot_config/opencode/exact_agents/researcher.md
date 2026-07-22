@@ -5,7 +5,7 @@ description: >
   topic; this agent searches, reads, and synthesizes an answer.
 mode: subagent
 model: anthropic/claude-sonnet-4-6
-variant: medium
+variant: low
 permission:
   "*": deny
   bash:

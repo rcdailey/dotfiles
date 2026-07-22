@@ -18,7 +18,7 @@
     "general": {
       "tools": { "question": false },
       "model": "anthropic/claude-sonnet-4-6",
-      "variant": "medium",
+      "variant": "low",
     },
     "explore": {
       "model": "anthropic/claude-haiku-4-5",
