@@ -135,15 +135,34 @@ itself.
 
 ### 3. Analyze
 
+Review as a principal engineer, not a bug finder. The diff is the entry point; the unit under review
+is the design decision it embodies.
+
 Focus on critical/high priority issues unless the caller passed a wider scope. Bias toward fewer,
-higher-signal comments.
+higher-signal comments. Priorities, in order:
+
+- **Security**: credentials, injection, auth flaws, input validation
+- **Design**: public contract shape (API naming, consistency, error semantics, compatibility),
+  abstraction boundaries, dependency direction, coupling, fit with the repo's existing architecture.
+  A flawed public contract is high priority: internal code can be refactored cheaply later; a
+  shipped contract costs a breaking change.
+- **Correctness and operations**: resource config, error handling, data loss risks, breaking changes
+- **Code quality**: duplication, logic errors, performance, missing config
+
+Medium/low (only when the caller widens scope): organization, docs, test coverage, style, naming
+
+For every non-trivial change, ask: Is this the right layer for the change? Does it introduce a
+second pattern where the repo already has one? Is the abstraction earning its existence, or is there
+a simpler shape? How will this age as the codebase grows? Derive the repo's conventions from the
+surrounding code you already read; do not impose a fixed rubric.
 
 Read changed files from the worktree path (or current working copy for non-PR reviews). Read at most
-2-3 directly relevant callsites per finding to understand how the changed code is used. Do not
-explore broadly or read unrelated files. Do not read README, docs/, wiki, or other documentation
-unless a specific finding requires that context.
+2-3 directly relevant callsites per finding to understand how the changed code is used; for design
+findings, prefer callsites that reveal how the contract is consumed. Do not explore broadly or read
+unrelated files. Do not read README, docs/, wiki, or other documentation unless a specific finding
+requires that context.
 
-Apply the review priorities and verification rules from the `gh-pr-review` skill.
+Apply the tone, etiquette, and verification rules from the `gh-pr-review` skill.
 
 MUST verify technical claims with `ctx7` for every library, framework, language, tool, CLI, or
 standard referenced in a finding. This is not optional; unverified assertions produce hallucinated

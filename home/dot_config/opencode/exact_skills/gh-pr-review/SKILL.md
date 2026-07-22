@@ -32,14 +32,6 @@ NUMBER` (e.g. `gh-review view sketchy/cortex-backend 2794`, `gh-review start own
 
 ## Review Etiquette
 
-### Priorities (in order)
-
-- **Security**: Credentials, injection, auth flaws, input validation
-- **Architecture**: Resource config, error handling, data loss risks, breaking changes
-- **Code quality**: Duplication, logic errors, performance, missing config
-
-Medium/low (only when explicitly requested): Organization, docs, test coverage, style, naming
-
 ### Tone
 
 - Bugs/defects: Direct language ("I think this is a bug...", "This will cause...")
