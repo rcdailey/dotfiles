@@ -44,7 +44,7 @@ def test_links_add():
     with patch(
         "linear_cli.links.execute",
         return_value={
-            "attachmentLinkURL": {
+            "attachmentCreate": {
                 "success": True,
                 "attachment": {"id": "att-uuid-3", "title": "PR", "url": "https://github.com/pr/1"},
             }

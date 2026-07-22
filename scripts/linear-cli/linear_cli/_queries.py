@@ -381,9 +381,9 @@ query Attachments($id: String!) {
 }
 """
 
-ATTACHMENT_LINK_URL_MUTATION = """
-mutation AttachmentLinkURL($issueId: String!, $url: String!, $title: String) {
-  attachmentLinkURL(issueId: $issueId, url: $url, title: $title) {
+ATTACHMENT_CREATE_MUTATION = """
+mutation AttachmentCreate($input: AttachmentCreateInput!) {
+  attachmentCreate(input: $input) {
     success
     attachment {
       id

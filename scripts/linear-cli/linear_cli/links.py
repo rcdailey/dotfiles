@@ -9,8 +9,8 @@ from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute
 from linear_cli._models import Attachment
 from linear_cli._queries import (
+    ATTACHMENT_CREATE_MUTATION,
     ATTACHMENT_DELETE_MUTATION,
-    ATTACHMENT_LINK_URL_MUTATION,
     ATTACHMENTS_QUERY,
 )
 
@@ -51,16 +51,16 @@ def list_links(issue_id: str) -> None:
 @click.option("--title", default=None, help="Optional display title for the link.")
 def add_link(issue_id: str, url: str, title: str | None) -> None:
     """Add a URL link to an issue."""
-    variables: dict = {"issueId": issue_id, "url": url}
+    input_data: dict = {"issueId": issue_id, "url": url}
     if title:
-        variables["title"] = title
+        input_data["title"] = title
 
     try:
-        data = execute(ATTACHMENT_LINK_URL_MUTATION, variables)
+        data = execute(ATTACHMENT_CREATE_MUTATION, {"input": input_data})
     except LinearError as exc:
         die(str(exc))
 
-    result = data.get("attachmentLinkURL") or {}
+    result = data.get("attachmentCreate") or {}
     if not result.get("success"):
         die("link creation failed")
 
