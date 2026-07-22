@@ -65,8 +65,9 @@ under `~/.config/opencode/` do not have these prefixes.
   testing, tools). Primary agents (`build`, `dispatch`) additionally include
   `opencode-primary-shared.md` for delegation and commit protocols. `dispatch` is `hidden: true`
   (headless ticket work only; zero-ask permission surface because headless runs auto-reject
-  permission asks). Non-coding agents (`commit`, `researcher`, `upgrade-analyst`) are plain markdown
-  with self-contained protocols. This split keeps coding directives out of non-coding contexts
+  permission asks). Non-coding agents (`commit`, `researcher`, `reviewer`, `upgrade-analyst`) are
+  plain markdown with self-contained protocols. This split keeps coding directives out of
+  non-coding contexts
   (e.g., a writing agent in another repo receives only the universal AGENTS.md).
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
 - `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`)

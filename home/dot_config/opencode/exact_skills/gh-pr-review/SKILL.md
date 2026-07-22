@@ -4,11 +4,12 @@ description: >-
   Use when reading, posting, or managing PR review comments via the `gh-review` tool: viewing
   PR comments with filtering, leaving inline comments on specific diff lines, starting or
   deleting pending reviews, replying to review threads, editing or removing individual review
-  comments. Triggers on phrases like "review this PR", "check for comments", "leave a comment
-  on line X", "add review feedback", "start a pending review", "reply to the comment", "edit
-  the comment", "remove that comment", "delete that comment", "fix my comment", "move comment
-  to line X", or any task involving PR comments and code review. Do NOT use for merging,
-  approving via `gh pr review --approve`, or non-review PR operations.
+  comments. Triggers on phrases like "check for comments", "leave a comment on line X",
+  "start a pending review", "reply to the comment", "edit the comment", "remove that comment",
+  "delete that comment", "fix my comment", "move comment to line X", or any task involving PR
+  comment mechanics. Do NOT use for merging, approving via `gh pr review --approve`, or
+  non-review PR operations. Authoring a full PR review is the `reviewer` subagent's job; it
+  loads this skill itself. Primary agents delegate instead of reviewing inline.
 ---
 
 # PR Review

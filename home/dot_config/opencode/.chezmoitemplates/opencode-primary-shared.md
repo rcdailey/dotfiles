@@ -79,7 +79,8 @@ up `/tmp` clones when done.
   changelogs, PR/issue bodies, release notes, gist content). MUST NOT load for conversational chat,
   code, commit messages, or structured data.
 - `gh-pr-review`: MUST load when reading, posting, or managing PR review comments, replying to
-  review threads, or any PR comment workflow via `gh-review`.
+  review threads, or any PR comment workflow via `gh-review`. MUST NOT author a full PR review
+  inline; delegate that to the `reviewer` subagent, which loads this skill itself.
 - `gh-api`: MUST load when using raw `gh api` for draft PRs, Discussions, or endpoints not covered
   by higher-level `gh` subcommands. Do NOT use for PR review operations; use `gh-review` instead.
 - `linear-cli`: MUST load when operating on Linear issues, projects, milestones, labels, or
