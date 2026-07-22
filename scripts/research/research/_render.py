@@ -55,6 +55,14 @@ def apply_find(text: str, pattern: str, context: int) -> str:
     Pattern is tried as a case-insensitive regex. Falls back to literal
     substring matching when the pattern is not valid regex.
     """
+    if r"\|" in pattern:
+        fixed = pattern.replace(r"\|", "|")
+        click.echo(
+            "[hint: converted \\| to | for regex alternation; use | directly next time]",
+            err=True,
+        )
+        pattern = fixed
+
     paragraphs = text.split("\n\n")
 
     try:
@@ -71,7 +79,13 @@ def apply_find(text: str, pattern: str, context: int) -> str:
             hi = min(len(paragraphs), i + context + 1)
             keep.update(range(lo, hi))
     if not keep:
-        return f"[no paragraphs matched '{pattern}']"
+        preview = "\n\n".join(paragraphs[:3])
+        if len(preview) > 500:
+            preview = preview[:500] + "..."
+        return (
+            f"[no paragraphs matched '{pattern}']\n\n"
+            f"--- content preview (first 3 paragraphs) ---\n{preview}"
+        )
     return "\n\n".join(paragraphs[i] for i in sorted(keep))
 
 

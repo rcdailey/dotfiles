@@ -12,24 +12,36 @@ from research.scout import cli
 from research.scout._clone import ensure_ref, ensure_repo
 from research.scout._common import parse_repo
 
+# Map common file extension aliases to ripgrep type names.
+# Only applied on the rg --type= path; git-grep uses raw extension globs.
+_TYPE_ALIASES: dict[str, str] = {
+    "tsx": "ts",
+    "jsx": "js",
+    "rs": "rust",
+    "kt": "kotlin",
+    "cs": "csharp",
+}
+
 
 @cli.command(name="rg")
 @click.argument("repo")
 @click.argument("pattern")
 @click.option("--path", default=".", help="subdirectory to search within")
 @click.option("--glob", "-g", "globs", multiple=True, help="file glob filter (repeatable)")
-@click.option("--type", "filetype", help="ripgrep type filter (e.g., py, ts, go)")
+@click.option("--type", "filetypes", multiple=True, help="ripgrep type filter (repeatable)")
 @click.option("--context", "-C", type=int, default=0, help="lines of context around matches")
 @click.option("--ignore-case", "-i", is_flag=True, help="case-insensitive search")
+@click.option("--fixed-strings", "-F", is_flag=True, help="treat pattern as literal string")
 @click.option("--ref", help="branch, tag, or SHA (uses git grep)")
 def rg_cmd(
     repo: str,
     pattern: str,
     path: str,
     globs: tuple[str, ...],
-    filetype: str | None,
+    filetypes: tuple[str, ...],
     context: int,
     ignore_case: bool,
+    fixed_strings: bool,
     ref: str | None,
 ) -> None:
     """Search cloned repo with ripgrep (auto-clones on first use)."""
@@ -42,18 +54,19 @@ def rg_cmd(
         args = ["git", "grep", "--line-number", "--no-color"]
         if ignore_case:
             args.append("-i")
+        if fixed_strings:
+            args.append("--fixed-strings")
         if context > 0:
             args.append(f"-C{context}")
         args.extend(["-e", pattern, sha])
-        # Pathspecs go after -- separator
+        # Pathspecs go after -- separator; use raw extension globs for git-grep
         pathspecs: list[str] = []
         if path and path != ".":
             pathspecs.append(path)
         for g in globs:
             pathspecs.append(g)
-        if filetype:
-            # Map ripgrep --type to glob (e.g., "cs" -> "*.cs")
-            pathspecs.append(f"*.{filetype}")
+        for ft in filetypes:
+            pathspecs.append(f"*.{ft}")
         if pathspecs:
             args.append("--")
             args.extend(pathspecs)
@@ -66,11 +79,15 @@ def rg_cmd(
             "--color=never",
             "--max-columns=200",
             "--max-columns-preview",
+            "--no-follow",
         ]
         if ignore_case:
             args.append("--ignore-case")
-        if filetype:
-            args.append(f"--type={filetype}")
+        if fixed_strings:
+            args.append("--fixed-strings")
+        for ft in filetypes:
+            mapped = _TYPE_ALIASES.get(ft, ft)
+            args.append(f"--type={mapped}")
         for g in globs:
             args.extend(["--glob", g])
         if context > 0:

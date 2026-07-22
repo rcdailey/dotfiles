@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from click.testing import CliRunner
 
 from research.cli import cli
+from research._cache import _InMemoryCache
 
 
 def _make_cache(store: dict | None = None) -> MagicMock:
@@ -118,6 +119,141 @@ def test_fetch_cmd_github_discussion_url_calls_budget_reserve() -> None:
         "https://github.com/owner/repo/discussions/1",
     )
     assert result.exit_code == 0
+
+
+def test_fetch_cmd_github_issue_url_reroutes() -> None:
+    """GitHub issue URLs are rerouted to view_issue."""
+    runner = CliRunner()
+    issue_data = {
+        "number": 42,
+        "title": "Bug report",
+        "state": "open",
+        "createdAt": "2024-01-01T00:00:00Z",
+        "body": "body text",
+        "comments": [],
+    }
+    with (
+        patch("research._cache.get_cache", return_value=_make_cache()),
+        patch("research._ghapi.view_issue", return_value=issue_data),
+        patch("research.scout.issues._render_comments"),
+    ):
+        result = runner.invoke(
+            cli,
+            ["web", "fetch", "https://github.com/owner/repo/issues/42"],
+            env=ENV,
+        )
+    assert result.exit_code == 0
+    assert "Bug report" in result.output
+
+
+def test_fetch_cmd_github_pr_url_reroutes() -> None:
+    """GitHub PR URLs are rerouted to view_pr."""
+    runner = CliRunner()
+    pr_data = {
+        "number": 7,
+        "title": "Fix everything",
+        "state": "merged",
+        "createdAt": "2024-01-01T00:00:00Z",
+        "mergedAt": "2024-01-02T00:00:00Z",
+        "body": "pr body",
+        "comments": [],
+    }
+    with (
+        patch("research._cache.get_cache", return_value=_make_cache()),
+        patch("research._ghapi.view_pr", return_value=pr_data),
+        patch("research.scout.issues._render_comments"),
+    ):
+        result = runner.invoke(
+            cli,
+            ["web", "fetch", "https://github.com/owner/repo/pull/7"],
+            env=ENV,
+        )
+    assert result.exit_code == 0
+    assert "Fix everything" in result.output
+
+
+def test_fetch_cmd_github_commit_url_reroutes() -> None:
+    """GitHub commit URLs are rerouted to view_commit."""
+    runner = CliRunner()
+    commit_data = {
+        "commit": {
+            "message": "fix: resolve the issue",
+            "author": {"name": "Alice", "date": "2024-01-01T00:00:00Z"},
+            "committer": {"name": "Alice", "date": "2024-01-01T00:00:00Z"},
+        },
+        "stats": {"additions": 5, "deletions": 2},
+        "files": [],
+    }
+    with (
+        patch("research._cache.get_cache", return_value=_make_cache()),
+        patch("research._ghapi.view_commit", return_value=commit_data),
+    ):
+        result = runner.invoke(
+            cli,
+            ["web", "fetch", "https://github.com/owner/repo/commit/abc1234"],
+            env=ENV,
+        )
+    assert result.exit_code == 0
+    assert "fix: resolve the issue" in result.output
+
+
+def test_fetch_cmd_github_blob_url_reroutes() -> None:
+    """GitHub blob URLs are rerouted to clone-based cat."""
+    runner = CliRunner()
+    mock_proc = MagicMock()
+    mock_proc.returncode = 0
+    mock_proc.stdout = "file content here\n"
+    with (
+        patch("research._cache.get_cache", return_value=_make_cache()),
+        patch("research.scout._clone.ensure_repo", return_value=MagicMock()),
+        patch("research.scout._clone.ensure_ref", return_value="deadbeef"),
+        patch("subprocess.run", return_value=mock_proc),
+    ):
+        result = runner.invoke(
+            cli,
+            ["web", "fetch", "https://github.com/owner/repo/blob/main/src/foo.py"],
+            env=ENV,
+        )
+    assert result.exit_code == 0
+    assert "file content here" in result.output
+
+
+# --- _InMemoryCache tests ---
+
+
+def test_in_memory_cache_get_set() -> None:
+    cache = _InMemoryCache()
+    assert cache.get("key") is None
+    cache.set("key", "value")
+    assert cache.get("key") == "value"
+
+
+def test_in_memory_cache_delete() -> None:
+    cache = _InMemoryCache()
+    cache.set("key", "value")
+    cache.delete("key")
+    assert cache.get("key") is None
+
+
+def test_in_memory_cache_contains() -> None:
+    cache = _InMemoryCache()
+    cache.set("key", "value")
+    assert "key" in cache
+    assert "other" not in cache
+
+
+def test_in_memory_cache_iter() -> None:
+    cache = _InMemoryCache()
+    cache.set("a", 1)
+    cache.set("b", 2)
+    assert set(cache) == {"a", "b"}
+
+
+def test_in_memory_cache_transact() -> None:
+    cache = _InMemoryCache()
+    with cache.transact():
+        cache.set("key", "val")
+    assert cache.get("key") == "val"
 
 
 def test_fetch_cmd_fetches_and_caches() -> None:

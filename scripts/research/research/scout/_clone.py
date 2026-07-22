@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import fcntl
+import os
 import subprocess
 import sys
 import threading
@@ -40,6 +41,7 @@ def _repo_lock(owner: str, repo: str) -> Generator[None, None, None]:
 def _do_clone(repo_dir: Path, owner: str, repo: str) -> None:
     click.echo(f"[cloning {owner}/{repo}]", err=True)
     repo_dir.parent.mkdir(parents=True, exist_ok=True)
+    clone_env = {**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"}
     result = subprocess.run(
         [
             "git",
@@ -52,6 +54,7 @@ def _do_clone(repo_dir: Path, owner: str, repo: str) -> None:
         ],
         capture_output=True,
         text=True,
+        env=clone_env,
     )
     if result.returncode != 0:
         click.echo(f"error: clone failed: {result.stderr.strip()}", err=True)
@@ -140,13 +143,18 @@ def ensure_repo(owner: str, repo: str) -> Path:
     repo_dir = _repo_dir(owner, repo)
 
     if _is_ready(repo_dir):
-        marker = repo_dir / MARKER
-        age = time.time() - marker.stat().st_mtime
-        if age > STALE_SECONDS:
-            with _repo_lock(owner, repo):
-                _do_pull_if_stale(repo_dir, owner, repo)
-        threading.Thread(target=_cleanup_stale_clones, args=(owner, repo), daemon=True).start()
-        return repo_dir
+        if not (repo_dir / ".git").is_dir():
+            import shutil
+
+            shutil.rmtree(repo_dir, ignore_errors=True)
+        else:
+            marker = repo_dir / MARKER
+            age = time.time() - marker.stat().st_mtime
+            if age > STALE_SECONDS:
+                with _repo_lock(owner, repo):
+                    _do_pull_if_stale(repo_dir, owner, repo)
+            threading.Thread(target=_cleanup_stale_clones, args=(owner, repo), daemon=True).start()
+            return repo_dir
 
     # Clone needed; re-check under lock (another process may have won).
     with _repo_lock(owner, repo):

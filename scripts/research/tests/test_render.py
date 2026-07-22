@@ -51,11 +51,23 @@ def test_apply_find_invalid_regex_falls_back_to_substring() -> None:
     assert "foo [bar" in result
 
 
-def test_apply_find_no_match() -> None:
-    text = "hello\n\nworld"
+def test_apply_find_no_match_includes_preview() -> None:
+    text = "hello\n\nworld\n\nextra para"
     result = apply_find(text, "notfound", 0)
     assert "no paragraphs matched" in result
     assert "notfound" in result
+    assert "content preview" in result
+    assert "hello" in result
+
+
+def test_apply_find_backslash_pipe_converted(capsys) -> None:
+    """\\| is auto-converted to | for alternation and a hint is printed."""
+    text = "foo bar\n\nbaz qux\n\nunrelated"
+    result = apply_find(text, r"foo\|baz", 0)
+    assert "foo bar" in result
+    assert "baz qux" in result
+    captured = capsys.readouterr()
+    assert "converted" in captured.err
 
 
 def test_apply_find_context_paragraphs() -> None:

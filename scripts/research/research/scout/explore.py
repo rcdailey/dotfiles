@@ -1,17 +1,13 @@
-"""Repo exploration: orient, tree, read, blame, diff, code."""
+"""Repo exploration: orient, diff."""
 
 from __future__ import annotations
 
-import base64
 import re
-import textwrap
-import urllib.error
-import urllib.request
 from collections import Counter
 
 import click
 
-from research._ghapi import APIError, _run_gh, api, api_raw, graphql, resolve_ref
+from research._ghapi import APIError, api, api_raw
 from research.scout import cli
 from research.scout._common import die, parse_repo
 
@@ -35,10 +31,6 @@ KEY_FILE_PATTERNS = [
     re.compile(r"^Dockerfile$"),
     re.compile(r"^docker-compose\.ya?ml$"),
 ]
-
-_REGEX_META_RE = re.compile(
-    r"(?:(?<!\\)\||(?:\\[.dwsDWS])|(?:\.\*|\.\+)|(?:\\\(|\\\))|(?:\\\[|\\\]))"
-)
 
 
 def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
@@ -146,136 +138,6 @@ def orient(repo: str, brief: bool, ref: str | None) -> None:
     _render_orient(owner, name, ref, brief)
 
 
-@cli.command()
-@click.argument("repo")
-@click.argument("path", required=False, default="")
-@click.option(
-    "--depth",
-    type=int,
-    default=0,
-    help="max directory depth; 1 = flat listing, 0 = full recursive (default)",
-)
-@click.option("--ref", help="branch, tag, or SHA")
-@click.option("--limit", type=int, default=0, help="max entries (0 = no limit)")
-def tree(repo: str, path: str, depth: int, ref: str | None, limit: int) -> None:
-    """List directory contents (--depth 1) or full recursive tree."""
-    owner, name = parse_repo(repo)
-
-    if depth == 1:
-        params: dict[str, str] = {}
-        if ref:
-            params["ref"] = ref
-        try:
-            data = api(f"repos/{owner}/{name}/contents/{path}", params=params)
-        except APIError as e:
-            die(str(e))
-        items = data if isinstance(data, list) else [data]
-        items = sorted(items, key=lambda x: (x["type"] != "dir", x["name"]))
-        if limit:
-            items = items[:limit]
-        for item in items:
-            suffix = "/" if item["type"] == "dir" else f"  {item['size']}B"
-            click.echo(f"{item['name']}{suffix}")
-        return
-
-    resolved = resolve_ref(owner, name, ref)
-    try:
-        data = api(f"repos/{owner}/{name}/git/trees/{resolved}", params={"recursive": "1"})
-    except APIError as e:
-        die(str(e))
-
-    paths = [item["path"] for item in data.get("tree", []) if item["type"] == "blob"]
-    if path:
-        prefix = path.rstrip("/") + "/"
-        paths = [p for p in paths if p.startswith(prefix)]
-    if depth > 1:
-        paths = [p for p in paths if p.count("/") < depth]
-    if limit:
-        paths = paths[:limit]
-    for p in paths:
-        click.echo(p)
-
-
-@cli.command()
-@click.argument("repo")
-@click.argument("path")
-@click.option("--ref", default="HEAD", help="branch, tag, or SHA")
-@click.option("--limit", type=int, default=0, help="max lines (0 = no limit)")
-@click.option("--offset", type=int, default=0, help="skip first N lines")
-def read(repo: str, path: str, ref: str, limit: int, offset: int) -> None:
-    """Read file contents (raw, no envelope)."""
-    owner, name = parse_repo(repo)
-    raw_url = f"https://raw.githubusercontent.com/{owner}/{name}/{ref}/{path}"
-
-    try:
-        with urllib.request.urlopen(raw_url, timeout=30) as response:
-            content = response.read().decode("utf-8")
-    except urllib.error.HTTPError as e:
-        if e.code != 404:
-            die(f"HTTP {e.code} fetching file")
-        try:
-            data = api(f"repos/{owner}/{name}/contents/{path}", params={"ref": ref})
-        except APIError as api_err:
-            msg = str(api_err)
-            if "404" in msg or "Not Found" in msg:
-                die(f"file not found at ref {ref}: {path} (verify the ref and path both exist)")
-            die(f"failed to read file: {api_err}")
-        if not isinstance(data, dict) or "content" not in data:
-            die("unexpected response from GitHub API")
-        content = base64.b64decode(data["content"]).decode("utf-8")
-
-    lines = content.split("\n")
-    if offset:
-        lines = lines[offset:]
-    if limit > 0:
-        lines = lines[:limit]
-    click.echo("\n".join(lines))
-
-
-@cli.command()
-@click.argument("repo")
-@click.argument("path")
-@click.option("--ref", help="branch, tag, or SHA")
-def blame(repo: str, path: str, ref: str | None) -> None:
-    """Line-by-line attribution."""
-    owner, name = parse_repo(repo)
-    resolved = resolve_ref(owner, name, ref)
-    query = textwrap.dedent("""\
-        query($owner:String!,$repo:String!,$ref:String!,$path:String!) {
-          repository(owner:$owner,name:$repo) {
-            object(expression:$ref) {
-              ... on Commit {
-                blame(path:$path) { ranges {
-                  startingLine endingLine
-                  commit {
-                    abbreviatedOid message
-                    author { name date }
-                  }
-                }}
-              }
-            }
-          }
-        }""")
-    try:
-        result = graphql(query, owner=owner, repo=name, ref=resolved, path=path)
-    except APIError as e:
-        die(str(e))
-
-    try:
-        ranges = result["data"]["repository"]["object"]["blame"]["ranges"]
-    except (KeyError, TypeError):
-        die("no blame data; verify repo, path, and ref")
-
-    for r in ranges:
-        c = r["commit"]
-        msg = c["message"].split("\n", 1)[0]
-        click.echo(
-            f"L{r['startingLine']}-{r['endingLine']} "
-            f"{c['abbreviatedOid']} {c['author']['name']} "
-            f"({c['author']['date']}): {msg}"
-        )
-
-
 @cli.command(name="diff")
 @click.argument("repo")
 @click.argument("spec")
@@ -313,56 +175,3 @@ def diff_cmd(repo: str, spec: str, path: str | None) -> None:
         click.echo("\n=== FILES ===")
         for f in files:
             click.echo(f"{f['status']:<12} +{f['additions']}-{f['deletions']} {f['filename']}")
-
-
-@cli.command(name="code")
-@click.argument("query")
-@click.option(
-    "--in", "scopes", multiple=True, metavar="OWNER/REPO", help="scope to repo; repeatable"
-)
-@click.option("--limit", type=int, default=20)
-def code_cmd(query: str, scopes: tuple[str, ...], limit: int) -> None:
-    """Search code across GitHub (no regex; `|` is literal)."""
-    import json
-
-    if _REGEX_META_RE.search(query):
-        raise click.UsageError(
-            'GitHub code search is literal, not regex; "|" is treated as a character. '
-            "Run separate searches for each term."
-        )
-    args = [
-        "search",
-        "code",
-        query,
-        "--limit",
-        str(limit),
-        "--json",
-        "path,repository,textMatches",
-    ]
-    for s in scopes:
-        args.extend(["--repo", s])
-    result = _run_gh(args, check=False)
-    if result.returncode != 0:
-        die(result.stderr.strip() or "code search failed")
-
-    try:
-        data = json.loads(result.stdout)
-    except json.JSONDecodeError as e:
-        die(f"invalid JSON from gh search: {e}")
-
-    if not data:
-        click.echo("no results")
-        return
-
-    scoped = len(scopes) == 1
-    for i, item in enumerate(data):
-        slug = item["repository"]["nameWithOwner"]
-        header = item["path"] if scoped else f"{slug}:{item['path']}"
-        if i > 0:
-            click.echo("")
-        click.echo(header)
-        for j, match in enumerate(item.get("textMatches", [])):
-            if j > 0:
-                click.echo("---")
-            for line in match["fragment"].splitlines():
-                click.echo(f"| {line}")
