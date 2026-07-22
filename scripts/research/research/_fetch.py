@@ -209,6 +209,21 @@ def fetch_markdown(url: str) -> str:
         include_tables=True,
     )
 
+    if markdown:
+        return markdown
+
+    # trafilatura found nothing; page likely requires JS rendering.
+    click.echo("[browser fallback: no content extracted from static HTML]", err=True)
+    try:
+        html = fetch_with_browser(url)
+    except Exception as e:
+        raise FetchError(f"no content extracted (browser fallback failed: {e})") from e
+    markdown = trafilatura.extract(
+        html,
+        output_format="markdown",
+        include_links=True,
+        include_tables=True,
+    )
     if not markdown:
-        raise FetchError("no content extracted")
+        raise FetchError("no content extracted (page may require JavaScript)")
     return markdown

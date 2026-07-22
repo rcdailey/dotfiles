@@ -278,3 +278,62 @@ def test_no_browser_fallback_for_normal_page() -> None:
 
     assert result == "Hello world"
     mock_browser.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# JS-rendered page fallback (trafilatura returns None on static HTML)
+# ---------------------------------------------------------------------------
+
+
+def test_js_fallback_triggered_when_trafilatura_returns_none() -> None:
+    """When trafilatura finds nothing in static HTML, browser fallback renders JS."""
+    empty_shell = "<html><body><div id='root'></div><script>app()</script></body></html>"
+    rendered_html = "<html><body><article>JS-rendered content here.</article></body></html>"
+    resp = _mock_response(200, empty_shell)
+
+    with (
+        patch("research._fetch._http_get", return_value=resp),
+        patch("research._fetch.fetch_with_browser", return_value=rendered_html) as mock_browser,
+        patch(
+            "research._fetch.trafilatura.extract",
+            side_effect=[None, "JS-rendered content here"],
+        ),
+        patch("research._fetch.click.echo"),
+    ):
+        result = fetch_markdown("https://example.com")
+
+    assert result == "JS-rendered content here"
+    mock_browser.assert_called_once_with("https://example.com")
+
+
+def test_js_fallback_raises_when_browser_also_empty() -> None:
+    """FetchError raised when browser renders but trafilatura still finds nothing."""
+    empty_shell = "<html><body><div id='root'></div></body></html>"
+    resp = _mock_response(200, empty_shell)
+
+    with (
+        patch("research._fetch._http_get", return_value=resp),
+        patch("research._fetch.fetch_with_browser", return_value="<html></html>"),
+        patch("research._fetch.trafilatura.extract", return_value=None),
+        patch("research._fetch.click.echo"),
+    ):
+        with pytest.raises(FetchError, match="page may require JavaScript"):
+            fetch_markdown("https://example.com")
+
+
+def test_js_fallback_raises_when_browser_fails() -> None:
+    """FetchError raised when browser itself fails during JS fallback."""
+    empty_shell = "<html><body><div id='root'></div></body></html>"
+    resp = _mock_response(200, empty_shell)
+
+    with (
+        patch("research._fetch._http_get", return_value=resp),
+        patch(
+            "research._fetch.fetch_with_browser",
+            side_effect=RuntimeError("browser crashed"),
+        ),
+        patch("research._fetch.trafilatura.extract", return_value=None),
+        patch("research._fetch.click.echo"),
+    ):
+        with pytest.raises(FetchError, match="browser fallback failed"):
+            fetch_markdown("https://example.com")
