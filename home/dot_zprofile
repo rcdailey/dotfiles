@@ -1,6 +1,14 @@
 # Homebrew environment setup moved to .zshenv for all shell sessions
-# mise shims activation moved to .zshenv for all shell types
 # PATH modifications moved to 05-configuration.sh for all interactive shells
+
+# Re-prepend mise shims after /etc/zprofile's path_helper reorders PATH.
+# .zshenv sets shims correctly for non-login shells, but path_helper (login
+# shells only) pushes them behind /opt/homebrew/bin. Interactive login shells
+# recover via full mise activation in .zshrc; this covers non-interactive
+# login shells (zsh -lc, SSH commands, kitty tab launches).
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate zsh --shims)"
+fi
 
 # Added by Toolbox App
 export PATH="$PATH:~/.local/share/JetBrains/Toolbox/scripts"
