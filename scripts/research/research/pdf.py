@@ -17,12 +17,13 @@ from research._render import DEFAULT_MAX_CHARS, apply_find, truncate_output
 @click.option("--find", help="show only paragraphs matching this pattern")
 @click.option("-C", "--context", type=int, default=0, help="paragraphs of context around matches")
 @click.option("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
-def cli(url: str, find: str | None, context: int, max_chars: int) -> None:
+@click.option("--offset", type=int, default=0, help="char offset into content for pagination")
+def cli(url: str, find: str | None, context: int, max_chars: int, offset: int) -> None:
     """Download, OCR, and convert PDF to markdown."""
-    _do_pdf(url, find, context, max_chars)
+    _do_pdf(url, find, context, max_chars, offset)
 
 
-def _do_pdf(url: str, find: str | None, context: int, max_chars: int) -> None:
+def _do_pdf(url: str, find: str | None, context: int, max_chars: int, offset: int = 0) -> None:
     """Internal PDF handler shared with web reroute."""
     base_url = url.split("?")[0]
     cache = get_cache()
@@ -54,8 +55,16 @@ def _do_pdf(url: str, find: str | None, context: int, max_chars: int) -> None:
         if text:
             write_cached_content(base_url, text)
 
+    total_len = len(text)
+    if offset > 0:
+        text = text[offset:]
+
     if find:
         output = apply_find(text, find, context)
     else:
         output = text
+
+    if offset > 0:
+        output = f"[starting at char offset {offset}; total length {total_len}]\n\n" + output
+
     click.echo(truncate_output(output, max_chars))

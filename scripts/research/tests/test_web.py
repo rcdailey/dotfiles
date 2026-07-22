@@ -256,6 +256,64 @@ def test_in_memory_cache_transact() -> None:
     assert cache.get("key") == "val"
 
 
+def test_fetch_cmd_offset_slices_cached_content() -> None:
+    """--offset returns content starting from that char position."""
+    store = {"content:https://example.com": "AAABBBCCC"}
+    runner = CliRunner()
+    with (
+        patch("research._cache.get_cache", return_value=_make_cache(store)),
+        patch("research._fetch._http_get"),
+    ):
+        result = runner.invoke(
+            cli,
+            ["web", "fetch", "https://example.com", "--offset", "3"],
+            env=ENV,
+        )
+    assert result.exit_code == 0
+    assert "BBBCCC" in result.output
+    assert "AAA" not in result.output
+    assert "starting at char offset 3" in result.output
+    assert "total length 9" in result.output
+
+
+def test_fetch_cmd_offset_with_find() -> None:
+    """--offset applies before --find."""
+    content = "preamble text\n\n" + "x" * 20 + "\n\nfoo match here"
+    store = {"content:https://example.com": content}
+    offset = len("preamble text\n\n")
+    runner = CliRunner()
+    with (
+        patch("research._cache.get_cache", return_value=_make_cache(store)),
+        patch("research._fetch._http_get"),
+    ):
+        result = runner.invoke(
+            cli,
+            ["web", "fetch", "https://example.com", "--offset", str(offset), "--find", "foo"],
+            env=ENV,
+        )
+    assert result.exit_code == 0
+    assert "foo match here" in result.output
+    assert "preamble text" not in result.output
+    assert "starting at char offset" in result.output
+
+
+def test_fetch_cmd_no_offset_no_marker() -> None:
+    """Without --offset no marker is prepended."""
+    store = {"content:https://example.com": "simple content"}
+    runner = CliRunner()
+    with (
+        patch("research._cache.get_cache", return_value=_make_cache(store)),
+        patch("research._fetch._http_get"),
+    ):
+        result = runner.invoke(
+            cli,
+            ["web", "fetch", "https://example.com"],
+            env=ENV,
+        )
+    assert result.exit_code == 0
+    assert "starting at char offset" not in result.output
+
+
 def test_fetch_cmd_fetches_and_caches() -> None:
     """Uncached URL fetches content and stores it."""
     store: dict = {}

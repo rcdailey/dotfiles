@@ -49,11 +49,30 @@ def truncate_output(text: str, max_chars: int) -> str:
     return text[:max_chars] + msg
 
 
+_MEGA_PARA_THRESHOLD = 1500  # chars; paragraphs above this get line-level matching
+
+
+def _match_lines(para: str, matches: object, context: int) -> str:
+    """Extract matching lines + context lines from a mega-paragraph."""
+    lines = para.split("\n")
+    keep: set[int] = set()
+    for i, line in enumerate(lines):
+        if matches(line):  # type: ignore[operator]
+            lo = max(0, i - context)
+            hi = min(len(lines), i + context + 1)
+            keep.update(range(lo, hi))
+    if not keep:
+        return ""
+    return "\n".join(lines[i] for i in sorted(keep))
+
+
 def apply_find(text: str, pattern: str, context: int) -> str:
     """Return paragraphs matching pattern with context paragraphs around them.
 
     Pattern is tried as a case-insensitive regex. Falls back to literal
     substring matching when the pattern is not valid regex.
+    Mega-paragraphs (> _MEGA_PARA_THRESHOLD chars) are matched at line level
+    to avoid returning thousands of unrelated characters.
     """
     if r"\|" in pattern:
         fixed = pattern.replace(r"\|", "|")
@@ -73,8 +92,14 @@ def apply_find(text: str, pattern: str, context: int) -> str:
         matches = lambda para: needle in para.lower()  # noqa: E731
 
     keep: set[int] = set()
+    mega_extracts: dict[int, str] = {}
     for i, para in enumerate(paragraphs):
-        if matches(para):
+        if len(para) > _MEGA_PARA_THRESHOLD:
+            extracted = _match_lines(para, matches, context)
+            if extracted:
+                mega_extracts[i] = extracted
+                keep.add(i)
+        elif matches(para):
             lo = max(0, i - context)
             hi = min(len(paragraphs), i + context + 1)
             keep.update(range(lo, hi))
@@ -86,7 +111,11 @@ def apply_find(text: str, pattern: str, context: int) -> str:
             f"[no paragraphs matched '{pattern}']\n\n"
             f"--- content preview (first 3 paragraphs) ---\n{preview}"
         )
-    return "\n\n".join(paragraphs[i] for i in sorted(keep))
+
+    def _para_text(i: int) -> str:
+        return mega_extracts.get(i, paragraphs[i])
+
+    return "\n\n".join(_para_text(i) for i in sorted(keep))
 
 
 def reroute_message(url: str, new_command: str, reason: str) -> None:

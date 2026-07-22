@@ -42,11 +42,22 @@ research web fetch URL                          # fetch as markdown (truncated a
 research web fetch URL --find "pattern"         # paragraphs matching regex pattern
 research web fetch URL --find "pattern" -C 2    # with 2 paragraphs of context
 research web fetch URL --max-chars 0            # full output, no truncation
+research web fetch URL --offset 20000           # start at char 20000 (pagination)
 ```
 
 `--find` uses Python regex (case-insensitive). Use `|` for alternation: `--find "SSO|SAML|OIDC"`.
 Do NOT use `\|`; it matches a literal pipe character, not alternation. Invalid regex falls back to
 literal substring matching.
+
+`--offset` slices content before `--find` and `--max-chars` apply. Use it to paginate through large
+documents: first fetch caches the content, subsequent `--offset` calls are free. The output includes
+a marker with the offset position and total document length.
+
+**Large documents:** URL fragment anchors (`#section-X`) are ignored; the full page is always
+fetched. For dense specs (RFCs, standards), use narrow `--find` patterns targeting the specific
+section text. Avoid broad patterns like `MUST|SHOULD|MAY` that match every paragraph. When
+`--find` returns too much, use `--offset` to paginate instead. Plain text URLs (`.txt`) may fail
+content extraction; prefer the HTML version.
 
 GitHub URLs are auto-rerouted to the correct scout subcommand (issues, PRs, discussions, blobs,
 commits). PDF URLs auto-reroute to `research pdf`. Both still burn a budget slot; call the correct
@@ -58,6 +69,7 @@ command directly to avoid the teaching message.
 research pdf URL                           # download, OCR, convert (truncated at 20k chars)
 research pdf URL --find "pattern"          # search converted output
 research pdf URL --find "pattern" -C 2     # with context
+research pdf URL --offset 20000            # pagination (same as web fetch)
 ```
 
 Use for any `.pdf` URL or when `web fetch` returns "no content extracted".
@@ -151,5 +163,5 @@ omitted when errors occurred.
 - MUST respond directly to the caller; MUST NOT write results to files
 - MUST report all tool errors verbatim (caller has no visibility into tool execution)
 - Stop when answered: if primary sources directly answer the question, synthesize immediately
-- No duplicate reads: use `--offset` for new sections of the same file
+- No duplicate reads: use `--offset` to paginate (scout cat, web fetch, pdf)
 - If you can't find the answer, say so: state what you searched and what's missing

@@ -53,7 +53,8 @@ def search_cmd(query: str, max_results: int) -> None:
 @click.option("--find", help="show only paragraphs matching this pattern")
 @click.option("-C", "--context", type=int, default=0, help="paragraphs of context around matches")
 @click.option("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
-def fetch_cmd(url: str, find: str | None, context: int, max_chars: int) -> None:
+@click.option("--offset", type=int, default=0, help="char offset into content for pagination")
+def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: int) -> None:
     """Fetch a URL as clean markdown."""
     # Check for reroutes before burning budget
     if is_github_url(url):
@@ -240,7 +241,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int) -> None:
         reroute_message(url, f"pdf {url}", "URL points to a PDF")
         from research.pdf import _do_pdf
 
-        _do_pdf(url, find, context, max_chars)
+        _do_pdf(url, find, context, max_chars, offset)
         return
 
     base_url = url.split("?")[0]
@@ -259,15 +260,23 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int) -> None:
                 reroute_message(url, f"pdf {url}", "response is a file, not HTML")
                 from research.pdf import _do_pdf
 
-                _do_pdf(url, find, context, max_chars)
+                _do_pdf(url, find, context, max_chars, offset)
                 return
             budget_refund(cache, base_url)
             click.echo(f"error: fetch failed: {msg}", err=True)
             sys.exit(1)
         write_cached_content(base_url, markdown)
 
+    total_len = len(markdown)
+    if offset > 0:
+        markdown = markdown[offset:]
+
     if find:
         output = apply_find(markdown, find, context)
     else:
         output = markdown
+
+    if offset > 0:
+        output = f"[starting at char offset {offset}; total length {total_len}]\n\n" + output
+
     click.echo(truncate_output(output, max_chars))

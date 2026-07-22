@@ -88,6 +88,53 @@ def test_apply_find_context_clamps_at_edges() -> None:
     assert "para2" in result
 
 
+# --- apply_find mega-paragraph fallback ---
+
+
+def test_apply_find_mega_paragraph_returns_matching_lines_only() -> None:
+    """Mega-paragraphs yield only matching lines, not the whole block."""
+    # Build a paragraph > 1500 chars with an identifiable target line
+    filler = "\n".join(f"line {i}: some filler content here" for i in range(60))
+    target_line = "grant_type: authorization_code is the key"
+    mega = filler + "\n" + target_line
+    assert len(mega) > 1500
+
+    text = f"intro paragraph\n\n{mega}\n\ntrailing paragraph"
+    result = apply_find(text, "grant_type", 0)
+
+    assert "grant_type" in result
+    assert "intro paragraph" not in result
+    assert "trailing paragraph" not in result
+    # Should NOT contain most of the filler lines
+    assert len(result) < len(mega)
+
+
+def test_apply_find_mega_paragraph_with_context_lines() -> None:
+    """Line-level context is applied within mega-paragraphs."""
+    lines = [f"line {i:03d}: padding content filler text abc" for i in range(100)]
+    lines[50] = "TARGET line is here"
+    mega = "\n".join(lines)
+    assert len(mega) > 1500
+
+    result = apply_find(mega, "TARGET", 2)
+    assert "TARGET line is here" in result
+    assert "line 048: padding" in result
+    assert "line 049: padding" in result
+    assert "line 051: padding" in result
+    assert "line 052: padding" in result
+    # Lines far away should not appear
+    assert "line 000: padding" not in result
+
+
+def test_apply_find_normal_paragraphs_unaffected_by_mega_threshold() -> None:
+    """Paragraphs within threshold still work as before."""
+    text = "alpha\n\nbeta target\n\ngamma"
+    result = apply_find(text, "target", 0)
+    assert "beta target" in result
+    assert "alpha" not in result
+    assert "gamma" not in result
+
+
 # --- truncate_output ---
 
 
