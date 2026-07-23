@@ -36,8 +36,8 @@ linear issues create --title TEXT --team KEY [--description TEXT] [--state NAME]
                      [--priority 0-4] [--assignee USER] [--label NAME]...
                      [--parent ID] [--estimate N] [--project NAME]
                      [--milestone NAME]
-linear issues update <ID> [--title TEXT] [--state NAME] [--priority 0-4]
-                     [--assignee USER] [--add-label NAME]...
+linear issues update <ID> [--title TEXT] [--description TEXT] [--state NAME]
+                     [--priority 0-4] [--assignee USER] [--add-label NAME]...
                      [--remove-label NAME]... [--estimate N] [--parent ID]
                      [--project NAME] [--milestone NAME]
 linear comments list <ISSUE_ID>

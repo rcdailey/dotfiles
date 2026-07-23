@@ -420,6 +420,35 @@ def test_issues_list_milestone_without_project_fails():
     assert result.exit_code != 0
 
 
+def test_issues_update_description():
+    issue_node = {
+        **_issue_node(),
+        "team": {"id": "team-uuid", "key": "ENG"},
+        "project": None,
+        "labels": {"nodes": []},
+    }
+    with patch(
+        "linear_cli.issues.execute",
+        side_effect=[
+            {"issue": issue_node},
+            {
+                "issueUpdate": {
+                    "success": True,
+                    "issue": {"id": "issue-uuid", "identifier": "ENG-1", "title": "Fix"},
+                }
+            },
+        ],
+    ) as mock_exec:
+        result = CliRunner().invoke(
+            cli, ["issues", "update", "ENG-1", "--description", "New body text"]
+        )
+
+    assert result.exit_code == 0
+    assert "updated" in result.output
+    update_call = mock_exec.call_args_list[1]
+    assert update_call[0][1]["input"]["description"] == "New body text"
+
+
 def test_issues_search_with_milestone_filter():
     with (
         patch(

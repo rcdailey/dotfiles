@@ -340,6 +340,7 @@ def create(
 @cli.command("update")
 @click.argument("issue_id")
 @click.option("--title", default=None, help="New title.")
+@click.option("--description", default=None, help="New description (markdown).")
 @click.option("--state", "state_name", default=None, help="New state display name.")
 @click.option("--priority", default=None, type=click.IntRange(0, 4), help="New priority (0-4).")
 @click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
@@ -356,6 +357,7 @@ def create(
 def update(
     issue_id: str,
     title: str | None,
+    description: str | None,
     state_name: str | None,
     priority: int | None,
     assignee: str | None,
@@ -383,6 +385,8 @@ def update(
     input_data: dict = {}
     if title:
         input_data["title"] = title
+    if description is not None:
+        input_data["description"] = description
     if state_name:
         input_data["stateId"] = resolve_state_id(state_name, team_id)
     if priority is not None:
