@@ -220,6 +220,7 @@ class Project:
     target_date: str | None
     description: str | None = None
     members: list[str] = field(default_factory=list)
+    teams: list[dict] = field(default_factory=list)
     issues: list[dict] = field(default_factory=list)
     milestones: list[dict] = field(default_factory=list)
     project_updates: list[dict] = field(default_factory=list)
@@ -227,6 +228,7 @@ class Project:
     @classmethod
     def from_graphql(cls, data: dict) -> Self:
         member_nodes = (data.get("members") or {}).get("nodes", [])
+        team_nodes = (data.get("teams") or {}).get("nodes", [])
         issue_nodes = (data.get("issues") or {}).get("nodes", [])
         milestone_nodes = (data.get("projectMilestones") or {}).get("nodes", [])
         update_nodes = (data.get("projectUpdates") or {}).get("nodes", [])
@@ -238,6 +240,7 @@ class Project:
             target_date=data.get("targetDate"),
             description=data.get("description"),
             members=[m.get("name", "") for m in member_nodes if m.get("name")],
+            teams=team_nodes,
             issues=issue_nodes,
             milestones=milestone_nodes,
             project_updates=update_nodes,

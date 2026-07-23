@@ -50,7 +50,7 @@ linear links list <ISSUE_ID>
 linear links add <ISSUE_ID> <URL> [--title TEXT]
 linear links remove <LINK_ID>
 linear projects list [--team KEY]
-linear projects view <ID_OR_NAME>
+linear projects view <ID_OR_NAME>  (includes teams and workflow states)
 linear project-updates list [PROJECT_ID_OR_NAME]
 linear project-updates add <PROJECT_ID_OR_NAME> --body TEXT [--health onTrack|atRisk|offTrack]
 linear milestones list --project <NAME_OR_UUID>
@@ -201,7 +201,11 @@ linear issues search "multiple images" --team ENG --state started
 
 ## Discovery before mutation
 
-Run `linear teams list`, `linear states list --team KEY`, or `linear labels groups`
-to discover available values before creating or updating issues. Labels are
-workspace-scoped (no `--team` filter). Use `linear labels list --group "Ticket Type"`
+When creating issues within a project, `linear projects view <name>` returns teams
+and their workflow states in one call; no separate `teams list` or `states list`
+needed.
+
+For issues outside a project context, run `linear teams list` then
+`linear states list --team KEY`. For labels, run `linear labels groups` (labels are
+workspace-scoped, no `--team` filter). Use `linear labels list --group "Ticket Type"`
 to see choices within a specific label group.

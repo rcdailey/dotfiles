@@ -30,6 +30,7 @@ def _project_detail_node(
     name: str = "Alpha",
     state: str = "started",
     include_updates: bool = False,
+    include_teams: bool = False,
 ) -> dict:
     node: dict = {
         "id": proj_id,
@@ -45,6 +46,22 @@ def _project_detail_node(
             ]
         },
     }
+    if include_teams:
+        node["teams"] = {
+            "nodes": [
+                {
+                    "key": "ENG",
+                    "name": "Engineering",
+                    "states": {
+                        "nodes": [
+                            {"name": "In Progress", "type": "started", "position": 1.0},
+                            {"name": "Backlog", "type": "backlog", "position": 0.0},
+                            {"name": "Done", "type": "completed", "position": 2.0},
+                        ]
+                    },
+                },
+            ]
+        }
     if include_updates:
         node["projectUpdates"] = {
             "nodes": [
@@ -146,6 +163,35 @@ def test_projects_view_no_updates_section_when_empty():
 
     assert result.exit_code == 0
     assert "recent updates" not in result.output
+
+
+def test_projects_view_shows_teams_and_states():
+    with patch(
+        "linear_cli.projects.execute",
+        return_value={"project": _project_detail_node(include_teams=True)},
+    ):
+        result = CliRunner().invoke(cli, ["projects", "view", "proj-uuid-1"])
+
+    assert result.exit_code == 0
+    assert "teams:" in result.output
+    assert "ENG  Engineering" in result.output
+    assert "backlog" in result.output
+    assert "Backlog" in result.output
+    assert "started" in result.output
+    assert "In Progress" in result.output
+    assert "completed" in result.output
+    assert "Done" in result.output
+
+
+def test_projects_view_no_teams_section_when_empty():
+    with patch(
+        "linear_cli.projects.execute",
+        return_value={"project": _project_detail_node()},
+    ):
+        result = CliRunner().invoke(cli, ["projects", "view", "proj-uuid-1"])
+
+    assert result.exit_code == 0
+    assert "teams:" not in result.output
 
 
 def test_projects_view_by_name_fallback():

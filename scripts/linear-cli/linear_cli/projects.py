@@ -85,6 +85,14 @@ def view_project(id_or_name: str) -> None:
     if proj.description:
         click.echo("")
         click.echo(proj.description)
+    if proj.teams:
+        click.echo("")
+        click.echo("teams:")
+        for team in proj.teams:
+            click.echo(f"  {team.get('key')}  {team.get('name')}")
+            states = (team.get("states") or {}).get("nodes", [])
+            for s in sorted(states, key=lambda s: (s.get("type", ""), s.get("position", 0))):
+                click.echo(f"    {s.get('type', ''):12}  {s.get('name', '')}")
     if proj.issues:
         click.echo("")
         click.echo("issues:")

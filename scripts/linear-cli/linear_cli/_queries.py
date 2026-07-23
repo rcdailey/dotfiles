@@ -430,6 +430,19 @@ query Project($id: String!) {
         name
       }
     }
+    teams {
+      nodes {
+        key
+        name
+        states {
+          nodes {
+            name
+            type
+            position
+          }
+        }
+      }
+    }
     issues {
       nodes {
         identifier
