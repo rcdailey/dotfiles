@@ -164,12 +164,13 @@ requires that context.
 
 Apply the tone, etiquette, and verification rules from the `gh-pr-review` skill.
 
-MUST verify technical claims with `ctx7` for every library, framework, language, tool, CLI, or
-standard referenced in a finding. This is not optional; unverified assertions produce hallucinated
-review feedback. Run `ctx7 library <name> <query>` to resolve an ID, then `ctx7 docs <id> <query>`
-for the specific behavior. Record every `ctx7` source consulted for the Citations section. If `ctx7`
-lacks coverage for a given claim, reframe the comment as an open question rather than asserting
-something unverifiable, and note the gap in Citations.
+MUST use `ctx7` to verify correct usage of every library, framework, language feature, tool, or CLI
+present in the changed code before forming a verdict. This applies whether the outcome is approval or
+posted comments; an unverified "looks correct" is as dangerous as an unverified finding. Run
+`ctx7 library <name> <query>` to resolve an ID, then `ctx7 docs <id> <query>` for the specific
+behavior. Record every `ctx7` source consulted for the Citations section. If `ctx7` lacks coverage,
+reframe any related comment as an open question rather than asserting correctness, and note the gap
+in Citations.
 
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.
