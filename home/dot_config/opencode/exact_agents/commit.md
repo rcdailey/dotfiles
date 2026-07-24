@@ -10,8 +10,6 @@ permission:
   "*": deny
   read: allow
   external_directory: allow
-  skill:
-    "*": deny
   bash:
     "*": deny
     "commit *": allow
@@ -40,9 +38,9 @@ Issues: <issue keys> (omit if none)
   - "split: `<file list>`" or "split: all" -> caller is delegating grouping. Use the multi-commit
     workflow (2-5 commits max). This is the only mode in which the agent decides commit count.
 - `Workdir`: when present, pass as the `workdir` parameter on every bash call.
-- `Context`: motivation for the change, not a description of what changed. Compose the commit
-  message from the diff, not from this field. If the context reads like a directive ("extract
-  validation..."), treat it as past-tense motivation ("extracted validation...").
+- `Context`: motivation for the change, not a description of what changed. If the context reads like
+  a directive ("extract validation..."), treat it as past-tense motivation ("extracted
+  validation...").
 - `Issues`: pass through to the commit message footer via `-i`.
 
 Callers MUST NOT run git inspection commands before delegating, describe the diff, enumerate
@@ -85,54 +83,17 @@ or `git reset` commands; the `commit` tool handles these internally with correct
 When committing in a different repository, set the `workdir` parameter on every bash call to that
 repo's path. All `commit` subcommands must run from the target repo's root.
 
-### Staged (default)
+### Single commit (staged only / all / file list)
 
-Commit only what is already staged.
-
-**Step 1:**
-
-```sh
-commit recon
-```
-
-**Step 2:** Run the analysis phase on the recon output, then:
-
-```sh
-commit save -s "type(scope): subject" [-p "text"] [-c "text"] [-i "text"]
-```
-
-### All
-
-Stage and commit everything in a single commit.
-
-**Step 1:**
-
-```sh
-commit recon --all
-```
-
-**Step 2:** Run the analysis phase on the recon output, then:
-
-```sh
-commit save -a -s "type(scope): subject" [-p "text"] [-c "text"] [-i "text"]
-```
+Run the recon command for the caller's Files mode (see Caller Protocol), run the analysis phase on
+its output, then run the matching `commit save` invocation.
 
 ### Multi-commit (split mode only)
 
-Applies only when the caller used the `split:` prefix. For all other Files modes, use the matching
-single-commit workflow above.
+Applies only when the caller used the `split:` prefix. Break changes into logical commits (2-5 max).
 
-Break changes into logical commits (2-5 max). Each `commit save` call is atomic: it resets the
-index, stages the specified files, prints a stat summary, and commits.
-
-**Step 1 (planning):**
-
-```sh
-commit recon --all
-```
-
-Review the recon output and plan groups by: directory > file type > change type > dependency order.
-List files per commit before starting.
+**Step 1 (planning):** `commit recon --all`, then plan groups by: directory > file type > change
+type > dependency order. List files per commit before starting.
 
 **Step 2 (per-group, one `commit save` per group):**
 
@@ -141,11 +102,7 @@ commit save file1 file2 -s "type(scope): subject" [-p "text"] [-c "text"] [-i "t
 ```
 
 For partial file staging, first inspect hunks with `commit hunks <file>` (read-only), then pass `-H
-file:1,2` to `commit save`:
-
-```sh
-commit save file1 -H file2:1,3 -s "type(scope): subject"
-```
+file:1,2` to `commit save`.
 
 `commit save` prints the staged stat before committing. Use the recon diff for analysis phase
 reasoning and the stat output to confirm correct files were staged. If the stat does not match the
@@ -153,8 +110,9 @@ intended scope, the commit is wrong; stop and report.
 
 **Multi-commit rules:**
 
-- Each `commit save <files>` atomically resets the index before staging. Previous commits are not
-  affected. There is no separate staging step.
+- Each `commit save <files>` is atomic: it resets the index, stages the specified files and hunks,
+  prints the stat, then commits. Previous commits are not affected. There is no separate staging
+  step.
 - NEVER use `git reset --soft HEAD~N` after any commit succeeds; this squashes groupings.
 - Pre-commit hooks stash/restore unstaged files; verify staging is clean after hooks run.
 - A failed commit does not exist. Previous successful commits remain intact. See Hook Failures for
@@ -209,13 +167,6 @@ automatically wrapped; do NOT hard-wrap.
 commit save -s "fix(config): correct default cache TTL"
 ```
 
-**Specific files:**
-
-```sh
-commit save src/api/auth.ts src/api/auth.test.ts \
-  -s "fix(auth): prevent token refresh race condition"
-```
-
 **Files with partial hunk staging:**
 
 ```sh
@@ -224,23 +175,8 @@ commit save src/config.yaml -H src/api/handler.py:1,3 \
   -p "The existing endpoint returned all users in a single response, causing timeouts for large tenants. This adds cursor-based pagination with a configurable page size."
 ```
 
-**Full structure** (summary, changelog, issue reference):
-
-```sh
-commit save -a -s "ci: harden GitHub Actions workflow security" \
-  -p "Apply security hardening across all workflow files based on zizmor static analysis findings." \
-  -c "Add persist-credentials: false to all actions/checkout steps to prevent credential leakage" \
-  -c "Replace overly broad permissions: read-all with minimum-required permission scopes" \
-  -c "Add zizmor pre-commit hook for continuous static analysis" \
-  -i "Closes #42"
-```
-
-**Issue reference without body:**
-
-```sh
-commit save -a -s "fix(auth): prevent token refresh race" \
-  -i "Closes #42"
-```
+For the full structure (summary, changelog, issue reference), see the rendered example under Body
+Structure; each layer maps to its flag.
 
 ## Commit Message Format
 
@@ -343,44 +279,6 @@ static analysis findings.
 - Add .github/zizmor.yml configuration to suppress accepted-risk
   findings
 - Add zizmor pre-commit hook for continuous static analysis
-```
-
-**Bad (paragraph enumerates the same items as changelog entries):**
-
-```txt
-chore: remove Claude artifacts and stale refs
-
-Removes obsolete Claude Code and Serena artifacts from the dotfiles
-repo. Deletes the claude-copy zsh function, all Claude Code setup
-scripts (setup-claude-code, setup-mcp-atlassian, setup-mcp-github,
-setup-serena), the install-claude.sh script, and the dot_serena
-configuration directory. Updates .chezmoiremove entries and cleans
-stale references from git/ignore and dot_profile.
-
-- Remove claude-copy zsh function
-- Delete setup-claude-code, setup-mcp-atlassian, setup-mcp-github,
-  setup-serena scripts
-- Delete install-claude.sh script
-- Remove dot_serena configuration directory
-- Update .chezmoiremove entries for new cleanup targets
-- Clean stale Claude Code references from git/ignore and dot_profile
-```
-
-**Good (paragraph frames the motivation; entries enumerate specifics):**
-
-```txt
-chore: remove Claude artifacts and stale refs
-
-Removes obsolete Claude Code and Serena artifacts that are no longer
-needed after migrating to OpenCode.
-
-- Remove claude-copy zsh function
-- Delete setup-claude-code, setup-mcp-atlassian, setup-mcp-github,
-  setup-serena scripts
-- Delete install-claude.sh script and dot_serena configuration
-  directory
-- Update .chezmoiremove entries for new cleanup targets
-- Clean stale Claude Code references from git/ignore and dot_profile
 ```
 
 **Bad `-p` usage (bullets and headers crammed into `-p` flags):**
