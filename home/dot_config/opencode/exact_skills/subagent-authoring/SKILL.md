@@ -79,8 +79,10 @@ Primary agent descriptions are looser; surfaced in TUI for humans, not programma
 
 ### Reasoning Variants
 
-- Anthropic Opus 4.6: `low`, `medium`, `high`, `max` (adaptive)
-- Anthropic (other): `high`, `max` (fixed token budget)
+- Anthropic Sonnet 5, Opus 4.7+, Fable 5: `low`, `medium`, `high`, `xhigh`, `max` (adaptive)
+- Anthropic Opus 4.6, Sonnet 4.6: `low`, `medium`, `high`, `max` (adaptive)
+- Anthropic (older): `high`, `max` (fixed token budget)
+- No variant set: no thinking/effort params sent (reasoning off)
 - OpenAI GPT-5 family: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`
 - Google Gemini 3: `low`, `high`
 

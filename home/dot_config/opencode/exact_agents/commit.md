@@ -4,8 +4,7 @@ description: >
   Cannot create, edit, or delete files; cannot push, amend, or use gh CLI. Pass only the goal
   behind the change plus any issue keys; do not describe the diff or dictate the message.
 mode: all
-model: anthropic/claude-sonnet-4-6
-variant: low
+model: anthropic/claude-sonnet-5
 hidden: true
 permission:
   "*": deny
