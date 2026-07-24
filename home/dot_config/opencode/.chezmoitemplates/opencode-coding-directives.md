@@ -68,8 +68,9 @@ constants.
 
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
 - `ctx7` (also called "context7") is the CLI for the Context7 documentation service; it provides
-  up-to-date library and framework docs to LLMs. Use `ctx7` for library and framework docs before
-  any web research; fall back to web research only when `ctx7` lacks coverage:
+  up-to-date library and framework docs to LLMs. MUST use `ctx7` first whenever working with an
+  unfamiliar library, framework, or tool API; other sources (web research, reading vendored source)
+  are fallbacks for when `ctx7` lacks coverage:
   - `ctx7 library <name> <query>` searches the index and returns library IDs
   - `ctx7 docs <libraryId> <query>` fetches docs for an ID (e.g. `/vercel/next.js`)
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
