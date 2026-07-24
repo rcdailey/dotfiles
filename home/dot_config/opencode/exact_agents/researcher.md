@@ -114,6 +114,17 @@ research scout activity REPO [--days N]     # recent commits + merged PRs + clos
 research scout changelog REPO [--since TAG] # CHANGELOG file + recent releases
 ```
 
+**Repo search:**
+
+```txt
+research scout search QUERY [--limit N] [--sort stars|forks|updated] [--language LANG] [--stars N]
+research scout search QUERY --forks N       # also show top N forks by stars per result
+```
+
+- `--sort` defaults to `stars`. `--stars N` filters to repos with >= N stars.
+- `--forks N` fetches the top N forks sorted by star count for each result, showing fork name,
+  stars, and last commit date. Defaults to 0 (skip).
+
 ## Budget
 
 Applies to `web` and `pdf` commands only (default limit: 15). Scout is free.
