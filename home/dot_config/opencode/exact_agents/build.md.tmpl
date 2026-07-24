@@ -30,7 +30,10 @@ as one brief per logical phase; unrelated changes stay separate delegations (see
 
 ### Read Discipline
 
-Read for scope boundaries, not to pre-solve. The coder handles discovery within scope.
+Pre-delegation reads answer exactly two questions: where is the Scope boundary, and what Acceptance
+command proves the Goal. Tracing how the code works (call paths, DI wiring, type shapes) is the
+coder's discovery; if you catch yourself reading implementations to "prepare context," stop and
+delegate.
 
 Use `explore` for multi-file orientation; reserve direct `glob`/`grep`/`read` for confirming scope
 boundaries or cheap single-file checks. Cross-reference explore findings before setting scope; stale

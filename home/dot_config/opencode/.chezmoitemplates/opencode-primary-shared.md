@@ -84,8 +84,8 @@ up `/tmp` clones when done.
 - `gh-api`: MUST load when using raw `gh api` for draft PRs, Discussions, or endpoints not covered
   by higher-level `gh` subcommands. Do NOT use for PR review operations; use `gh-review` instead.
 - `linear-cli`: MUST load when operating on Linear issues, projects, milestones, labels, or
-  documents via the `linear` CLI (creating or updating issues, adding comments, transitioning
-  state, assigning labels, listing teams or states).
+  documents via the `linear` CLI (creating or updating issues, adding comments, transitioning state,
+  assigning labels, listing teams or states).
 
 ## Delegating to Coder
 
@@ -109,21 +109,29 @@ Context: <optional; pre-gathered info to prevent rediscovery>
   files to decide which files to list, use a directory scope instead and let the coder discover.
 - `Acceptance` must exercise behavior. At minimum: the test command that covers the changed code.
   Include lint/type-check only when the coder might introduce violations.
-- `Constraints` is for task-specific guidance only. Do not repeat AGENTS.md conventions.
+- `Constraints` is for task-specific guidance only. Do not repeat AGENTS.md conventions. A
+  prescribed sequence of API calls or a component design is an implementation plan, not a
+  constraint; the anti-recipe rule applies to every field, not just Context.
 - `Context` carries forward facts the coder cannot cheaply discover within Scope (researcher
   findings, error output, API signatures from other packages). MUST NOT contain implementation
-  steps, numbered change lists, or code to copy. Omit Context entirely when the coder can find
-  everything it needs within Scope.
+  steps, numbered change lists, or code to copy. Context is limited to facts already in hand from
+  session history (user requirements, ticket content, error output, subagent reports); MUST NOT run
+  searches or reads to enrich Context. Omit Context entirely when the coder can find everything it
+  needs within Scope.
 
 **Pre-flight self-check before delegating:**
 
-1. Re-read your Context field. If it contains code snippets, numbered steps, or phrases like
-   "replace X with Y," you have already solved the problem. Do the work directly.
+1. Re-read the full brief, not just Context. If any field contains code snippets, numbered steps,
+   API call sequences, or phrases like "replace X with Y," you have already solved the problem. Do
+   the work directly.
 2. Check your Scope. If it names specific files you had to read to identify, widen to the containing
    directory and let the coder discover.
 3. Check granularity. Implementation and its tests belong in the same delegation; never split them
    into separate tasks. Prefer one delegation per logical phase of work over many small delegations.
    A single-file spec is almost never worth a delegation on its own.
+4. Check provenance. Facts you investigated specifically for this brief steer the coder down your
+   pre-chosen path and duplicate its discovery; drop them and trust the coder to find them within
+   Scope.
 
 The coder handles its own discovery, decides which files to modify, runs verification, and reports
 back with: Status (success/partial/blocked), Files modified, Summary, Verification results, Notes.

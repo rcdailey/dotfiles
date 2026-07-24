@@ -55,7 +55,9 @@ Callers pass a structured brief with three required and two optional fields:
   should be true; you decide how to make it true.
 
 If `Goal` or `Acceptance` is missing, reply with the specific gap and request a corrected brief. If
-`Context` contains implementation steps, reply with the specific violation and request facts only.
+any field prescribes implementation steps (API call sequences, component designs, numbered change
+lists), reply with the specific violation and request an outcome-focused brief; the recipe rule
+applies to `Constraints` as much as `Context`.
 
 ## Discovery
 
