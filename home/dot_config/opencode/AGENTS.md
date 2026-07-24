@@ -31,16 +31,20 @@ Per-skill triggers:
 MUST use `rg` (ripgrep) over `grep`. MUST use `rg --files -g` over `find -name`. Both are enforced
 by tool guards that reject the blocked commands.
 
-ripgrep is recursive by default. `-r` means `--replace`, not recursive. MUST NOT use `-r` or `-rl`
-when intending recursive search (it silently replaces matched text in output). Common patterns:
+ripgrep is recursive by default; no flag enables it. `-r` is `--replace=REPLACEMENT`: it takes an
+argument, so `rg -r "pattern" path/` consumes `pattern` as replacement text and searches for `path/`
+instead. MUST NOT use `-r` or `-rl` for recursion. Common patterns:
 
 ```sh
 rg "pattern" path/              # recursive content search (default)
 rg -n "pattern" path/           # with line numbers
 rg -l "pattern" path/           # files containing matches
 rg -c "pattern" path/           # match count per file
+rg -i / -w / -F "pattern"       # case-insensitive / whole-word / literal
+rg -A3 -B3 "pattern"            # context lines after/before
 rg --files -g "*.yaml" path/    # find files by glob (replaces find -name)
-rg -g "*.py" "pattern" path/    # search within file type
+rg -g "*.py" "pattern" path/    # restrict search to a glob
+rg --hidden -g "!**/.git/**"    # include dot-directories
 ```
 
 ## Agents
