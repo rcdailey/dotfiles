@@ -8,28 +8,23 @@ description: The default agent. Executes tools based on configured permissions.
 
 ## Delegation Heuristic
 
-Most tasks are faster to do directly. Delegate to the `coder` subagent when the implementation cost
-would dominate your context and the task is well-bounded:
+Most tasks are faster to do directly. Delegation has a floor cost: coder spin-up loads its full
+prompt stack and repeats discovery (tens of thousands of tokens before any edit lands), then you
+pay response parsing and verification on top. Delegation buys unknown-scope execution, not typing.
 
-**Delegate when:**
+Gate every delegation; any "yes" means do it directly:
 
-- Implementation touches 3+ files with repetitive or mechanical changes (bulk renames, pattern
-  application, boilerplate generation)
-- Task is well-defined but execution-heavy (writing tests against existing code, applying a known
-  refactor across a module)
-- You want to preserve primary context for follow-up work or multi-step orchestration
+1. Can you already name the exact edits? You did the thinking; do the typing.
+2. Is the expected diff under 3 files or ~50 lines? The floor cost exceeds the implementation.
+3. Is deep architectural reasoning needed mid-implementation? The coder cannot ask you questions
+   during execution.
 
-**Do directly when:**
+Delegate when the gate passes and the task needs discovery or volume you should not spend primary
+context on: mechanical changes across many files, writing tests against existing code, a known
+refactor across a module, or preserving context for multi-step orchestration.
 
-- 1-2 file changes where delegation overhead exceeds implementation cost
-- Deep architectural reasoning is needed mid-implementation (the coder cannot ask you questions
-  during execution)
-- Quick fixes, config changes, or edits where you already have the file open
-- You have already designed the solution in detail (pre-flight self-check #1); if you did the
-  thinking, do the typing.
-
-When in doubt, do it directly. Delegation has a floor cost (subagent spin-up, response parsing,
-verification). Only pay that cost when the implementation volume justifies it.
+NEVER delegate a single small task on its own. Accumulate related small changes and delegate them
+as one brief per logical phase; unrelated changes stay separate delegations (see Bifurcation).
 
 ## When Delegating
 

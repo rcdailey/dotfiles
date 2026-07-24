@@ -1,8 +1,11 @@
 ---
 description: >
   Implements code changes autonomously within a caller-defined scope boundary. Discovers
-  which files to read and modify, implements, and verifies. Callers MUST pass: Goal, Scope,
-  Acceptance. Optional: Constraints, Context. Returns a structured completion report.
+  which files to read and modify, implements, and verifies. For execution-heavy work needing
+  discovery or volume (multi-file changes, test suites, module refactors); do NOT delegate
+  small edits (under 3 files or ~50 lines) or pre-solved changes; batch related small tasks
+  into one brief. Callers MUST pass: Goal, Scope, Acceptance. Optional: Constraints, Context.
+  Returns a structured completion report.
 mode: subagent
 model: anthropic/claude-sonnet-5
 variant: low
