@@ -3,7 +3,7 @@ name: python-scripting
 description: >-
   Use when creating, editing, refactoring, or reviewing modularized Python CLI scripts managed by
   uv with pyproject.toml; scaffolding new script projects; adding commands or subcommands to
-  Click-based CLIs; writing pytest tests for CLI tools; configuring hatchling builds or dependency
+  Click-based CLIs; verifying CLI behavior adhoc; configuring hatchling builds or dependency
   groups; creating wrapper shell scripts for uv-managed projects. Triggers on phrases like "new
   python script", "add a CLI command", "scaffold a script project", "python CLI", "click command",
   or any work in a scripts/ directory containing pyproject.toml with hatchling. Do NOT use for
@@ -39,10 +39,6 @@ project-name/
     subgroup/          # nested command group (subpackage)
       __init__.py      # defines group, imports subcommand modules
       subcommand.py    # attaches to parent group via decorator
-  tests/
-    __init__.py
-    conftest.py
-    test_command_a.py
 ```
 
 - Directory: kebab-case (`gh-review`). Package: snake_case equivalent (`gh_review`).
@@ -67,12 +63,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["package_name"]
-
-[dependency-groups]
-dev = ["pytest>=8.0"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
 ```
 
 Rules:
@@ -80,7 +70,9 @@ Rules:
 - Click is always a dependency. No argparse. No exceptions.
 - Minimum-version pins only (`>=X.Y`), not ranges or exact pins
 - `[tool.hatch.build.targets.wheel] packages` MUST point to the package directory
-- Dev tools in `[dependency-groups] dev` (not `[project.optional-dependencies]`)
+- Dev tools in `[dependency-groups] dev` (not `[project.optional-dependencies]`); omit the group
+  entirely when there are none
+- No test framework: no pytest dependency, no `[tool.pytest.ini_options]` (see Adhoc Verification)
 - Omit license, authors, URLs, classifiers
 - No `[project.scripts]`; use wrapper scripts (see Invocation)
 
@@ -390,32 +382,39 @@ Call `check_deps()` from the root CLI group callback (the `cli()` function body 
 - No `if __name__ == "__main__"` in modules other than `__main__.py`
 - Imports: stdlib, blank line, third-party, blank line, local (isort default)
 
-## Testing
+## Adhoc Verification
 
-Tests use pytest with Click's `CliRunner`. Flat functions (no test classes). Mock at the subprocess
-wrapper boundary (`run_tool`, `run_gh`, etc.), not deeper. Run via `uv run --project . pytest`.
+MUST NOT introduce pytest, unittest, or any test framework. No `tests/` directory, no test files, no
+fixtures, no conftest. These scripts are disposable LLM tooling; a maintained test suite costs more
+than it protects.
 
-```python
-from unittest.mock import patch
+Behavioral claims MUST be backed by executed code, not reasoning. Exercise the real module inline,
+then discard the snippet: an ephemeral run proves behavior without leaving a test file to maintain.
 
-from click.testing import CliRunner
+Every snippet MUST print the observed value next to the expectation, so pass/fail is in the output
+rather than in your interpretation of a dump.
 
-from package_name.cli import cli
-
-
-def test_command_success():
-    runner = CliRunner()
-    result = runner.invoke(cli, ["command", "arg"])
-    assert result.exit_code == 0
-    assert "expected output" in result.output
-
-
-def test_command_with_external_tool():
-    with patch("package_name._tool.run_tool", return_value="output"):
-        runner = CliRunner()
-        result = runner.invoke(cli, ["fetch", "target"])
-        assert result.exit_code == 0
+```sh
+uv run --project . python - <<'EOF'
+from package_name._helpers import parse_target
+r = parse_target("owner/repo#12")
+print("repo:", r.repo, "| number:", r.number, "| expect owner/repo, 12")
+EOF
 ```
+
+Exercise the narrowest unit that proves the claim: a pure function over a literal input beats a full
+command run. For command-level behavior, invoke the CLI the way a user does:
+
+```sh
+uv run --project . -m package_name command arg
+```
+
+Output that contradicts the expectation MUST be diagnosed before any code change: re-derive the
+expectation from the source, then suspect the harness, and only then the code. Synthetic drivers use
+hand-built inputs, so anything ordering-, timing-, or environment-dependent needs a realistic
+fixture; otherwise the harness reports its own artifacts as failures.
+
+Scratch files MUST be deleted before reporting; when a file is unavoidable, name it `*.local.*`.
 
 ## Compliance Checklist
 
@@ -432,7 +431,7 @@ refactoring, or reviewing any project. Fix violations in place.
 - [ ] Package contains `_click.py` with `HelpfulGroup` (verbatim)
 - [ ] Package contains `_errors.py` with `die()` and domain exception
 - [ ] Package contains `cli.py` with `_AutoGroup` root group
-- [ ] `tests/` directory exists with `__init__.py` and at least one test file
+- [ ] No `tests/` directory and no test files anywhere in the project
 - [ ] No `[project.scripts]` in pyproject.toml; wrapper script exists instead
 
 ### Dependencies
@@ -442,6 +441,7 @@ refactoring, or reviewing any project. Fix violations in place.
 - [ ] All pins use `>=X.Y` format
 - [ ] Dev dependencies in `[dependency-groups] dev`, not `[project.optional-dependencies]`
 - [ ] No formatting/UI libraries (rich, tabulate, colorama, tqdm, etc.)
+- [ ] No test framework dependency (pytest, unittest plugins) and no `[tool.pytest.ini_options]`
 
 ### Code
 
@@ -457,10 +457,8 @@ refactoring, or reviewing any project. Fix violations in place.
 - [ ] External tool dependencies checked via `check_deps()` at startup
 - [ ] Subprocess calls wrapped in typed helper functions in private modules
 
-### Testing
+### Verification
 
-- [ ] pytest configured in `[tool.pytest.ini_options]`
-- [ ] Tests use flat functions (no test classes)
-- [ ] CLI tests use `click.testing.CliRunner`
-- [ ] External calls mocked at the subprocess wrapper boundary
-- [ ] `uv run --project . pytest` passes
+- [ ] Behavioral claims proven by an executed snippet, not reasoning
+- [ ] Snippets print observed value beside expectation
+- [ ] Scratch files deleted before reporting
