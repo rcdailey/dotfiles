@@ -90,10 +90,11 @@ Projects are invoked via thin shell wrappers that use `uv run --project`:
 
 ```bash
 #!/usr/bin/env bash
-# Project-scoped vars leaking from the caller's repo (mise commonly exports
-# UV_PYTHON) would hijack this tool's interpreter and environment.
+# Project-scoped vars from the caller's repo (mise commonly exports UV_PYTHON)
+# would hijack this tool's interpreter. They arrive two ways: inherited through
+# the environment, and re-injected by mise's uv shim from the caller's cwd.
 exec env -u UV_PYTHON -u UV_PROJECT -u UV_PROJECT_ENVIRONMENT \
-  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME \
+  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME MISE_NO_ENV=1 \
   uv run --quiet \
   --project "$(chezmoi source-path)/../scripts/project-name" \
   -m package_name "$@"
@@ -104,14 +105,16 @@ For non-chezmoi repos, resolve relative to the wrapper itself:
 ```bash
 #!/usr/bin/env bash
 exec env -u UV_PYTHON -u UV_PROJECT -u UV_PROJECT_ENVIRONMENT \
-  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME \
+  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME MISE_NO_ENV=1 \
   uv run --quiet \
   --project "$(dirname "$(realpath "$0")")/../scripts/project-name" \
   -m package_name "$@"
 ```
 
-The `env -u` prefix is mandatory: `uv` honors ambient `UV_*` regardless of `--project`, so a caller
-repo pinning a Python older than the project's `requires-python` breaks the tool outright.
+The env prefix is mandatory. `uv` honors ambient `UV_*` regardless of `--project`, so a caller repo
+pinning a Python older than the project's `requires-python` breaks the tool outright. `env -u` alone
+is not enough when `uv` resolves to a mise shim: the shim reloads the caller's `mise.toml` and
+re-injects `[env]` values, so `MISE_NO_ENV=1` is what neutralizes it.
 
 ## Click Patterns
 

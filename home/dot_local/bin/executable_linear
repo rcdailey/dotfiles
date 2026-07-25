@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Project-scoped vars leaking from the caller's repo (mise commonly exports
-# UV_PYTHON) would hijack this tool's interpreter and environment.
+# Project-scoped vars from the caller's repo (mise commonly exports UV_PYTHON)
+# would hijack this tool's interpreter. They arrive two ways: inherited through
+# the environment, and re-injected by mise's uv shim from the caller's cwd.
 exec env -u UV_PYTHON -u UV_PROJECT -u UV_PROJECT_ENVIRONMENT \
-  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME \
+  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME MISE_NO_ENV=1 \
   uv run --quiet \
   --project "$(chezmoi source-path)/../scripts/linear-cli" \
   -m linear_cli "$@"
