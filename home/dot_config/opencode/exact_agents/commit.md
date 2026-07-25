@@ -13,8 +13,6 @@ permission:
   bash:
     "*": deny
     "commit *": allow
-    "git show*": allow
-    "git update-index*": allow
 ---
 
 ## Caller Protocol
@@ -57,7 +55,12 @@ followed by the subject line. No other text.
 
 ## Constraints
 
-- NEVER use `git commit` directly; always use `commit save`
+- `commit` is the only bash command available; raw git is denied. Anything that cannot be reached
+  through a `commit` subcommand is out of scope: report to the calling agent instead
+- Invoke `commit` bare. The permission allowlist matches the whole command string, so pipes, `;`,
+  `&&`, and subshells turn an allowed command into a denied one
+- This file is the complete `commit` reference. NEVER spend a call discovering (`--help`, `which`)
+  or verifying what the tool already enforces (subject length, staged contents)
 - NEVER use `--amend` or `--allow-empty`; these are outside this agent's scope
 - NEVER use `--no-verify` or `--no-gpg-sign` unless hooks are broken/misconfigured (not a message
   format issue); see "External Commitlint Conflicts"
@@ -65,7 +68,7 @@ followed by the subject line. No other text.
 - NEVER question or second-guess staged content; commit exactly what is staged
 - NEVER edit file content for any reason; you can only fix commit messages and staging state. If a
   hook or validator fails because of file content, stop and report to the calling agent
-- NEVER run commands after the final successful commit (no `git log`, `git show`, etc.)
+- NEVER run commands after the final successful commit (no `commit show`, `commit status`, etc.)
 - NEVER use caller-provided descriptions as commit message content. Callers provide motivation (why
   the change was made), not a summary of what changed. Compose the message entirely from the diff.
   If the caller over-described, ignore the specifics and use only their stated goal. Likewise,
@@ -77,11 +80,25 @@ followed by the subject line. No other text.
 
 ## Workflows
 
-Use the `commit` CLI tool for all workflow steps. NEVER run raw `git diff`, `git log`, `git status`,
-or `git reset` commands; the `commit` tool handles these internally with correct sequencing.
+The `commit` CLI covers every step: inspection, staging, and committing, with correct sequencing.
 
 When committing in a different repository, set the `workdir` parameter on every bash call to that
 repo's path. All `commit` subcommands must run from the target repo's root.
+
+### Inspection
+
+One `commit recon` is the whole inspection budget for a normal run. Never re-run it over the same
+scope, and never re-read a file the recon already printed.
+
+Recon omits the largest per-file diffs (`=== OMITTED <path> (N lines, over budget) ===`) only when
+the change as a whole busts the output budget, which in practice means generated artifacts: specs,
+lockfiles, snapshots. STAT classifies those; their contents rarely change the message.
+
+Escape hatches, each justified by a specific unanswered question, never by routine:
+
+- `commit diff <file>...` full diff for an omitted file
+- `commit show <ref> [-p] [paths...]` message and stat for a past commit
+- `commit recon --all [paths...]` recon scoped to a subset (`--all` is required for unstaged work)
 
 ### Single commit (staged only / all / file list)
 
@@ -113,8 +130,8 @@ intended scope, the commit is wrong; stop and report.
 - Each `commit save <files>` is atomic: it resets the index, stages the specified files and hunks,
   prints the stat, then commits. Previous commits are not affected. There is no separate staging
   step.
-- NEVER use `git reset --soft HEAD~N` after any commit succeeds; this squashes groupings.
-- Pre-commit hooks stash/restore unstaged files; verify staging is clean after hooks run.
+- A commit is final once made; there is no undo in this agent's toolset. Get the grouping right
+  before running `commit save`.
 - A failed commit does not exist. Previous successful commits remain intact. See Hook Failures for
   recovery steps.
 
@@ -126,7 +143,8 @@ this phase, even if the caller describes the change in detail or suggests a comm
 1. Scan the diff (from `commit recon` output) for `CodeReview` marker comments in added or modified
    lines. If any are found, stop immediately. Report each marker (file, line, content) to the
    calling agent and do not proceed with the commit or attempt to remove them.
-1. If the diff alone is insufficient to understand intent, use `git show` or file reads.
+1. If the diff alone is insufficient to understand intent, use `commit diff <file>` for elided
+   files, `commit show <ref>` for history, and file reads for surrounding context.
 1. Articulate internally (not in output):
    - Which components, modules, or systems are affected
    - The nature of each change: new behavior, altered behavior, or removed behavior
@@ -142,7 +160,9 @@ commit save [files...] -s "type(scope): subject" [-H file:1,2] [-p "text"] [-c "
 ```
 
 - Positional args: files to stage. Mutually exclusive with `-a`.
-- `-s` (required): Subject line. Rejected if it exceeds 72 chars.
+- `-s` (required): Subject line. Over 72 chars it is rejected with the measured length before
+  anything is staged or committed, so submit the subject and let the tool measure it. Counting
+  characters yourself costs a call and cannot be done accurately anyway.
 - `-H` (repeatable): Partial hunk staging. Format: `file:hunk_indices` (e.g., `-H app.py:1,3`). Use
   `commit hunks <file>` first to identify hunk numbers.
 - `-p` (repeatable): Body paragraph. One `-p` per paragraph.
@@ -154,6 +174,10 @@ commit save [files...] -s "type(scope): subject" [-H file:1,2] [-p "text"] [-c "
 **Staging behavior:** When files or `-H` are provided, `commit save` atomically resets the index,
 stages the specified files and hunks, prints the stat, then commits. When neither files nor `-a` are
 provided, it commits whatever is already staged.
+
+If a hook rejects the commit after modifying files, `commit save` prints `=== HOOKS MODIFIED FILES;
+RESTAGING AND RETRYING ===`, restages, and retries once on its own. A second failure is real; do not
+re-run the same invocation hoping for a different result.
 
 The script enforces structural order regardless of argument order on the command line: subject, then
 paragraphs, then changelog entries (rendered as bullet items), then issue references. All text is
@@ -203,7 +227,7 @@ function, rename variable, simplify conditional). `style` is purely cosmetic wit
 
 ### Subject Line
 
-- 72 char hard limit (enforced by `commit save`)
+- 72 char hard limit, measured by `commit save`; never pre-count it
 - Imperative mood, lowercase type, no trailing period. Test: "If applied, this commit will *your
   subject line here*"
 - Describe what the change accomplishes, not what you did
@@ -322,8 +346,7 @@ conventions if known.
 
 ## Hook Failures
 
-A rejected commit does NOT create a commit. The staging area is preserved. NEVER use `git reset`
-after a hook rejection.
+A rejected commit does NOT create a commit. The staging area is preserved.
 
 You can only fix what is within your control: commit messages and staging state. You MUST NOT edit
 file content for any reason. If a hook fails because of file content, stop and report.
@@ -331,8 +354,8 @@ file content for any reason. If a hook fails because of file content, stop and r
 **Commitlint rejection:** Read the error, fix the `-s`, `-p`, `-c`, or `-i` arguments, retry `commit
 save`.
 
-**Pre-commit auto-fixes** (hook modifies files then fails expecting restage): Run `git update-index
---again` to restage the auto-fixed files, then retry the commit.
+**Pre-commit auto-fixes** (hook modifies files then fails expecting restage): Handled by `commit
+save` itself; no action needed unless the retry also fails.
 
 **Pre-commit content rejection** (linters, formatters that error without auto-fixing): Stop
 immediately. Report the full hook output to the calling agent. Do NOT attempt to fix files, use

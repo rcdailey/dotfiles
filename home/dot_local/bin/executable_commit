@@ -6,25 +6,30 @@ the right command and reason about the output. Eliminates multi-step
 git command sequences that weaker models get wrong.
 
 Usage:
-    commit recon [--all]         # collect status, diff, and log
-    commit hunks <file>          # list numbered hunks for partial staging
+    commit recon [--all] [paths...]  # collect status, stat, diff, and log
+    commit diff <file>...            # full diff for specific files
+    commit show <ref> [-p] [paths]   # message and stat for a past commit
+    commit hunks <file>              # list numbered hunks for partial staging
     commit save [files] -s "..." [-H file:1,2] [-p "..."] [-c "..."] [-i "..."]
-    commit status                # quick repo state check
+    commit status                    # quick repo state check
 
 Environment:
     GIT_COMMIT_FMT_SUBJECT_WIDTH  Subject char limit (default: 72)
     GIT_COMMIT_FMT_BODY_WIDTH     Body wrap width (default: 72)
+    COMMIT_RECON_MAX_DIFF_LINES   Total diff line budget in recon (default: 1000)
 """
 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import re
 import subprocess
 import sys
 import tempfile
 import textwrap
+from collections.abc import Iterator
 from pathlib import Path
 from typing import NoReturn
 
@@ -39,12 +44,15 @@ os.environ[f"GIT_CONFIG_VALUE_{_idx}"] = "false"
 
 SUBJECT_WIDTH = int(os.environ.get("GIT_COMMIT_FMT_SUBJECT_WIDTH", 72))
 BODY_WIDTH = int(os.environ.get("GIT_COMMIT_FMT_BODY_WIDTH", 72))
+MAX_DIFF_LINES = int(os.environ.get("COMMIT_RECON_MAX_DIFF_LINES", 1000))
 
 USAGE = """\
 usage: commit <subcommand> [args...]
 
 subcommands:
-  recon [--all]              collect status, diff, and log in one call
+  recon [--all] [paths...]   collect status, stat, diff, and log in one call
+  diff <file>...             full diff for specific files (never elided)
+  show <ref> [-p] [paths]    message and stat for a past commit
   hunks <file>               list numbered hunks for partial staging
   save [files] -s "..."      stage files and commit (atomic)
   status                     quick repo state check
@@ -80,6 +88,93 @@ def print_section(header: str, content: str) -> None:
     print(content, end="" if content.endswith("\n") else "\n")
 
 
+# -- diff plumbing ---------------------------------------------------------
+
+@contextlib.contextmanager
+def intent_to_add(paths: list[str]) -> Iterator[None]:
+    """Temporarily register untracked files so they appear in `git diff HEAD`.
+
+    Only the files this context marks are removed from the index afterwards, so
+    any pre-existing staged state survives untouched.
+    """
+    listed = git_output("ls-files", "--others", "--exclude-standard", "--", *paths)
+    untracked = [p for p in listed.splitlines() if p]
+
+    if untracked:
+        git("add", "-N", "--", *untracked, check=False, capture=True)
+    try:
+        yield
+    finally:
+        if untracked:
+            git(
+                "rm", "--cached", "--quiet", "--force", "--", *untracked,
+                check=False, capture=True,
+            )
+
+
+def _diff_file_path(chunk: str) -> str:
+    """Extract the file path from one `diff --git` chunk."""
+    fallback = ""
+    for line in chunk.splitlines():
+        if line.startswith("+++ ") and not line.endswith("/dev/null"):
+            return line[6:]
+        if line.startswith("--- ") and not line.endswith("/dev/null"):
+            fallback = line[6:]
+        if line.startswith("@@"):
+            break
+    return fallback or "(unknown)"
+
+
+def _split_diff_by_file(diff_text: str) -> list[tuple[str, str]]:
+    """Split a unified diff into (path, chunk) pairs, one per file."""
+    chunks: list[list[str]] = []
+    for line in diff_text.splitlines(keepends=True):
+        if line.startswith("diff --git ") or not chunks:
+            chunks.append([])
+        chunks[-1].append(line)
+    return [(_diff_file_path("".join(c)), "".join(c)) for c in chunks if c]
+
+
+def _omitted_indices(chunks: list[tuple[str, str]]) -> set[int]:
+    """Pick the fewest files to drop to bring the diff under the line budget.
+
+    Nothing is dropped while the diff as a whole fits, so ordinary changes are
+    printed verbatim. Oversized ones lose their largest files first.
+    """
+    sizes = [chunk.count("\n") for _, chunk in chunks]
+    total = sum(sizes)
+    omitted: set[int] = set()
+
+    for idx in sorted(range(len(sizes)), key=lambda i: sizes[i], reverse=True):
+        if total <= MAX_DIFF_LINES:
+            break
+        omitted.add(idx)
+        total -= sizes[idx]
+
+    return omitted
+
+
+def print_diff_section(diff_text: str) -> None:
+    """Print the diff, dropping the largest files if it busts the budget."""
+    chunks = _split_diff_by_file(diff_text)
+    omitted = _omitted_indices(chunks)
+
+    print("=== DIFF ===")
+    for idx, (path, chunk) in enumerate(chunks):
+        if idx in omitted:
+            line_count = chunk.count("\n")
+            print(f"=== OMITTED {path} ({line_count} lines, over budget) ===")
+            continue
+        print(chunk, end="" if chunk.endswith("\n") else "\n")
+
+    if omitted:
+        print(
+            f"note: {len(omitted)} file(s) omitted above; STAT covers their scope."
+            " Fetch one with 'commit diff <file>' only if the commit message"
+            " depends on its contents."
+        )
+
+
 # -- recon -----------------------------------------------------------------
 
 def cmd_recon(args: list[str]) -> None:
@@ -88,30 +183,78 @@ def cmd_recon(args: list[str]) -> None:
         "--all", action="store_true",
         help="include unstaged and untracked changes (for all/multi-commit workflows)",
     )
+    parser.add_argument(
+        "paths", nargs="*", default=[],
+        help="limit status, stat, and diff to these paths",
+    )
     opts = parser.parse_args(args)
+    paths = ["--", *opts.paths] if opts.paths else []
 
-    status = git_output("status", "-sb")
-    log = git_output("log", "--oneline", "-5")
+    status = git_output("status", "-sb", *paths)
+    log = git_output("log", "--oneline", "-10", *paths)
 
     if opts.all:
-        # Mark untracked files so they appear in diff, then clean up
-        git("add", "-N", ".", check=False)
-        diff = git_output("diff", "HEAD")
-        git("reset", check=False, capture=True)
+        with intent_to_add(opts.paths):
+            stat = git_output("diff", "HEAD", "--stat", *paths)
+            diff = git_output("diff", "HEAD", *paths)
 
         if not diff.strip():
             die("working tree is clean; nothing to commit")
     else:
-        diff = git_output("diff", "--cached")
+        stat = git_output("diff", "--cached", "--stat", *paths)
+        diff = git_output("diff", "--cached", *paths)
 
         if not diff.strip():
             die("nothing staged; use --all to include unstaged changes, or stage files first")
 
     print_section("STATUS", status)
     print()
-    print_section("DIFF", diff)
+    print_section("STAT", stat)
+    print()
+    print_diff_section(diff)
     print()
     print_section("LOG", log)
+
+
+# -- diff ------------------------------------------------------------------
+
+def cmd_diff(args: list[str]) -> None:
+    if not args:
+        die("commit diff requires at least one file argument\n\n"
+            "usage: commit diff <file>...")
+
+    with intent_to_add(args):
+        diff = git_output("diff", "HEAD", "--", *args)
+
+    if not diff.strip():
+        die(f"no changes found in: {' '.join(args)}")
+
+    print(diff, end="" if diff.endswith("\n") else "\n")
+
+
+# -- show ------------------------------------------------------------------
+
+def cmd_show(args: list[str]) -> None:
+    parser = argparse.ArgumentParser(prog="commit show", add_help=True)
+    parser.add_argument("ref", help="commit-ish to inspect")
+    parser.add_argument(
+        "-p", "--patch", action="store_true",
+        help="include the diff (per-file elision applies)",
+    )
+    parser.add_argument("paths", nargs="*", default=[], help="limit output to these paths")
+    opts = parser.parse_args(args)
+    paths = ["--", *opts.paths] if opts.paths else []
+
+    result = git("show", "--stat", opts.ref, *paths, check=False, capture=True)
+    if result.returncode != 0:
+        die(f"cannot show {opts.ref}: {result.stderr.strip()}")
+    print(result.stdout, end="" if result.stdout.endswith("\n") else "\n")
+
+    if not opts.patch:
+        return
+
+    print()
+    print_diff_section(git_output("show", "--format=", "--patch", opts.ref, *paths).lstrip("\n"))
 
 
 # -- hunks -----------------------------------------------------------------
@@ -328,6 +471,11 @@ def format_message(
     return "\n".join(parts) + "\n"
 
 
+def _commit_output(result: subprocess.CompletedProcess) -> str:
+    """Merge git commit's stdout and stderr in that order."""
+    return (result.stdout or "") + (result.stderr or "")
+
+
 def cmd_save(args: list[str]) -> None:
     parser = argparse.ArgumentParser(prog="commit save", add_help=False)
     parser.add_argument("files", nargs="*", default=[])
@@ -364,35 +512,47 @@ def cmd_save(args: list[str]) -> None:
         print(message, end="")
         return
 
-    # Stage files atomically: reset index, add whole files, apply hunk patches
-    if has_files:
-        _stage_files(args_parsed.files, args_parsed.hunks)
-    elif args_parsed.a:
-        git("add", "-A")
-    else:
-        # Staged-only mode: verify something is staged
-        stat = git_output("diff", "--cached", "--stat")
-        if not stat.strip():
-            die("nothing staged; pass files, -H, or -a")
-        print_section("STAGED", stat)
-        sys.stdout.flush()
+    def stage(restage: bool = False) -> None:
+        """Put the caller's requested content into the index."""
+        # Atomic for file mode: reset index, add whole files, apply hunk patches
+        if has_files:
+            _stage_files(args_parsed.files, args_parsed.hunks)
+        elif args_parsed.a:
+            git("add", "-A")
+        else:
+            # Staged-only mode: never widen the index except to pick up hook edits
+            if restage:
+                git("update-index", "--again", check=False, capture=True)
+            stat = git_output("diff", "--cached", "--stat")
+            if not stat.strip():
+                die("nothing staged; pass files, -H, or -a")
+            print_section("STAGED", stat)
+            sys.stdout.flush()
+
+    stage()
 
     fd, msg_path = tempfile.mkstemp(prefix="commit-msg-", suffix=".txt")
     try:
         with os.fdopen(fd, "w") as f:
             f.write(message)
 
+        worktree_before = git_output("status", "--porcelain")
         result = git("commit", "-F", msg_path, check=False, capture=True)
+
+        # Hooks that auto-fix files abort the commit and expect a restage
+        if result.returncode != 0 and git_output("status", "--porcelain") != worktree_before:
+            print(_commit_output(result), end="", file=sys.stderr)
+            print("\n=== HOOKS MODIFIED FILES; RESTAGING AND RETRYING ===")
+            sys.stdout.flush()
+            stage(restage=True)
+            result = git("commit", "-F", msg_path, check=False, capture=True)
+
         if result.returncode == 0:
-            if result.stdout:
-                print(result.stdout, end="")
+            print(_commit_output(result), end="")
             sha_line = git_output("log", "--oneline", "-1").strip()
             print(f"\n=== COMMITTED === {sha_line}")
         else:
-            if result.stderr:
-                print(result.stderr, end="", file=sys.stderr)
-            if result.stdout:
-                print(result.stdout, end="", file=sys.stderr)
+            print(_commit_output(result), end="", file=sys.stderr)
             print("\n=== COMMIT FAILED ===", file=sys.stderr)
         sys.exit(result.returncode)
     finally:
@@ -410,6 +570,8 @@ def cmd_status(args: list[str]) -> None:
 
 COMMANDS = {
     "recon": cmd_recon,
+    "diff": cmd_diff,
+    "show": cmd_show,
     "hunks": cmd_hunks,
     "save": cmd_save,
     "status": cmd_status,
