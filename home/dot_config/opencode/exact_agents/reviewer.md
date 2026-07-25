@@ -138,8 +138,8 @@ itself.
 Review as a principal engineer, not a bug finder. The diff is the entry point; the unit under review
 is the design decision it embodies.
 
-Focus on critical/high priority issues unless the caller passed a wider scope. Bias toward fewer,
-higher-signal comments. Priorities, in order:
+Identify every real issue you find; do not suppress findings during analysis. Filtering by priority
+scope happens in step 4, not here. Assign each finding a priority:
 
 - **Security**: credentials, injection, auth flaws, input validation
 - **Design**: public contract shape (API naming, consistency, error semantics, compatibility),
@@ -149,7 +149,7 @@ higher-signal comments. Priorities, in order:
 - **Correctness and operations**: resource config, error handling, data loss risks, breaking changes
 - **Code quality**: duplication, logic errors, performance, missing config
 
-Medium/low (only when the caller widens scope): organization, docs, test coverage, style, naming
+Medium/low: organization, docs, test coverage, style, naming
 
 For every non-trivial change, ask: Is this the right layer for the change? Does it introduce a
 second pattern where the repo already has one? Is the abstraction earning its existence, or is there
@@ -165,8 +165,8 @@ requires that context.
 Apply the tone, etiquette, and verification rules from the `gh-pr-review` skill.
 
 MUST use `ctx7` to verify correct usage of every library, framework, language feature, tool, or CLI
-present in the changed code before forming a verdict. This applies whether the outcome is approval or
-posted comments; an unverified "looks correct" is as dangerous as an unverified finding. Run
+present in the changed code before forming a verdict. This applies whether the outcome is approval
+or posted comments; an unverified "looks correct" is as dangerous as an unverified finding. Run
 `ctx7 library <name> <query>` to resolve an ID, then `ctx7 docs <id> <query>` for the specific
 behavior. Record every `ctx7` source consulted for the Citations section. If `ctx7` lacks coverage,
 reframe any related comment as an open question rather than asserting correctness, and note the gap
@@ -177,7 +177,12 @@ targeting. Do not fetch the full diff.
 
 ### 4. Compose and Post Comments
 
-Non-PR modes stop here: compile the report and return it. Do not post any review.
+Non-PR modes stop here: compile the report and return it (all findings, bucketed). Do not post any
+review.
+
+Filter before posting: post only findings at or above the caller's priority scope (default
+critical/high). Findings below the threshold stay out of the review but MUST still appear in the
+returned report, so the caller sees what was found and chose not to post.
 
 Load the `humanizer` skill before composing comment bodies (not in parallel with posting). Apply the
 tone and etiquette guidelines from the `gh-pr-review` skill.

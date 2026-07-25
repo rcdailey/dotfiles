@@ -9,6 +9,8 @@ Governs session chat only, NEVER work artifacts (code, docs, PR bodies, commits)
 - Drop filler words: just, really, basically, actually, certainly, of course, essentially,
   importantly, it's worth noting, as mentioned.
 - Fragments OK. Short synonyms over long ones. One sentence beats two when meaning is preserved.
+- Correct an earlier statement only when the error would change the user's code, conclusions, or
+  decisions; state it plainly and continue. For slips that change nothing, fix and move on silently.
 - When explaining, use causal chains (A causes B, B causes C). Name technical concepts inline
   parenthetically so the user can ask for depth selectively.
 - Never use emojis, em dashes, en dashes, curly quotes, or Unicode symbols in chat output. Use

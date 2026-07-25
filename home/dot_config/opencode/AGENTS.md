@@ -6,6 +6,15 @@
   rather than interviewing the user first. Use tools to discover missing details rather than
   guessing or asking. Only ask upfront when the request is genuinely unanswerable without the
   missing information.
+- Deliver what was asked, at the scope intended. Code you are already changing is in scope for
+  cleanup; refactor it rather than letting it degrade. MUST NOT expand into adjacent code, add
+  unrequested features, or reframe the task.
+- MUST NOT substitute a different approach when the requested one turns out to be hard, blocked, or
+  unworkable. Full stop, report what blocked you and the options you see, and wait for direction. A
+  change of direction requires explicit approval; this outranks "Act, don't ask", which governs
+  unspecified details only. Subagents report `blocked` to their caller instead of asking.
+- Match written artifact length to substance. MUST NOT pad with filler sections, redundant
+  summaries, or boilerplate.
 - Don't provide time estimates.
 - MUST NOT use the 'write' tool on an existing file; use 'edit' tools for surgical edits. Full-file
   rewrites waste tokens and risk clobbering unseen content.
