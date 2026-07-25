@@ -135,13 +135,24 @@ def _split_diff_by_file(diff_text: str) -> list[tuple[str, str]]:
     return [(_diff_file_path("".join(c)), "".join(c)) for c in chunks if c]
 
 
-def _omitted_indices(chunks: list[tuple[str, str]]) -> set[int]:
+def _is_deletion(chunk: str) -> bool:
+    """Detect a whole-file deletion chunk."""
+    for line in chunk.splitlines():
+        if line.startswith("deleted file mode") or line == "+++ /dev/null":
+            return True
+        if line.startswith("@@"):
+            break
+    return False
+
+
+def _omitted_indices(chunks: list[tuple[str, str]], skip: set[int]) -> set[int]:
     """Pick the fewest files to drop to bring the diff under the line budget.
 
     Nothing is dropped while the diff as a whole fits, so ordinary changes are
-    printed verbatim. Oversized ones lose their largest files first.
+    printed verbatim. Oversized ones lose their largest files first. Indices in
+    `skip` are already elided, so they cost nothing against the budget.
     """
-    sizes = [chunk.count("\n") for _, chunk in chunks]
+    sizes = [0 if i in skip else c.count("\n") for i, (_, c) in enumerate(chunks)]
     total = sum(sizes)
     omitted: set[int] = set()
 
@@ -151,27 +162,31 @@ def _omitted_indices(chunks: list[tuple[str, str]]) -> set[int]:
         omitted.add(idx)
         total -= sizes[idx]
 
-    return omitted
+    return omitted - skip
 
 
 def print_diff_section(diff_text: str) -> None:
-    """Print the diff, dropping the largest files if it busts the budget."""
+    """Print the diff, eliding deleted files and the largest budget busters."""
     chunks = _split_diff_by_file(diff_text)
-    omitted = _omitted_indices(chunks)
+    deleted = {i for i, (_, chunk) in enumerate(chunks) if _is_deletion(chunk)}
+    omitted = _omitted_indices(chunks, deleted)
 
     print("=== DIFF ===")
     for idx, (path, chunk) in enumerate(chunks):
+        line_count = chunk.count("\n")
+        if idx in deleted:
+            print(f"=== DELETED {path} ({line_count} lines, body elided) ===")
+            continue
         if idx in omitted:
-            line_count = chunk.count("\n")
             print(f"=== OMITTED {path} ({line_count} lines, over budget) ===")
             continue
         print(chunk, end="" if chunk.endswith("\n") else "\n")
 
-    if omitted:
+    if deleted or omitted:
         print(
-            f"note: {len(omitted)} file(s) omitted above; STAT covers their scope."
-            " Fetch one with 'commit diff <file>' only if the commit message"
-            " depends on its contents."
+            f"note: {len(deleted) + len(omitted)} file(s) elided above; STAT covers"
+            " their scope. Fetch one with 'commit diff <file>' only if the commit"
+            " message depends on its contents."
         )
 
 
