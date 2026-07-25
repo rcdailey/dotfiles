@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
-exec uv run --quiet \
+# Project-scoped vars leaking from the caller's repo (mise commonly exports
+# UV_PYTHON) would hijack this tool's interpreter and environment.
+exec env -u UV_PYTHON -u UV_PROJECT -u UV_PROJECT_ENVIRONMENT \
+  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME \
+  uv run --quiet \
   --project "$(chezmoi source-path)/../scripts/research" \
   -m research "$@"

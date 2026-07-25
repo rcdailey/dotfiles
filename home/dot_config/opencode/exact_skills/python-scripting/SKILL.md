@@ -90,7 +90,11 @@ Projects are invoked via thin shell wrappers that use `uv run --project`:
 
 ```bash
 #!/usr/bin/env bash
-exec uv run --quiet \
+# Project-scoped vars leaking from the caller's repo (mise commonly exports
+# UV_PYTHON) would hijack this tool's interpreter and environment.
+exec env -u UV_PYTHON -u UV_PROJECT -u UV_PROJECT_ENVIRONMENT \
+  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME \
+  uv run --quiet \
   --project "$(chezmoi source-path)/../scripts/project-name" \
   -m package_name "$@"
 ```
@@ -99,10 +103,15 @@ For non-chezmoi repos, resolve relative to the wrapper itself:
 
 ```bash
 #!/usr/bin/env bash
-exec uv run --quiet \
+exec env -u UV_PYTHON -u UV_PROJECT -u UV_PROJECT_ENVIRONMENT \
+  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME \
+  uv run --quiet \
   --project "$(dirname "$(realpath "$0")")/../scripts/project-name" \
   -m package_name "$@"
 ```
+
+The `env -u` prefix is mandatory: `uv` honors ambient `UV_*` regardless of `--project`, so a caller
+repo pinning a Python older than the project's `requires-python` breaks the tool outright.
 
 ## Click Patterns
 
