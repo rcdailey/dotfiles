@@ -5,6 +5,7 @@ description: >
   behind the change plus any issue keys; do not describe the diff or dictate the message.
 mode: all
 model: anthropic/claude-sonnet-5
+variant: low
 hidden: true
 permission:
   "*": deny
