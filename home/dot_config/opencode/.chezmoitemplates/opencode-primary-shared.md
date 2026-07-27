@@ -46,6 +46,20 @@ appear in.
 
 Reference code with `file_path:line_number` pattern for source navigation.
 
+## CLI Prose Arguments
+
+Prose bound for a CLI (PR bodies, review comments, issue text, release notes) MUST be inlined via
+quoted heredoc; MUST NOT be staged in a temp file and passed with `--body-file`/`-F`. The quoted
+delimiter blocks expansion of `$` and backticks. Bodies rendered as markdown MUST NOT be hard
+wrapped; one line per paragraph.
+
+```sh
+gh pr create --title "..." --body "$(cat <<'EOF'
+Paragraph text, unwrapped.
+EOF
+)"
+```
+
 ## Authoring
 
 Applies when producing AGENTS.md, SKILL.md, agent definitions, or command files.
