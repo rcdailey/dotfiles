@@ -60,9 +60,9 @@ under `~/.config/opencode/` do not have these prefixes.
 - `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory
   contains a `SKILL.md`. Some are managed via `.chezmoiexternal.toml` in this directory.
 - `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). Coding agents
-  (`build`, `dispatch`, `coder`, `general`) are chezmoi templates that include
+  (`build`, `dispatch`, `lead`, `coder`, `general`) are chezmoi templates that include
   `opencode-coding-directives.md` for coding-specific rules (chat style, development conventions,
-  testing, tools). Primary agents (`build`, `dispatch`) additionally include
+  testing, tools). Primary agents (`build`, `dispatch`, `lead`) additionally include
   `opencode-primary-shared.md` for delegation and commit protocols. `dispatch` is `hidden: true`
   (headless ticket work only; zero-ask permission surface because headless runs auto-reject
   permission asks). Non-coding agents (`commit`, `researcher`, `reviewer`, `upgrade-analyst`) are

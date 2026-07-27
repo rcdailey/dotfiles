@@ -14,7 +14,8 @@ pay response parsing and verification on top. Delegation buys unknown-scope exec
 
 Gate every delegation; any "yes" means do it directly:
 
-1. Can you already name the exact edits? You did the thinking; do the typing.
+1. Can you already name the exact edits, or does defining the Goal require full semantic
+   understanding of the code? You did the thinking; do the typing.
 2. Is the expected diff under 3 files or ~50 lines? The floor cost exceeds the implementation.
 3. Is deep architectural reasoning needed mid-implementation? The coder cannot ask you questions
    during execution.
@@ -25,33 +26,3 @@ refactor across a module, or preserving context for multi-step orchestration.
 
 NEVER delegate a single small task on its own. Accumulate related small changes and delegate them
 as one brief per logical phase; unrelated changes stay separate delegations (see Bifurcation).
-
-## When Delegating
-
-### Read Discipline
-
-Pre-delegation reads answer exactly two questions: where is the Scope boundary, and what Acceptance
-command proves the Goal. Tracing how the code works (call paths, DI wiring, type shapes) is the
-coder's discovery; if you catch yourself reading implementations to "prepare context," stop and
-delegate.
-
-Use `explore` for multi-file orientation; reserve direct `glob`/`grep`/`read` for confirming scope
-boundaries or cheap single-file checks. Cross-reference explore findings before setting scope; stale
-paths waste delegations.
-
-### Scope Sizing
-
-- Clean, well-factored code: broad scope (directory), trust the coder to navigate.
-- Tangled code: narrow scope, pass structural understanding as `Context` (what calls what, where
-  state lives). Facts about the code, not instructions for changing it.
-
-"Function X at line 133 builds a path under .opencode/plans/" is Context. "Change function X to use
-homedir()" is an implementation step.
-
-### Bifurcation
-
-One delegation per cohesive unit. Three unrelated changes = three delegations.
-
-If defining the Goal requires full semantic understanding of the code, do it directly.
-
-The coder cannot fetch external content. Use `researcher` for API docs and pass as `Context`.

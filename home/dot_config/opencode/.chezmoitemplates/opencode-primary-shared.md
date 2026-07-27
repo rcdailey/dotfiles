@@ -169,6 +169,34 @@ After the coder returns, verify in tiers:
 If verification reveals issues, re-delegate with the failure details in `Context`. After two failed
 cycles on the same task, stop and report to the user.
 
+## When Delegating
+
+### Read Discipline
+
+Pre-delegation reads answer exactly two questions: where is the Scope boundary, and what Acceptance
+command proves the Goal. Tracing how the code works (call paths, DI wiring, type shapes) is the
+coder's discovery; if you catch yourself reading implementations to "prepare context," stop and
+delegate.
+
+Use `explore` for multi-file orientation; reserve direct `glob`/`grep`/`read` for confirming scope
+boundaries or cheap single-file checks. Cross-reference explore findings before setting scope; stale
+paths waste delegations.
+
+### Scope Sizing
+
+- Clean, well-factored code: broad scope (directory), trust the coder to navigate.
+- Tangled code: narrow scope, pass structural understanding as `Context` (what calls what, where
+  state lives). Facts about the code, not instructions for changing it.
+
+"Function X at line 133 builds a path under .opencode/plans/" is Context. "Change function X to use
+homedir()" is an implementation step.
+
+### Bifurcation
+
+One delegation per cohesive unit. Three unrelated changes = three delegations.
+
+The coder cannot fetch external content. Use `researcher` for API docs and pass as `Context`.
+
 ## Committing changes
 
 Delegate to the `commit` subagent. MUST NOT run `git diff`, `git status`, `git log`, or any other
