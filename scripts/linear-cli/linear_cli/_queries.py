@@ -343,6 +343,16 @@ query IssueRelations($id: String!) {
         }
       }
     }
+    inverseRelations {
+      nodes {
+        id
+        type
+        issue {
+          identifier
+          title
+        }
+      }
+    }
   }
 }
 """

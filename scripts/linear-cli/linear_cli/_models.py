@@ -182,8 +182,10 @@ class Relation:
     related_title: str | None
 
     @classmethod
-    def from_graphql(cls, data: dict) -> Self:
-        related = data.get("relatedIssue") or {}
+    def from_graphql(cls, data: dict, *, inverse: bool = False) -> Self:
+        # Linear stores each relation once, on the source issue. Reading it from the target's
+        # inverseRelations means the other issue is under "issue" rather than "relatedIssue".
+        related = data.get("issue" if inverse else "relatedIssue") or {}
         return cls(
             id=data.get("id"),
             type=data.get("type"),

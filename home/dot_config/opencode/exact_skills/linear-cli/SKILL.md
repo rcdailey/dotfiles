@@ -131,7 +131,11 @@ EOF
 ## Relations
 
 Relation types for `linear relations add/remove`: `blocks`, `blocked-by`,
-`related`, `duplicate`.
+`related`, `duplicate`, `similar`.
+
+Linear stores a relation once, on the source issue. `blocked-by` is that same
+row read from the other side, so the CLI resolves it by swapping the two
+issues. `relations list` shows both directions.
 
 ## Sub-issues
 

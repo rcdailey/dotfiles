@@ -14,14 +14,22 @@ from linear_cli._queries import (
     ISSUE_RELATIONS_QUERY,
 )
 
-_CLI_TO_API_TYPE: dict[str, str] = {
-    "blocks": "blocks",
-    "blocked-by": "blockedBy",
-    "related": "related",
-    "duplicate": "duplicate",
-}
+_RELATION_TYPES = ["blocks", "blocked-by", "related", "duplicate", "similar"]
 
-_API_TO_CLI_TYPE: dict[str, str] = {v: k for k, v in _CLI_TO_API_TYPE.items()}
+# Linear's IssueRelationType enum has no "blockedBy": blocking is stored once, directionally, and
+# "blocked by" is the same row read from the other issue. So the CLI keeps the term and resolves it
+# by swapping the two issues.
+_INVERSE_DISPLAY: dict[str, str] = {"blocks": "blocked-by"}
+
+
+def _resolve(issue_id: str, type: str, related_id: str) -> tuple[str, str, str]:
+    """Map a CLI relation type onto the API's directional form.
+
+    Returns the issue that owns the relation, the API type, and the other issue.
+    """
+    if type.lower() == "blocked-by":
+        return related_id, "blocks", issue_id
+    return issue_id, type.lower(), related_id
 
 
 @click.group(cls=HelpfulGroup)
@@ -42,30 +50,36 @@ def list_relations(issue_id: str) -> None:
     if not issue:
         die(f"issue '{issue_id}' not found")
 
-    nodes = (issue.get("relations") or {}).get("nodes", [])
-    if not nodes:
+    direct = [
+        (Relation.from_graphql(n), False) for n in (issue.get("relations") or {}).get("nodes", [])
+    ]
+    inverse = [
+        (Relation.from_graphql(n, inverse=True), True)
+        for n in (issue.get("inverseRelations") or {}).get("nodes", [])
+    ]
+
+    if not direct and not inverse:
         click.echo("no relations")
         return
-    for node in nodes:
-        rel = Relation.from_graphql(node)
-        rel_type = _API_TO_CLI_TYPE.get(rel.type or "", rel.type or "unknown")
+
+    for rel, is_inverse in direct + inverse:
+        rel_type = rel.type or "unknown"
+        if is_inverse:
+            rel_type = _INVERSE_DISPLAY.get(rel_type, rel_type)
         click.echo(f"{rel_type}  {rel.related_identifier}  ({rel.related_title})")
 
 
 @cli.command("add")
 @click.argument("issue_id")
-@click.argument(
-    "type",
-    type=click.Choice(["blocks", "blocked-by", "related", "duplicate"], case_sensitive=False),
-)
+@click.argument("type", type=click.Choice(_RELATION_TYPES, case_sensitive=False))
 @click.argument("related_id")
 def add_relation(issue_id: str, type: str, related_id: str) -> None:
     """Add a relation between two issues."""
-    api_type = _CLI_TO_API_TYPE[type.lower()]
+    source_id, api_type, target_id = _resolve(issue_id, type, related_id)
     try:
         data = execute(
             ISSUE_RELATION_CREATE_MUTATION,
-            {"input": {"issueId": issue_id, "relatedIssueId": related_id, "type": api_type}},
+            {"input": {"issueId": source_id, "relatedIssueId": target_id, "type": api_type}},
         )
     except LinearError as exc:
         die(str(exc))
@@ -80,28 +94,25 @@ def add_relation(issue_id: str, type: str, related_id: str) -> None:
 
 @cli.command("remove")
 @click.argument("issue_id")
-@click.argument(
-    "type",
-    type=click.Choice(["blocks", "blocked-by", "related", "duplicate"], case_sensitive=False),
-)
+@click.argument("type", type=click.Choice(_RELATION_TYPES, case_sensitive=False))
 @click.argument("related_id")
 def remove_relation(issue_id: str, type: str, related_id: str) -> None:
     """Remove a relation between two issues."""
+    source_id, api_type, target_id = _resolve(issue_id, type, related_id)
     try:
-        data = execute(ISSUE_RELATIONS_QUERY, {"id": issue_id})
+        data = execute(ISSUE_RELATIONS_QUERY, {"id": source_id})
     except LinearError as exc:
         die(str(exc))
 
     issue = data.get("issue")
     if not issue:
-        die(f"issue '{issue_id}' not found")
+        die(f"issue '{source_id}' not found")
 
-    api_type = _CLI_TO_API_TYPE[type.lower()]
     nodes = (issue.get("relations") or {}).get("nodes", [])
     relation_id: str | None = None
     for node in nodes:
         rel = Relation.from_graphql(node)
-        if rel.type == api_type and (rel.related_identifier or "").upper() == related_id.upper():
+        if rel.type == api_type and (rel.related_identifier or "").upper() == target_id.upper():
             relation_id = rel.id
             break
 
