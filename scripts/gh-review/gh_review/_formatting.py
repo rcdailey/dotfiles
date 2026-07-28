@@ -58,9 +58,12 @@ def _comment_header(
     bot_marker: str,
     db_id: int | None,
     indent: str,
+    node_id: str | None = None,
 ) -> str:
-    """Build a comment attribution header with optional databaseId."""
+    """Build a comment attribution header with optional databaseId and node id."""
     id_suffix = f" #{db_id}" if db_id else ""
+    if node_id:
+        id_suffix += f" {node_id}"
     return f"{indent}@{login} ({created}){bot_marker}{id_suffix}:"
 
 
@@ -101,7 +104,7 @@ def format_review_threads(
 
             bot = is_bot(login, typename)
             bot_marker = " [bot, sanitized]" if bot else ""
-            header = _comment_header(login, created, bot_marker, db_id, "  ")
+            header = _comment_header(login, created, bot_marker, db_id, "  ", c.get("id"))
 
             if not processed:
                 lines.append(header)

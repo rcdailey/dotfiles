@@ -62,7 +62,7 @@ To discard a pending review: `gh-review delete PRR_...`.
 or conversation comment and routes to the correct API.
 
 The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` output headers (e.g.
-`@reviewer (2026-05-14) #98765:`). Extract the number after `#`.
+`@reviewer (2026-05-14) #98765 PRRC_kwDO...:`). Extract the number after `#`, not the node ID.
 
 ## Editing and Removing Comments
 
@@ -77,7 +77,8 @@ The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` ou
 
 `gh-review remove` deletes a single review comment.
 
-Both commands take the comment node ID (`PRRC_...` from `comment` output's `comment-node-id` field).
+Both commands take the comment node ID (`PRRC_...`), printed after `#ID` in `view` review-thread
+headers and as `comment-node-id` in `comment` output.
 These commands operate on pending review comments only; `edit` will reject published comments with an
 error. When this happens, do NOT fall back to `reply` or any other command as a workaround. Published
 comments can only be edited through the GitHub UI; inform the user and stop.
@@ -106,7 +107,7 @@ lines being replaced. Do NOT include surrounding context lines in the range; the
 
 - `PRR_...`: Review node ID (from `start` or `view`)
 - `PRRT_...`: Thread node ID (emitted as the `id:` field by `comment`; not surfaced by `view`)
-- `PRRC_...`: Comment node ID (from `comment` output's `comment-node-id` field); used by `edit` and
-  `remove`
+- `PRRC_...`: Comment node ID (from `view` review-thread headers or `comment` output's
+  `comment-node-id` field); used by `edit` and `remove`
 - `#NNN`: Numeric database ID (from `view` output or `comment` output's `comment-id` field); used by
   `reply`
