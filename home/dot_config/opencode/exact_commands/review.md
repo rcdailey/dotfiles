@@ -31,7 +31,7 @@ Build the work list as the union of two queries:
 
 ```bash
 gh pr list --repo {target} --state open \
-  --search "-author:@me -reviewed-by:@me" \
+  --search "-author:@me -reviewed-by:@me -is:draft" \
   --json number,title,url,author,updatedAt
 ```
 
@@ -39,7 +39,7 @@ gh pr list --repo {target} --state open \
 
 ```bash
 gh pr list --repo {target} --state open \
-  --search "-author:@me reviewed-by:@me" \
+  --search "-author:@me reviewed-by:@me -is:draft" \
   --json number,title,url,author,updatedAt
 ```
 
