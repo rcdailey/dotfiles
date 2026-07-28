@@ -60,24 +60,33 @@ Alternative modes (no PR number):
 ## Return Contract
 
 Return this template to the caller (not a file), filled in and in this order. Callers relay it
-verbatim, so no field may be moved, renamed, or folded into prose.
+verbatim, so no field may be moved, renamed, or folded into prose. The whole report MUST fit in 20
+lines; the pending review carries the detail, this is the index to it.
 
 ```markdown
-**PR:** #{number} {title} - {url}
-**Verdict:** {approve | request changes | comment-only} - {one-sentence rationale}
-**Pending review:** {PRR_... ID} - {n} comments posted (unsubmitted)
+**PR:** #{number} - {url}
+**Verdict:** {approve | request changes | comment-only} - {rationale, one sentence}
+**Review:** {PRR_... ID} - {n} comments (unsubmitted)
 
-**Blockers:** {finding, `path:line`} (or `none`)
-**Should fix:** {finding, `path:line`} (or `none`)
-**Recommendations:** {finding, `path:line`} (or `none`)
-**Found but not posted:** {finding, `path:line`, priority} (or `none`)
+**Posted:**
+- {P1|P2} `path:line` - {finding, at most 15 words}
 
-**Citations:** {ctx7 sources, file paths with line ranges, URLs fetched this session}
-**Confidence:** {high | medium | low} - {justification; name weakest comments if not high}
+**Not posted:**
+- {P3|P4} `path:line` - {finding, at most 10 words}
+
+**Refs:** {ctx7 IDs and URLs fetched this session, comma-separated, no annotations}
+**Confidence:** {high | medium | low} - {one sentence; name the weakest comment if not high}
 ```
 
-Mark each posted finding with a trailing `(posted)`. For commit-range and local-changes modes, drop
-the `PR` and `Pending review` lines and list all findings in the buckets.
+Rules for filling it:
+
+- One line per finding, no sub-bullets, no explanatory prose. Depth belongs in the posted comment
+  body, not here.
+- `Not posted`: cap at 3 lines, highest priority first, then `+{n} more` if truncated. Omit findings
+  already flagged on the PR entirely.
+- `Refs`: bare identifiers only. Read-only file paths that produced no finding are not refs.
+- Empty sections collapse to `**Posted:** none` on one line.
+- Commit-range and local-changes modes: drop `PR` and `Review`, list all findings under `Posted`.
 
 ## Process
 
@@ -188,12 +197,11 @@ targeting. Do not fetch the full diff.
 
 ### 4. Compose and Post Comments
 
-Non-PR modes stop here: compile the report and return it (all findings, bucketed). Do not post any
-review.
+Non-PR modes stop here: compile the report and return it. Do not post any review.
 
 Filter before posting: post only findings at or above the caller's priority scope (default
-critical/high). Findings below the threshold stay out of the review but MUST still appear in the
-returned report, so the caller sees what was found and chose not to post.
+critical/high). Findings below the threshold stay out of the review and appear under `Not posted`,
+subject to that section's cap.
 
 Load the `humanizer` skill before composing comment bodies (not in parallel with posting). Apply the
 tone and etiquette guidelines from the `gh-pr-review` skill.
