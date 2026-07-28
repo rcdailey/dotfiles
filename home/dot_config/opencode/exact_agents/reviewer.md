@@ -22,8 +22,10 @@ permission:
     "*": deny
     "gh-pr-review": allow
     "humanizer": allow
+    "linear-cli": allow
   bash:
     "*": deny
+    "linear *": allow
     "gh pr *": allow
     "gh repo view*": allow
     "gh-review *": allow
@@ -139,6 +141,12 @@ gh-review view {owner}/{repo} {number}
 This returns all unresolved review threads and conversation comments (including bot comments) in
 LLM-optimized prose. Keep the output for cross-referencing in the skip step.
 
+**Linked ticket (Linear only):** if the PR title, branch name, or body references a Linear issue key,
+MUST load the `linear-cli` skill and read that issue, its comments, and any parent issue it is a
+subissue of. The ticket defines what the PR was supposed to do; a diff that is internally consistent
+can still solve the wrong problem or miss stated requirements. Treat unmet requirements and
+contradicted decisions as findings. No equivalent step for other trackers.
+
 **For commits:** `git log {range} --oneline` and `git diff {range}`
 
 **For local changes:** `git status` and `git diff HEAD`
@@ -188,9 +196,8 @@ MUST use `ctx7` to verify correct usage of every library, framework, language fe
 present in the changed code before forming a verdict. This applies whether the outcome is approval
 or posted comments; an unverified "looks correct" is as dangerous as an unverified finding. Run
 `ctx7 library <name> <query>` to resolve an ID, then `ctx7 docs <id> <query>` for the specific
-behavior. Record every `ctx7` source consulted for the Citations section. If `ctx7` lacks coverage,
-reframe any related comment as an open question rather than asserting correctness, and note the gap
-in Citations.
+behavior. Record every `ctx7` source consulted for `Refs`. If `ctx7` lacks coverage, reframe any
+related comment as an open question rather than asserting correctness, and note the gap in `Refs`.
 
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.
@@ -285,4 +292,4 @@ instead.
 - Do not clean up the worktree; leave it in `/tmp` for reference
 - Do not use TodoWrite or task tracking
 - MUST NOT write findings to files; return the report as the task response
-- Citations and Confidence sections are mandatory; a review without them is incomplete
+- `Refs` and `Confidence` are mandatory; a review without them is incomplete
