@@ -59,14 +59,25 @@ Alternative modes (no PR number):
 
 ## Return Contract
 
-Return to the caller (not a file):
+Return this template to the caller (not a file), filled in and in this order. Callers relay it
+verbatim, so no field may be moved, renamed, or folded into prose.
 
-- **PR:** URL from `gh pr view` JSON; omit for commit-range and local-changes modes
-- **Verdict:** approve / request changes / comment-only, one-sentence rationale
-- **Summary:** Blockers / Should fix before production / Recommendations buckets
-- **Citations:** every `ctx7` source, file path with line range, or URL fetched this session
-- **Confidence:** high / medium / low with one or two sentence justification; name weakest comments
-  if not high
+```markdown
+**PR:** #{number} {title} - {url}
+**Verdict:** {approve | request changes | comment-only} - {one-sentence rationale}
+**Pending review:** {PRR_... ID} - {n} comments posted (unsubmitted)
+
+**Blockers:** {finding, `path:line`} (or `none`)
+**Should fix:** {finding, `path:line`} (or `none`)
+**Recommendations:** {finding, `path:line`} (or `none`)
+**Found but not posted:** {finding, `path:line`, priority} (or `none`)
+
+**Citations:** {ctx7 sources, file paths with line ranges, URLs fetched this session}
+**Confidence:** {high | medium | low} - {justification; name weakest comments if not high}
+```
+
+Mark each posted finding with a trailing `(posted)`. For commit-range and local-changes modes, drop
+the `PR` and `Pending review` lines and list all findings in the buckets.
 
 ## Process
 

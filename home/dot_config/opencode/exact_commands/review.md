@@ -81,12 +81,13 @@ For single-PR, commit-range, and local-changes modes, spawn one task and relay i
 
 ## Aggregate Output
 
-For each completed PR, relay the subagent's full report:
+Relay each subagent's report verbatim, preserving every field of its return template (PR URL,
+verdict, pending review ID and comment count, the four finding buckets, citations, confidence).
+MUST NOT summarize, truncate, reorder, or drop fields; the report is the deliverable. Separate
+multiple PRs with `---`.
 
-- PR URL
-- Verdict
-- Summary (Blockers / Should fix / Recommendations)
-- Citations
-- Confidence
+For fan-out, prefix the reports with a one-line-per-PR index (`#N {verdict} - {n} comments -
+{url}`), then the full reports.
 
-Note any PRs skipped from the re-review list and why. Do not add analysis or re-post comments.
+Close with any PRs skipped from the re-review list and why, and the reminder that pending reviews
+are unsubmitted. Do not add analysis or re-post comments.
