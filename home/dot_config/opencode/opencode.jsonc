@@ -10,18 +10,18 @@
   "agent": {
     "plan": { "disable": true },
     "title": {
-      "model": "anthropic/claude-haiku-4-5",
+      "model": "{env:OPENCODE_MODEL_FAST}",
     },
     "compaction": {
       "model": "opencode/deepseek-v4-flash",
     },
     "general": {
       "tools": { "question": false },
-      "model": "anthropic/claude-sonnet-5",
+      "model": "{env:OPENCODE_MODEL_BALANCED}",
       "variant": "low",
     },
     "explore": {
-      "model": "anthropic/claude-sonnet-5",
+      "model": "{env:OPENCODE_MODEL_BALANCED}",
       "permission": {
         "edit": "deny",
         "question": "deny",
@@ -34,6 +34,11 @@
         },
       },
     },
+    "coder": { "model": "{env:OPENCODE_MODEL_CAPABLE}" },
+    "commit": { "model": "{env:OPENCODE_MODEL_BALANCED}" },
+    "researcher": { "model": "{env:OPENCODE_MODEL_BALANCED}" },
+    "reviewer": { "model": "{env:OPENCODE_MODEL_CAPABLE}" },
+    "upgrade-analyst": { "model": "{env:OPENCODE_MODEL_BALANCED}" },
   },
   "lsp": false,
   "formatter": {

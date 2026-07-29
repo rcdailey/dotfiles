@@ -43,8 +43,8 @@ export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 # CLI) hardcodes ~/.netrc and writes non-RFC keywords that break Terraform parsing.
 export NETRC="$HOME/.netrc.terraform"
 
-# Per-machine opencode overrides (model, provider, agent defaults)
-export OPENCODE_CONFIG="$XDG_CONFIG_HOME/opencode/opencode.local.jsonc"
+# OpenCode environment
+source "$XDG_CONFIG_HOME/opencode/env.sh"
 
 # Force opencode's embedded Bun to bypass its global package cache when
 # resolving @latest plugin versions. Without this, Bun serves stale metadata

@@ -6,7 +6,6 @@ description: >
   commit-range and local-changes modes (analyze and report only; no pending review).
 mode: subagent
 hidden: true
-model: anthropic/claude-opus-5
 variant: low
 permission:
   "*": deny

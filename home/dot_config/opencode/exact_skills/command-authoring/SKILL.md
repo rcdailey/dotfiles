@@ -28,7 +28,7 @@ The filename (without `.md`) becomes the `/command-name`.
 ---
 description: Brief description shown in TUI autocomplete
 agent: plan          # optional: which agent executes (defaults to current)
-model: anthropic/claude-sonnet-5  # optional: override model
+model: provider/model-id  # optional: override model
 subtask: true        # optional: force subagent invocation (isolated context)
 ---
 ```

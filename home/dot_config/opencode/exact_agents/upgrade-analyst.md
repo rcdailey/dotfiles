@@ -5,7 +5,6 @@ description: >
   categorizes findings. Callers pass a PR number or package/version details; this agent performs
   all research and returns structured findings.
 mode: subagent
-model: anthropic/claude-sonnet-5
 variant: low
 permission:
   "*": deny
