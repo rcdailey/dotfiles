@@ -6,6 +6,8 @@ from typing import Any
 
 from gh_review._sanitize import is_bot, sanitize_bot_body, truncate_body
 
+PENDING_MARKER = " [pending, unsubmitted]"
+
 
 def _author_info(author: dict[str, Any] | None) -> tuple[str, str]:
     """Extract (login, typename) from an author dict."""
@@ -55,7 +57,7 @@ def _format_body(
 def _comment_header(
     login: str,
     created: str,
-    bot_marker: str,
+    markers: str,
     db_id: int | None,
     indent: str,
     node_id: str | None = None,
@@ -64,7 +66,12 @@ def _comment_header(
     id_suffix = f" #{db_id}" if db_id else ""
     if node_id:
         id_suffix += f" {node_id}"
-    return f"{indent}@{login} ({created}){bot_marker}{id_suffix}:"
+    return f"{indent}@{login} ({created}){markers}{id_suffix}:"
+
+
+def _is_pending(comment: dict[str, Any]) -> bool:
+    """Whether an inline comment belongs to an unsubmitted (pending) review."""
+    return (comment.get("pullRequestReview") or {}).get("state") == "PENDING"
 
 
 def format_review_threads(
@@ -103,8 +110,10 @@ def format_review_threads(
                 continue
 
             bot = is_bot(login, typename)
-            bot_marker = " [bot, sanitized]" if bot else ""
-            header = _comment_header(login, created, bot_marker, db_id, "  ", c.get("id"))
+            markers = " [bot, sanitized]" if bot else ""
+            if _is_pending(c):
+                markers += PENDING_MARKER
+            header = _comment_header(login, created, markers, db_id, "  ", c.get("id"))
 
             if not processed:
                 lines.append(header)
@@ -214,12 +223,35 @@ def format_review_bodies(
     return "\n".join(lines) if lines else "no review comments"
 
 
-def format_pending_reviews(reviews: list[dict[str, Any]]) -> str:
-    """Format pending review entries."""
+def format_pending_reviews(reviews: list[dict[str, Any]], max_body: int) -> str:
+    """Format pending review entries with their unsubmitted body and inline comments."""
     if not reviews:
         return ""
-    lines = ["=== PENDING REVIEWS ==="]
+    lines = ["=== PENDING REVIEWS (not visible to others until submitted) ==="]
     for r in reviews:
         author = (r.get("author") or {}).get("login", "?")
-        lines.append(f"{r['id']} @{author}")
+        comments = (r.get("comments") or {}).get("nodes", [])
+        count = len(comments)
+        noun = "comment" if count == 1 else "comments"
+        lines.append(f"{r['id']} @{author} ({count} inline {noun})")
+
+        body = (r.get("body") or "").strip()
+        if body:
+            lines.append("  body:")
+            for bl in truncate_body(body, max_body).splitlines():
+                lines.append(f"    {bl}")
+
+        for c in comments:
+            location = f"{c.get('path', '?')} {_line_label(c)}".strip()
+            id_suffix = f" #{c['databaseId']}" if c.get("databaseId") else ""
+            if c.get("id"):
+                id_suffix += f" {c['id']}"
+            header = f"  {location}{id_suffix}:"
+            body_lines = truncate_body((c.get("body") or "").strip(), max_body).splitlines()
+            if len(body_lines) == 1:
+                lines.append(f"{header} {body_lines[0]}")
+                continue
+            lines.append(header)
+            for bl in body_lines:
+                lines.append(f"    {bl}")
     return "\n".join(lines)

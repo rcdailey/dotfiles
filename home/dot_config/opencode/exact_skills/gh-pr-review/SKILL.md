@@ -47,6 +47,17 @@ NUMBER` (e.g. `gh-review view sketchy/cortex-backend 2794`, `gh-review start own
 Use `ctx7` and web search to verify unfamiliar patterns, best practices, and security implications
 before writing comments. Every technical claim must be verified.
 
+## Reading a PR
+
+`gh-review view` hides resolved threads unless you pass `--all`. Pass it whenever the question is
+what already happened on the PR: whether a finding was raised before, or whether your own review
+landed. A published review whose threads were all resolved is invisible without it, which reads as
+"never posted." `--author LOGIN` narrows output to one participant.
+
+Inline comments belonging to an unsubmitted review are tagged `[pending, unsubmitted]`, and the
+`PENDING REVIEWS` section prints the draft body and each inline comment. Nothing there is visible to
+anyone else yet.
+
 ## Pending Review Workflow
 
 1. `gh-review view` the PR. If the output includes a `PENDING REVIEWS` section, reuse that `PRR_...`

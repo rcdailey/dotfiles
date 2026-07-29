@@ -74,6 +74,8 @@ Spawn one `reviewer` task per selected PR. Pass:
 - The PR number
 - The priority scope from `$ARGUMENTS` (if any)
 
+Keep each returned task id paired with its PR number for the rest of the session.
+
 Fan-out PRs run in parallel; each gets its own `/tmp/pr-review-{n}` worktree so parallel execution
 is safe.
 
@@ -90,3 +92,16 @@ If a report exceeds its 20-line budget or pads findings with prose, cut it back 
 finding rather than relaying the overrun.
 
 Close with any PRs skipped from the re-review list and why.
+
+## After the Reports
+
+The session stays conversational once the reports land. Two rules govern what follows.
+
+**Re-review after new commits or replies:** resume the `reviewer` task for that PR by its recorded
+task id rather than spawning a fresh one; it still holds the diff, the ticket, and its own findings.
+Pass only what changed (new commits, resolved threads, unanswered questions) and the priority scope.
+Spawn a new task only when no id was recorded for that PR.
+
+**Comment mechanics stay on `gh-review`:** reading threads, replying, editing or removing your own
+comments, and inspecting an unsubmitted review all go through it; load the `gh-pr-review` skill
+first. Never reach for raw `gh api` or `gh pr` for review comments.

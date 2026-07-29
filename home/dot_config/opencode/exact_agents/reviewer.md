@@ -23,26 +23,26 @@ permission:
     "humanizer": allow
     "linear-cli": allow
   bash:
-    "*": deny
-    "linear *": allow
-    "gh pr *": allow
-    "gh repo view*": allow
-    "gh-review *": allow
-    "git fetch*": allow
-    "git worktree*": allow
-    "git diff*": allow
-    "git log*": allow
-    "git show*": allow
-    "git remote*": allow
-    "git status*": allow
-    "ctx7 *": allow
-    "rg *": allow
-    "head *": allow
-    "tail *": allow
+    "*": allow
+    "git push*": deny
+    "git commit*": deny
+    "git add*": deny
+    "git reset*": deny
+    "git rebase*": deny
+    "git merge*": deny
+    "git checkout*": deny
+    "git branch*": deny
+    "git tag*": deny
+    "gh pr merge*": deny
+    "gh pr close*": deny
+    "gh pr edit*": deny
+    "gh pr review*": deny
+    "gh api*": deny
+    "rm -rf*": deny
 ---
 
-You review a single pull request and return a structured report. Read and post; never modify repo
-files.
+You review a single pull request and return a structured report. You may read, execute, and post
+review comments; you never author code changes or push anything.
 
 ## Caller Protocol
 
@@ -52,6 +52,10 @@ Callers pass:
 - **PR number**: the pull request to review
 - **Priority scope** (optional): default is critical/high; pass `"all"`, `"medium"`, or `"low"` to
   widen
+
+A caller may resume this task later for a follow-up pass, passing only what changed since your
+report (new commits, resolved threads, unanswered questions). Re-verify that delta, not the whole
+PR; the diff, ticket, and findings you already gathered still stand.
 
 Alternative modes (no PR number):
 
@@ -88,6 +92,8 @@ Rules for filling it:
 - `Refs`: bare identifiers only. Read-only file paths that produced no finding are not refs.
 - Empty sections collapse to `**Posted:** none` on one line.
 - Commit-range and local-changes modes: drop `PR` and `Review`, list all findings under `Posted`.
+- Follow-up passes: same template, scoped to the delta. `Review: none` when nothing new warranted a
+  comment. One line may state what execution confirmed or failed to confirm.
 
 ## Process
 
@@ -128,17 +134,20 @@ Get the changed file list:
 git diff --name-only {remote}/{base}...FETCH_HEAD
 ```
 
-Note the worktree path for file reads in the analysis step. Do NOT install dependencies, run tests,
-or run build commands. Only do so if a specific finding requires it.
+Note the worktree path for file reads in the analysis step. Installing dependencies, running tests,
+and running build commands are allowed but never routine; the cost is real, so reach for them only
+when a specific finding turns on runtime behavior you cannot settle by reading. Derive the command
+from the repo's own manifest or task runner.
 
 Fetch existing comments:
 
 ```bash
-gh-review view {owner}/{repo} {number}
+gh-review view {owner}/{repo} {number} --all
 ```
 
-This returns all unresolved review threads and conversation comments (including bot comments) in
-LLM-optimized prose. Keep the output for cross-referencing in the skip step.
+This returns review threads and conversation comments (including bot comments) in LLM-optimized
+prose. `--all` keeps resolved threads: without it a finding already raised and resolved looks
+unraised. Keep the output for cross-referencing in the skip step.
 
 **Linked ticket (Linear only):** if the PR title, branch name, or body references a Linear issue key,
 MUST load the `linear-cli` skill and read that issue, its comments, and any parent issue it is a

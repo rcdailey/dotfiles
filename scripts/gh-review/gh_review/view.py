@@ -32,6 +32,13 @@ _VIEW_QUERY = textwrap.dedent("""\
               id databaseId state
               author { login __typename }
               body createdAt
+              comments(first:50) {
+                nodes {
+                  id databaseId
+                  path line startLine
+                  body createdAt
+                }
+              }
             }
           }
           reviewThreads(first:100) {
@@ -101,6 +108,10 @@ def _thread_last_author(thread: dict[str, Any]) -> str:
     return (last.get("author") or {}).get("login", "")
 
 
+def _login(node: dict[str, Any]) -> str:
+    return (node.get("author") or {}).get("login", "")
+
+
 def _filter_threads(
     threads: list[dict[str, Any]],
     *,
@@ -108,6 +119,7 @@ def _filter_threads(
     unanswered_by: str | None,
     since: datetime | None,
     no_bots: bool,
+    author: str | None,
 ) -> list[dict[str, Any]]:
     result = []
     for t in threads:
@@ -131,6 +143,12 @@ def _filter_threads(
             ]
             if not non_bot:
                 continue
+        if author:
+            comments = (t.get("comments") or {}).get("nodes", [])
+            by_author = [c for c in comments if _login(c) == author]
+            if not by_author:
+                continue
+            t = {**t, "comments": {"nodes": by_author}}
         result.append(t)
     return result
 
@@ -140,9 +158,12 @@ def _filter_conversation(
     *,
     since: datetime | None,
     no_bots: bool,
+    author: str | None,
 ) -> list[dict[str, Any]]:
     result = []
     for c in comments:
+        if author and _login(c) != author:
+            continue
         if since:
             created = _parse_iso(c.get("createdAt", ""))
             if created < since:
@@ -161,11 +182,14 @@ def _filter_review_bodies(
     *,
     since: datetime | None,
     no_bots: bool,
+    author: str | None,
 ) -> list[dict[str, Any]]:
     """Filter reviews to those with a non-empty body, excluding pending."""
     result = []
     for r in reviews:
         if r.get("state") == "PENDING":
+            continue
+        if author and _login(r) != author:
             continue
         if not (r.get("body") or "").strip():
             continue
@@ -198,6 +222,12 @@ def _filter_review_bodies(
 )
 @click.option("--no-bots", is_flag=True, help="drop bot comments entirely")
 @click.option(
+    "--author",
+    default=None,
+    metavar="LOGIN",
+    help="only comments authored by this login",
+)
+@click.option(
     "--max-body",
     type=int,
     default=DEFAULT_MAX_BODY,
@@ -212,6 +242,7 @@ def cli(
     unanswered: bool,
     since: datetime | None,
     no_bots: bool,
+    author: str | None,
     max_body: int,
 ) -> None:
     """View PR comments with filtering and LLM-optimized output."""
@@ -232,11 +263,16 @@ def cli(
 
         # Reviews
         all_reviews = pr.get("reviews", {}).get("nodes", [])
-        pending = [r for r in all_reviews if r["state"] == "PENDING"]
+        pending = [
+            r
+            for r in all_reviews
+            if r["state"] == "PENDING" and (not author or _login(r) == author)
+        ]
         review_bodies = _filter_review_bodies(
             all_reviews,
             since=since,
             no_bots=no_bots,
+            author=author,
         )
 
         # Review threads
@@ -247,6 +283,7 @@ def cli(
             unanswered_by=pr_author if unanswered else None,
             since=since,
             no_bots=no_bots,
+            author=author,
         )
 
         # Conversation comments
@@ -255,6 +292,7 @@ def cli(
             all_convo,
             since=since,
             no_bots=no_bots,
+            author=author,
         )
 
         # Summary line
@@ -264,11 +302,15 @@ def cli(
         shown_threads = len(threads)
         shown_convo = len(convo)
 
+        if not total_threads:
+            thread_summary = "no review threads exist"
+        elif not unresolved_count:
+            thread_summary = f"0/{total_threads} unresolved threads (all resolved)"
+        else:
+            thread_summary = f"{unresolved_count}/{total_threads} unresolved threads"
+
         click.echo(f"PR #{number}: {title}")
-        click.echo(
-            f"{unresolved_count}/{total_threads} unresolved threads, "
-            f"{shown_convo} conversation comments"
-        )
+        click.echo(f"{thread_summary}, {shown_convo} conversation comments")
 
         filter_notes: list[str] = []
         if show_all:
@@ -285,7 +327,7 @@ def cli(
             click.echo(f"({'; '.join(filter_notes)})")
 
         # Pending reviews
-        pending_out = format_pending_reviews(pending)
+        pending_out = format_pending_reviews(pending, max_body)
         if pending_out:
             click.echo(f"\n{pending_out}")
 
