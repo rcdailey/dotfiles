@@ -20,16 +20,13 @@ uv = "latest"
 worktrunk = "latest"
 yamllint = "latest"
 yq = "latest"
-bun = "latest"
 zizmor = "latest"
 ruff = "latest"
 "github:byteowlz/sx" = "latest"
-
-# Node and NPM packages
 node = "latest"
+bun = "latest"
 "npm:@commitlint/cli" = "latest"
 "npm:@commitlint/config-conventional" = "latest"
-"npm:@openchamber/web" = "latest"
 "npm:ctx7" = "latest"
 topgrade = "latest"
 
