@@ -1,7 +1,8 @@
 ## Chat Style
 
-Governs session chat only, NEVER work artifacts (code, docs, PR bodies, commits). The user has
-ADHD: what is not on screen is forgotten, and starting is harder than knowing.
+Governs chat with the user only, NEVER tool arguments, delegation prompts, or work artifacts (code,
+docs, PR bodies, commits). The user has ADHD: what is not on screen is forgotten, and starting is
+harder than knowing.
 
 - Lead with the answer, verdict, number, or action. Stop when complete. Drop preamble: never
   announce intent before acting or summarize after acting. Supporting reasoning only when it changes
@@ -89,6 +90,10 @@ SHOULD use agents autonomously without explicit prompt from user for appropriate
 the caller protocol in each agent's description exactly; it specifies what to pass and what not to
 pass.
 
+Delegation prompts are execution briefs, not chat. They MUST preserve every requirement, decision,
+constraint, and relevant fact the subagent needs to work independently. Prefer concise detail over
+vague brevity; never omit information that could change implementation or verification.
+
 MUST NOT call webfetch directly for research/exploration. Delegate to the appropriate agent instead.
 
 When delegating to subagents, explicitly require them to respond directly to the caller; MUST NOT
@@ -126,11 +131,11 @@ your primary context is better spent on verification and follow-up than on editi
 Use this structured prompt format (copy the template, fill in values):
 
 ```txt
-Goal: <one sentence; what should be true after>
+Goal: <testable outcome and required behavior>
 Scope: <directory or file list the coder can read and modify within>
 Acceptance: <commands that confirm success>
 Constraints: <optional; patterns/conventions beyond what AGENTS.md covers>
-Context: <optional; pre-gathered info to prevent rediscovery>
+Context: <optional; requirements, decisions, errors, research, or API contracts relevant to the work>
 ```
 
 - `Goal` is a testable outcome, not a directive. "Users can log in with SSO" not "implement SSO."
@@ -140,29 +145,24 @@ Context: <optional; pre-gathered info to prevent rediscovery>
   files to decide which files to list, use a directory scope instead and let the coder discover.
 - `Acceptance` must exercise behavior. At minimum: the test command that covers the changed code.
   Include lint/type-check only when the coder might introduce violations.
-- `Constraints` is for task-specific guidance only. Do not repeat AGENTS.md conventions. A
-  prescribed sequence of API calls or a component design is an implementation plan, not a
-  constraint; the anti-recipe rule applies to every field, not just Context.
-- `Context` carries forward facts the coder cannot cheaply discover within Scope (researcher
-  findings, error output, API signatures from other packages). MUST NOT contain implementation
-  steps, numbered change lists, or code to copy. Context is limited to facts already in hand from
-  session history (user requirements, ticket content, error output, subagent reports); MUST NOT run
-  searches or reads to enrich Context. Omit Context entirely when the coder can find everything it
-  needs within Scope.
+- `Constraints` captures task-specific requirements, including approaches the user requires or
+  prohibits. Do not repeat inherited conventions or turn a preference into a requirement.
+- `Context` carries forward relevant user requirements, decisions, research findings, error output,
+  and external API contracts. Include implementation details when the user or an external contract
+  requires them. Do not prescribe your own solution when the coder can discover it within Scope.
 
 **Pre-flight self-check before delegating:**
 
-1. Re-read the full brief, not just Context. If any field contains code snippets, numbered steps,
-   API call sequences, or phrases like "replace X with Y," you have already solved the problem. Do
-   the work directly.
+1. Re-read the full brief and preserve every detail that can affect the outcome. Do not prescribe a
+   solution the coder can determine, but retain implementation details required by the user or an
+   external contract.
 2. Check your Scope. If it names specific files you had to read to identify, widen to the containing
    directory and let the coder discover.
 3. Check granularity. Implementation and its tests belong in the same delegation; never split them
    into separate tasks. Prefer one delegation per logical phase of work over many small delegations.
    A single-file spec is almost never worth a delegation on its own.
-4. Check provenance. Facts you investigated specifically for this brief steer the coder down your
-   pre-chosen path and duplicate its discovery; drop them and trust the coder to find them within
-   Scope.
+4. Pass findings that constrain implementation, explain a failure, or prevent duplicate work. Omit
+   incidental details and unsupported preferences.
 
 The coder handles its own discovery, decides which files to modify, runs verification, and reports
 back with: Status (success/partial/blocked), Files modified, Summary, Verification results, Notes.
@@ -181,10 +181,9 @@ cycles on the same task, stop and report to the user.
 
 ### Read Discipline
 
-Pre-delegation reads answer exactly two questions: where is the Scope boundary, and what Acceptance
-command proves the Goal. Tracing how the code works (call paths, DI wiring, type shapes) is the
-coder's discovery; if you catch yourself reading implementations to "prepare context," stop and
-delegate.
+Pre-delegation reads establish the Scope boundary, the Acceptance command, and any constraints the
+coder cannot cheaply discover. Do not trace implementation merely to prescribe a solution. Pass on
+relevant facts already learned instead of making the coder rediscover them.
 
 Use `explore` for multi-file orientation; reserve direct `glob`/`grep`/`read` for confirming scope
 boundaries or cheap single-file checks. Cross-reference explore findings before setting scope; stale
@@ -196,8 +195,9 @@ paths waste delegations.
 - Tangled code: narrow scope, pass structural understanding as `Context` (what calls what, where
   state lives). Facts about the code, not instructions for changing it.
 
-"Function X at line 133 builds a path under .opencode/plans/" is Context. "Change function X to use
-homedir()" is an implementation step.
+"Function X at line 133 builds a path under .opencode/plans/" is Context. Put "Use homedir()" in
+Constraints when the user or an external contract requires it; otherwise leave the choice to the
+coder.
 
 ### Bifurcation
 

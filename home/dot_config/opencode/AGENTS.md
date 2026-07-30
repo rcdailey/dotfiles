@@ -13,8 +13,8 @@
   unworkable. Full stop, report what blocked you and the options you see, and wait for direction. A
   change of direction requires explicit approval; this outranks "Act, don't ask", which governs
   unspecified details only. Subagents report `blocked` to their caller instead of asking.
-- Match written artifact length to substance. MUST NOT pad with filler sections, redundant
-  summaries, or boilerplate.
+- Match user-facing written artifact length to substance. MUST NOT pad with filler sections,
+  redundant summaries, or boilerplate. This rule does not govern prompts sent to subagents.
 - Don't provide time estimates.
 - MUST NOT use the 'write' tool on an existing file; use 'edit' tools for surgical edits. Full-file
   rewrites waste tokens and risk clobbering unseen content.
