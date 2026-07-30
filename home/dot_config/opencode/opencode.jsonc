@@ -65,6 +65,7 @@
   "mcp": {},
   "permission": {
     "*": "allow",
+    "todowrite": "deny",
     // web CLI replaces both search and fetch; deny built-in equivalents
     "websearch": "deny",
     // "webfetch": "deny",
