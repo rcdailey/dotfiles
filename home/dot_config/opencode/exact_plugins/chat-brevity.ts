@@ -19,9 +19,9 @@ import type { Plugin } from "@opencode-ai/plugin";
 
 const REMINDER = [
   "<system-reminder>",
-  "Chat brevity: you MUST answer first in plain words, under 6 lines, with no preamble, headers,",
-  "or volunteered reasoning. Stop when answered: no trailing offers, no recap. The only permitted",
-  "closer, and only when work remains, is your position plus the single next action.",
+  "Chat brevity: you MUST answer first in plain words, with no preamble, headers, or volunteered",
+  "reasoning. Stop when answered: no trailing offers, no recap. The only permitted closer, and",
+  "only when work remains, is your position plus the single next action.",
   "</system-reminder>",
 ].join("\n");
 
