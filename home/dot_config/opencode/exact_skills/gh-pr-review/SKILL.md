@@ -25,7 +25,7 @@ NUMBER` (e.g. `gh-review view sketchy/cortex-backend 2794`, `gh-review start own
 ## Critical Rules
 
 - NEVER submit reviews. The user manually submits pending reviews via GitHub UI.
-- All new review comments MUST go through a pending review. Never post comments directly.
+- All new review comments, replies included, MUST go through a pending review. Never post directly.
 - When a line target is outside diff hunks, `comment` automatically retries as a file-level comment
   on the same file. The output includes a `note:` line indicating the fallback. No manual retry or
   relocation needed.
@@ -69,11 +69,15 @@ To discard a pending review: `gh-review delete PRR_...`.
 
 ## Replying to Comments
 
-`gh-review reply` posts to an existing thread. It auto-detects whether the target is a review thread
-or conversation comment and routes to the correct API.
+`gh-review reply` adds a threaded reply to an existing review thread as part of a pending review, so
+it stays invisible until the user submits. It resolves the pending review itself; pass `--review-id`
+only when more than one exists. With no pending review it errors instead of posting: `start` one
+first, and treat replies as part of the same review pass as your inline comments.
 
 The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` output headers (e.g.
 `@reviewer (2026-05-14) #98765 PRRC_kwDO...:`). Extract the number after `#`, not the node ID.
+
+Conversation comments (the PR's main timeline) have no thread and cannot be replied to this way.
 
 ## Editing and Removing Comments
 
