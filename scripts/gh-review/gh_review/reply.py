@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import textwrap
 from typing import Any
 
 import click
 
 from gh_review._errors import GhError, die
-from gh_review._gh import gh_graphql, gh_graphql_mutation, split_repo
+from gh_review._gh import gh_graphql, gh_graphql_mutation, gh_rest, split_repo
 
 _CONTEXT_QUERY = textwrap.dedent("""\
     query($owner:String!, $repo:String!, $number:Int!) {
@@ -50,6 +51,28 @@ def _find_thread(threads: list[dict[str, Any]], comment_id: int) -> str | None:
     return None
 
 
+def _reply_now(repo: str, number: int, comment_id: int, body: str) -> None:
+    """Post a threaded reply immediately, outside any pending review."""
+    try:
+        raw = gh_rest(
+            "POST",
+            f"repos/{repo}/pulls/{number}/comments/{comment_id}/replies",
+            body={"body": body},
+            jq="{id, html_url}",
+        )
+    except GhError as exc:
+        if exc.status == 404:
+            die(
+                f"comment {comment_id} is not a review comment on {repo}#{number} "
+                "(conversation comments do not support threaded replies)"
+            )
+        die(f"failed to post reply: {exc}")
+    data = json.loads(raw)
+    click.echo(f"id: {data['id']}")
+    click.echo(f"url: {data['html_url']}")
+    click.echo("state: PUBLISHED")
+
+
 @click.command()
 @click.argument("repo")
 @click.argument("number", type=int)
@@ -60,13 +83,32 @@ def _find_thread(threads: list[dict[str, Any]], comment_id: int) -> str | None:
     default=None,
     help="PRR_... node id; defaults to the existing pending review",
 )
-def cli(repo: str, number: int, comment_id: int, body: str, review_id: str | None) -> None:
+@click.option(
+    "--publish",
+    is_flag=True,
+    help="post the reply immediately instead of attaching it to a pending review",
+)
+def cli(
+    repo: str,
+    number: int,
+    comment_id: int,
+    body: str,
+    review_id: str | None,
+    publish: bool,
+) -> None:
     """Reply to a review comment thread on a pending review.
 
     The reply stays unsubmitted until the pending review is submitted, so it is
     invisible to everyone else until then. Requires a pending review to attach
-    to; start one with `gh-review start` first.
+    to; start one with `gh-review start` first, or pass --publish to post the
+    reply immediately.
     """
+    if publish:
+        if review_id:
+            die("--publish cannot be combined with --review-id")
+        _reply_now(repo, number, comment_id, body)
+        return
+
     if review_id and not review_id.startswith("PRR_"):
         die(f"invalid review id: {review_id} (expected PRR_... node id)")
 

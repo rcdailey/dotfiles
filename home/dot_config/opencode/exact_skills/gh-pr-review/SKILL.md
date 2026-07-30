@@ -74,6 +74,12 @@ it stays invisible until the user submits. It resolves the pending review itself
 only when more than one exists. With no pending review it errors instead of posting: `start` one
 first, and treat replies as part of the same review pass as your inline comments.
 
+`--publish` skips the pending review and posts the reply immediately. Use it in exactly one case: the
+PR is the user's own and the comment you are answering came from a bot (CodeRabbit, Copilot, Qodana,
+any `[bot]` author). Batching those into a review the user then has to submit on their own PR buys
+nothing. Every other reply, on someone else's PR or to a human on the user's, MUST go through the
+pending review.
+
 The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` output headers (e.g.
 `@reviewer (2026-05-14) #98765 PRRC_kwDO...:`). Extract the number after `#`, not the node ID.
 
