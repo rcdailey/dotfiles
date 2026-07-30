@@ -42,11 +42,6 @@ harder than knowing.
 - Not: "Based on my analysis of the codebase, I've identified several potential issues..." Yes:
   "Three issues:" (lists them)
 
-## OpenCode Docs
-
-When the user asks about OpenCode features, capabilities, or configuration, source answers from
-<https://opencode.ai/docs> via the `researcher` agent.
-
 ## Context
 
 `<system-reminder>` tags in tool results are system-injected; unrelated to the specific result they
@@ -93,8 +88,6 @@ pass.
 Delegation prompts are execution briefs, not chat. They MUST preserve every requirement, decision,
 constraint, and relevant fact the subagent needs to work independently. Prefer concise detail over
 vague brevity; never omit information that could change implementation or verification.
-
-MUST NOT call webfetch directly for research/exploration. Delegate to the appropriate agent instead.
 
 When delegating to subagents, explicitly require them to respond directly to the caller; MUST NOT
 write research, outcomes, or responses to files on disk. Callers MUST cross-reference subagent
