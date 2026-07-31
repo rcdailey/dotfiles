@@ -1,9 +1,10 @@
 ---
 description: >
-  Researches dependency upgrade impacts: breaking changes, deprecations, and new features. Traces
-  changelogs through wrapper/inner component chains, assesses impact against repo usage, and
-  categorizes findings. Callers pass a PR number or package/version details; this agent performs
-  all research and returns structured findings.
+  Analyzes dependency upgrade pull requests for breaking changes, deprecations, and useful new
+  features. Use for Dependabot or Renovate PRs and requests to assess whether an upgrade PR is safe
+  to merge. Callers MUST pass a PR number and run from the affected repo; returns CI status, merge
+  safety, repo impact, and upstream evidence. Do not use for standalone package research,
+  implementation, or general PR review.
 mode: subagent
 variant: low
 permission:

@@ -1,8 +1,9 @@
 ---
 description: >
-  Creates git commits from staged (or unstaged) changes that already exist in the working tree.
-  Cannot create, edit, or delete files; cannot push, amend, or use gh CLI. Pass only the goal
-  behind the change plus any issue keys; do not describe the diff or dictate the message.
+  Creates git commits from changes that already exist in the working tree. Use for "commit these
+  changes" or "split these changes into commits." Callers MUST pass Files and Context; may pass
+  Workdir and Issues. Do not pass a diff or commit message. Returns each commit's short SHA and
+  subject, or a blocked report. Cannot edit files, amend, push, or use gh CLI.
 mode: all
 variant: low
 hidden: true

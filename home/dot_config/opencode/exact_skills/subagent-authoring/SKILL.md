@@ -1,9 +1,9 @@
 ---
 name: subagent-authoring
 description: >-
-  Use when creating, editing, or refactoring custom OpenCode agent definitions (`.md` or
-  `.md.tmpl` files in an agents directory, including chezmoi source forms). Triggers on any
-  edit to an agent definition file. Do NOT use for AGENTS.md, SKILL.md, or slash commands.
+  Use when creating, editing, refactoring, or reviewing OpenCode agent definitions in Markdown
+  (`.md`, `.md.tmpl`) or the `agent` section of `opencode.json`, including primary, subagent, and
+  `all` modes and chezmoi source forms. Do NOT use for AGENTS.md, SKILL.md, or slash commands.
 ---
 
 # Subagent Authoring
