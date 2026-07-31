@@ -34,7 +34,7 @@
         },
       },
     },
-    "coder": { "model": "{env:OPENCODE_MODEL_CAPABLE}" },
+    "coder": { "model": "{env:OPENCODE_MODEL_BALANCED}" },
     "commit": { "model": "{env:OPENCODE_MODEL_BALANCED}" },
     "researcher": { "model": "{env:OPENCODE_MODEL_BALANCED}" },
     "reviewer": { "model": "{env:OPENCODE_MODEL_CAPABLE}" },
