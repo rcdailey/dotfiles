@@ -81,7 +81,7 @@
   "permission": {
     "*": "allow",
     "todowrite": "deny",
-    // web CLI replaces both search and fetch; deny built-in equivalents
+    // Disable built-in search; external research is delegated
     "websearch": "deny",
     // "webfetch": "deny",
 

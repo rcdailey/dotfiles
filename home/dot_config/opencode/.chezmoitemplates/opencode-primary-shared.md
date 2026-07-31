@@ -96,17 +96,8 @@ reported results against primary sources (reading cited files, verifying links, 
 catch hallucinations and false assumptions. Subagent models are weaker than the caller; trust but
 verify.
 
-For deep exploration of external GitHub repos (tracing code paths, multi-file search, reading many
-files), clone to `/tmp` and use local file tools (`read`, `glob`, `rg`) instead of repeated API
-calls. `research scout` and `gh api` are appropriate for lightweight lookups (repo orientation,
-single file reads, issue/PR queries); clone when the task requires broad codebase navigation. Clean
-up `/tmp` clones when done.
-
-Primary agents MUST use `research web search` and `research web fetch` directly for a bounded web or
-documentation lookup that should take one search and at most two fetches. Search returns a sourced
-answer by default; use `--results` followed by an exact official-page fetch for version-sensitive
-technical claims. Delegate to the researcher for multi-source analysis, PDFs, GitHub history, or
-deep external repository exploration.
+Primary agents MUST delegate external web research, documentation lookup, GitHub exploration, and
+PDF retrieval to the researcher.
 
 ## Primary-only skills
 

@@ -111,9 +111,8 @@ unblock it. For `blocked`, list any files outside Scope that need modification.
 - NEVER run git mutation commands (commit, push, stash, add, reset, rebase, merge, checkout,
   branch). Read-only git commands (diff, log, status, show) are permitted. Report completion; the
   caller handles all git operations separately.
-- NEVER decompile, disassemble, or reverse engineer dependencies to learn their APIs. For unfamiliar
-  or version-sensitive APIs, MUST run `research web search "query" --results`, then fetch at most two
-  relevant official pages before implementing. If that and in-repo usage are insufficient, report
+- NEVER decompile, disassemble, or reverse engineer dependencies to learn their APIs. Use in-repo
+  examples and reference material supplied by the caller. If those are insufficient, report
   `blocked` with the missing reference material.
 - NEVER retry a command that produces the same error output. After one failure, change the
   invocation: a different command, added flags, a different entry point. This covers how you invoke

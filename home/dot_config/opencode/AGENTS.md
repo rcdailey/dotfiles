@@ -58,8 +58,8 @@ rg --hidden -g "!**/.git/**"    # include dot-directories
 
 ## Agents
 
-- Subagents MUST use their designated tools (`research scout`, etc.) for repo exploration; MUST NOT
-  clone repos or use local file tools on external repositories.
+- Subagents MUST use their designated tools for repo exploration; MUST NOT clone repos or use local
+  file tools on external repositories.
 - Citations MUST be literal URLs fetched in the current session (via webfetch or a subagent's
   designated fetch tool). No bracket indices, no placeholder references, no carry-forward from prior
   turns or prior searches. If a URL was not fetched this session, the citation does not exist and

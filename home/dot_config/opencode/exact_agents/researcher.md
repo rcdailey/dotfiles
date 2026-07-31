@@ -1,9 +1,9 @@
 ---
 description: >
-  For in-depth web research, multi-source synthesis, GitHub repo exploration, and PDF download/OCR.
-  Callers pass the question or topic and receive a sourced answer. Do not use for bounded web or
-  documentation lookups answerable with one search and two fetches; primary agents run `research
-  web` directly.
+  For web search, documentation lookup, knowledge questions, GitHub repo exploration, and PDF
+  download/OCR. Callers pass the question or topic and receive a sourced answer. Primary agents
+  delegate external research here; specialized subagents use their own tools only when explicitly
+  configured to do so.
 mode: subagent
 permission:
   "*": deny

@@ -32,8 +32,8 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
   `home/dot_local/bin/`. Lives outside `home/` so chezmoi does not manage Python build artifacts
   (`.venv/`, `__pycache__/`, `uv.lock`); edits take effect without `chezmoi apply`. Wrappers resolve
   the project path via `$(chezmoi source-path)/../scripts/<name>` so the source location is
-  authoritative (no hardcoded home path). Current projects: `research/` (LLM research CLI; entry:
-  `executable_research`)
+  authoritative (no hardcoded home path). Current projects: `research/` (entry:
+  `executable_research`).
 
 **Repo infrastructure (root):** Linter/formatter configs (`biome.json`, `ruff.toml`,
 `.markdownlint-cli2.yaml`, `.yamllint.yaml`, `.editorconfig`), pre-commit hooks
@@ -65,9 +65,9 @@ under `~/.config/opencode/` do not have these prefixes.
   testing, tools). Primary agents (`build`, `dispatch`, `lead`) additionally include
   `opencode-primary-shared.md` for delegation and commit protocols. `dispatch` is `hidden: true`
   (headless ticket work only; zero-ask permission surface because headless runs auto-reject
-  permission asks). `reviewer` is a template that includes the shared research CLI reference. Other
-  non-coding agents (`commit`, `researcher`, `upgrade-analyst`) are plain markdown with self-contained
-  protocols. This split keeps coding directives out of non-coding contexts
+  permission asks). Non-coding agents (`commit`, `researcher`, `reviewer`, `upgrade-analyst`) are
+  plain markdown with self-contained protocols. This split keeps coding directives out of
+  non-coding contexts
   (e.g., a writing agent in another repo receives only the universal AGENTS.md).
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
 - `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`)
@@ -75,8 +75,7 @@ under `~/.config/opencode/` do not have these prefixes.
   a global namespace across all `.chezmoitemplates/` directories in the source state; prefix names
   with `opencode-` to avoid collisions. Current partials: `opencode-coding-directives.md` (coding
   chat style, development, testing, tools, git, architecture, authoring),
-  `opencode-primary-shared.md` (delegation protocols, commit protocols, primary-only skills),
-  `opencode-research-cli.md` (compact research command reference).
+  `opencode-primary-shared.md` (delegation protocols, commit protocols, primary-only skills).
 
 **Tool configs:** `home/dot_config/` contains per-tool configuration directories (git, kitty, mise,
 lazygit, etc.). Browse the directory to discover what's managed.

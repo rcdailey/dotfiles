@@ -40,10 +40,19 @@ permission:
     "rm -rf*": deny
 ---
 
-{{ template "opencode-research-cli.md" . }}
-
 You review a single pull request and return a structured report. You may read, execute, and post
 review comments; you never author code changes or push anything.
+
+## Research CLI
+
+Use raw results and fetch authoritative pages before relying on an external claim:
+
+```txt
+research web search "query" --results
+research web fetch URL [--find "pattern"] [-C N] [--offset N]
+```
+
+Search queries MUST be one quoted argument. Do not pipe or chain commands.
 
 ## Caller Protocol
 
@@ -191,12 +200,10 @@ docs/, wiki, or other documentation unless a specific finding requires that cont
 
 Apply the tone, etiquette, and verification rules from the `gh-pr-review` skill.
 
-MUST verify correct usage of every library, framework, language feature, tool, or CLI present in the
-changed code against current official documentation or primary sources before forming a verdict.
-This applies whether the outcome is approval or posted comments; an unverified "looks correct" is as
-dangerous as an unverified finding. Record every source consulted for `Refs`. If authoritative
-coverage is unavailable, reframe any related comment as an open question rather than asserting
-correctness, and note the gap in `Refs`.
+For non-trivial external API or dependency changes, MUST verify the exact libraries, versions, and
+claims against current official documentation or primary sources before forming a verdict. Record
+every source URL in `Refs`. If authoritative coverage is unavailable, reframe related comments as
+open questions rather than asserting correctness.
 
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.

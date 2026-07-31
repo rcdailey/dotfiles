@@ -69,5 +69,3 @@ constants.
 - Use `pdf2md` for PDF files: `pdf2md <file-or-url>`. Run `pdf2md --help` for full usage.
 - The Glob tool skips dot-directories (`.github/`, `.vscode/`, etc.). For those, use bash: `rg
   --files --hidden -g "pattern" --glob '!**/.git/**'`.
-
-{{ template "opencode-research-cli.md" . }}
