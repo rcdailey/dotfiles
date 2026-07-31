@@ -6,7 +6,6 @@ description: >
   safety, repo impact, and upstream evidence. Do not use for standalone package research,
   implementation, or general PR review.
 mode: subagent
-variant: low
 permission:
   "*": deny
   grep: allow

@@ -10,18 +10,18 @@
   "agent": {
     "plan": { "disable": true },
     "title": {
-      "model": "{env:OPENCODE_MODEL_FAST}",
+      "model": "{env:OPENCODE_FAST_MODEL}",
     },
     "compaction": {
       "model": "opencode/deepseek-v4-flash",
     },
     "general": {
       "tools": { "question": false },
-      "model": "{env:OPENCODE_MODEL_BALANCED}",
-      "variant": "low",
+      "model": "{env:OPENCODE_BALANCED_MODEL}",
+      "variant": "{env:OPENCODE_BALANCED_VARIANT}",
     },
     "explore": {
-      "model": "{env:OPENCODE_MODEL_FAST}",
+      "model": "{env:OPENCODE_FAST_MODEL}",
       "permission": {
         "edit": "deny",
         "question": "deny",
@@ -34,11 +34,26 @@
         },
       },
     },
-    "coder": { "model": "{env:OPENCODE_MODEL_BALANCED}" },
-    "commit": { "model": "{env:OPENCODE_MODEL_BALANCED}" },
-    "researcher": { "model": "{env:OPENCODE_MODEL_BALANCED}" },
-    "reviewer": { "model": "{env:OPENCODE_MODEL_CAPABLE}" },
-    "upgrade-analyst": { "model": "{env:OPENCODE_MODEL_BALANCED}" },
+    "coder": {
+      "model": "{env:OPENCODE_BALANCED_MODEL}",
+      "variant": "{env:OPENCODE_BALANCED_VARIANT}",
+    },
+    "commit": {
+      "model": "{env:OPENCODE_BALANCED_MODEL}",
+      "variant": "{env:OPENCODE_BALANCED_VARIANT}",
+    },
+    "researcher": {
+      "model": "{env:OPENCODE_BALANCED_MODEL}",
+      "variant": "{env:OPENCODE_BALANCED_VARIANT}",
+    },
+    "reviewer": {
+      "model": "{env:OPENCODE_CAPABLE_MODEL}",
+      "variant": "{env:OPENCODE_CAPABLE_VARIANT}",
+    },
+    "upgrade-analyst": {
+      "model": "{env:OPENCODE_BALANCED_MODEL}",
+      "variant": "{env:OPENCODE_BALANCED_VARIANT}",
+    },
   },
   "lsp": false,
   "formatter": {

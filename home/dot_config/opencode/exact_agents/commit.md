@@ -5,7 +5,6 @@ description: >
   Workdir and Issues. Do not pass a diff or commit message. Returns each commit's short SHA and
   subject, or a blocked report. Cannot edit files, amend, push, or use gh CLI.
 mode: all
-variant: low
 hidden: true
 permission:
   "*": deny

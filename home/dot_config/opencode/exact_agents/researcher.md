@@ -5,7 +5,6 @@ description: >
   documentation lookups answerable with one search and two fetches; primary agents run `research
   web` directly.
 mode: subagent
-variant: low
 permission:
   "*": deny
   bash:
