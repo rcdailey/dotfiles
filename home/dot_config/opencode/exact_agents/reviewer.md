@@ -2,8 +2,8 @@
 description: >
   Reviews a single pull request and posts a pending GitHub review via gh-review. Callers pass a
   repo target (directory path or owner/repo), PR number, and optional priority scope; this agent
-  gathers context, analyzes, posts comments, and returns a structured report. Also handles
-  commit-range and local-changes modes (analyze and report only; no pending review).
+  gathers context, analyzes, posts comments, and returns a structured report. Do not use for commit
+  ranges or local code changes.
 mode: subagent
 hidden: true
 variant: low
@@ -57,10 +57,8 @@ A caller may resume this task later for a follow-up pass, passing only what chan
 report (new commits, resolved threads, unanswered questions). Re-verify that delta, not the whole
 PR; the diff, ticket, and findings you already gathered still stand.
 
-Alternative modes (no PR number):
-
-- **Commit range** (e.g., `main..feature`): analyze and report only; no pending review posted
-- **Local changes**: analyze staged/unstaged changes and report; no pending review posted
+A PR number is required. If the caller omits it, return `blocked` rather than reviewing a commit
+range or local changes.
 
 ## Return Contract
 
@@ -91,15 +89,12 @@ Rules for filling it:
   already flagged on the PR entirely.
 - `Refs`: bare identifiers only. Read-only file paths that produced no finding are not refs.
 - Empty sections collapse to `**Posted:** none` on one line.
-- Commit-range and local-changes modes: drop `PR` and `Review`, list all findings under `Posted`.
 - Follow-up passes: same template, scoped to the delta. `Review: none` when nothing new warranted a
   comment. One line may state what execution confirmed or failed to confirm.
 
 ## Process
 
 ### 1. Gather Context
-
-**For PRs:**
 
 Fetch PR metadata:
 
@@ -155,10 +150,6 @@ subissue of. The ticket defines what the PR was supposed to do; a diff that is i
 can still solve the wrong problem or miss stated requirements. Treat unmet requirements and
 contradicted decisions as findings. No equivalent step for other trackers.
 
-**For commits:** `git log {range} --oneline` and `git diff {range}`
-
-**For local changes:** `git status` and `git diff HEAD`
-
 ### 2. Skip Already-Flagged Issues
 
 Before formulating feedback, cross-reference against the `gh-review view` output. If a bot or human
@@ -192,11 +183,10 @@ second pattern where the repo already has one? Is the abstraction earning its ex
 a simpler shape? How will this age as the codebase grows? Derive the repo's conventions from the
 surrounding code you already read; do not impose a fixed rubric.
 
-Read changed files from the worktree path (or current working copy for non-PR reviews). Read at most
-2-3 directly relevant callsites per finding to understand how the changed code is used; for design
-findings, prefer callsites that reveal how the contract is consumed. Do not explore broadly or read
-unrelated files. Do not read README, docs/, wiki, or other documentation unless a specific finding
-requires that context.
+Read changed files from the worktree path. Read at most 2-3 directly relevant callsites per finding
+to understand how the changed code is used; for design findings, prefer callsites that reveal how
+the contract is consumed. Do not explore broadly or read unrelated files. Do not read README,
+docs/, wiki, or other documentation unless a specific finding requires that context.
 
 Apply the tone, etiquette, and verification rules from the `gh-pr-review` skill.
 
@@ -211,8 +201,6 @@ Only use local `git diff` with path filters when a specific finding needs diff h
 targeting. Do not fetch the full diff.
 
 ### 4. Compose and Post Comments
-
-Non-PR modes stop here: compile the report and return it. Do not post any review.
 
 Filter before posting: post only findings at or above the caller's priority scope (default
 critical/high). Findings below the threshold stay out of the review and appear under `Not posted`,
