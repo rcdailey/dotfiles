@@ -21,7 +21,7 @@
       "variant": "low",
     },
     "explore": {
-      "model": "{env:OPENCODE_MODEL_BALANCED}",
+      "model": "{env:OPENCODE_MODEL_FAST}",
       "permission": {
         "edit": "deny",
         "question": "deny",
