@@ -362,5 +362,3 @@ query($owner:String!,$repo:String!,$number:Int!) {
 
 class APIError(Exception):
     """GitHub API call failed."""
-
-    pass

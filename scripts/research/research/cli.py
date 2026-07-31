@@ -33,7 +33,7 @@ class _AutoGroup(HelpfulGroup):
                 continue
             try:
                 mod = importlib.import_module(f"research.{info.name}")
-            except Exception:
+            except Exception:  # noqa: BLE001, S112
                 continue
             cmd = getattr(mod, "cli", None)
             if isinstance(cmd, click.Command):

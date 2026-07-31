@@ -1,8 +1,9 @@
 ---
 description: >
-  For web search, documentation lookup, knowledge questions, GitHub repo exploration, and PDF
-  download/OCR. Callers MUST delegate here instead of using webfetch directly. Pass the question or
-  topic; this agent searches, reads, and synthesizes an answer.
+  For in-depth web research, multi-source synthesis, GitHub repo exploration, and PDF download/OCR.
+  Callers pass the question or topic and receive a sourced answer. Do not use for bounded web or
+  documentation lookups answerable with one search and two fetches; primary agents run `research
+  web` directly.
 mode: subagent
 variant: low
 permission:
@@ -35,8 +36,8 @@ tool invocations. Non-research commands (`date`, `pwd`, `ls`, `curl`, `cat`) are
 ### web commands
 
 ```txt
-research web search "query"                     # search (5 results)
-research web search "query" --max-results 10    # more results
+research web search "query" --results                     # search (5 results)
+research web search "query" --results --max-results 10    # more results
 research web fetch URL                          # fetch as markdown (truncated at 20k chars)
 research web fetch URL --find "pattern"         # paragraphs matching regex pattern
 research web fetch URL --find "pattern" -C 2    # with 2 paragraphs of context
@@ -44,19 +45,22 @@ research web fetch URL --max-chars 0            # full output, no truncation
 research web fetch URL --offset 20000           # start at char 20000 (pagination)
 ```
 
+MUST pass `--results` for every search, then fetch and synthesize from the relevant sources. The
+default sourced answer is for direct primary-agent lookups.
+
 `--find` uses Python regex (case-insensitive). Use `|` for alternation: `--find "SSO|SAML|OIDC"`.
 Do NOT use `\|`; it matches a literal pipe character, not alternation. Invalid regex falls back to
 literal substring matching.
 
 `--offset` slices content before `--find` and `--max-chars` apply. Use it to paginate through large
 documents: first fetch caches the content, subsequent `--offset` calls are free. The output includes
-a marker with the offset position and total document length.
+a marker with the offset position and total document length. For official documentation, probe the
+site's `/llms.txt` and fetch only the relevant linked pages when it is available.
 
 **Large documents:** URL fragment anchors (`#section-X`) are ignored; the full page is always
 fetched. For dense specs (RFCs, standards), use narrow `--find` patterns targeting the specific
 section text. Avoid broad patterns like `MUST|SHOULD|MAY` that match every paragraph. When
-`--find` returns too much, use `--offset` to paginate instead. Plain text URLs (`.txt`) may fail
-content extraction; prefer the HTML version.
+`--find` returns too much, use `--offset` to paginate instead.
 
 GitHub URLs are auto-rerouted to the correct scout subcommand (issues, PRs, discussions, blobs,
 commits). PDF URLs auto-reroute to `research pdf`. Both still burn a budget slot; call the correct
@@ -142,7 +146,7 @@ Failed calls are auto-refunded.
 1. **Assess.** Choose starting tool:
    - Named project: `research scout orient` first (repo docs > web search)
    - PDF: `research pdf URL`
-   - General/current events: `research web search`
+   - General/current events: `research web search --results`
 
 2. **Search.** If results are thin, rephrase once. After 2 failures, switch tools or synthesize.
    Once you have a relevant page, use `--find` to extract details rather than running more searches.

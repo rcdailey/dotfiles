@@ -62,30 +62,28 @@ def translate_error(action: str, e: Exception) -> str:
     name = type(e).__name__
     reason = _ERROR_MESSAGES.get(name)
     if reason is None:
-        clean = name[6:] if name.startswith("Linkup") else name
+        clean = name.removeprefix("Linkup")
         reason = f"{clean}: {e}"
     return format_error(action, reason)
 
 
-def search(query: str, max_results: int = 5) -> list:
-    """Execute a Linkup search and return results."""
+def search(query: str, max_results: int = 5, sourced_answer: bool = True) -> object:
+    """Execute a Linkup search or sourced-answer request."""
     client = get_client()
     try:
         response = client.search(
             query=query,
             depth="standard",
-            output_type="searchResults",
+            output_type="sourcedAnswer" if sourced_answer else "searchResults",
             max_results=max_results,
         )
-        return response.results
+        return response
     except Exception as e:
         raise SearchError(translate_error("search", e)) from e
 
 
 class SearchError(Exception):
     """Search operation failed."""
-
-    pass
 
 
 def format_search_results(results: list) -> str:
@@ -101,3 +99,12 @@ def format_search_results(results: list) -> str:
             snippet = snippet[:300] + "..."
         lines.append(f"{i}. {r.name}\n   URL: {r.url}\n   {snippet}")
     return "\n\n".join(lines) if lines else "[no results]"
+
+
+def format_sourced_answer(response: object) -> str:
+    """Format Linkup's sourced-answer response as an answer and source list."""
+    answer = getattr(response, "answer", "") or "[no answer]"
+    sources = getattr(response, "sources", []) or []
+    if not sources:
+        return answer
+    return f"{answer}\n\n## Sources\n\n{format_search_results(list(sources))}"

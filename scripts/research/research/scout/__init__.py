@@ -15,4 +15,4 @@ def cli() -> None:
 
 
 # Submodules attach their commands to `cli` on import.
-from research.scout import commits, explore, issues, local, search, synthesis  # noqa: E402,F401
+from research.scout import commits, explore, issues, local, search, synthesis  # noqa: E402, F401

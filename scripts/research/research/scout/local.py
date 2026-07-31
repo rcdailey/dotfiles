@@ -63,14 +63,13 @@ def rg_cmd(
         pathspecs: list[str] = []
         if path and path != ".":
             pathspecs.append(path)
-        for g in globs:
-            pathspecs.append(g)
+        pathspecs.extend(globs)
         for ft in filetypes:
             pathspecs.append(f"*.{ft}")
         if pathspecs:
             args.append("--")
             args.extend(pathspecs)
-        result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir)
+        result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir, check=False)
     else:
         args = [
             "rg",
@@ -93,7 +92,7 @@ def rg_cmd(
         if context > 0:
             args.extend(["-C", str(context)])
         args.extend([pattern, path])
-        result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir)
+        result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir, check=False)
 
     if result.returncode == 0:
         click.echo(result.stdout, nl=False)
@@ -121,6 +120,7 @@ def find_cmd(repo: str, pattern: str, limit: int, ref: str | None) -> None:
             capture_output=True,
             text=True,
             cwd=repo_dir,
+            check=False,
         )
         if result.returncode != 0:
             click.echo(f"error: git ls-tree failed: {result.stderr.strip()}", err=True)
@@ -164,6 +164,7 @@ def cat_cmd(repo: str, path: str, limit: int, offset: int, ref: str | None) -> N
             capture_output=True,
             text=True,
             cwd=repo_dir,
+            check=False,
         )
         if result.returncode != 0:
             err = result.stderr.strip()

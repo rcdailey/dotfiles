@@ -29,8 +29,8 @@ _stealth: Any = None
 def _ensure_packages() -> None:
     """Install playwright packages via uv if not importable."""
     try:
-        import playwright  # noqa: F401
-        import playwright_stealth  # noqa: F401
+        import playwright
+        import playwright_stealth
     except ImportError:
         uv = shutil.which("uv")
         if not uv:
@@ -42,6 +42,7 @@ def _ensure_packages() -> None:
             [uv, "pip", "install", "--python", sys.executable, *_PACKAGES],
             capture_output=True,
             text=True,
+            check=False,
         )
         if result.returncode != 0:
             raise RuntimeError(f"failed to install playwright packages: {result.stderr.strip()}")
@@ -64,6 +65,7 @@ def _ensure_browser(pw: Any) -> None:
         [sys.executable, "-m", "playwright", "install", "chromium"],
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(f"failed to install chromium: {result.stderr.strip()}")

@@ -9,11 +9,8 @@ from urllib.parse import urlparse, urlunparse
 import click
 import trafilatura
 from curl_cffi.requests import get as _http_get
-from curl_cffi.requests.exceptions import (
-    ConnectionError as _CurlConnError,
-    RequestException,
-    Timeout,
-)
+from curl_cffi.requests.exceptions import ConnectionError as _CurlConnError
+from curl_cffi.requests.exceptions import RequestException, Timeout
 from lxml import html as lxml_html
 
 from research._browser import fetch_with_browser
@@ -96,7 +93,7 @@ def _extract_reddit(html_text: str) -> str:
     """Extract post and comments from old.reddit.com HTML as markdown."""
     try:
         tree = lxml_html.fromstring(html_text)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return ""
     parts: list[str] = []
 
@@ -177,6 +174,9 @@ def fetch_markdown(url: str) -> str:
     content_type = response.headers.get("content-type", "")
     if any(content_type.startswith(t) for t in _FILE_CONTENT_TYPES):
         raise FetchError("URL serves a file, not an HTML page; try `research pdf URL` instead")
+
+    if content_type.lower().startswith("text/plain"):
+        return response.text
 
     if is_reddit:
         markdown = _extract_reddit(response.text)

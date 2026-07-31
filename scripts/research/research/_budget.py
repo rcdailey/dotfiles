@@ -48,6 +48,14 @@ def budget_message(count: int) -> str:
     return f"\n{counter}"
 
 
+def _session_key(key: str) -> str | None:
+    """Scope a budget key to the opt-in research session."""
+    from research._cache import get_session_id
+
+    session_id = get_session_id()
+    return f"budget:{session_id}:{key}" if session_id else None
+
+
 def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
     """Reserve a budget slot and print the footer.
 
@@ -57,10 +65,13 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
     If cached_url was already seen this session, no slot is consumed.
     On budget exhaustion, prints the message then exits 1.
     """
-    seen_key = f"{_SEEN_PREFIX}{cached_url}" if cached_url else None
+    count_key = _session_key(_COUNT_KEY)
+    if count_key is None:
+        return
+    seen_key = _session_key(f"{_SEEN_PREFIX}{cached_url}") if cached_url else None
 
     with cache.transact():
-        count = cache.get(_COUNT_KEY, 0)
+        count = cache.get(count_key, 0)
 
         if seen_key and seen_key in cache:
             remaining = MAX_CALLS - count
@@ -70,14 +81,15 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
             )
             return
 
-        count += 1
-        cache.set(_COUNT_KEY, count)
-        if seen_key:
-            cache.set(seen_key, True)
-        click.echo(budget_message(count))
+        if count >= MAX_CALLS:
+            click.echo(budget_message(MAX_CALLS + 1))
+            sys.exit(1)
 
-    if count > MAX_CALLS:
-        sys.exit(1)
+        count += 1
+        cache.set(count_key, count, expire=24 * 3600)
+        if seen_key:
+            cache.set(seen_key, True, expire=24 * 3600)
+        click.echo(budget_message(count))
 
 
 def budget_refund(cache: Cache, cached_url: str | None = None) -> None:
@@ -86,14 +98,17 @@ def budget_refund(cache: Cache, cached_url: str | None = None) -> None:
     Reverses a prior budget_reserve: decrements count and removes the seen
     key if one was recorded. Prints a notice to stderr so the agent sees it.
     """
-    seen_key = f"{_SEEN_PREFIX}{cached_url}" if cached_url else None
+    count_key = _session_key(_COUNT_KEY)
+    if count_key is None:
+        return
+    seen_key = _session_key(f"{_SEEN_PREFIX}{cached_url}") if cached_url else None
 
     with cache.transact():
-        count = cache.get(_COUNT_KEY, 0)
+        count = cache.get(count_key, 0)
         if count <= 0:
             return
         count -= 1
-        cache.set(_COUNT_KEY, count)
+        cache.set(count_key, count, expire=24 * 3600)
         if seen_key and seen_key in cache:
             cache.delete(seen_key)
 
@@ -107,15 +122,20 @@ def budget_refund(cache: Cache, cached_url: str | None = None) -> None:
 
 def get_count(cache: Cache) -> int:
     """Return current call count."""
-    return cache.get(_COUNT_KEY, 0)
+    count_key = _session_key(_COUNT_KEY)
+    return cache.get(count_key, 0) if count_key else 0
 
 
 def format_status(cache: Cache) -> str:
     """Return status string for status command."""
-    count = cache.get(_COUNT_KEY, 0)
+    count_key = _session_key(_COUNT_KEY)
+    if count_key is None:
+        return "No budget session active."
+    count = cache.get(count_key, 0)
     remaining = MAX_CALLS - count
     lines = [f"{count}/{MAX_CALLS} calls used, {remaining} remaining"]
-    url_count = sum(1 for k in cache if isinstance(k, str) and k.startswith(_SEEN_PREFIX))
+    seen_prefix = _session_key(_SEEN_PREFIX)
+    url_count = sum(1 for k in cache if isinstance(k, str) and k.startswith(seen_prefix or ""))
     if url_count:
         lines.append(f"cached URLs: {url_count}")
     return "\n".join(lines)

@@ -8,9 +8,16 @@ import sys
 import click
 
 from research._budget import budget_refund, budget_reserve
-from research._cache import get_cache, read_cached_content, write_cached_content
+from research._cache import (
+    cache_url,
+    get_cache,
+    read_cached_content,
+    read_cached_search,
+    write_cached_content,
+    write_cached_search,
+)
 from research._fetch import FetchError, fetch_markdown
-from research._linkup import SearchError, format_search_results
+from research._linkup import SearchError, format_search_results, format_sourced_answer
 from research._render import (
     DEFAULT_MAX_CHARS,
     apply_find,
@@ -32,16 +39,30 @@ def cli() -> None:
 @cli.command(name="search")
 @click.argument("query")
 @click.option("--max-results", type=int, default=DEFAULT_MAX_RESULTS)
-def search_cmd(query: str, max_results: int) -> None:
+@click.option("--results", is_flag=True, help="return search results instead of a sourced answer")
+def search_cmd(query: str, max_results: int, results: bool) -> None:
     """Search the web via Linkup."""
+    sourced_answer = not results
+    cache_key = f"{sourced_answer}:{max_results}:{query}"
+    cached = read_cached_search(cache_key)
+    if cached is not None:
+        click.echo(cached)
+        return
+
     cache = get_cache()
     budget_reserve(cache, None)
 
     try:
         from research._linkup import search
 
-        results = search(query, max_results)
-        click.echo(format_search_results(results))
+        response = search(query, max_results, sourced_answer)
+        rendered = (
+            format_sourced_answer(response)
+            if sourced_answer
+            else format_search_results(response.results)
+        )
+        write_cached_search(cache_key, rendered)
+        click.echo(rendered)
     except SearchError as e:
         budget_refund(cache)
         click.echo(f"error: {e}", err=True)
@@ -67,7 +88,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
 
             if len(parts) >= 4 and parts[2] == "discussions" and parts[3].isdigit():
                 cache = get_cache()
-                budget_reserve(cache, url.split("?")[0].split("#")[0])
+                budget_reserve(cache, cache_url(url))
                 number = int(parts[3])
                 reroute_message(
                     url,
@@ -99,7 +120,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
 
             elif len(parts) >= 4 and parts[2] == "issues" and parts[3].isdigit():
                 cache = get_cache()
-                budget_reserve(cache, url.split("?")[0].split("#")[0])
+                budget_reserve(cache, cache_url(url))
                 number = int(parts[3])
                 reroute_message(
                     url, f"scout issue {owner}/{repo_name} {number}", "github.com issue"
@@ -127,7 +148,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
 
             elif len(parts) >= 4 and parts[2] in ("pull", "pulls") and parts[3].isdigit():
                 cache = get_cache()
-                budget_reserve(cache, url.split("?")[0].split("#")[0])
+                budget_reserve(cache, cache_url(url))
                 number = int(parts[3])
                 reroute_message(url, f"scout pr {owner}/{repo_name} {number}", "github.com PR")
                 from research._ghapi import APIError, view_pr
@@ -157,7 +178,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
 
             elif len(parts) >= 4 and parts[2] == "blob":
                 cache = get_cache()
-                budget_reserve(cache, url.split("?")[0].split("#")[0])
+                budget_reserve(cache, cache_url(url))
                 ref = parts[3]
                 file_path = "/".join(parts[4:])
                 reroute_message(
@@ -174,6 +195,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
                     capture_output=True,
                     text=True,
                     cwd=repo_dir,
+                    check=False,
                 )
                 if result_proc.returncode != 0:
                     click.echo(f"error: file not found: {file_path} at ref {ref}", err=True)
@@ -188,7 +210,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
 
             elif len(parts) >= 4 and parts[2] == "commit":
                 cache = get_cache()
-                budget_reserve(cache, url.split("?")[0].split("#")[0])
+                budget_reserve(cache, cache_url(url))
                 sha = parts[3]
                 reroute_message(url, f"scout commit {owner}/{repo_name} {sha}", "github.com commit")
                 from research._ghapi import APIError, view_commit
@@ -230,7 +252,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
             else:
                 # Default: scout orient for bare owner/repo URLs
                 cache = get_cache()
-                budget_reserve(cache, url.split("?")[0].split("#")[0])
+                budget_reserve(cache, cache_url(url))
                 reroute_message(url, f"scout orient {owner}/{repo_name}", "github.com pages")
                 from research.scout.explore import _render_orient
 
@@ -244,7 +266,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
         _do_pdf(url, find, context, max_chars, offset)
         return
 
-    base_url = url.split("?")[0]
+    base_url = cache_url(url)
     cache = get_cache()
 
     cached = read_cached_content(base_url)

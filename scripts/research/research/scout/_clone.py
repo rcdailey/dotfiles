@@ -54,6 +54,7 @@ def _do_clone(repo_dir: Path, owner: str, repo: str) -> None:
         ],
         capture_output=True,
         text=True,
+        check=False,
         env=clone_env,
     )
     if result.returncode != 0:
@@ -76,6 +77,7 @@ def _do_pull_if_stale(repo_dir: Path, owner: str, repo: str) -> None:
         cwd=repo_dir,
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode != 0:
         click.echo(
@@ -91,6 +93,7 @@ def _do_pull_if_stale(repo_dir: Path, owner: str, repo: str) -> None:
         cwd=repo_dir,
         capture_output=True,
         text=True,
+        check=False,
     )
     marker.touch()
 
@@ -184,6 +187,7 @@ def ensure_ref(owner: str, repo: str, ref: str) -> str:
             cwd=repo_dir,
             capture_output=True,
             text=True,
+            check=False,
         )
     if result.returncode != 0:
         click.echo(f"error: ref not found: {ref}", err=True)
@@ -216,6 +220,7 @@ def _resolve_one(repo_dir: Path, ref: str) -> str | None:
         cwd=repo_dir,
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode == 0:
         return result.stdout.strip()

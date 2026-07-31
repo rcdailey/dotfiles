@@ -8,7 +8,7 @@ import sys
 import click
 
 from research._budget import budget_refund, budget_reserve
-from research._cache import get_cache, read_cached_content, write_cached_content
+from research._cache import cache_url, get_cache, read_cached_content, write_cached_content
 from research._render import DEFAULT_MAX_CHARS, apply_find, truncate_output
 
 
@@ -25,7 +25,7 @@ def cli(url: str, find: str | None, context: int, max_chars: int, offset: int) -
 
 def _do_pdf(url: str, find: str | None, context: int, max_chars: int, offset: int = 0) -> None:
     """Internal PDF handler shared with web reroute."""
-    base_url = url.split("?")[0]
+    base_url = cache_url(url)
     cache = get_cache()
 
     cached = read_cached_content(base_url)

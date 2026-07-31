@@ -89,7 +89,9 @@ def apply_find(text: str, pattern: str, context: int) -> str:
         matches = compiled.search
     except re.error:
         needle = pattern.lower()
-        matches = lambda para: needle in para.lower()  # noqa: E731
+
+        def matches(para: str) -> bool:
+            return needle in para.lower()
 
     keep: set[int] = set()
     mega_extracts: dict[int, str] = {}
