@@ -44,8 +44,8 @@ NUMBER` (e.g. `gh-review view sketchy/cortex-backend 2794`, `gh-review start own
 
 ### Verification
 
-Use `ctx7` and web search to verify unfamiliar patterns, best practices, and security implications
-before writing comments. Every technical claim must be verified.
+Use official documentation and web search to verify unfamiliar patterns, best practices, and
+security implications before writing comments. Every technical claim must be verified.
 
 ## Reading a PR
 

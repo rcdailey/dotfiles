@@ -8,9 +8,7 @@
 - Use latest stable versions of tools, languages, libraries, frameworks.
 - Prefer idiomatic patterns: use framework-native solutions over hand-rolled equivalents, current
   API surfaces over deprecated predecessors, and official usage recommendations over ad-hoc
-  approaches. SHOULD verify against `ctx7` when writing non-trivial integrations with libraries,
-  frameworks, tools, or language features; model training data may reflect outdated or incorrect
-  idioms.
+  approaches.
 - Reduce nesting: invert conditions, exit early.
 - YAML: don't quote values unless required for disambiguation.
 - Prefer defaults by omission over explicit configuration.
@@ -67,12 +65,6 @@ constants.
 ## Tools
 
 - Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
-- `ctx7` (also called "context7") is the CLI for the Context7 documentation service; it provides
-  up-to-date library and framework docs to LLMs. MUST use `ctx7` first whenever working with an
-  unfamiliar library, framework, or tool API; other sources (web research, reading vendored source)
-  are fallbacks for when `ctx7` lacks coverage:
-  - `ctx7 library <name> <query>` searches the index and returns library IDs
-  - `ctx7 docs <libraryId> <query>` fetches docs for an ID (e.g. `/vercel/next.js`)
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
 - Use `pdf2md` for PDF files: `pdf2md <file-or-url>`. Run `pdf2md --help` for full usage.
 - The Glob tool skips dot-directories (`.github/`, `.vscode/`, etc.). For those, use bash:

@@ -77,7 +77,7 @@ lines; the pending review carries the detail, this is the index to it.
 **Not posted:**
 - {P3|P4} `path:line` - {finding, at most 10 words}
 
-**Refs:** {ctx7 IDs and URLs fetched this session, comma-separated, no annotations}
+**Refs:** {URLs fetched this session, comma-separated, no annotations}
 **Confidence:** {high | medium | low} - {one sentence; name the weakest comment if not high}
 ```
 
@@ -87,7 +87,7 @@ Rules for filling it:
   body, not here.
 - `Not posted`: cap at 3 lines, highest priority first, then `+{n} more` if truncated. Omit findings
   already flagged on the PR entirely.
-- `Refs`: bare identifiers only. Read-only file paths that produced no finding are not refs.
+- `Refs`: bare URLs only. Read-only file paths that produced no finding are not refs.
 - Empty sections collapse to `**Posted:** none` on one line.
 - Follow-up passes: same template, scoped to the delta. `Review: none` when nothing new warranted a
   comment. One line may state what execution confirmed or failed to confirm.
@@ -190,12 +190,12 @@ docs/, wiki, or other documentation unless a specific finding requires that cont
 
 Apply the tone, etiquette, and verification rules from the `gh-pr-review` skill.
 
-MUST use `ctx7` to verify correct usage of every library, framework, language feature, tool, or CLI
-present in the changed code before forming a verdict. This applies whether the outcome is approval
-or posted comments; an unverified "looks correct" is as dangerous as an unverified finding. Run
-`ctx7 library <name> <query>` to resolve an ID, then `ctx7 docs <id> <query>` for the specific
-behavior. Record every `ctx7` source consulted for `Refs`. If `ctx7` lacks coverage, reframe any
-related comment as an open question rather than asserting correctness, and note the gap in `Refs`.
+MUST verify correct usage of every library, framework, language feature, tool, or CLI present in the
+changed code against current official documentation or primary sources before forming a verdict.
+This applies whether the outcome is approval or posted comments; an unverified "looks correct" is as
+dangerous as an unverified finding. Record every source consulted for `Refs`. If authoritative
+coverage is unavailable, reframe any related comment as an open question rather than asserting
+correctness, and note the gap in `Refs`.
 
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.

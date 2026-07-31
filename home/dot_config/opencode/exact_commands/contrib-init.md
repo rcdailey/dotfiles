@@ -24,9 +24,9 @@ If focus area provided, prioritize analysis of that directory/module.
 
 ## Phase 2: Tool Documentation
 
-After Phase 1, use `ctx7` to research each major library/framework discovered:
+After Phase 1, use official documentation to research each major library/framework discovered:
 
-- Resolve library IDs and query docs for best practices
+- Check current best practices
 - Focus on contribution guidelines specific to each tool
 
 ## Output
