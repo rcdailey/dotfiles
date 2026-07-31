@@ -1,7 +1,7 @@
 import type { Plugin } from "@opencode-ai/plugin";
 
 // The Chat Style rules in the system prompt lose to recency on long sessions, so restate the
-// core constraint at the very end of every request. The transform hook fires per LLM request
+// readability calibration at the end of every request. The transform hook fires per LLM request
 // (the prompt loop re-reads messages from the DB each step), so the mutation is in-memory only:
 // nothing is persisted to session storage and nothing renders in the TUI.
 //
@@ -19,9 +19,10 @@ import type { Plugin } from "@opencode-ai/plugin";
 
 const REMINDER = [
   "<system-reminder>",
-  "Chat brevity: you MUST answer first in plain words, with no preamble, headers, or volunteered",
-  "reasoning. Stop when answered: no trailing offers, no recap. The only permitted closer, and",
-  "only when work remains, is your position plus the single next action.",
+  "Chat readability: lead with the answer and optimize for first-pass comprehension, not minimum",
+  "length. Explain nontrivial conclusions enough to make the cause and effect clear. Use short",
+  "paragraphs and scan-friendly structure when useful. Stop once complete; omit filler, repeated",
+  "conclusions, and trailing offers. When work remains, end with `Next:` and one small action.",
   "</system-reminder>",
 ].join("\n");
 
