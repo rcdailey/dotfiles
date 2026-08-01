@@ -79,6 +79,8 @@ Applies when producing AGENTS.md, SKILL.md, agent definitions, or command files.
 - MUST self-review authored content against these rules before finalizing. If a draft violates any
   rule, tighten before writing.
 
+{{ template "opencode-testing-directives.md" . }}
+
 ## Agents
 
 SHOULD use agents autonomously without explicit prompt from user for appropriate operations. Follow
@@ -123,7 +125,6 @@ Use this structured prompt format (copy the template, fill in values):
 ```txt
 Goal: <testable outcome and required behavior>
 Scope: <directory or file list the coder can read and modify within>
-Acceptance: <commands that confirm success>
 Constraints: <optional; patterns/conventions beyond what AGENTS.md covers>
 Context: <optional; requirements, decisions, errors, research, or API contracts relevant to the work>
 ```
@@ -133,8 +134,6 @@ Context: <optional; requirements, decisions, errors, research, or API contracts 
   scopes (`src/api/`); file lists are valid only for genuinely surgical tasks where the blast radius
   is already known (e.g., renaming one export and its test). If you find yourself reading the source
   files to decide which files to list, use a directory scope instead and let the coder discover.
-- `Acceptance` must exercise behavior. At minimum: the test command that covers the changed code.
-  Include lint/type-check only when the coder might introduce violations.
 - `Constraints` captures task-specific requirements, including approaches the user requires or
   prohibits. Do not repeat inherited conventions or turn a preference into a requirement.
 - `Context` carries forward relevant user requirements, decisions, research findings, error output,
@@ -148,32 +147,32 @@ Context: <optional; requirements, decisions, errors, research, or API contracts 
    external contract.
 2. Check your Scope. If it names specific files you had to read to identify, widen to the containing
    directory and let the coder discover.
-3. Check granularity. Implementation and its tests belong in the same delegation; never split them
-   into separate tasks. Prefer one delegation per logical phase of work over many small delegations.
-   A single-file spec is almost never worth a delegation on its own.
+3. Check granularity. Keep one implementation delegation per logical phase. The primary retains
+   behavioral verification; a single-file spec is almost never worth a delegation on its own.
 4. Pass findings that constrain implementation, explain a failure, or prevent duplicate work. Omit
    incidental details and unsupported preferences.
 
-The coder handles its own discovery, decides which files to modify, runs verification, and reports
-back with: Status (success/partial/blocked), Files modified, Summary, Verification results, Notes.
+The coder handles discovery, implementation, and repository-mandated checks. Its report is an
+implementation handoff, not proof of behavioral correctness. Retain its `task_id` for follow-up.
 
-After the coder returns, verify in tiers:
+After the coder returns, the primary MUST:
 
 1. `git diff --stat` to confirm blast radius.
-2. `git diff` (per-file when large) to review changes.
-3. Targeted reads where the diff raised questions.
-4. Re-run `Acceptance` when you doubt the coder's report.
+2. Review `git diff`, using targeted reads where the diff raises questions.
+3. Execute the behavioral acceptance required by the Goal, following the repo verification guidance.
+4. Diagnose failures before resuming the same coder `task_id` with observed and expected values,
+   traceback, and relevant source facts.
 
-If verification reveals issues, re-delegate with the failure details in `Context`. After two failed
-cycles on the same task, stop and report to the user.
+After a follow-up, rerun only the failed scenario. Run the full affected matrix once when targeted
+checks pass, then delete disposable verification files. After two failed cycles, stop and report.
 
 ## When Delegating
 
 ### Read Discipline
 
-Pre-delegation reads establish the Scope boundary, the Acceptance command, and any constraints the
-coder cannot cheaply discover. Do not trace implementation merely to prescribe a solution. Pass on
-relevant facts already learned instead of making the coder rediscover them.
+Pre-delegation reads establish the Scope boundary and constraints the coder cannot cheaply discover.
+Do not trace implementation merely to prescribe a solution. Pass on relevant facts already learned
+instead of making the coder rediscover them.
 
 Use `explore` for multi-file orientation; reserve direct `glob`/`grep`/`read` for confirming scope
 boundaries or cheap single-file checks. Cross-reference explore findings before setting scope; stale

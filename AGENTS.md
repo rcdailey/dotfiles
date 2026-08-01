@@ -66,16 +66,16 @@ under `~/.config/opencode/` do not have these prefixes.
   `opencode-primary-shared.md` for delegation and commit protocols. `dispatch` is `hidden: true`
   (headless ticket work only; zero-ask permission surface because headless runs auto-reject
   permission asks). Non-coding agents (`commit`, `researcher`, `reviewer`, `upgrade-analyst`) are
-  plain markdown with self-contained protocols. This split keeps coding directives out of
-  non-coding contexts
-  (e.g., a writing agent in another repo receives only the universal AGENTS.md).
+  plain markdown with self-contained protocols. This split keeps coding directives out of non-coding
+  contexts (e.g., a writing agent in another repo receives only the universal AGENTS.md).
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
 - `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`)
 - `.chezmoitemplates/` - Reusable template partials scoped to OpenCode config. Template names share
   a global namespace across all `.chezmoitemplates/` directories in the source state; prefix names
   with `opencode-` to avoid collisions. Current partials: `opencode-coding-directives.md` (coding
-  chat style, development, testing, tools, git, architecture, authoring),
-  `opencode-primary-shared.md` (delegation protocols, commit protocols, primary-only skills).
+  chat style, development, tools, git, architecture, authoring), `opencode-testing-directives.md`
+  (behavioral testing and failure diagnosis), `opencode-primary-shared.md` (delegation protocols,
+  commit protocols, primary-only skills).
 
 **Tool configs:** `home/dot_config/` contains per-tool configuration directories (git, kitty, mise,
 lazygit, etc.). Browse the directory to discover what's managed.
@@ -121,7 +121,7 @@ survive upstream syncs:
 
 1. Tightened frontmatter description
 2. `User Voice Profile` section appended at the end, delimited by `BEGIN LOCAL ADDITION` / `END
-   LOCAL ADDITION` HTML comment markers. It lives inside `SKILL.md` (not a sibling file) because
+LOCAL ADDITION` HTML comment markers. It lives inside `SKILL.md` (not a sibling file) because
    `mcp_skill` only injects `SKILL.md` content.
 
 To sync: extract the LOCAL ADDITION block, fetch upstream via `gh api`, drop upstream's Voice
