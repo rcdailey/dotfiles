@@ -20,6 +20,10 @@ CLONE_MAX_AGE = 7 * 24 * 3600  # 7 days before a clone is pruned
 MARKER = ".last_fetched"
 
 
+def _ssh_url(owner: str, repo: str) -> str:
+    return f"git@github.com:{owner}/{repo}.git"
+
+
 def _repo_dir(owner: str, repo: str) -> Path:
     return CLONE_BASE / owner / repo
 
@@ -49,7 +53,7 @@ def _do_clone(repo_dir: Path, owner: str, repo: str) -> None:
             "--depth",
             "1",
             "-q",
-            f"https://github.com/{owner}/{repo}.git",
+            _ssh_url(owner, repo),
             str(repo_dir),
         ],
         capture_output=True,
@@ -61,6 +65,16 @@ def _do_clone(repo_dir: Path, owner: str, repo: str) -> None:
         click.echo(f"error: clone failed: {result.stderr.strip()}", err=True)
         sys.exit(1)
     (repo_dir / MARKER).touch()
+
+
+def _set_ssh_origin(repo_dir: Path, owner: str, repo: str) -> None:
+    subprocess.run(
+        ["git", "remote", "set-url", "origin", _ssh_url(owner, repo)],
+        cwd=repo_dir,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
 def _do_pull_if_stale(repo_dir: Path, owner: str, repo: str) -> None:
@@ -151,6 +165,7 @@ def ensure_repo(owner: str, repo: str) -> Path:
 
             shutil.rmtree(repo_dir, ignore_errors=True)
         else:
+            _set_ssh_origin(repo_dir, owner, repo)
             marker = repo_dir / MARKER
             age = time.time() - marker.stat().st_mtime
             if age > STALE_SECONDS:
