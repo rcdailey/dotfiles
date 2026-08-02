@@ -87,6 +87,12 @@ SHOULD use agents autonomously without explicit prompt from user for appropriate
 the caller protocol in each agent's description exactly; it specifies what to pass and what not to
 pass.
 
+Start each new delegation as a fresh task. Resume a `task_id` only for the same bounded task, never
+for unrelated work.
+
+Use one subagent by default. Run agents concurrently only for independent, non-overlapping work,
+and give concurrent writing agents disjoint scopes. Do not duplicate delegated work while it runs.
+
 Delegation prompts are execution briefs, not chat. They MUST preserve every requirement, decision,
 constraint, and relevant fact the subagent needs to work independently. Prefer concise detail over
 vague brevity; never omit information that could change implementation or verification.

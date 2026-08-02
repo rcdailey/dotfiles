@@ -5,6 +5,12 @@ description: >
 mode: primary
 permission:
   edit: deny
+  task:
+    "*": deny
+    explore: allow
+    researcher: allow
+    coder: allow
+    commit: allow
   bash:
     "*> /*": deny
     "*>> /*": deny
