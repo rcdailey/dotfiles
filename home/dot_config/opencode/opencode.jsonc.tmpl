@@ -1,3 +1,5 @@
+{{- $profile := ternary "work" "personal" (eq .env "work") -}}
+{{- $models := index .opencodeModels $profile -}}
 {
   // Per-machine overrides (model, agent, provider, etc.) go in:
   //   ~/.config/opencode/opencode.local.jsonc
@@ -10,18 +12,18 @@
   "agent": {
     "plan": { "disable": true },
     "title": {
-      "model": "{env:OPENCODE_FAST_MODEL}",
+      "model": {{ $models.title.model | quote }},
     },
     "compaction": {
-      "model": "opencode/deepseek-v4-flash",
+      "model": {{ $models.compaction.model | quote }},
     },
     "general": {
       "tools": { "question": false },
-      "model": "{env:OPENCODE_BALANCED_MODEL}",
-      "variant": "{env:OPENCODE_BALANCED_VARIANT}",
+      "model": {{ $models.general.model | quote }},
+      "variant": {{ $models.general.variant | quote }},
     },
     "explore": {
-      "model": "{env:OPENCODE_FAST_MODEL}",
+      "model": {{ $models.explore.model | quote }},
       "permission": {
         "edit": "deny",
         "question": "deny",
@@ -35,24 +37,23 @@
       },
     },
     "coder": {
-      "model": "{env:OPENCODE_BALANCED_MODEL}",
-      "variant": "{env:OPENCODE_BALANCED_VARIANT}",
+      "model": {{ $models.coder.model | quote }},
+      "variant": {{ $models.coder.variant | quote }},
     },
     "commit": {
-      "model": "{env:OPENCODE_BALANCED_MODEL}",
-      "variant": "{env:OPENCODE_BALANCED_VARIANT}",
+      "model": {{ $models.commit.model | quote }},
+      "variant": {{ $models.commit.variant | quote }},
     },
     "researcher": {
-      "model": "{env:OPENCODE_FAST_MODEL}",
-      "variant": "{env:OPENCODE_FAST_VARIANT}",
+      "model": {{ $models.researcher.model | quote }},
     },
     "reviewer": {
-      "model": "{env:OPENCODE_CAPABLE_MODEL}",
-      "variant": "{env:OPENCODE_CAPABLE_VARIANT}",
+      "model": {{ $models.reviewer.model | quote }},
+      "variant": {{ $models.reviewer.variant | quote }},
     },
     "upgrade-analyst": {
-      "model": "{env:OPENCODE_BALANCED_MODEL}",
-      "variant": "{env:OPENCODE_BALANCED_VARIANT}",
+      "model": {{ $models.upgradeAnalyst.model | quote }},
+      "variant": {{ $models.upgradeAnalyst.variant | quote }},
     },
   },
   "lsp": false,

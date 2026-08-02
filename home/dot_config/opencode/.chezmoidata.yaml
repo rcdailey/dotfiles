@@ -1,0 +1,50 @@
+opencodeModels:
+  work:
+    title:
+      model: anthropic/claude-sonnet-5
+    compaction:
+      model: anthropic/claude-sonnet-5
+    general:
+      model: anthropic/claude-sonnet-5
+      variant: low
+    explore:
+      model: anthropic/claude-sonnet-5
+    coder:
+      model: anthropic/claude-sonnet-5
+      variant: low
+    commit:
+      model: anthropic/claude-sonnet-5
+      variant: low
+    researcher:
+      model: anthropic/claude-sonnet-5
+    reviewer:
+      model: anthropic/claude-opus-5
+      variant: low
+    upgradeAnalyst:
+      model: anthropic/claude-sonnet-5
+      variant: low
+
+  personal:
+    title:
+      model: openai/gpt-5.6-luna
+    compaction:
+      model: opencode/deepseek-v4-flash
+    general:
+      model: openai/gpt-5.6-terra
+      variant: high
+    explore:
+      model: openai/gpt-5.6-luna
+    coder:
+      model: openai/gpt-5.6-terra
+      variant: high
+    commit:
+      model: openai/gpt-5.6-terra
+      variant: low
+    researcher:
+      model: openai/gpt-5.6-luna
+    reviewer:
+      model: openai/gpt-5.6-sol
+      variant: low
+    upgradeAnalyst:
+      model: openai/gpt-5.6-terra
+      variant: high
