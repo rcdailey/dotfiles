@@ -43,8 +43,8 @@
       "variant": "{env:OPENCODE_BALANCED_VARIANT}",
     },
     "researcher": {
-      "model": "{env:OPENCODE_BALANCED_MODEL}",
-      "variant": "{env:OPENCODE_BALANCED_VARIANT}",
+      "model": "{env:OPENCODE_FAST_MODEL}",
+      "variant": "{env:OPENCODE_FAST_VARIANT}",
     },
     "reviewer": {
       "model": "{env:OPENCODE_CAPABLE_MODEL}",
