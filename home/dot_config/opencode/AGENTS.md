@@ -19,6 +19,14 @@
 - MUST NOT use the 'write' tool on an existing file; use 'edit' tools for surgical edits. Full-file
   rewrites waste tokens and risk clobbering unseen content.
 
+## Documentation
+
+- For current library or framework APIs, MUST use `aidocs_search_docs` first. If a library is
+  missing, MUST index its official documentation with `aidocs_scrape_docs` before using other
+  sources.
+- Documentation MCP results are research leads. Fetch a result URL through an allowed fetch tool
+  before citing it.
+
 ## Skills
 
 MUST check the available skills list before any task. MUST load a matching skill BEFORE acting on

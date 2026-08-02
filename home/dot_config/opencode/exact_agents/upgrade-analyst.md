@@ -8,6 +8,7 @@ description: >
 mode: subagent
 permission:
   "*": deny
+  "aidocs_*": allow
   grep: allow
   read: allow
   glob: allow
@@ -31,7 +32,9 @@ You research dependency upgrades and return structured findings. Read-only; inve
 
 Two toolsets with distinct purposes:
 
-- **Upstream evidence**: use the `research` CLI exclusively.
+- **Documentation**: use `aidocs_search_docs`; if a dependency is missing, index its official docs
+  with `aidocs_scrape_docs`.
+- **Other upstream evidence**: use the `research` CLI exclusively.
 - **Local repo analysis**: use `rg`, read/grep/glob, `gh pr view/checks`, and
   `git log/diff/show` directly.
 

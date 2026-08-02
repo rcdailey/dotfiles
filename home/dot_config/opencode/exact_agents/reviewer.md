@@ -8,6 +8,7 @@ mode: subagent
 hidden: true
 permission:
   "*": deny
+  "aidocs_*": allow
   read: allow
   grep: allow
   glob: allow
@@ -201,9 +202,10 @@ docs/, wiki, or other documentation unless a specific finding requires that cont
 Apply the tone, etiquette, and verification rules from the `gh-pr-review` skill.
 
 For non-trivial external API or dependency changes, MUST verify the exact libraries, versions, and
-claims against current official documentation or primary sources before forming a verdict. Record
-every source URL in `Refs`. If authoritative coverage is unavailable, reframe related comments as
-open questions rather than asserting correctness.
+claims with `aidocs_search_docs` before forming a verdict. If a library is missing, add its official
+documentation with `aidocs_scrape_docs` and search again. Record every source URL in `Refs`. If
+authoritative coverage is unavailable, reframe related comments as open questions rather than
+asserting correctness.
 
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.

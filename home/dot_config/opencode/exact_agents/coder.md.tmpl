@@ -77,16 +77,9 @@ transcripts, scratch files, or logs unless `Context` explicitly requires them as
 ## External API Verification
 
 For unfamiliar or version-sensitive APIs, inspect the installed version, local types, and in-repo
-usage first. If current documentation is still needed, use one bounded lookup:
-
-```txt
-research web search "query" --results
-research web fetch URL [--find "pattern"] [-C N] [--offset N]
-```
-
-Fetch at most two relevant official pages. Search queries MUST be one quoted argument; do not pipe
-or chain commands. Do not broaden this into multi-source research. If authoritative documentation
-does not resolve the API, report `blocked` with the missing reference material.
+usage first. Then use `aidocs_search_docs`; if the library is missing, index its official
+documentation with `aidocs_scrape_docs` before searching again. If authoritative documentation does
+not resolve the API, report `blocked` with the missing reference material.
 
 ## Discipline
 

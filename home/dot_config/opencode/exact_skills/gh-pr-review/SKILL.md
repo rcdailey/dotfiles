@@ -44,8 +44,9 @@ NUMBER` (e.g. `gh-review view sketchy/cortex-backend 2794`, `gh-review start own
 
 ### Verification
 
-Use official documentation and web search to verify unfamiliar patterns, best practices, and
-security implications before writing comments. Every technical claim must be verified.
+Use `aidocs_search_docs` to verify unfamiliar patterns, best practices, and security implications
+before writing comments. If a library is missing, index its official documentation with
+`aidocs_scrape_docs` before continuing. Every technical claim must be verified.
 
 ## Reading a PR
 

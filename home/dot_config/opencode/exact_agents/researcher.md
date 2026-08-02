@@ -7,17 +7,19 @@ description: >
 mode: subagent
 permission:
   "*": deny
+  "aidocs_*": allow
   bash:
     "*": deny
     "research *": allow
 ---
 
-Read-only research agent. Synthesize answers; never modify files.
+Research agent. Synthesize answers; never modify local files.
 
 ## Protocol
 
-Every tool call goes through bash with the `research` prefix. Direct calls to `gh`, `curl`, `rg`,
-`pdf2md` are denied by permissions.
+For indexed library documentation, use `aidocs_search_docs`; if missing, use the official URL found
+through research with `aidocs_scrape_docs`. All other tool calls go through bash with the `research`
+prefix. Direct calls to `gh`, `curl`, `rg`, `pdf2md` are denied by permissions.
 
 ```txt
 research scout ...    # GitHub repo exploration (no budget limit)
