@@ -1,9 +1,10 @@
 ---
 description: >
-  For web search, documentation lookup, knowledge questions, GitHub repo exploration, and PDF
-  download/OCR. Callers pass the question or topic and receive a sourced answer. Primary agents
-  delegate external research here; specialized subagents use their own tools only when explicitly
-  configured to do so.
+  For external web research, PDF retrieval, and open-ended or multi-source documentation and GitHub
+  repo exploration. Use when the answer requires broad code search, source correlation, citations,
+  or substantive synthesis. Do not use for a bounded read-only GitHub or aidocs lookup the caller
+  can answer directly. Callers pass the question, known target or version, and required evidence;
+  omit implementation instructions. Returns sourced findings, confidence, freshness, and errors.
 mode: subagent
 permission:
   "*": deny
@@ -145,7 +146,8 @@ Failed calls are auto-refunded.
 ## Workflow
 
 1. **Assess.** Choose starting tool:
-   - Named project: `research scout orient` first (repo docs > web search)
+   - Open-ended repo question: `research scout orient` first (repo docs > web search)
+   - Known GitHub object or query: use the matching scout subcommand directly
    - PDF: `research pdf URL`
    - General/current events: `research web search --results`
 

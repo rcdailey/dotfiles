@@ -98,8 +98,13 @@ reported results against primary sources (reading cited files, verifying links, 
 catch hallucinations and false assumptions. Subagent models are weaker than the caller; trust but
 verify.
 
-Primary agents MUST delegate external web research, documentation lookup, GitHub exploration, and
-PDF retrieval to the researcher.
+Primary agents MUST delegate external web research, PDF retrieval, and open-ended or multi-source
+GitHub exploration to the researcher. They MAY use direct read-only `gh` commands for bounded
+lookups when the repository and desired object or query are known. Delegate when the answer requires
+repo-wide code exploration, correlating multiple sources, citations, or substantive synthesis.
+
+Primary agents MAY use `aidocs_search_docs` directly for a bounded API lookup. Delegate
+documentation research that requires multiple pages, external sources, or substantive synthesis.
 
 ## Primary-only skills
 
@@ -192,7 +197,8 @@ coder.
 
 One delegation per cohesive unit. Three unrelated changes = three delegations.
 
-The coder cannot fetch external content. Use `researcher` for API docs and pass as `Context`.
+The coder cannot fetch external content. Gather bounded API facts with `aidocs_search_docs`; use the
+researcher for broader documentation research. Pass the findings as `Context`.
 
 ## Committing changes
 
