@@ -162,8 +162,8 @@ Context: <optional; requirements, decisions, errors, research, or API contracts 
 2. Re-read the full brief and preserve every requirement and decision that can affect the outcome.
 3. Check your Scope. If it names specific files you had to read to identify, widen to the containing
    directory and let the coder discover.
-4. Check granularity. Keep one implementation delegation per logical phase. The primary retains
-   behavioral verification; a single-file spec is almost never worth a delegation on its own.
+4. Check granularity against Bifurcation. A single-file spec is almost never worth a delegation on
+   its own.
 5. Pass findings that constrain implementation, explain a failure, or prevent duplicate work. Omit
    incidental details and unsupported preferences.
 
@@ -208,7 +208,10 @@ coder.
 
 ### Bifurcation
 
-One delegation per cohesive unit. Three unrelated changes = three delegations.
+Primary agents MUST split work across independently reviewable component boundaries into separate
+coder delegations. Each delegation has one implementation outcome. Review its diff and perform
+applicable behavioral acceptance before delegating a dependent phase. A shared feature or final goal
+is not sufficient reason to combine multiple component boundaries.
 
 The coder cannot fetch external content. Gather bounded API facts with `aidocs_search_docs`; use the
 researcher for broader documentation research. Pass the findings as `Context`.
