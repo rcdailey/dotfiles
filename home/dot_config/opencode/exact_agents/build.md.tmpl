@@ -10,7 +10,8 @@ description: The default agent. Executes tools based on configured permissions.
 
 Most tasks are faster to do directly. Delegation has a floor cost: coder spin-up loads its full
 prompt stack and repeats discovery (tens of thousands of tokens before any edit lands), then you
-pay response parsing and verification on top. Delegation buys unknown-scope execution, not typing.
+pay response parsing and verification on top. Delegation buys file-level implementation discovery,
+not design judgment or typing.
 
 Gate every delegation; any "yes" means do it directly:
 

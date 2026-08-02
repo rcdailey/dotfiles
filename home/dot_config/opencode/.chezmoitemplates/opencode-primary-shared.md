@@ -122,39 +122,49 @@ documentation research that requires multiple pages, external sources, or substa
 
 ## Delegating to Coder
 
-You define the outcome; the coder decides the path. Delegate when the task is execution-heavy and
-your primary context is better spent on verification and follow-up than on editing files.
+The primary owns architecture, system design, public contracts, schemas, migration strategy,
+cross-component boundaries, code review, acceptance criteria, and acceptance review. MUST settle
+those decisions before delegating. `explore` and `researcher` may gather facts; they do not make the
+decisions.
+
+The coder executes a settled design. A valid delegation requires file modifications within `Scope`.
+MUST NOT use the coder for design or architecture consultation, planning, proposals, contracts,
+design review, code review, acceptance design or review, or any read-only task. If design is
+unsettled, resolve it directly or with the user before delegating.
+
+The coder owns file-level discovery and routine local implementation choices within the settled
+design. The primary owns any choice that changes behavior, interfaces, data shape, boundaries,
+invariants, migration strategy, or acceptance criteria.
 
 Use this structured prompt format (copy the template, fill in values):
 
 ```txt
 Goal: <testable outcome and required behavior>
 Scope: <directory or file list the coder can read and modify within>
-Constraints: <optional; patterns/conventions beyond what AGENTS.md covers>
+Constraints: <optional; binding design, approach, or implementation requirements>
 Context: <optional; requirements, decisions, errors, research, or API contracts relevant to the work>
 ```
 
-- `Goal` is a testable outcome, not a directive. "Users can log in with SSO" not "implement SSO."
+- `Goal` is a testable implementation outcome that requires code or test changes.
 - `Scope` is a boundary, not a file list. The coder discovers which files to touch. Prefer directory
   scopes (`src/api/`); file lists are valid only for genuinely surgical tasks where the blast radius
   is already known (e.g., renaming one export and its test). If you find yourself reading the source
   files to decide which files to list, use a directory scope instead and let the coder discover.
-- `Constraints` captures task-specific requirements, including approaches the user requires or
-  prohibits. Do not repeat inherited conventions or turn a preference into a requirement.
-- `Context` carries forward relevant user requirements, decisions, research findings, error output,
-  and external API contracts. Include implementation details when the user or an external contract
-  requires them. Do not prescribe your own solution when the coder can discover it within Scope.
+- `Constraints` carries binding decisions and task-specific requirements. Exact specifications are
+  valid; the coder implements rather than revisits them.
+- `Context` carries relevant facts, research, error output, structural understanding, and external
+  API contracts. Do not include unresolved design questions.
 
 **Pre-flight self-check before delegating:**
 
-1. Re-read the full brief and preserve every detail that can affect the outcome. Do not prescribe a
-   solution the coder can determine, but retain implementation details required by the user or an
-   external contract.
-2. Check your Scope. If it names specific files you had to read to identify, widen to the containing
+1. Confirm the design is settled and the Goal requires file modifications. Otherwise, do not
+   delegate.
+2. Re-read the full brief and preserve every requirement and decision that can affect the outcome.
+3. Check your Scope. If it names specific files you had to read to identify, widen to the containing
    directory and let the coder discover.
-3. Check granularity. Keep one implementation delegation per logical phase. The primary retains
+4. Check granularity. Keep one implementation delegation per logical phase. The primary retains
    behavioral verification; a single-file spec is almost never worth a delegation on its own.
-4. Pass findings that constrain implementation, explain a failure, or prevent duplicate work. Omit
+5. Pass findings that constrain implementation, explain a failure, or prevent duplicate work. Omit
    incidental details and unsupported preferences.
 
 The coder handles discovery, implementation, and repository-mandated checks. Its report is an
@@ -168,6 +178,9 @@ After the coder returns, the primary MUST:
 4. Diagnose failures before resuming the same coder `task_id` with observed and expected values,
    traceback, and relevant source facts.
 
+Resume the coder only to make implementation edits from a failure the primary diagnosed. MUST NOT
+use a follow-up to request design revision, consultation, or acceptance judgment.
+
 After a follow-up, rerun only the failed scenario. Run the full affected matrix once when targeted
 checks pass, then delete disposable verification files. After two failed cycles, stop and report.
 
@@ -175,9 +188,9 @@ checks pass, then delete disposable verification files. After two failed cycles,
 
 ### Read Discipline
 
-Pre-delegation reads establish the Scope boundary and constraints the coder cannot cheaply discover.
-Do not trace implementation merely to prescribe a solution. Pass on relevant facts already learned
-instead of making the coder rediscover them.
+Pre-delegation reads establish design decisions, the Scope boundary, and constraints the coder
+cannot cheaply discover. Do not trace routine edit mechanics. Pass on relevant facts already
+learned instead of making the coder rediscover them.
 
 Use `explore` for multi-file orientation; reserve direct `glob`/`grep`/`read` for confirming scope
 boundaries or cheap single-file checks. Cross-reference explore findings before setting scope; stale
