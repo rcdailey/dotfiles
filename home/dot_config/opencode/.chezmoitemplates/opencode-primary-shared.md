@@ -148,7 +148,7 @@ Use this structured prompt format (copy the template, fill in values):
 Goal: <testable outcome and required behavior>
 Scope: <directory or file list the coder can read and modify within>
 Constraints: <optional; binding design, approach, or implementation requirements>
-Context: <optional; requirements, decisions, errors, research, or API contracts relevant to the work>
+Context: <optional; requirements, decisions, errors, research, or relevant API contracts>
 ```
 
 - `Goal` is a testable implementation outcome that requires code or test changes.
@@ -160,6 +160,9 @@ Context: <optional; requirements, decisions, errors, research, or API contracts 
   valid; the coder implements rather than revisits them.
 - `Context` carries relevant facts, research, error output, structural understanding, and external
   API contracts. Do not include unresolved design questions.
+- State required behavior in `Goal`, but keep behavioral acceptance execution with the primary.
+  MUST NOT instruct the coder to author or run disposable adhoc harnesses. Repository-owned durable
+  tests and mandated checks remain coder work.
 
 **Pre-flight self-check before delegating:**
 
@@ -173,8 +176,9 @@ Context: <optional; requirements, decisions, errors, research, or API contracts 
 5. Pass findings that constrain implementation, explain a failure, or prevent duplicate work. Omit
    incidental details and unsupported preferences.
 
-The coder handles discovery, implementation, and repository-mandated checks. Its report is an
-implementation handoff, not proof of behavioral correctness. Retain its `task_id` for follow-up.
+The coder handles discovery, implementation, durable tests, and repository-mandated checks. The
+primary reviews the diff and runs behavioral acceptance, including disposable harnesses. Retain the
+coder's `task_id` for follow-up.
 
 After the coder returns, the primary MUST:
 
