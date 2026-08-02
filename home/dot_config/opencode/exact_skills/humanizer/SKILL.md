@@ -1,11 +1,11 @@
 ---
 name: humanizer
 description: >-
-  Use when writing prose text to files or through tool calls: documentation, changelogs,
-  pull request or issue descriptions and comments, email drafts, READMEs, release notes,
-  announcements, blog posts, gist content, or any durable written artifact. Do NOT use
-  for in-session conversational responses, code, commit messages, or structured data
-  (JSON, YAML, tables).
+  Use when writing prose intended for people: documentation, changelogs, pull request or issue
+  text, email drafts, READMEs, release notes, announcements, blog posts, or gist content. Do NOT
+  use for machine-to-machine text, including subagent prompts, delegation briefs, coding
+  instructions, implementation handoffs, or other agent communication. Also exclude in-session
+  chat, code, commit messages, and structured data (JSON, YAML, tables).
 ---
 
 # Humanizer: Remove AI Writing Patterns
