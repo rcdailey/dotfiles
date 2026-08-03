@@ -1,15 +1,17 @@
-"""Edit a pending review comment body and/or position."""
+"""Edit a pending or published review comment."""
 
 from __future__ import annotations
 
+import json
 import sys
 import textwrap
 from typing import Any
 
 import click
 
+from gh_review._body import body_option, read_body
 from gh_review._errors import GhError, die
-from gh_review._gh import gh_graphql, gh_graphql_mutation
+from gh_review._gh import gh_graphql, gh_graphql_mutation, gh_rest
 
 _ADD_THREAD_MUTATION = textwrap.dedent("""\
     mutation($input: AddPullRequestReviewThreadInput!) {
@@ -48,8 +50,9 @@ _QUERY_COMMENT = textwrap.dedent("""\
 
 
 @click.command()
-@click.argument("comment_id")
-@click.option("--body", default=None, help="new comment body")
+@click.argument("target")
+@click.argument("published_id", type=int, required=False)
+@body_option(required=False)
 @click.option("--path", "file_path", default=None, help="file path in the PR")
 @click.option("--line", type=int, default=None, help="end line number")
 @click.option("--start-line", type=int, default=None, help="start line for multi-line comments")
@@ -67,7 +70,8 @@ _QUERY_COMMENT = textwrap.dedent("""\
 )
 @click.option("--review-id", default=None, help="PRR_... node id (required when repositioning)")
 def cli(
-    comment_id: str,
+    target: str,
+    published_id: int | None,
     body: str | None,
     file_path: str | None,
     line: int | None,
@@ -76,8 +80,23 @@ def cli(
     start_side: str | None,
     review_id: str | None,
 ) -> None:
-    """Edit a pending review comment body or reposition it in the diff."""
+    """Edit a pending comment or update a published comment body.
+
+    TARGET is a PRRC_ node ID for pending comments. For published comments,
+    TARGET is OWNER/REPO and PUBLISHED_ID is the numeric comment ID.
+    """
+    body = read_body(body)
     positioning = any(x is not None for x in [file_path, line, start_line, side, start_side])
+
+    if published_id is not None:
+        if positioning:
+            die("positioning options are only supported for pending comments")
+        if body is None:
+            die("--body is required for published comments")
+        _published_edit(target, published_id, body)
+        return
+
+    comment_id = target
 
     if body is None and not positioning:
         die("at least one option required")
@@ -90,6 +109,24 @@ def cli(
         if not review_id.startswith("PRR_"):
             die(f"invalid review id: {review_id} (expected PRR_... node id)")
         _reposition_edit(comment_id, body, file_path, line, start_line, side, start_side, review_id)
+
+
+def _published_edit(repo: str, comment_id: int, body: str) -> None:
+    """Update a published review comment body via REST."""
+    try:
+        raw = gh_rest(
+            "PATCH",
+            f"repos/{repo}/pulls/comments/{comment_id}",
+            body={"body": body},
+            jq="{id, node_id}",
+        )
+        data = json.loads(raw)
+    except GhError as exc:
+        die(str(exc))
+
+    click.echo(f"id: {data['id']}")
+    click.echo(f"node-id: {data['node_id']}")
+    click.echo("state: PUBLISHED")
 
 
 def _assert_pending(comment_id: str) -> dict[str, Any]:

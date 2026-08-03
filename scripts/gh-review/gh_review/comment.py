@@ -7,13 +7,17 @@ from typing import Any
 
 import click
 
+from gh_review._body import body_option, read_body
 from gh_review._errors import GhError, die
 from gh_review._gh import gh_graphql_mutation
 
 _THREAD_MUTATION = textwrap.dedent("""\
     mutation($input: AddPullRequestReviewThreadInput!) {
       addPullRequestReviewThread(input: $input) {
-        thread { id path isOutdated line startLine diffSide subjectType comments(first: 1) { nodes { databaseId id } } }
+        thread {
+          id path isOutdated line startLine diffSide subjectType
+          comments(first: 1) { nodes { databaseId id } }
+        }
       }
     }""")
 
@@ -86,7 +90,7 @@ def _emit_thread(thread: dict[str, Any], fallback_note: str | None = None) -> No
     help="line number (or end line for multi-line); omit for file-level",
 )
 @click.option("--start-line", type=int, default=None, help="start line for multi-line comments")
-@click.option("--body", required=True, help="comment body")
+@body_option(required=True)
 @click.option(
     "--side",
     type=click.Choice(["LEFT", "RIGHT"]),
@@ -115,6 +119,10 @@ def cli(
     file-level comment. If the targeted line is outside the diff, automatically
     retries as a file-level comment on the same file.
     """
+    body = read_body(body)
+    if body is None:
+        die("--body is required")
+
     if not review_id.startswith("PRR_"):
         die(f"invalid review id: {review_id} (expected PRR_... node id)")
 

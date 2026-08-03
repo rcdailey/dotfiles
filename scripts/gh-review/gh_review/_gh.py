@@ -15,7 +15,7 @@ def check_deps() -> None:
     """Verify gh CLI is installed and authenticated."""
     if not shutil.which("gh"):
         die("gh CLI not found")
-    result = subprocess.run(["gh", "auth", "status"], capture_output=True)
+    result = subprocess.run(["gh", "auth", "status"], capture_output=True, check=False)
     if result.returncode != 0:
         die("gh not authenticated; run 'gh auth login'")
 
@@ -28,7 +28,7 @@ def _parse_status(stderr: str) -> int:
 
 def run_gh(*args: str) -> str:
     """Run gh with args, return stdout. Raises GhError on failure."""
-    result = subprocess.run(["gh", *args], capture_output=True, text=True)
+    result = subprocess.run(["gh", *args], capture_output=True, text=True, check=False)
     if result.returncode != 0:
         raise GhError(result.stderr.strip(), status=_parse_status(result.stderr))
     return result.stdout
@@ -50,6 +50,7 @@ def gh_graphql_mutation(query: str, variables: dict[str, Any]) -> Any:
         input=payload,
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode != 0:
         raise GhError(result.stderr.strip())

@@ -8,6 +8,7 @@ from typing import Any
 
 import click
 
+from gh_review._body import body_option, read_body
 from gh_review._errors import GhError, die
 from gh_review._gh import gh_graphql, gh_graphql_mutation, gh_rest, split_repo
 
@@ -58,7 +59,7 @@ def _reply_now(repo: str, number: int, comment_id: int, body: str) -> None:
             "POST",
             f"repos/{repo}/pulls/{number}/comments/{comment_id}/replies",
             body={"body": body},
-            jq="{id, html_url}",
+            jq="{id, node_id, html_url}",
         )
     except GhError as exc:
         if exc.status == 404:
@@ -69,6 +70,7 @@ def _reply_now(repo: str, number: int, comment_id: int, body: str) -> None:
         die(f"failed to post reply: {exc}")
     data = json.loads(raw)
     click.echo(f"id: {data['id']}")
+    click.echo(f"node-id: {data['node_id']}")
     click.echo(f"url: {data['html_url']}")
     click.echo("state: PUBLISHED")
 
@@ -77,7 +79,7 @@ def _reply_now(repo: str, number: int, comment_id: int, body: str) -> None:
 @click.argument("repo")
 @click.argument("number", type=int)
 @click.argument("comment_id", type=int)
-@click.option("--body", required=True, help="reply body")
+@body_option(required=True)
 @click.option(
     "--review-id",
     default=None,
@@ -103,6 +105,10 @@ def cli(
     to; start one with `gh-review start` first, or pass --publish to post the
     reply immediately.
     """
+    body = read_body(body)
+    if body is None:
+        die("--body is required")
+
     if publish:
         if review_id:
             die("--publish cannot be combined with --review-id")

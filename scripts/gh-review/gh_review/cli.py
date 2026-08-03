@@ -32,10 +32,7 @@ class _AutoGroup(HelpfulGroup):
         for info in pkgutil.iter_modules([pkg_path]):
             if info.name.startswith("_") or info.name == "cli":
                 continue
-            try:
-                mod = importlib.import_module(f"gh_review.{info.name}")
-            except Exception:
-                continue
+            mod = importlib.import_module(f"gh_review.{info.name}")
             cmd = getattr(mod, "cli", None)
             if isinstance(cmd, click.Command):
                 self.add_command(cmd, info.name)

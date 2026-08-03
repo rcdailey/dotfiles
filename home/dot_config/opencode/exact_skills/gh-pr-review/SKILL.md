@@ -26,6 +26,8 @@ NUMBER` (e.g. `gh-review view sketchy/cortex-backend 2794`, `gh-review start own
 
 - NEVER submit reviews. The user manually submits pending reviews via GitHub UI.
 - All new review comments, replies included, MUST go through a pending review. Never post directly.
+- Pass Markdown bodies as `--body -` with a single-quoted heredoc. Double-quoted bodies execute
+  backticks as shell commands before `gh-review` receives them.
 - When a line target is outside diff hunks, `comment` automatically retries as a file-level comment
   on the same file. The output includes a `note:` line indicating the fallback. No manual retry or
   relocation needed.
@@ -71,7 +73,7 @@ To discard a pending review: `gh-review delete PRR_...`.
 ## Replying to Comments
 
 `gh-review reply` adds a threaded reply to an existing review thread as part of a pending review, so
-it stays invisible until the user submits. It resolves the pending review itself; pass `--review-id`
+it stays invisible until the user submits. It finds the pending review itself; pass `--review-id`
 only when more than one exists. With no pending review it errors instead of posting: `start` one
 first, and treat replies as part of the same review pass as your inline comments.
 
@@ -99,11 +101,11 @@ Conversation comments (the PR's main timeline) have no thread and cannot be repl
 
 `gh-review remove` deletes a single review comment.
 
-Both commands take the comment node ID (`PRRC_...`), printed after `#ID` in `view` review-thread
-headers and as `comment-node-id` in `comment` output.
-These commands operate on pending review comments only; `edit` will reject published comments with an
-error. When this happens, do NOT fall back to `reply` or any other command as a workaround. Published
-comments can only be edited through the GitHub UI; inform the user and stop.
+For pending comments, both commands take the `PRRC_...` node ID. For published comments and replies,
+pass `OWNER/REPO` followed by the numeric comment ID. Published comments support body edits only.
+
+`gh-review resolve OWNER/REPO NUMBER COMMENT_ID` resolves the thread containing a numeric comment
+ID. Pass `--undo` to unresolve it.
 
 ## Line Targeting
 
@@ -128,8 +130,8 @@ lines being replaced. Do NOT include surrounding context lines in the range; the
 ## ID Formats
 
 - `PRR_...`: Review node ID (from `start` or `view`)
-- `PRRT_...`: Thread node ID (emitted as the `id:` field by `comment`; not surfaced by `view`)
+- `PRRT_...`: Thread node ID (emitted by `comment` and `resolve`; not surfaced by `view`)
 - `PRRC_...`: Comment node ID (from `view` review-thread headers or `comment` output's
   `comment-node-id` field); used by `edit` and `remove`
 - `#NNN`: Numeric database ID (from `view` output or `comment` output's `comment-id` field); used by
-  `reply`
+  `reply`, published `edit` and `remove`, and `resolve`
