@@ -12,13 +12,13 @@ opencodeModels:
       variant: low
     coder:
       model: anthropic/claude-sonnet-5
-      variant: low
+      variant: medium
     commit:
       model: anthropic/claude-sonnet-5
       variant: low
     researcher:
       model: anthropic/claude-sonnet-5
-      variant: low
+      variant: medium
     reviewer:
       model: anthropic/claude-opus-5
       variant: low
@@ -36,13 +36,13 @@ opencodeModels:
       variant: high
     explore:
       model: openai/gpt-5.6-luna
-      variant: xhigh
+      variant: low
     coder:
       model: openai/gpt-5.6-luna
       variant: xhigh
     commit:
       model: openai/gpt-5.6-luna
-      variant: high
+      variant: medium
     researcher:
       model: openai/gpt-5.6-luna
       variant: high
