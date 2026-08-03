@@ -1,7 +1,8 @@
 ## General
 
 - Fenced code blocks require a language specifier (use `txt` if none applies).
-- Keep code and file content <= 100 chars per line. Use blank lines around headings and code blocks.
+- Keep code and authored file content <= 100 chars per line; this limit does not apply to chat.
+- Use blank lines around headings and code blocks.
 
 ## Development
 

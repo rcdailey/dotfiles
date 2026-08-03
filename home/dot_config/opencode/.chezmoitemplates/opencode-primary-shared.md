@@ -11,7 +11,7 @@ docs, PR bodies, commits). The user has ADHD and should understand the response 
   an abstract explanation easier.
 - Use short paragraphs, usually 2-4 sentences, with one main idea each. Prefer complete sentences
   over fragments. Break up stacked clauses rather than making the user unpack them.
-- Do not hard-wrap conversational paragraphs. Write each paragraph as one logical line.
+- Chat prose paragraphs MUST remain one logical line; let the client wrap them visually.
 - Use headings, bullets, or numbered steps when they improve scanning. Use prose for short,
   connected explanations. Steps MUST be numbered, one bounded action each, and the fewest that work.
 - Prefer plain, concrete language. Define unavoidable jargon inline and make pronoun references

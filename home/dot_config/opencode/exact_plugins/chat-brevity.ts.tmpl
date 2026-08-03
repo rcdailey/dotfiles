@@ -1,33 +1,15 @@
 import type { Plugin } from "@opencode-ai/plugin";
 
-// The Chat Style rules in the system prompt lose to recency on long sessions, so restate the
-// readability calibration at the end of every request. The transform hook fires per LLM request
-// (the prompt loop re-reads messages from the DB each step), so the mutation is in-memory only:
-// nothing is persisted to session storage and nothing renders in the TUI.
-//
-// Turn start: the last message is the user's; append a synthetic text part to it.
-// Mid-turn (tool loop): the last message is an assistant with finish "tool-calls"; append the
-// reminder to the newest completed tool output so heavy tool stretches cannot bury it.
-//
-// Compaction shares this hook with the same empty input. Its message slice ends either on a
-// completed turn (finish "stop", excluded by the finish gate) or mid-history where the injection
-// lands on the user message before any summarization prompt, so summaries stay uncontaminated.
-//
-// Only sessions the user is reading get the reminder. Subagent runs live in child sessions, so a
-// null parentID is the discriminator; agent mode is not, since `mode: "all"` agents run in both
-// positions. Parentage never changes, so the lookup is cached per session.
-//
-// The reminder is assembled from chunks so profiles share the parts that do not vary. Only BUDGET
-// is gated: the work profile runs Anthropic models, whose verbosity ignores qualitative guidance,
-// so it gets a hard word cap instead of the comprehension-first stance the personal GPT models
-// need.
+// Reinject after user messages and tool calls so long tool loops cannot bury the guidance.
+// Child sessions are subagents, so only parentless sessions receive user-facing chat guidance.
+// Source fragments join with spaces to avoid reproducing source line wrapping at runtime.
 
 const CALIBRATION = [
   "Chat readability: lead with the answer. Make cause and effect clear for nontrivial claims in a",
   "sentence or two, never a section. Short paragraphs; headings or bullets only where they beat",
   "prose for scanning. Stop when complete: no preambles, restated requests, recaps of work the",
   "user just watched, restated conclusions, or trailing offers.",
-];
+].join(" ");
 
 const BUDGET = [
 {{- if eq .env "work" }}
@@ -39,15 +21,13 @@ const BUDGET = [
   "Optimize for first-pass comprehension, not minimum length; keep the one example or caveat that",
   "prevents a wrong inference.",
 {{- end }}
-];
+].join(" ");
 
-const CLOSING = ["If work remains, end with `Next:` and one small action."];
+const CLOSING = "If work remains, end with `Next:` and one small action.";
 
 const REMINDER = [
   "<system-reminder>",
-  ...CALIBRATION,
-  ...BUDGET,
-  ...CLOSING,
+  [CALIBRATION, BUDGET, CLOSING].join("\n\n"),
   "</system-reminder>",
 ].join("\n");
 
