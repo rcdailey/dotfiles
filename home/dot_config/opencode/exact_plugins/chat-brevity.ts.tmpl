@@ -16,13 +16,38 @@ import type { Plugin } from "@opencode-ai/plugin";
 // Only sessions the user is reading get the reminder. Subagent runs live in child sessions, so a
 // null parentID is the discriminator; agent mode is not, since `mode: "all"` agents run in both
 // positions. Parentage never changes, so the lookup is cached per session.
+//
+// The reminder is assembled from chunks so profiles share the parts that do not vary. Only BUDGET
+// is gated: the work profile runs Anthropic models, whose verbosity ignores qualitative guidance,
+// so it gets a hard word cap instead of the comprehension-first stance the personal GPT models
+// need.
+
+const CALIBRATION = [
+  "Chat readability: lead with the answer. Make cause and effect clear for nontrivial claims in a",
+  "sentence or two, never a section. Short paragraphs; headings or bullets only where they beat",
+  "prose for scanning. Stop when complete: no preambles, restated requests, recaps of work the",
+  "user just watched, restated conclusions, or trailing offers.",
+];
+
+const BUDGET = [
+{{- if eq .env "work" }}
+  "Hard length budget: under 120 words, unless the user asked for depth or the answer cannot fit.",
+  "Verbosity is your dominant failure mode; length reads as padding, not thoroughness. Write the",
+  "reply you would send if the user answered your draft with `TLDR`: same answer, same key reason,",
+  "no scaffolding.",
+{{- else }}
+  "Optimize for first-pass comprehension, not minimum length; keep the one example or caveat that",
+  "prevents a wrong inference.",
+{{- end }}
+];
+
+const CLOSING = ["If work remains, end with `Next:` and one small action."];
 
 const REMINDER = [
   "<system-reminder>",
-  "Chat readability: lead with the answer and optimize for first-pass comprehension, not minimum",
-  "length. Explain nontrivial conclusions enough to make the cause and effect clear. Use short",
-  "paragraphs and scan-friendly structure when useful. Stop once complete; omit filler, repeated",
-  "conclusions, and trailing offers. When work remains, end with `Next:` and one small action.",
+  ...CALIBRATION,
+  ...BUDGET,
+  ...CLOSING,
   "</system-reminder>",
 ].join("\n");
 
