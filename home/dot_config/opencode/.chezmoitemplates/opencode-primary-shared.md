@@ -112,6 +112,17 @@ repo-wide code exploration, correlating multiple sources, citations, or substant
 Primary agents MAY use `aidocs_search_docs` directly for a bounded API lookup. Delegate
 documentation research that requires multiple pages, external sources, or substantive synthesis.
 
+## Delegating read-only discovery
+
+The primary owns architecture, system design, public contracts, schemas, migration strategy,
+cross-component boundaries, implementation phases, acceptance criteria, and acceptance review.
+`explore` and `researcher` gather evidence; they do not make or recommend these decisions.
+
+Discovery prompts MAY request exact paths, data flow, current contracts, invariants, existing
+patterns, constraints, and risks. They MUST NOT request designs, proposals, tradeoff analysis,
+recommended approaches or scopes, implementation phases, or acceptance cases. The primary derives
+and evaluates options after cross-referencing the reported evidence.
+
 ## Primary-only skills
 
 - `humanizer`: MUST load when writing prose to files or through tool calls (docs, READMEs,
@@ -128,15 +139,11 @@ documentation research that requires multiple pages, external sources, or substa
 
 ## Delegating to Coder
 
-The primary owns architecture, system design, public contracts, schemas, migration strategy,
-cross-component boundaries, code review, acceptance criteria, and acceptance review. MUST settle
-those decisions before delegating. `explore` and `researcher` may gather facts; they do not make the
-decisions.
-
-The coder executes a settled design. A valid delegation requires file modifications within `Scope`.
-MUST NOT use the coder for design or architecture consultation, planning, proposals, contracts,
-design review, code review, acceptance design or review, or any read-only task. If design is
-unsettled, resolve it directly or with the user before delegating.
+The coder executes decisions owned by the primary under Delegating read-only discovery. A valid
+delegation requires a settled design and file modifications within `Scope`. MUST NOT use the coder
+for design or architecture consultation, planning, proposals, contracts, design review, code review,
+acceptance design or review, or any read-only task. If design is unsettled, resolve it directly or
+with the user before delegating.
 
 The coder owns file-level discovery and routine local implementation choices within the settled
 design. The primary owns any choice that changes behavior, interfaces, data shape, boundaries,
