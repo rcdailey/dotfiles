@@ -8,169 +8,82 @@ description: >-
 
 # Skill Authoring
 
-Conventions for SKILL.md files. Omissions intentional. All authored content MUST follow the
-Authoring rules in your system prompt (Authoring section).
+Skills are on-demand procedures. AGENTS.md holds durable invariants; documentation holds reference
+material; permissions and checks enforce deterministic rules.
 
-## Skills vs. AGENTS.md
+## Decide whether to create a skill
 
-Skills are on-demand context modules loaded via progressive disclosure; they hold procedural
-knowledge (workflows, patterns, reference). AGENTS.md holds invariants, constraints, and conventions
-that apply every session.
+Delete content that is inferable, duplicated, obsolete, or too generic to change behavior. Create a
+skill only when a recurring task needs instructions that should not load for unrelated work.
+Existing data files do not prove that their authoring workflow is still active. Check current use
+and deletion history before creating or restoring a skill.
 
-Litmus test: would this apply even when you're not thinking about it? Yes = AGENTS.md. No = skill.
+Use three layers:
 
-Examples: "Never commit `.env` files" -> AGENTS.md (invariant). "When creating decision records,
-follow this template" -> skill (infrequent workflow).
+1. `name` and `description`: metadata shown in the skill tool.
+2. `SKILL.md`: the procedure needed whenever the skill is loaded.
+3. Referenced files or scripts: optional detail loaded or executed only when required.
 
-## Progressive Disclosure
+Do not move broad advice into AGENTS.md merely to shorten a skill. Keep a universal rule only when a
+concrete failure justifies always loading it.
 
-Three layers:
+## Location and frontmatter
 
-1. **Metadata** (~100 tokens): `name` + `description` in always-loaded context. Decides relevance.
-2. **SKILL.md body** (on trigger): core instructions.
-3. **Referenced files** (on demand): heavy reference material read selectively.
-
-The description decides whether the body is ever read. If the agent needs content every load, it
-belongs in SKILL.md. Split into referenced files only when genuinely separable (e.g., a 600-line API
-spec).
-
-## File Location
-
-- Project: `.opencode/skills/<name>/SKILL.md` (walks up to git worktree root)
-- Global: `~/.config/opencode/skills/<name>/SKILL.md`
-
-Skill name MUST match directory name.
-
-## Frontmatter
+OpenCode discovers project skills under `.opencode/skills/<name>/SKILL.md` and global skills under
+`~/.config/opencode/skills/<name>/SKILL.md`. It also supports compatible `.claude/skills` and
+`.agents/skills` locations.
 
 ```yaml
 ---
 name: skill-name
-description: Use when [triggering conditions]
+description: Use when creating or reviewing the artifact this skill governs.
 ---
 ```
 
-- `name`: 1-64 chars, lowercase alphanumeric + hyphens, no leading/trailing/consecutive hyphens
-- `description`: 1-1024 chars (under 500 preferred)
+- `name` is 1-64 lowercase alphanumeric characters separated by single hyphens and matches the
+  directory name.
+- `description` is 1-1024 characters.
+- OpenCode also recognizes `license`, `compatibility`, and string-to-string `metadata`.
+- Unknown frontmatter fields are ignored; do not invent behavioral fields.
 
-## Description: The Sole Selection Signal
+## Write the description
 
-The description is the ONLY signal for loading. Body content is not consulted at selection time.
-Bias toward pushy descriptions: missed invocations are silent; over-triggers are visible and
-correctable. Describe triggers, not workflow (avoids The Shortcut failure mode).
+The description is visible before the body loads. Describe triggers and boundaries, not the
+procedure itself.
 
-Required trigger coverage:
+- Start with `Use when` as the local convention.
+- Include common user phrasing, governed paths or tools, and adjacent terms when useful.
+- Add a negative trigger only when a neighboring skill has an ambiguous boundary.
+- Prefer a precise short description over an exhaustive keyword list.
 
-- Opens with `Use when`
-- Multiple phrasings users actually type (synonyms, abbreviations, casual and formal forms)
-- File extensions, paths, or tool names the skill governs (`.cs`, `SKILL.md`, `gh-review`)
-- Adjacent terms that should route here (framework names, feature names)
-- Negative triggers (`Do NOT use for X`) when sibling-skill boundaries are fuzzy
-- Under 1024 chars; under 500 preferred
-- No `<` or `>` characters (parsed as XML/HTML tokens and rejected)
+Register the skill in always-loaded instructions only when missed loading repeatedly causes a
+consequential error. Put primary-only registration in the primary prompt.
 
-Trigger coverage beats brevity; trim body prose before trigger phrases.
+## Write the body
 
-Examples:
+State the purpose, required inputs, procedure, failure behavior, and verification that the agent
+cannot infer elsewhere. For CLI tools, teach sequencing and non-obvious semantics; defer ordinary
+syntax to `--help`.
 
-```yaml
-# BAD: too narrow, single phrasing
-description: Use when writing C# code
+- Cross-reference another skill instead of copying it.
+- Keep facts needed on every invocation in SKILL.md.
+- Move large, separable reference material into `references/`.
+- Use a script when deterministic transformation or validation is safer than prose.
+- Include one example only when it communicates a contract more clearly than rules.
+- Examples, including disposable checks, must obey the repository rules they are meant to teach.
 
-# BAD: summarizes workflow (shortcut risk)
-description: Testing patterns, infrastructure, and fixtures for Recyclarr
+The loaded skill must let the agent understand its workflow without broad preliminary discovery.
+Repository discovery that is part of the workflow remains valid.
 
-# GOOD: multiple phrasings, extensions, alternate terms, negative trigger
-description: >-
-  Use when writing, editing, reviewing, or refactoring C# code or .NET projects
-  (`.cs`, `.csproj`, `.razor`, `.cshtml`); working on dotnet, ASP.NET, Blazor, MAUI,
-  EF Core, or Roslyn tasks; applying modern C# features, nullable reference types, or
-  async patterns. Do NOT use for F#, VB.NET, or non-CLR languages.
-```
+Before removing a schema, data shape, or procedure, inspect what the skill's consumers may read.
+Keep the minimal canonical contract in the skill when permissions or workflow boundaries prevent
+consumers from retrieving it elsewhere.
 
-## Triggering Reliability
+## Review
 
-Frontmatter alone triggers roughly half as often as skills with reinforcing AGENTS.md directives.
-
-- Every skill MUST be registered in `AGENTS.md` or `opencode-primary-shared.md` (primary-only scope)
-  with an imperative RFC 2119 trigger.
-- Primary-only skills MUST live in the primary-shared partial to avoid subagent context bloat.
-- For deterministic workflows, `disable-model-invocation: true` forces explicit `/skill-name`
-  invocation.
-
-## Body Content
-
-Open with purpose, then actionable content. Cover: inputs, procedure, verification, when to ask the
-human, failure handling.
-
-- If the agent needs it every load, put it in SKILL.md; otherwise, referenced file.
-- Cross-reference other skills by name instead of duplicating.
-- See `agents-authoring` for RFC 2119 rule writing conventions.
-- **CLI tool skills**: teach workflow and semantics; defer to `--help` for syntax. Cover what the
-  tool cannot self-document: sequencing, failure handling, non-obvious interactions.
-
-### Content Effectiveness
-
-Research shows only ~40% of typical skill body content is actionable; removing the rest measurably
-improves agent performance through reduced attention dilution.
-
-- **Earned complexity.** Every rule MUST trace to a concrete failure mode. If you cannot name the
-  failure it prevents, delete it.
-- **Subtraction test.** Periodically remove rules and test whether behavior changes. Rules that
-  survive removal were not doing anything; removing them makes the skill more robust.
-- **Examples vs rules.** One good example replaces 3-5 rule sentences for format, tone, and
-  edge-case handling. More than 3-5 examples hits diminishing returns. Use examples for output
-  structure and style; use rules for hard prohibitions and safety constraints.
-- **Attention curve.** Models attend strongly to the beginning and end of loaded content, with a
-  blind spot in the middle. Front-load critical behavioral rules; place reference material
-  (schemas, field catalogs, YAML examples) in the middle; put verification steps at the end.
-- **Prose vs structure.** Prose for nuanced judgment calls; bullet lists for binary constraints and
-  enumerable rules. The hybrid (prose framing, then bullets, then one example) consistently
-  outperforms either alone.
-
-### Directory Structures
-
-Most skills are self-contained (`skill-name/SKILL.md`). Add subdirectories only when justified:
-
-```txt
-skill-name/
-  SKILL.md              # Core workflows + always-needed reference
-  references/           # Large docs the agent reads selectively
-    api-reference.md
-  scripts/              # Deterministic operations better as code
-    validate.py
-```
-
-Reference from SKILL.md: "See `references/api-reference.md` for complete API documentation."
-
-## Failure Modes
-
-- **Ghost** (undertriggering): too narrow. Fix: more phrasings, extensions, synonyms.
-- **Orphan**: no AGENTS.md reinforcement. Fix: register with RFC 2119 trigger.
-- **Shortcut**: description summarizes workflow; model skips body. Fix: triggers only.
-- **Everything Bagel**: applies every task. Fix: move to AGENTS.md.
-- **Fragile**: breaks when repo changes. Fix: move specifics to referenced files.
-- **Skeleton**: agent wastes tool calls on discovery. Fix: inline reference material.
-- **Echo**: body opener restates trigger. Fix: state purpose instead.
-- **Reserved Name**: starts with `claude`/`anthropic`. Fix: rename.
-- **Imposter**: `README.md` instead of `SKILL.md`. Fix: rename.
-- **Escape**: raw `<`/`>` in frontmatter. Fix: rephrase.
-
-## Validation Checklist
-
-- [ ] Frontmatter has `name` and `description`
-- [ ] Name matches directory; lowercase alphanumeric + hyphens; 1-64 chars
-- [ ] Name does not start with `claude` or `anthropic`
-- [ ] Name unique across discovery locations
-- [ ] `SKILL.md` filename uppercase; no `README.md` sibling
-- [ ] No `<` or `>` anywhere in frontmatter values
-- [ ] Description opens with `Use when`
-- [ ] Description states triggers only; no workflow summary
-- [ ] Description includes multiple phrasings, relevant extensions/paths/tools
-- [ ] Description includes negative triggers when sibling boundary is fuzzy
-- [ ] Description under 1024 chars (under 500 preferred)
-- [ ] Skill registered in `AGENTS.md` or `opencode-primary-shared.md` with RFC 2119 trigger
-- [ ] Registration scoped correctly (primary-only skills in primary-shared)
-- [ ] Body opens with purpose statement (not a restated trigger)
-- [ ] Any examples present are copy-pasteable without modification
-- [ ] Agent can act without excessive discovery tool calls (one `--help` is acceptable)
+- Verify frontmatter against the current OpenCode documentation.
+- Confirm the name matches the directory and is unique across discovery locations.
+- Remove instructions inherited from AGENTS.md or another skill.
+- Confirm permitted consumers can retrieve every contract removed from the skill body.
+- Check that every rule prevents a current failure and every referenced path exists.
+- Delete unused references and scripts rather than preserving an empty structure.

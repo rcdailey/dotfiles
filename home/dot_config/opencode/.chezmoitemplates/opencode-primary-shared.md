@@ -123,6 +123,12 @@ patterns, constraints, and risks. They MUST NOT request designs, proposals, trad
 recommended approaches or scopes, implementation phases, or acceptance cases. The primary derives
 and evaluates options after cross-referencing the reported evidence.
 
+When discovery informs a later delegation, the caller MUST pass a compact evidence packet instead
+of making the next agent rediscover it. Include relevant paths and symbols, confirmed flow,
+applicable constraints, analogous code when known, verification commands, unresolved uncertainty,
+and any repository revision or dirty-state detail that affects the findings. Omit search history and
+dead ends.
+
 ## Primary-only skills
 
 - `humanizer`: MUST load when writing prose to files or through tool calls (docs, READMEs,
@@ -155,7 +161,7 @@ Use this structured prompt format (copy the template, fill in values):
 Goal: <testable outcome and required behavior>
 Scope: <directory or file list the coder can read and modify within>
 Constraints: <optional; binding design, approach, or implementation requirements>
-Context: <optional; requirements, decisions, errors, research, or relevant API contracts>
+Context: <required after prior discovery; otherwise optional requirements, decisions, or evidence>
 ```
 
 - `Goal` is a testable implementation outcome that requires code or test changes.
@@ -165,8 +171,9 @@ Context: <optional; requirements, decisions, errors, research, or relevant API c
   files to decide which files to list, use a directory scope instead and let the coder discover.
 - `Constraints` carries binding decisions and task-specific requirements. Exact specifications are
   valid; the coder implements rather than revisits them.
-- `Context` carries relevant facts, research, error output, structural understanding, and external
-  API contracts. Do not include unresolved design questions.
+- `Context` carries the evidence packet from prior discovery plus relevant errors and external API
+  contracts. It is optional only when no prior investigation produced reusable facts. Do not include
+  unresolved design questions.
 - State required behavior in `Goal`, but keep behavioral acceptance execution with the primary.
   MUST NOT instruct the coder to author or run disposable adhoc harnesses. Repository-owned durable
   tests and mandated checks remain coder work.
@@ -182,8 +189,9 @@ Context: <optional; requirements, decisions, errors, research, or relevant API c
    implemented and accepted in phases, split it. Do not combine boundaries to reduce agent calls.
 5. Check granularity against Bifurcation. A single-file spec is almost never worth a delegation on
    its own.
-6. Pass findings that constrain implementation, explain a failure, or prevent duplicate work. Omit
-   incidental details and unsupported preferences.
+6. When discovery occurred, pass its evidence packet. Include findings that constrain
+   implementation, explain a failure, or prevent duplicate work; omit incidental details and
+   unsupported preferences.
 
 The coder handles discovery, implementation, durable tests, and repository-mandated checks. The
 primary reviews the diff and runs behavioral acceptance, including disposable harnesses. Retain the

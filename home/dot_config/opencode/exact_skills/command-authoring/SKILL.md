@@ -10,159 +10,66 @@ description: >-
 
 # Command Authoring
 
-Conventions for OpenCode custom commands. Omissions intentional. All authored content MUST follow
-the Authoring rules in your system prompt (Authoring section).
+Commands are thin user-facing entry points for repeatable prompts. Put reusable procedures in skills
+and specialized execution contracts in agents.
 
-## Command Anatomy
+## Definition
 
-### File Location
-
-- **Global**: `~/.config/opencode/commands/<name>.md`
-- **Per-project**: `.opencode/commands/<name>.md`
-
-The filename (without `.md`) becomes the `/command-name`.
-
-### Frontmatter
+Place Markdown commands in `.opencode/commands/<name>.md` or
+`~/.config/opencode/commands/<name>.md`. The filename becomes the slash command.
 
 ```yaml
 ---
-description: Brief description shown in TUI autocomplete
-agent: plan          # optional: which agent executes (defaults to current)
-model: provider/model-id  # optional: override model
-subtask: true        # optional: force subagent invocation (isolated context)
+description: Brief purpose shown in command completion
+agent: build
+subtask: true
 ---
 ```
 
-`description` is the only required field. When `agent` references a subagent, subtask invocation
-happens automatically. Set `subtask: true` explicitly when you want isolation with a primary agent.
-Set `subtask: false` to disable automatic subtask for subagent references.
+- `description` is required.
+- `agent` and `model` are optional overrides.
+- A subagent target runs as a subtask by default; `subtask: false` disables that behavior.
+- `subtask: true` isolates execution even when the selected agent is primary.
 
-### Template Body
+The body is the prompt template. It supports `$ARGUMENTS`, positional `$1` values, shell output via
+`` !`command` ``, and file inclusion via `@path`.
 
-Everything after frontmatter is the prompt template. Supports:
+## Write the command
 
-- **`$ARGUMENTS`**: All arguments as a single string
-- **`$1`, `$2`, `$3`...**: Positional arguments
-- **`` !`command` ``**: Inject shell output into the prompt
-- **`@path/to/file`**: Include file contents
+- Start with the requested outcome and define fallback behavior for missing arguments.
+- Reference a skill or agent instead of copying its workflow.
+- State output shape and stop conditions only when they affect execution.
+- Use `subtask: true` for discovery-heavy or large-output work that does not need the primary
+  conversation.
+- Keep simple commands simple; headings and phases are optional.
 
-## Writing Effective Commands
+The selected agent must support every mode the command advertises. Pass all required and applicable
+optional inputs. Handle each documented return status, including blocked, partial, and retry paths,
+without inventing alternate behavior in the command layer.
 
-### The Five Elements
+Keep an interactive orchestration command on the primary agent when it must gather input or confirm
+decisions before delegation. Do not bind the command to the eventual worker merely because that
+worker performs the final step.
 
-- **Role/Goal**: what the command is doing; opening directive and domain framing.
-- **Expertise**: what it knows; specific tools, patterns, and skill references.
-- **Process**: how it works; numbered phases and decision criteria.
-- **Output**: what it produces; format templates and required sections.
-- **Constraints**: what it will not do; rules, anti-patterns, and stop points.
+## Arguments and injected context
 
-Simple commands may only need Role/Goal and Constraints. Complex commands benefit from all five.
+Treat arguments as untrusted text. Do not interpolate `$ARGUMENTS` or positional values inside a
+shell-output expression; OpenCode does not provide shell escaping for command placeholders. Let the
+agent validate arguments before running tools.
 
-### Structure Pattern
+Shell-output expressions execute in the project root before their output enters the prompt:
 
-```markdown
----
-description: One-line purpose
----
+- Keep them read-only, deterministic, and bounded.
+- Do not run formatters, migrations, installs, or other mutating commands through injection.
+- Prefer an agent tool call when output depends on user input or requires error handling.
+- Avoid `@path` inclusion for large files; instruct the agent to read targeted content instead.
 
-[Opening directive in imperative mood]
+## Review
 
-Arguments: $ARGUMENTS
-
-## Process
-
-### 1. [First Phase]
-[Steps with specific tool calls, verification, decision points]
-
-### 2. [Next Phase]
-[Steps...]
-
-## Output
-[Expected deliverable format]
-
-## Rules
-[Hard constraints, anti-patterns, stop conditions]
-```
-
-Not every command needs all sections. A 3-line command is fine for simple tasks.
-
-### Prompt Engineering Principles
-
-- **Complete but concise.** Include what the agent needs; omit everything else.
-- **Specific.** "Run `npm test`, parse failures, correlate with `git blame`" not "analyze
-  carefully."
-- **Front-load the directive.** State purpose first; models attend most to beginning and end.
-
-### Context Pollution Awareness
-
-Every command runs in the main context window by default. Commands generating large output SHOULD
-use `subtask: true` or delegate to a subagent.
-
-### Argument Handling
-
-State fallback behavior explicitly: `Review $ARGUMENTS (or infer from recent discussion if not
-provided).`
-
-### Shell Output Injection
-
-Use `` !`command` `` for dynamic context. Commands run in the project root. Bound output size.
-
-```markdown
-Current branch status:
-!`git status --short`
-
-Based on these changes, prepare a commit message.
-```
-
-### Referencing Skills and Files
-
-Reference skills by name; do not duplicate. Use `@path/to/file` to include file contents.
-
-## Command Categories
-
-- **Operational**: short, focused, minimal process. Example: format staged files and report the
-  diff.
-- **Workflow**: multi-step with phases. Example: generate release notes from git log.
-- **Orchestration**: coordinates parallel subagents. Example: validate all open Renovate PRs.
-- **Research**: gathers information without mutations. Example: analyze a library upgrade path.
-
-Research and orchestration commands are good candidates for `subtask: true`.
-
-Workflow example:
-
-```markdown
----
-description: Prepare release notes
----
-
-Generate release notes for $ARGUMENTS (version tag or range).
-
-### 1. Gather
-!`git log --oneline $1`
-
-### 2. Categorize
-Group by: breaking changes, features, fixes, chores.
-
-### 3. Output
-Markdown release notes with categories and PR references.
-```
-
-## Personas
-
-Useful for specialist tasks (security audit, architecture review) and adversarial perspectives.
-Establish in the opening line with specific expertise: `You are a senior application security
-engineer. You think like an attacker.` Anti-pattern: "You are a helpful AI assistant."
-
-## Validation Checklist
-
-- [ ] Frontmatter has `description` field
-- [ ] Description is concise (shown in TUI autocomplete)
-- [ ] Opening directive is clear and specific
-- [ ] Arguments are documented or fallback behavior stated
-- [ ] Shell injections (`` !`cmd` ``) produce bounded output
-- [ ] Skills referenced by name (not duplicated)
-- [ ] Commands with large output use `subtask: true` or subagent delegation
-- [ ] Constraints section present for non-trivial commands
-- [ ] Line length <= 100 characters
-- [ ] Code blocks have language specifiers
-- [ ] Command belongs as a command (not AGENTS.md, skill, or subagent)
+- Verify frontmatter and placeholder behavior against current OpenCode documentation.
+- Compare the command with the agent's required inputs, optional inputs, statuses, and recovery
+  behavior.
+- Check empty, malformed, and adversarial arguments.
+- Bound injected output and isolate large workflows.
+- Remove duplicated skill, agent, and global instructions.
+- Confirm the command does not override a built-in command unintentionally.

@@ -3,7 +3,8 @@ description: Code review orchestrator; selects PRs and delegates each to the rev
 ---
 
 Orchestrate code review by parsing the argument, selecting the work list, and spawning one
-`reviewer` task per PR. Relay each subagent's report; do not re-verify or re-post findings.
+`reviewer` task per PR. Spot-check the returned evidence, then relay the corrected subagent report;
+do not reproduce the full review or re-post findings.
 
 Focus is critical/high priority issues unless `$ARGUMENTS` includes `"medium"`, `"minor"`, `"low"`,
 or `"all"`. Pass the priority scope through to every spawned task unchanged.
@@ -13,17 +14,18 @@ or `"all"`. Pass the priority scope through to every spawned task unchanged.
 - **PR number** (e.g., `16` or `#16`): review that PR in the current repo
 - **Repo path or name** (e.g., `/path/to/repo`, `owner/repo`, or a bare repo name): select open PRs
   needing review (see PR Selection below)
-- **Commit range** (e.g., `main..feature`): delegate to `reviewer` in commit-range mode
-- **No arguments**: delegate to `reviewer` in local-changes mode
+- **No target** (empty arguments or priority keywords only): select open PRs in the current repo
+- **Commit range** (e.g., `main..feature`): STOP; this command reviews PRs only
 - **Priority keywords** (`medium`, `minor`, `low`, `all`): pass through to every spawned task
 
-## PR Selection (repo path or name only)
+## PR Selection
 
 Resolve the repo target for `gh`:
 
 - Directory path: derive with `gh repo view --json nameWithOwner -q .nameWithOwner` executed in that
   directory, or pass via `workdir`
 - `owner/repo` or bare repo name: pass directly as `--repo {target}`
+- No target: derive the current repo with `gh repo view --json nameWithOwner -q .nameWithOwner`
 
 Build the work list as the union of two queries:
 
@@ -79,17 +81,22 @@ Keep each returned task id paired with its PR number for the rest of the session
 Fan-out PRs run in parallel; each gets its own `/tmp/pr-review-{n}` worktree so parallel execution
 is safe.
 
-For single-PR, commit-range, and local-changes modes, spawn one task and relay its report directly.
+For one selected PR, spawn one task and relay its report directly.
 
 ## Aggregate Output
+
+Before relaying, spot-check one representative reported finding per PR against its cited path and
+line, plus any external claim that controls the verdict. This is a bounded hallucination check, not
+a second review. If the evidence contradicts the report, resume that PR's reviewer task with the
+discrepancy and require it to correct its pending comments and report.
 
 Relay each subagent's report verbatim, preserving every field of its return template. MUST NOT
 summarize, expand, reorder, or drop fields; the report is already compressed to an index and the
 pending review carries the detail. Separate multiple PRs with `---`. Add no index, preamble, or
 analysis of your own.
 
-If a report exceeds its 20-line budget or pads findings with prose, cut it back to one line per
-finding rather than relaying the overrun.
+If a report exceeds its 20-line budget or pads findings with prose, resume the reviewer task and
+require a compliant report rather than editing it in the caller context.
 
 Close with any PRs skipped from the re-review list and why.
 

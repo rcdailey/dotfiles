@@ -8,131 +8,65 @@ description: >-
 
 # Subagent Authoring
 
-Conventions for OpenCode agent definitions. Omissions intentional. All authored content MUST follow
-the Authoring rules in your system prompt (Authoring section).
+Agents justify a separate definition through a distinct role, permission boundary, model, or isolated
+context. Put reusable procedures in skills instead of creating persona-only agents.
 
-## What Agents Are
+## Definition and source
 
-Specialized personas with models, prompts, tools, and permissions. Primary agents are user-facing;
-subagents are invoked via the Task tool.
+Define agents in `.opencode/agents/<name>.md`, `~/.config/opencode/agents/<name>.md`, or the `agent`
+section of `opencode.json`. In a generated configuration repository, edit the source template and
+validate the rendered target; do not maintain both independently.
 
-## Definition
+Common fields are:
 
-Markdown files in `.opencode/agents/<name>.md` (project) or `~/.config/opencode/agents/<name>.md`
-(global). JSON alternative exists under `agent` in `opencode.json` with a `prompt` field; prefer
-markdown.
+- `description`: required routing summary.
+- `mode`: `primary`, `subagent`, or `all`; defaults to `all`.
+- `model`, `temperature`, `top_p`, `steps`, `disable`, and `color`: optional behavior settings.
+- `hidden`: removes a subagent from user autocomplete, not programmatic invocation.
+- `permission`: tool, Bash, skill, task, and external-directory access.
 
-## Frontmatter Fields
+Provider-specific fields and reasoning options change independently of OpenCode. Verify them against
+the current provider and schema instead of preserving a model catalog here.
 
-### Core
+## Permissions
 
-- `name` (string): agent identifier (defaults to filename)
-- `description` (string): drives caller delegation (required; see below)
-- `mode` (string): `primary`, `subagent`, or `all` (default: `all`)
-- `model` (string): provider/model identifier
-- `variant` (string): reasoning variant (see below)
-- `prompt` (string): system prompt (or `@./path.txt` to include file)
-- `hidden` (boolean): hide from @ menu (subagent only)
+Use `permission`; `tools` is deprecated. Permission patterns use last-match precedence, so put a
+wildcard before narrower rules.
 
-### Permissions
+- Start read-only and specialist agents from deny-by-default permissions.
+- Deny edits and mutation-capable Bash commands for read-only roles.
+- Allow only the skills and subagents required by the workflow.
+- Use permissions instead of repeating an enforceable prohibition in prose.
+- Check shell redirection and indirect mutation paths when granting Bash access.
 
-Tool-level and skill-level access; values `allow`, `deny`, `ask`. Bash and task permissions support
-glob patterns; last matching rule wins.
+## Routing contract
 
-```yaml
-permission:
-  edit: deny
-  bash:
-    "*": ask
-    "git diff": allow
-    "git log*": allow
-  webfetch: deny
-  skill:
-    "*": allow
-    "internal-*": deny
-  task:
-    "*": deny
-    "my-subagent-*": allow
-```
+A subagent description must tell callers:
 
-The deprecated `tools` field converts to permissions internally; prefer `permission`.
+- when to delegate and when not to;
+- required inputs and anything callers should omit;
+- the result returned and whether the caller must verify it.
 
-### Writing the Description
+The prompt defines domain ownership, workflow boundaries, failure behavior, and output contract. It
+must be self-contained about its own protocol, but it need not contain repository knowledge that the
+agent is specifically responsible for discovering.
 
-Same trigger-coverage discipline as skill descriptions (see `skill-authoring`). Routing
-reinforcement lives in the caller's `AGENTS.md`, not the subagent's own file.
+Reference a companion skill by name rather than copying its procedure. Include fixed tool syntax
+only when the agent cannot perform its job without it and `--help` cannot supply it.
 
-Subagent descriptions additionally MUST specify:
+The prompt, allowed skills, readable files, and available tools must together provide enough
+information to produce the return contract. Least privilege must not make the workflow impossible.
+Check inherited repository and global rules against the role. State a narrow exception when the
+agent's valid output cannot satisfy an inherited workflow, such as an out-of-repository artifact
+that cannot be committed.
 
-- **Caller protocol**: what to pass and what to omit (required inputs, structured format).
-- **Return contract**: what the caller gets back (shape, trustworthiness).
+## Review
 
-Primary agent descriptions are looser; surfaced in TUI for humans, not programmatic routing.
-
-### Behavior Options
-
-- `steps` (integer): max agentic iterations (`maxSteps` is deprecated)
-- `disable` (boolean): set `true` to disable
-- `temperature` (number): LLM randomness (0.0-1.0)
-- `top_p` (number): response diversity (0.0-1.0)
-- `color` (string): `#hex` or theme name (primary, accent, error)
-
-### Reasoning Variants
-
-- Anthropic Sonnet 5, Opus 4.7+, Opus 5, Fable 5: `low`, `medium`, `high`, `xhigh`, `max`
-  (adaptive)
-- Anthropic Opus 4.6, Sonnet 4.6: `low`, `medium`, `high`, `max` (adaptive)
-- Anthropic (older): `high`, `max` (fixed token budget)
-- No variant set: no thinking/effort params sent (reasoning off)
-- OpenAI GPT-5 family: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`
-- Google Gemini 3: `low`, `high`
-
-Variant takes highest priority in the options merge chain. Unknown frontmatter fields pass through
-as provider-specific model `options`.
-
-## Agent Modes
-
-- **primary**: User-facing, selectable in TUI.
-- **subagent**: Invoked programmatically via Task tool.
-- **all**: Both.
-
-Set `hidden: true` on subagents that should only be called by other agents.
-
-## Prompt Structure
-
-Cover (not all required): workflow/prerequisites, domain ownership, hard constraints (RFC 2119; see
-`agents-authoring`), verification commands, output format, when stuck. Do not restate constraints
-already enforced by permissions. Do not restate rules from skills the agent will load; duplication
-dilutes attention without improving compliance.
-
-### Calibration Overrides
-
-When overriding model defaults, match the framing to the override type:
-
-- **Fighting training priors** (model defaults to X, you want Y): state the override + one-line
-  rationale. The rationale helps the model generalize to edge cases. Example: "Use parallel tool
-  calls when independent; sequential wastes user time."
-- **Environment constraints** (tool unavailable, format restriction): state the fact only. No
-  rationale needed; the model has no conflicting prior.
-- **Hard stops** (safety, scope boundaries): state the boundary + redirect to a safe path. Prevents
-  the model from treating the boundary as a puzzle to route around.
-
-### Reference Material
-
-Include tool command signatures the agent needs to act without discovery calls. Standalone subagents
-MUST have reference inline; when a companion skill exists, reference by name instead.
-
-The test: can the agent do its job from the prompt alone? If not, add the missing reference.
-
-## Validation Checklist
-
-- [ ] Mode explicitly set (primary, subagent, or all)
-- [ ] Description includes multiple trigger phrasings and explicit scope
-- [ ] Description includes negative triggers for fuzzy boundaries
-- [ ] Subagent descriptions specify caller protocol (inputs to pass, inputs to omit)
-- [ ] Subagent descriptions specify return contract
-- [ ] Tool permissions match purpose (read-only agents deny write/edit/bash)
-- [ ] Hard constraints use RFC 2119 keywords
-- [ ] Agent can act from prompt alone (no discovery tool calls)
-- [ ] Tool references inline and concise
-- [ ] "When stuck" guidance included
+- Confirm the mode and description match how callers invoke the agent.
+- Compare advertised work with effective permissions and available tools.
+- Check inherited instructions for requirements the role cannot or should not perform.
+- Validate every caller and command against the agent's input contract.
+- Confirm the agent can obtain required schemas and reference data within its permission boundary.
+- Remove inherited rules, duplicated skill content, and generic persona text.
+- Verify generated templates and rendered definitions agree.
+- Test blocked behavior as well as allowed behavior for security boundaries.

@@ -9,148 +9,57 @@ description: >-
 
 # AGENTS.md Authoring
 
-Conventions for AGENTS.md files. Omissions intentional. All authored content MUST follow the
-Authoring rules in your system prompt (Authoring section).
+Use AGENTS.md for concise, non-obvious rules that apply throughout its effective scope. It is not a
+repository manual.
 
-## Core Concept
+## Decide what belongs
 
-AGENTS.md is a "README for agents": a predictable place for AI coding agent context. Supported by
-OpenAI Codex, Google Jules, Cursor, VS Code, GitHub Copilot, Devin, Windsurf, OpenCode, Aider, and
-others.
+Apply this order to every candidate instruction:
 
-## Writing Style
+1. Delete it if code, tool help, configuration, or ordinary conventions already reveal it.
+2. Enforce it with permissions, tests, schemas, hooks, or linters when deterministic.
+3. Put task-specific procedures in a skill and detailed reference material in documentation.
+4. Keep it in AGENTS.md only when it is durable, consequential, and broadly applicable.
 
-Prefer dense prose over multi-header structures. Collapse related constraints into single
-paragraphs. Use bullet lists only for genuine enumeration. Screenshot test: if removing a header and
-merging its content into the preceding section loses nothing, the header was unnecessary.
+Useful content often includes unusual commands, architectural boundaries, operational hazards, and
+a small map to authoritative files. Include examples or escalation guidance only when they prevent a
+known failure.
 
-## Essential Sections
+## Scope and loading
 
-Cover these areas (not necessarily as separate sections):
+OpenCode loads the first local rule file found while traversing upward from the current working
+directory, plus the global rule file. A child AGENTS.md is not loaded merely because an agent reads
+a file in that directory. Do not rely on additive nested instructions unless the workflow starts
+there or configuration loads them explicitly.
 
-1. **Constraints** (dos/don'ts): Be nitpicky; clear guidelines prevent repeated mistakes.
-2. **Commands**: File-scoped over project-wide; faster feedback.
-3. **Permissions**: Explicit allow/ask lists prevent surprises.
-4. **Structure hints**: A tiny index saves exploration time.
-5. **Example pointers**: Real files beat abstractions.
-6. **When stuck**: Escape hatch for uncertainty.
-7. **PR/commit checklist**: Define "ready" explicitly.
+For package-specific guidance, choose one of these deliberately:
 
-Compressed example:
+- A local AGENTS.md when sessions normally start in that package.
+- The `instructions` setting when package rules must always load.
+- A root pointer that tells agents when to read a package document or skill.
 
-```markdown
-## Do
+Keep one authoritative location per rule. Lower scopes reference higher scopes instead of copying
+them.
 
-- use TypeScript strict mode
-- default to small, focused diffs
+## Write rules
 
-## Don't
+- State the required behavior and the condition that triggers it.
+- Use `MUST` or `MUST NOT` only for hard requirements.
+- Replace vague qualities with an observable result or a real example path.
+- Give the valid alternative when prohibiting an action.
+- Omit prose that only restates structural enforcement.
+- Scope primary-only delegation rules explicitly; every agent receives global AGENTS.md.
 
-- no hard-coded colors; use design tokens
-- no new dependencies without approval
+Register a skill in always-loaded instructions only when missing that skill causes repeated,
+consequential errors. Primary-only registrations belong in the primary prompt, not global context.
 
-## Commands
+## Review
 
-npm run tsc --noEmit path/to/file.tsx # type check single file
-npm run eslint --fix path/to/file.tsx # lint single file
+Before finalizing:
 
-## Permissions
-
-Allowed: read, type check, lint, single unit tests. Ask first: installs, push, deletes, full build.
-
-## Structure
-
-- routes: `src/App.tsx`
-- components: `src/components/`
-- design tokens: `src/lib/theme/tokens.ts`
-
-## Examples
-
-Copy: `src/components/UserForm.tsx` (forms). Avoid: `src/legacy/Admin.tsx` (class component).
-
-## When stuck
-
-Ask a clarifying question, propose a plan, or open a draft PR. Do not push speculative changes.
-
-## PR checklist
-
-lint + type check + tests green; diff small and focused; summary of what and why.
-```
-
-## Skill Routing
-
-Per-skill imperative triggers in AGENTS.md MUST use RFC 2119 keywords. Empirical testing shows
-skills relying on frontmatter alone trigger roughly half as often as skills with reinforcing
-AGENTS.md directives; softer phrasing produces measurably weaker compliance than MUST.
-
-- Skills used by both primary agents and subagents MUST live in `AGENTS.md`.
-- Skills used only by primary agents MUST live in `opencode-primary-shared.md` to avoid subagent
-  context bloat.
-- The generic "check skills before acting" directive MUST NOT be duplicated across AGENTS.md and
-  primary-shared; keep in AGENTS.md only.
-
-## Alternative: Instructions in opencode.json
-
-Rules can load via the `instructions` field (globs + remote URLs); combines with AGENTS.md.
-
-```json
-{
-  "instructions": [
-    "CONTRIBUTING.md",
-    "packages/*/AGENTS.md",
-    "https://raw.githubusercontent.com/my-org/shared-rules/main/style.md"
-  ]
-}
-```
-
-## Nested AGENTS.md for Monorepos
-
-Place AGENTS.md in subdirectories for package-specific rules. OpenCode traverses up from the working
-directory to the git worktree root; closer files take precedence. Global rules in
-`~/.config/opencode/AGENTS.md` apply across all sessions.
-
-## Context Engineering
-
-- **Position sensitivity**: critical rules at the top; checklists at the end. Middle content
-  receives the least model attention (U-shaped attention curve).
-- **Completeness without bloat**: terse rules, compressed examples, no filler.
-- **Subtraction test**: periodically remove rules and test whether behavior degrades. Rules that
-  survive removal were noise; removing them improves signal density.
-
-## Rule Writing
-
-Use RFC 2119 keywords (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY). LLMs parse these as strict
-requirement levels, producing measurably higher compliance than softer phrasing.
-
-- `MUST` / `SHALL`: absolute requirement
-- `MUST NOT` / `SHALL NOT`: absolute prohibition
-- `SHOULD` / `SHOULD NOT`: strong preference; exceptions require justification
-- `MAY`: truly discretionary; usually omit instead
-
-- **Constraint + consequence.** Bad: "Don't commit to main." Good: "MUST NOT commit directly to
-  main; use feature branches and PRs."
-- **Specific over vague.** Bad: "Be careful with error handling." Good: "All async functions MUST
-  have try/catch; unhandled rejections crash the process."
-- **Declarative for dense constraints.** Stacking multiple imperative chains ("when X, don't do Y;
-  also don't Z unless W") is measurably more fragile than flat declarative statements ("X: disabled.
-  Y: required."). Use RFC 2119 imperatives for individual rules; prefer declarative state-setting
-  for multi-condition constraint lists and configuration-like blocks.
-
-## Antipatterns
-
-- Repeated rules across files: single authoritative location.
-- Vague adjectives: replace with concrete criteria or examples.
-- Prohibitions without alternatives: include the correct approach.
-- Restating structural enforcement: if denied via permissions, skip the prose rule.
-- Duplicated routing: document delegation in one location (Agents section is authoritative).
-- Unscoped delegation: AGENTS.md is inherited by ALL agents. Delegation directives MUST scope to
-  primary agents; otherwise subagents receive directives to delegate to agents they cannot invoke.
-
-## Validation Checklist
-
-- [ ] Each constraint has a consequence
-- [ ] Commands copy-pasteable; file-scoped where possible
-- [ ] Examples reference real files
-- [ ] "When stuck" guidance included
-- [ ] Skill routing directives use RFC 2119 keywords
-- [ ] Skill routing scoped correctly (primary-only skills in primary-shared)
+- Verify every path and command against the repository.
+- Inspect history before restoring a removed instruction or workflow; absence may be intentional.
+- Remove duplicated, stale, generic, and speculative guidance.
+- Confirm each remaining rule has one authoritative home and a concrete failure it prevents.
+- Check that the file helps an agent choose the next source without describing the repository file
+  by file.
