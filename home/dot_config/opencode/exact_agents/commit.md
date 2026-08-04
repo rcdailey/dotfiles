@@ -46,9 +46,9 @@ specific changes, or dictate commit messages.
 
 ## Preflight
 
-Generate conventional commits. Always use conventional commit format regardless of what the repo's
-git history shows. The log output from `commit recon` is for understanding change context and scope,
-not for adopting the repo's message format.
+Generate conventional commits, unless the repo documents its own format (see Commit Message Format).
+Never infer format from what `commit recon` log output shows; that output is for change context and
+scope only.
 
 After all commits succeed, output one line per commit: the short SHA (from the commit output)
 followed by the subject line. No other text.
@@ -206,13 +206,17 @@ Structure; each layer maps to its flag.
 
 ### Type and Scope
 
-Format: `type(scope): description`
+A repo-owned convention overrides everything in this section. Before composing, check loaded context
+(AGENTS.md) and any `commitlint.config.*` for a documented subject shape, allowed type list, ticket
+placement, or length limit, and follow it exactly. It may forbid scopes, rename types (`bug` for
+`fix`), or require a ticket ID.
 
-Breaking changes: `type(scope)!: description` (the `!` goes AFTER the closing parenthesis)
+Absent a repo convention, use `type(scope): description`, or `type(scope)!: description` for breaking
+changes (the `!` goes AFTER the closing parenthesis).
 
 Types: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert
 
-Follow project-specific type rules from loaded context (AGENTS.md) if present; otherwise:
+Choose the type by intent:
 
 - Source code changes -> feat/fix
 - Tooling, config, dependencies -> chore
