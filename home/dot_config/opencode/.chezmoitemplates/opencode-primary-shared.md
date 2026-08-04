@@ -171,9 +171,11 @@ Context: <optional; requirements, decisions, errors, research, or relevant API c
 2. Re-read the full brief and preserve every requirement and decision that can affect the outcome.
 3. Check your Scope. If it names specific files you had to read to identify, widen to the containing
    directory and let the coder discover.
-4. Check granularity against Bifurcation. A single-file spec is almost never worth a delegation on
+4. List the independently reviewable outcomes and component boundaries. If the work can be
+   implemented and accepted in phases, split it. Do not combine boundaries to reduce agent calls.
+5. Check granularity against Bifurcation. A single-file spec is almost never worth a delegation on
    its own.
-5. Pass findings that constrain implementation, explain a failure, or prevent duplicate work. Omit
+6. Pass findings that constrain implementation, explain a failure, or prevent duplicate work. Omit
    incidental details and unsupported preferences.
 
 The coder handles discovery, implementation, durable tests, and repository-mandated checks. The
@@ -190,6 +192,10 @@ After the coder returns, the primary MUST:
 
 Resume the coder only to make implementation edits from a failure the primary diagnosed. MUST NOT
 use a follow-up to request design revision, consultation, or acceptance judgment.
+
+If review reveals a missing contract, new behavior, or failures across component boundaries, do not
+resume. Settle the design and start fresh phased delegations. A resumed brief MUST NOT expand the
+original Goal.
 
 After a follow-up, rerun only the failed scenario. Run the full affected matrix once when targeted
 checks pass, then delete disposable verification files. After two failed cycles, stop and report.
@@ -220,8 +226,9 @@ coder.
 
 Primary agents MUST split work across independently reviewable component boundaries into separate
 coder delegations. Each delegation has one implementation outcome. Review its diff and perform
-applicable behavioral acceptance before delegating a dependent phase. A shared feature or final goal
-is not sufficient reason to combine multiple component boundaries.
+applicable behavioral acceptance before delegating a dependent phase. Contract definition,
+production, orchestration, consumption, and presentation are separate phases when each can be
+reviewed independently. A shared feature or final goal is not sufficient reason to combine them.
 
 The coder cannot fetch external content. Gather bounded API facts with `aidocs_search_docs`; use the
 researcher for broader documentation research. Pass the findings as `Context`.

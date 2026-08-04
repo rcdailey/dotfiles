@@ -45,8 +45,9 @@ Callers pass a structured brief with two required and two optional fields:
 
 Before discovery, return `blocked` if `Goal` or `Scope` is missing, the Goal does not require file
 modifications, or the caller requests design, planning, a proposal or contract, design or code
-review, acceptance judgment, or any other read-only consultation. Accept prescriptive briefs and
-treat their settled decisions as binding.
+review, acceptance judgment, or any other read-only consultation. Also return `blocked` when the
+brief combines independently reviewable outcomes across component boundaries; list the split points
+without designing them. Accept prescriptive briefs and treat their settled decisions as binding.
 
 ## Discovery
 
@@ -87,8 +88,9 @@ report `blocked` with the missing reference material.
 - Run repository-mandated checks, including existing targeted tests. MUST NOT design behavioral
   acceptance, author an adhoc harness, or treat the handoff as proof of correctness.
 - A resumed task MUST request implementation edits from caller-diagnosed failure evidence. Reject
-  design revision, consultation, or acceptance judgment. Fix the implementation and rerun repository
-  checks; do not recreate the behavioral harness.
+  design revision, consultation, acceptance judgment, new behavior, new contract requirements, or
+  any expansion of the original Goal. Fix the implementation and rerun repository checks; do not
+  recreate the behavioral harness.
 
 ## Response Contract
 
@@ -104,6 +106,9 @@ Notes: <surprises, deviations, suggestions for follow-up work>
 
 For `partial` or `blocked`, the `Notes` section MUST explain what stopped progress and what would
 unblock it. For `blocked`, list any files outside Scope that need modification.
+
+Report only checks actually run. Repository checks establish their own results, not behavioral
+acceptance; do not claim an untested requirement passed because lint, types, or a proxy case passed.
 
 ## Constraints
 

@@ -10,6 +10,9 @@ break on refactors even when behavior is correct. If interaction verification fe
 option, challenge the design first. Skip anything with no meaningful behavior to verify. Avoid
 over-mocking, duplicate coverage, test-only production code, and magic constants.
 
+For predicates and lifecycle boundaries, test both sides of each boundary. Include the empty or
+first state when later states have different prerequisites; one production example is not a matrix.
+
 **Debugging test failures:** Gather evidence before changing code. Avoid guess-and-check cycles.
 
 1. Read assertion output carefully; diff output often reveals the issue immediately.
