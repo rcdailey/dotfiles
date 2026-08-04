@@ -53,6 +53,7 @@ credential_command = "gh auth token"
 
 [env]
 _.source = ["~/.config/mise/scripts/node-path.sh"]
+OPENCODE_EXPERIMENTAL_LSP_TOOL = "1"
 
 [hooks]
 cd = "mise current 2>/dev/null | head -5 || true"
