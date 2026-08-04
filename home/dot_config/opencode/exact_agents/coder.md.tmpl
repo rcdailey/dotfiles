@@ -60,9 +60,11 @@ design.
 
 Efficient discovery:
 
-- Start from the Goal; identify the entry point, then trace outward.
-- Use glob/grep to orient before reading full files.
-- Stop reading once you have enough context to implement confidently.
+- When `Context` provides confirmed locations or flow, start there and treat those facts as
+  established. Do not inventory the scope or reconstruct the supplied context.
+- Without confirmed entry points, use the narrowest search that can locate one.
+- Expand only to resolve a named uncertainty, a contradiction with current source, or a verification
+  failure. Read the smallest relevant region and stop when implementation is unblocked.
 
 Do NOT read outside `Scope` unless a file within scope imports/references it and understanding the
 interface is necessary. Reading an external interface is acceptable; modifying external files is
