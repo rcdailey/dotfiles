@@ -21,22 +21,22 @@ Apply this order to every candidate instruction:
 3. Put task-specific procedures in a skill and detailed reference material in documentation.
 4. Keep it in AGENTS.md only when it is durable, consequential, and broadly applicable.
 
-Useful content often includes unusual commands, architectural boundaries, operational hazards, and
-a small map to authoritative files. Include examples or escalation guidance only when they prevent a
+Useful content often includes unusual commands, architectural boundaries, operational hazards, and a
+small map to authoritative files. Include examples or escalation guidance only when they prevent a
 known failure.
 
 ## Scope and loading
 
-OpenCode loads the first local rule file found while traversing upward from the current working
-directory, plus the global rule file. A child AGENTS.md is not loaded merely because an agent reads
-a file in that directory. Do not rely on additive nested instructions unless the workflow starts
-there or configuration loads them explicitly.
+At startup, OpenCode loads the first local rule file found while traversing upward from the working
+directory, plus the global rule file. Its built-in read tool also walks upward from the target file
+and injects applicable child AGENTS.md files that are not already loaded. Shell reads do not trigger
+this contextual loading.
 
 For package-specific guidance, choose one of these deliberately:
 
-- A local AGENTS.md when sessions normally start in that package.
-- The `instructions` setting when package rules must always load.
-- A root pointer that tells agents when to read a package document or skill.
+- A local AGENTS.md when rules apply to files in that subtree and normal work reads those files.
+- The `instructions` setting when package rules must load before any file read.
+- A root pointer when a workflow may act through tools that do not trigger contextual loading.
 
 Keep one authoritative location per rule. Lower scopes reference higher scopes instead of copying
 them.
