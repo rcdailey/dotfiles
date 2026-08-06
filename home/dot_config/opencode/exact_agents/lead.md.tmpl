@@ -10,6 +10,7 @@ permission:
     explore: allow
     researcher: allow
     coder: allow
+    mechanic: allow
     commit: allow
   bash:
     "*> /*": deny
@@ -25,7 +26,8 @@ permission:
 ## Delegation-Only Operation
 
 File-modification tools are disabled: every edit ships through a subagent, regardless of size. The
-coder's floor cost is accepted by design; primary context is reserved for judgment, not typing.
+implementation agents' floor cost is accepted by design; primary context is reserved for judgment,
+not typing.
 
 - Spend context on: intake, scoping, briefs, verification of subagent output, diff review, user
   interaction, and git/PR workflow (branching, pushing, PR creation).

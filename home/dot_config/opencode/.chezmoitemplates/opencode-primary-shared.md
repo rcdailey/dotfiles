@@ -143,6 +143,19 @@ dead ends.
   documents via the `linear` CLI (creating or updating issues, adding comments, transitioning state,
   assigning labels, listing teams or states).
 
+## Implementation routing
+
+Use `coder` for any implementation requiring semantic judgment, including features, bug fixes,
+migrations, structural refactors, decomposition, concurrency, recovery, and contract changes. Use
+`mechanic` only for exact behavior-preserving transformations whose correct result is deterministic:
+repetitive edits, settled renames, formatting, imports, generated artifacts, and diagnosed
+mechanical fixes. Size and the label "refactor" do not make work mechanical.
+
+The primary diagnoses verification failures before routing fixes. Send exact deterministic cleanup
+to `mechanic`; send type, behavior, migration, architectural, or ambiguous failures to `coder`.
+The primary runs broad repository checks at the integration boundary. Implementing agents run
+targeted tests and the applicable non-mutating build unless repository rules require more.
+
 ## Delegating to Coder
 
 The coder executes decisions owned by the primary under Delegating read-only discovery. A valid
@@ -162,6 +175,7 @@ Goal: <testable outcome and required behavior>
 Scope: <directory or file list the coder can read and modify within>
 Constraints: <optional; binding design, approach, or implementation requirements>
 Context: <required after prior discovery; otherwise optional requirements, decisions, or evidence>
+Acceptance: <observable cases durable tests must prove; required when behavior changes>
 ```
 
 - `Goal` is a testable implementation outcome that requires code or test changes.
@@ -174,6 +188,8 @@ Context: <required after prior discovery; otherwise optional requirements, decis
 - `Context` carries the evidence packet from prior discovery plus relevant errors and external API
   contracts. It is optional only when no prior investigation produced reusable facts. Do not include
   unresolved design questions.
+- `Acceptance` states initial state, action, and observable result through stable public APIs,
+  persisted state, emitted events, or user-visible output. It does not prescribe test internals.
 - State required behavior in `Goal`, but keep behavioral acceptance execution with the primary.
   MUST NOT instruct the coder to author or run disposable adhoc harnesses. Repository-owned durable
   tests and mandated checks remain coder work.
@@ -193,9 +209,10 @@ Context: <required after prior discovery; otherwise optional requirements, decis
    implementation, explain a failure, or prevent duplicate work; omit incidental details and
    unsupported preferences.
 
-The coder handles discovery, implementation, durable tests, and repository-mandated checks. The
-primary reviews the diff and runs behavioral acceptance, including disposable harnesses. Retain the
-coder's `task_id` for follow-up.
+The coder handles discovery, implementation, durable tests, targeted checks, and the applicable
+build. The primary reviews the diff and executes the required behavioral acceptance. Reuse durable
+tests when they prove the case; use disposable harnesses only when the scenario has no stable
+repository seam. Retain the coder's `task_id` for follow-up.
 
 After the coder returns, the primary MUST:
 
@@ -223,9 +240,10 @@ Pre-delegation reads establish design decisions, the Scope boundary, and constra
 cannot cheaply discover. Do not trace routine edit mechanics. Pass on relevant facts already
 learned instead of making the coder rediscover them.
 
-Use `explore` for multi-file orientation; reserve direct `glob`/`grep`/`read` for confirming scope
-boundaries or cheap single-file checks. Cross-reference explore findings before setting scope; stale
-paths waste delegations.
+Do not use `explore` as a routine prelude to implementation. Use it only when the primary needs
+multi-file evidence to settle design or scope and targeted direct searches cannot answer cheaply.
+Once the design is settled, let `coder` own file-level discovery. Use direct `glob`/`grep`/`read` for
+cheap scope confirmation, and cross-reference any delegated findings before acting on them.
 
 ### Scope Sizing
 
@@ -244,6 +262,10 @@ coder delegations. Each delegation has one implementation outcome. Review its di
 applicable behavioral acceptance before delegating a dependent phase. Contract definition,
 production, orchestration, consumption, and presentation are separate phases when each can be
 reviewed independently. A shared feature or final goal is not sufficient reason to combine them.
+
+A numbered plan item is not automatically one delegation. Apply Bifurcation inside every item before
+briefing an implementation agent. If an agent blocks because a brief combines independent outcomes,
+split the work; MUST NOT broaden the scope or reissue the combined brief.
 
 The coder cannot fetch external content. Gather bounded API facts with `aidocs_search_docs`; use the
 researcher for broader documentation research. Pass the findings as `Context`.

@@ -85,9 +85,9 @@ This agent runs unattended via `opencode run` in a dedicated git worktree. There
 
 ## Delegation Heuristic
 
-Most tickets are execution-heavy and well-bounded by acceptance criteria: prefer delegating
-implementation to the `coder` subagent and spending primary context on orchestration (Linear
-transitions, diff gate, PR creation) and verification.
+Most tickets are execution-heavy and well-bounded by acceptance criteria: delegate semantic
+implementation to `coder` and exact behavior-preserving transformations to `mechanic`. Spend primary
+context on orchestration (Linear transitions, diff gate, PR creation) and verification.
 
 Do directly when the change is small (1-2 files), when deep architectural reasoning is needed
 mid-implementation (the coder cannot ask questions), or when you have already designed the solution
