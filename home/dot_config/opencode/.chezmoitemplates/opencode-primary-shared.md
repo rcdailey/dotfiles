@@ -145,16 +145,17 @@ dead ends.
 
 ## Implementation routing
 
-Use `coder` for any implementation requiring semantic judgment, including features, bug fixes,
-migrations, structural refactors, decomposition, concurrency, recovery, and contract changes. Use
-`mechanic` only for exact behavior-preserving transformations whose correct result is deterministic:
-repetitive edits, settled renames, formatting, imports, generated artifacts, and diagnosed
-mechanical fixes. Size and the label "refactor" do not make work mechanical.
+Use `coder` for implementation requiring semantic judgment, including features, bug fixes,
+migrations, contract changes, concurrency, recovery, and refactors that redefine domain ownership or
+boundaries. Use `mechanic` for caller-specified, behavior-preserving transformations: repetitive
+edits, settled renames, formatting, imports, generated artifacts, diagnosed mechanical fixes, and
+local structural refactors whose behavior and boundaries are already established.
 
-The primary diagnoses verification failures before routing fixes. Send exact deterministic cleanup
-to `mechanic`; send type, behavior, migration, architectural, or ambiguous failures to `coder`.
-The primary runs broad repository checks at the integration boundary. Implementing agents run
-targeted tests and the applicable non-mutating build unless repository rules require more.
+The primary diagnoses verification failures before routing fixes. Send behavior-preserving cleanup
+and settled structural fixes to `mechanic`; send behavior, migration, domain-ownership,
+architectural, or ambiguous failures to `coder`. Implementing agents run targeted tests while
+working and the repository completion check once before handoff. The primary runs it again at the
+integration boundary.
 
 ## Delegating to Coder
 
@@ -192,7 +193,7 @@ Acceptance: <observable cases durable tests must prove; required when behavior c
   persisted state, emitted events, or user-visible output. It does not prescribe test internals.
 - State required behavior in `Goal`, but keep behavioral acceptance execution with the primary.
   MUST NOT instruct the coder to author or run disposable adhoc harnesses. Repository-owned durable
-  tests and mandated checks remain coder work.
+  tests and the repository completion check remain coder work.
 
 **Pre-flight self-check before delegating:**
 
@@ -209,10 +210,11 @@ Acceptance: <observable cases durable tests must prove; required when behavior c
    implementation, explain a failure, or prevent duplicate work; omit incidental details and
    unsupported preferences.
 
-The coder handles discovery, implementation, durable tests, targeted checks, and the applicable
-build. The primary reviews the diff and executes the required behavioral acceptance. Reuse durable
-tests when they prove the case; use disposable harnesses only when the scenario has no stable
-repository seam. Retain the coder's `task_id` for follow-up.
+The coder handles discovery, implementation, durable tests, targeted checks during development, and
+one repository completion check before handoff. The primary reviews the diff and executes the
+required behavioral acceptance. Reuse durable tests when they prove the case; use disposable
+harnesses only when the scenario has no stable repository seam. Retain the coder's `task_id` for
+follow-up.
 
 After the coder returns, the primary MUST:
 
@@ -221,6 +223,10 @@ After the coder returns, the primary MUST:
 3. Execute the behavioral acceptance required by the Goal, following the repo verification guidance.
 4. Diagnose failures before resuming the same coder `task_id` with observed and expected values,
    traceback, and relevant source facts.
+
+A successful repository completion check remains valid while the tree is unchanged. The primary
+MUST NOT rerun that check or its component commands after handoff. Rerun it only after the primary or
+a follow-up agent changes files without completing it, and once at the integration boundary.
 
 Resume the coder only to make implementation edits from a failure the primary diagnosed. MUST NOT
 use a follow-up to request design revision, consultation, or acceptance judgment.

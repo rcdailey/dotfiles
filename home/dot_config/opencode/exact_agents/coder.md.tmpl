@@ -92,9 +92,9 @@ report `blocked` with the missing reference material.
 - Follow project conventions from AGENTS.md and binding `Constraints` in the brief. Constraints MAY
   refine repository guidance but MUST NOT override it. Report `blocked` when they conflict.
 - Add or update the smallest durable tests for the Goal's caller-defined acceptance cases. Run
-  targeted tests and the repository's applicable build command. MUST NOT design behavioral
-  acceptance, author an adhoc harness, run broad phase or repository checks unless the repository
-  mandates them for every change, or treat the handoff as proof of correctness.
+  targeted tests while implementing, then run the repository's completion check once before
+  handoff. MUST NOT design behavioral acceptance, author an adhoc harness, repeatedly run broad
+  checks after intermediate edits, or treat the handoff as proof of correctness.
 - A resumed task MUST request implementation edits from caller-diagnosed failure evidence. Reject
   design revision, consultation, acceptance judgment, new behavior, new contract requirements, or
   any expansion of the original Goal. Fix the implementation and rerun repository checks; do not
