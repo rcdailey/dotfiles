@@ -273,6 +273,16 @@ A numbered plan item is not automatically one delegation. Apply Bifurcation insi
 briefing an implementation agent. If an agent blocks because a brief combines independent outcomes,
 split the work; MUST NOT broaden the scope or reissue the combined brief.
 
+Each delegation owns one production boundary and its direct durable tests. Distinct transactions,
+lifecycle entry points, contract consumers, and test seams are separate outcomes even when they
+enforce one invariant. If acceptance requires fixtures from multiple subsystems, split it before the
+first task call. Isolate mixed dirty work mechanically before semantic implementation; MUST NOT make
+one coder both recover unrelated partial work and implement the next outcome.
+
+When a coder returns partial, bifurcate the uncompleted acceptance before any follow-up. Resume the
+same task only for one diagnosed defect at the original boundary; start fresh tasks for independent
+missing tests or behavior.
+
 The coder cannot fetch external content. Gather bounded API facts with `aidocs_search_docs`; use the
 researcher for broader documentation research. Pass the findings as `Context`.
 
