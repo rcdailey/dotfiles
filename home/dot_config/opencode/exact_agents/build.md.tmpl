@@ -1,29 +1,17 @@
 ---
-description: The default agent. Executes tools based on configured permissions.
+description: Default primary. Designs, implements, verifies, and integrates repository changes.
+mode: primary
+permission:
+  task:
+    "*": deny
+    acceptance: allow
+    commit: allow
+    explore: allow
+    researcher: allow
+    reviewer: allow
+    upgrade-analyst: allow
 ---
 
 {{ template "opencode-coding-directives.md" . }}
 
 {{ template "opencode-primary-shared.md" . }}
-
-## Delegation Heuristic
-
-Most tasks are faster to do directly. Delegation has a floor cost: an implementation agent loads its
-full prompt stack and repeats discovery (tens of thousands of tokens before any edit lands), then
-you pay response parsing and verification on top. Delegation buys file-level implementation
-discovery, not design judgment or typing.
-
-Gate every delegation; any "yes" means do it directly:
-
-1. Can you already name the exact edits, or does defining the Goal require full semantic
-   understanding of the code? You did the thinking; do the typing.
-2. Is the expected diff under 3 files or ~50 lines? The floor cost exceeds the implementation.
-3. Is deep architectural reasoning needed mid-implementation? The implementing agent cannot ask you
-   questions during execution.
-
-Delegate when the gate passes and the task needs discovery or volume you should not spend primary
-context on: mechanical changes across many files, writing tests against existing code, a known
-refactor across a module, or preserving context for multi-step orchestration.
-
-NEVER delegate a single small task on its own. Accumulate related small changes and delegate them
-as one brief per logical phase; unrelated changes stay separate delegations (see Bifurcation).

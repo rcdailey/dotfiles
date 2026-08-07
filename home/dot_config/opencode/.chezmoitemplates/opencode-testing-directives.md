@@ -5,9 +5,9 @@ scope that's practical; push to lower-scoped tests only when higher-scoped tests
 specific code paths.
 
 Add durable tests when behavior changes and a stable observable boundary exists. The primary owns
-acceptance cases; implementing agents write the smallest proof of those cases. Show that each new
-test fails for the expected reason before changing production code when practical. If no stable seam
-exists, state why instead of adding an implementation-coupled test.
+acceptance cases and writes their smallest proof. Show that each new test fails for the expected
+reason before changing production code when practical. If no stable seam exists, state why instead
+of adding an implementation-coupled test.
 
 **Assert outcomes, not interactions.** Verify the result, side effect, or state change rather than
 asserting a mock method was called. Interaction verification couples tests to implementation; they

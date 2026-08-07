@@ -1,5 +1,5 @@
 ---
-description: Write a delegation-ready plan from the current design
+description: Write an implementation-ready plan from the current design
 agent: build
 subtask: false
 ---
@@ -68,10 +68,9 @@ Each slice must be independently reviewable, revertible, and committable. It own
 tests; do not create a later catch-all testing slice. Shared feature names or invariants do not
 justify combining boundaries.
 
-Slices are acceptance units, not mandatory agent calls. Do not prescribe an agent or session per
-slice; implementation routing follows the primary's delegation heuristic. A contract slice may
-include generated output or nonbehavioral exhaustiveness scaffolding needed to keep compilation
-green, but not behavioral consumption.
+Slices are acceptance units, not agent calls. The primary implements them directly; do not prescribe
+an agent or session per slice. A contract slice may include generated output or nonbehavioral
+exhaustiveness scaffolding needed to keep compilation green, but not behavioral consumption.
 
 For a finite response union or state machine, enumerate every reachable variant, legal transition,
 stale transition, and observable route. "Use the existing contract" is not an acceptance matrix.

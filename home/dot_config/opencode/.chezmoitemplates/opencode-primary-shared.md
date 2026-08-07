@@ -83,26 +83,13 @@ Applies when producing AGENTS.md, SKILL.md, agent definitions, or command files.
 
 ## Agents
 
-SHOULD use agents autonomously without explicit prompt from user for appropriate operations. Follow
-the caller protocol in each agent's description exactly; it specifies what to pass and what not to
-pass.
+Subagents gather independent evidence or perform specialized operations; they do not implement
+repository changes. Follow each agent's caller protocol. Require responses directly to the caller,
+never files on disk. Treat results as evidence: cross-reference cited source or observed output
+before acting.
 
-Start each new delegation as a fresh task. Resume a `task_id` only for the same bounded task, never
-for unrelated work.
-
-Use one subagent by default. Run agents concurrently only for independent, non-overlapping work,
-and give concurrent writing agents disjoint scopes. Do not duplicate delegated work while it runs.
-
-Delegation prompts are execution briefs, not chat. They MUST preserve every requirement, decision,
-constraint, and relevant fact the subagent needs to work independently. Prefer concise detail over
-vague brevity; never omit information that could change implementation or verification.
-
-When delegating to subagents, explicitly require them to respond directly to the caller; MUST NOT
-write research, outcomes, or responses to files on disk. Callers MUST cross-reference subagent
-findings before acting on them. This doesn't mean repeating the work; it means spot-checking
-reported results against primary sources (reading cited files, verifying links, searching docs) to
-catch hallucinations and false assumptions. Subagent models are weaker than the caller; trust but
-verify.
+Start each task fresh unless the agent's protocol explicitly requires continuity. Acceptance audits
+after a changed tree MUST always use a fresh task.
 
 Primary agents MUST delegate external web research, PDF retrieval, and open-ended or multi-source
 GitHub exploration to the researcher. They MAY use direct read-only `gh` commands for bounded
@@ -115,7 +102,7 @@ documentation research that requires multiple pages, external sources, or substa
 ## Delegating read-only discovery
 
 The primary owns architecture, system design, public contracts, schemas, migration strategy,
-cross-component boundaries, implementation phases, acceptance criteria, and acceptance review.
+cross-component boundaries, implementation phases, acceptance criteria, and final acceptance.
 `explore` and `researcher` gather evidence; they do not make or recommend these decisions.
 
 Discovery prompts MAY request exact paths, data flow, current contracts, invariants, existing
@@ -143,172 +130,54 @@ dead ends.
   documents via the `linear` CLI (creating or updating issues, adding comments, transitioning state,
   assigning labels, listing teams or states).
 
-## Implementation routing
+## Direct implementation
 
-Use `coder` for implementation requiring semantic judgment, including features, bug fixes,
-migrations, contract changes, concurrency, recovery, and refactors that redefine domain ownership or
-boundaries. Use `mechanic` for caller-specified, behavior-preserving transformations: repetitive
-edits, settled renames, formatting, imports, generated artifacts, diagnosed mechanical fixes, and
-local structural refactors whose behavior and boundaries are already established.
-
-The primary diagnoses verification failures before routing fixes. Send behavior-preserving cleanup
-and settled structural fixes to `mechanic`; send behavior, migration, domain-ownership,
-architectural, or ambiguous failures to `coder`. Implementing agents run targeted tests while
-working and the repository completion check once before handoff. The primary runs it again at the
-integration boundary.
-
-## Delegating to Coder
-
-The coder executes decisions owned by the primary under Delegating read-only discovery. A valid
-delegation requires a settled design and file modifications within `Scope`. MUST NOT use the coder
-for design or architecture consultation, planning, proposals, contracts, design review, code review,
-acceptance design or review, or any read-only task. If design is unsettled, resolve it directly or
-with the user before delegating.
-
-The coder owns file-level discovery and routine local implementation choices within the settled
-design. The primary owns any choice that changes behavior, interfaces, data shape, boundaries,
-invariants, migration strategy, or acceptance criteria.
-
-Use this structured prompt format (copy the template, fill in values):
-
-```txt
-Goal: <testable outcome and required behavior>
-Scope: <directory or file list the coder can read and modify within>
-Introduces: <new reusable contract or artifact; omit if none>
-Dependencies: <accepted contracts or artifacts consumed; omit if none>
-Constraints: <optional; binding design, approach, or implementation requirements>
-Context: <required after prior discovery; otherwise optional requirements, decisions, or evidence>
-Acceptance: <observable cases durable tests must prove; required when behavior changes>
-```
-
-- `Goal` is a testable implementation outcome that requires code or test changes.
-- `Scope` is a boundary, not a file list. The coder discovers which files to touch. Prefer directory
-  scopes (`src/api/`); file lists are valid only for genuinely surgical tasks where the blast radius
-  is already known (e.g., renaming one export and its test). If you find yourself reading the source
-  files to decide which files to list, use a directory scope instead and let the coder discover.
-- `Introduces` names reusable schemas, APIs, events, repository contracts, or persisted artifacts
-  established by this outcome. `Dependencies` names existing or previously accepted contracts the
-  outcome consumes. A delegation MUST NOT introduce and behaviorally consume the same reusable
-  contract.
-- `Constraints` carries binding decisions and task-specific requirements. Exact specifications are
-  valid; the coder implements rather than revisits them.
-- `Context` carries the evidence packet from prior discovery plus relevant errors and external API
-  contracts. It is optional only when no prior investigation produced reusable facts. Do not include
-  unresolved design questions.
-- `Acceptance` states initial state, action, and observable result through stable public APIs,
-  persisted state, emitted events, or user-visible output. It does not prescribe test internals.
-- State required behavior in `Goal`, but keep behavioral acceptance execution with the primary.
-  MUST NOT instruct the coder to author or run disposable adhoc harnesses. Repository-owned durable
-  tests and the repository completion check remain coder work.
-
-**Pre-flight self-check before delegating:**
-
-1. Confirm the design is settled and the Goal requires file modifications. Otherwise, do not
-   delegate.
-2. Re-read the full brief and preserve every requirement and decision that can affect the outcome.
-3. Check your Scope. If it names specific files you had to read to identify, widen to the containing
-   directory and let the coder discover.
-4. Build the contract graph. List reusable contracts introduced and consumed. Every consumed
-   contract must already exist or come from an accepted foundation slice; split any outcome that
-   both establishes and behaviorally uses one.
-5. List the independently reviewable outcomes and component boundaries. If the work can be
-   implemented and accepted in phases, split it. Do not combine boundaries to reduce agent calls.
-6. Check granularity against Bifurcation. A single-file spec is almost never worth a delegation on
-   its own.
-7. When discovery occurred, pass its evidence packet. Include findings that constrain
-   implementation, explain a failure, or prevent duplicate work; omit incidental details and
-   unsupported preferences.
-
-The coder handles discovery, implementation, durable tests, targeted checks during development, and
-one repository completion check before handoff. The primary reviews the diff and executes the
-required behavioral acceptance. Reuse durable tests when they prove the case; use disposable
-harnesses only when the scenario has no stable repository seam. Retain the coder's `task_id` for
-follow-up.
-
-After the coder returns, the primary MUST:
-
-1. `git diff --stat` to confirm blast radius.
-2. Review `git diff`, using targeted reads where the diff raises questions.
-3. Execute the behavioral acceptance required by the Goal, following the repo verification guidance.
-4. Diagnose failures before resuming the same coder `task_id` with observed and expected values,
-   traceback, and relevant source facts.
-
-A successful repository completion check remains valid while the tree is unchanged. The primary
-MUST NOT rerun that check or its component commands after handoff. Rerun it only after the primary or
-a follow-up agent changes files without completing it, and once at the integration boundary.
-
-Resume the coder only to make implementation edits from a failure the primary diagnosed. MUST NOT
-use a follow-up to request design revision, consultation, or acceptance judgment.
-
-If review reveals a missing contract, new behavior, or failures across component boundaries, do not
-resume. Settle the design and start fresh phased delegations. A resumed brief MUST NOT expand the
-original Goal.
-
-After a follow-up, rerun only the failed scenario. Run the full affected matrix once when targeted
-checks pass, then delete disposable verification files. A failed cycle is any handoff rejected by
-parent acceptance, regardless of the agent's reported status. After two failed cycles, stop and
-report.
-
-## When Delegating
-
-### Read Discipline
-
-Pre-delegation reads establish design decisions, the Scope boundary, and constraints the coder
-cannot cheaply discover. Do not trace routine edit mechanics. Pass on relevant facts already
-learned instead of making the coder rediscover them.
-
-Do not use `explore` as a routine prelude to implementation. Use it only when the primary needs
-multi-file evidence to settle design or scope and targeted direct searches cannot answer cheaply.
-Once the design is settled, let `coder` own file-level discovery. Use direct `glob`/`grep`/`read` for
-cheap scope confirmation, and cross-reference any delegated findings before acting on them.
-
-### Scope Sizing
-
-- Clean, well-factored code: broad scope (directory), trust the coder to navigate.
-- Tangled code: narrow scope, pass structural understanding as `Context` (what calls what, where
-  state lives). Facts about the code, not instructions for changing it.
-
-"Function X at line 133 builds a path under .opencode/plans/" is Context. Put "Use homedir()" in
-Constraints when the user or an external contract requires it; otherwise leave the choice to the
-coder.
-
-### Bifurcation
-
-Primary agents MUST first split work into independently reviewable acceptance slices, then apply the
-Delegation Heuristic to each slice. A slice is not automatically an agent call; implement small work
-directly and route deterministic work to `mechanic`. When a slice requires a coder, give it one
-implementation outcome and accept it before delegating a dependent slice.
+The primary implements all repository changes, including tests, migrations, generated artifacts,
+refactors, and cleanup. MUST NOT delegate file modifications. Keep independently reviewable work in
+separate acceptance and commit slices, but do not turn slices into agent calls.
 
 Build a contract graph before behavior slices. Every new reusable schema, API, event, repository
 contract, or persisted artifact gets a foundation slice with direct contract acceptance. Its first
-behavioral producer and consumer depend on that accepted foundation; neither may share its
-delegation. Generated output or nonbehavioral exhaustiveness scaffolding required to keep compilation
-green may accompany the foundation.
+behavioral producer and consumer depend on that accepted foundation. Generated output or
+nonbehavioral exhaustiveness scaffolding required to keep compilation green may accompany it.
 
 Production, action orchestration, durable hydration or recovery, state reduction, consumption, and
 presentation are separate slices when independently reviewable. A shared feature or final goal is
 not sufficient reason to combine them.
 
-A numbered plan item is not automatically one delegation. Apply Bifurcation inside every item before
-briefing an implementation agent. If an agent blocks because a brief combines independent outcomes,
-split the work; MUST NOT broaden the scope or reissue the combined brief.
-
-Each delegation owns one production boundary and its direct durable tests. Distinct transactions,
-lifecycle entry points, contract consumers, and test seams are separate outcomes even when they
-enforce one invariant. If acceptance requires fixtures from multiple subsystems, split it before the
-first task call. Isolate mixed dirty work mechanically before semantic implementation; MUST NOT make
-one coder both recover unrelated partial work and implement the next outcome.
-
 For finite response unions and state machines, enumerate every reachable variant and legal or stale
 transition before implementation. State the observable route for each; "use the existing contract"
 is not acceptance.
 
-When a coder returns partial, bifurcate the uncompleted acceptance before any follow-up. Resume the
-same task only for one diagnosed defect at the original boundary; start fresh tasks for independent
-missing tests or behavior.
+Implement test-first when practical. Run targeted checks while editing and the repository completion
+check once after the final change for the slice. A successful check remains valid while the tree is
+unchanged. At a major component boundary, commit and start a fresh primary session when carrying the
+full implementation history would add more context than value.
 
-The coder cannot fetch external content. Gather bounded API facts with `aidocs_search_docs`; use the
-researcher for broader documentation research. Pass the findings as `Context`.
+## Independent acceptance audit
+
+Use a fresh `acceptance` task after multi-slice work, migrations, concurrency or recovery changes,
+cross-component behavior, and before deployment or marking a plan complete. Tiny documentation,
+configuration, and behavior-preserving edits do not require an audit unless repository rules say
+otherwise.
+
+Pass:
+
+```txt
+Goal: <completed behavior or phase>
+Scope: <repository surface and commit or diff range>
+Base: <accepted base revision>
+Acceptance: <complete observable matrix>
+Context: <applicable plan, known check results, constraints, and intentional exclusions>
+```
+
+The primary must first complete implementation and its own review. Tell the auditor which completion
+checks remain valid on the unchanged tree so it can run only missing acceptance. The auditor returns
+independent evidence and findings; the primary cross-references them and owns the final judgment.
+
+On failure, diagnose and fix the findings directly, then launch a new acceptance task against the
+changed tree. Never resume the previous auditor. After two rejected correction passes, stop and
+report. A passing audit is valid only while the reviewed tree is unchanged.
 
 ## Committing changes
 

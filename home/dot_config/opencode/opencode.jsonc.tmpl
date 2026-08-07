@@ -18,11 +18,7 @@
       "model": {{ $models.compaction.model | quote }},
       "variant": {{ $models.compaction.variant | quote }},
     },
-    "general": {
-      "tools": { "question": false },
-      "model": {{ $models.general.model | quote }},
-      "variant": {{ $models.general.variant | quote }},
-    },
+    "general": { "disable": true },
     "explore": {
       "model": {{ $models.explore.model | quote }},
       "variant": {{ $models.explore.variant | quote }},
@@ -38,13 +34,9 @@
         },
       },
     },
-    "coder": {
-      "model": {{ $models.coder.model | quote }},
-      "variant": {{ $models.coder.variant | quote }},
-    },
-    "mechanic": {
-      "model": {{ $models.mechanic.model | quote }},
-      "variant": {{ $models.mechanic.variant | quote }},
+    "acceptance": {
+      "model": {{ $models.acceptance.model | quote }},
+      "variant": {{ $models.acceptance.variant | quote }},
     },
     "commit": {
       "model": {{ $models.commit.model | quote }},

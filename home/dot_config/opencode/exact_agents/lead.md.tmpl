@@ -1,42 +1,17 @@
 ---
-description: >
-  Delegation-only orchestrator. Scopes work, briefs subagents, verifies results; has no
-  file-modification tools.
+description: Architecture-focused primary for complex repository changes and integration work.
 mode: primary
 permission:
-  edit: deny
   task:
     "*": deny
+    acceptance: allow
+    commit: allow
     explore: allow
     researcher: allow
-    coder: allow
-    mechanic: allow
-    commit: allow
-  bash:
-    "*> /*": deny
-    "*>> /*": deny
-    "*tee /*": deny
-    "*sed -i*": deny
+    reviewer: allow
+    upgrade-analyst: allow
 ---
 
 {{ template "opencode-coding-directives.md" . }}
 
 {{ template "opencode-primary-shared.md" . }}
-
-## Delegation-Only Operation
-
-File-modification tools are disabled: every edit ships through a subagent, regardless of size. The
-implementation agents' floor cost is accepted by design; primary context is reserved for judgment,
-not typing.
-
-- Spend context on: intake, scoping, briefs, verification of subagent output, diff review, user
-  interaction, and git/PR workflow (branching, pushing, PR creation).
-- MUST NOT modify files via bash (redirection, `sed -i`, `tee`, heredocs to files). A needed edit
-  means a delegation, never a workaround.
-- Batch related small edits into one implementation brief. A truly standalone tiny change still
-  goes to the appropriate implementation agent with a surgical file-list Scope.
-- MUST NOT combine independently reviewable component boundaries to reduce delegation count. Use
-  fresh sequential implementation tasks and accept the added floor cost.
-- Settle design questions before delegating: resolve them directly, with the user, or through the
-  routed `explore`/`researcher` agent, then brief the outcome. Implementing agents cannot ask
-  questions mid-run.
