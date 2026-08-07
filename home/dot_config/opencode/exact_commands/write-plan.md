@@ -1,11 +1,11 @@
 ---
-description: Write an implementation-ready plan from the current design
+description: Write a concise implementation plan from the current design
 agent: build
 subtask: false
 ---
 
-Write a new implementation plan from the settled decisions in this conversation and repository
-evidence. Do not implement the plan.
+Write one concise implementation plan from settled decisions and repository evidence. The primary
+will implement it directly and delegate independent acceptance. Do not implement the plan.
 
 Arguments: $ARGUMENTS
 
@@ -17,78 +17,152 @@ Arguments: $ARGUMENTS
 - If arguments are empty, infer the subject and destination from the current conversation.
 - If the destination already exists, stop and report it. This command creates new plans; it does not
   refactor existing ones.
-- Ask only when a missing decision would change architecture, a public contract, an invariant, or
-  acceptance. Resolve minor omissions from repository evidence.
 
-## Plan
+## Design readiness
 
-Capture only information needed to implement and verify the settled design:
+Before repository discovery, inventory the settled user-visible behavior, valued data, constraints,
+and non-goals from the conversation and cited documents. Identify only gaps whose answers would
+change what the user experiences, what data survives, or which outcomes are allowed.
 
-- Objective, current state, scope, and non-goals
-- Architectural decisions, ownership, invariants, and dependency order
-- Ordered implementation slices with direct durable acceptance
-- Phase-level acceptance, verification cadence, and completion protocol
+User-visible behavior includes generated-content consistency, recovery, retries, and later turns,
+not only UI. Translate technical gaps into product consequences without narrowing the original
+outcome or treating one story-specific example as the feature's full scope.
 
-For each slice, specify:
+Treat the user as the product owner, not the code architect. Ask about desired behavior and data
+consequences. Do not ask the user to choose contract shapes, state representations, schemas, storage
+strategies, migration structure, retry machinery, event vocabularies, or other implementation
+details. The primary owns those decisions and chooses the simplest option consistent with settled
+behavior, repository constraints, and data safety.
 
-```txt
-Outcome: <one observable result>
-Owner: <one component that owns the state or contract>
-Boundary: <one transaction, endpoint, worker, contract, or UI transition>
-Introduces: <new reusable contract or artifact, or n/a>
-Consumes: <existing or earlier accepted contracts and artifacts, or n/a>
-Excludes: <adjacent behavior reserved for later slices>
-States: <every reachable variant and legal or stale transition, or n/a>
-Acceptance:
-- <observable case through the direct stable seam>
-```
+Ask one separate question per independent product decision. Put independent questions in one
+question-tool call. If one answer changes another question's options, ask only the upstream question
+and stop. Every option must preserve settled scope and vary only the missing decision.
+
+Write questions in ordinary product language. Define unavoidable terms inline. Each option must say
+what the user will observe and include a concrete scenario when the effect is not obvious. Put the
+recommendation first and explain why it fits the stated goals. Do not expose internal identifiers or
+ask for facts the repository can establish. When an unknown technical fact has a conservative,
+reversible default, use it and record the assumption.
+
+Before offering options, reject any that violate settled behavior or active authority, data-safety,
+atomicity, stale-result, and fail-closed invariants. A recommendation must satisfy all of them.
+
+For example, ask what should happen when a checker cannot evaluate good prose. Do not ask the user
+to choose a retry topology.
+
+## Discovery
+
+After design readiness passes, inspect only enough current code and documentation to locate exact
+touchpoints, symbols, migrations, generated artifacts, and durable tests. Do not run broad discovery
+to redesign product behavior. Derive the technical design from current repository constraints and
+the settled product decisions. Do not inspect history solely to learn plan style.
+
+## Content
+
+Include only what the primary needs to implement without rediscovering the design:
+
+- Objective, scope, non-goals, settled decisions, and invariants
+- Exact source, migration, generated, and test touchpoints with relevant symbols
+- A compact contract graph and dependency order
+- Traceability from each product decision to its owning contract, producer, and consumers
+- Ordered workstreams with durable acceptance checkpoints
+- Integration checks, an audit map, and deferred decisions
+
+For each workstream, give one observable outcome and one dependency branch. For each checkpoint,
+name one owning component, one lifecycle or transaction boundary, exact touchpoints, contracts
+introduced or consumed, and acceptance cases with named tests or commands. Omit fields that add no
+information.
+
+## Fidelity
+
+Before drafting, inventory every settled behavior and non-goal plus every derived contract,
+migration, recovery path, and presentation change. Map each one to one workstream or to an
+explicitly settled deferral.
+
+Compression must not replace, weaken, merge, or defer settled behavior. Repository evidence may
+resolve implementation details, but it may not silently change the design. If evidence contradicts a
+settled decision, report the conflict and stop instead of choosing a different design.
+
+Preserve settled contract names, finite variants, transitions, and distinctions exactly. Do not
+rename, collapse, or reinterpret one state as another to simplify the plan.
+
+Represent every distinct product rule directly in the technical design. Do not use an existing role,
+status, or field as a proxy unless repository evidence proves it has the same meaning. Every new
+field, state, or policy referenced by behavior needs an owning foundation, production path,
+persistence or derivation rule, consumers, and direct acceptance.
+
+Map system-wide outcomes to every required consumer. A reader surface does not replace model,
+control-plane, recovery, or persistence behavior needed to keep later generated content consistent.
+
+For a rebuildable derived artifact, name the authoritative typed payload that retains every input
+needed for deterministic rebuild. An evidence link to unstructured text is not sufficient. Features
+in a generic engine must omit irrelevant story-specific state without losing shared behavior.
 
 ## Decomposition
 
-Build the contract graph before behavior slices. Every new reusable schema, API, event, repository
-contract, or persisted artifact gets a foundation slice with direct contract acceptance. A later
-slice may consume it only after that foundation is accepted. No slice may introduce and behaviorally
-consume the same reusable contract.
+Honor the active direct-implementation and acceptance constraints. Preserve independent branches in
+the contract graph. Do not block one branch on an unrelated foundation or organize all foundations
+into a global first phase.
 
-Then inventory each behavior's owner, boundary, consumed contracts, state matrix, and stable test
-seam. Behaviors may share a slice only when those facts match.
+Use workstreams to group a coherent outcome along one dependency branch. A workstream may cross
+components, but its checkpoints retain their real implementation and acceptance boundaries. Do not
+split a coherent branch merely to make every checkpoint a top-level section.
 
-Split distinct:
+Within each workstream, use compact ordered checkpoints:
 
-- Transactions or lifecycle entry points
-- Contract definition, production, and behavioral consumption
-- Pure state reduction, request or action orchestration, durable hydration or recovery, and
-  presentation
-- Schema ownership from runtime consumers
-- Backend behavior from frontend state and presentation
-- Acceptance requiring fixtures from different subsystems
-- Dirty-work isolation from semantic implementation
+- Give every reusable contract a foundation checkpoint with direct durable acceptance.
+- Give independently consumed contracts separate foundation checkpoints. Combine artifacts only when
+  they share one owner, persistence boundary, and stable test seam and cannot be accepted
+  separately.
+- A foundation checkpoint may include required generated or persistence scaffolding, but it must not
+  behaviorally produce or consume its contract.
+- Put the first producer and each independent consumer in later checkpoints.
+- Split checkpoints when the owning component, lifecycle or transaction entry point, durable
+  recovery path, or stable test seam differs.
+- Split normal production from restart, resume, rebuild, or correction when recovery has another
+  entry point or observable seam.
+- Keep backend publication and frontend presentation in separate checkpoints when each has
+  independent observable acceptance.
 
-Each slice must be independently reviewable, revertible, and committable. It owns its direct durable
-tests; do not create a later catch-all testing slice. Shared feature names or invariants do not
-justify combining boundaries.
+Checkpoints are implementation and acceptance units, not agent calls. Do not prescribe an agent,
+session, or commit for every internal step.
 
-Slices are acceptance units, not agent calls. The primary implements them directly; do not prescribe
-an agent or session per slice. A contract slice may include generated output or nonbehavioral
-exhaustiveness scaffolding needed to keep compilation green, but not behavioral consumption.
+Partition independent audits from checkpoint boundaries, not workstream headings. An audit may cover
+multiple checkpoints only when their stated owner, lifecycle or transaction entry point, consumed
+contracts, and stable test seam are identical. Assign every checkpoint whole to exactly one primary
+audit. If an audit would cover only part of a checkpoint, split the checkpoint. Name the checkpoints
+included in each audit. Do not present a whole cross-component workstream as one audit boundary.
 
-For a finite response union or state machine, enumerate every reachable variant, legal transition,
-stale transition, and observable route. "Use the existing contract" is not an acceptance matrix.
+State a finite union or state matrix once at its owning contract. Consumer steps reference it and
+add only behavior specific to their seam. Do not repeat stale-result, idempotence, serialization, or
+fail-closed requirements unless the observable behavior differs at that boundary.
 
-## Audit
+## Brevity
 
-Before writing, verify:
+This is an execution map, not a handoff transcript. Use short checkpoint subsections and bullets; do
+not put detailed checkpoint content in wide Markdown tables. Do not repeat repository guidance,
+settled design prose, state matrices, acceptance cases, or the active acceptance protocol. Keep one
+document even when the graph has parallel branches. Plan length follows scope; do not use a numeric
+line target as an acceptance criterion.
 
-1. Every reusable contract has one foundation slice with direct contract acceptance.
-2. No slice introduces and behaviorally consumes the same reusable contract.
-3. Every consumed contract already exists or comes from an earlier accepted slice.
-4. Every behavior slice has one owner, boundary, state matrix, and stable acceptance seam.
-5. Every acceptance case maps to exactly one slice.
-6. Exclusions prevent later behavior from leaking into earlier slices.
-7. No slice combines recovery, cleanup, or presentation with an independent production boundary.
+Finish the content and satisfy active authoring limits before creating the file. After creation, do
+not delete and recreate it or rewrite it wholesale for brevity or wrapping. Make only surgical
+corrections required for accuracy or validation.
 
-Resolve audit failures by splitting the plan. If splitting exposes an unsettled architectural
-decision, ask one bounded question and stop until answered.
+## Final check
 
-Write the plan, then report its path and any intentionally deferred decisions. Do not delegate
+Compare the draft with the fidelity inventory. Confirm that every item is present unchanged, every
+foundation precedes separate producer and consumer checkpoints, and every checkpoint names one real
+owner, entry point, and stable acceptance seam. Confirm that recovery is separate when its entry
+point differs and that the audit map assigns every checkpoint whole to one primary audit without
+hiding cross-component boundaries. Confirm every touchpoint is concrete, parallel work remains
+parallel, and no section repeats another. Reject conditional implementation choices, inferred
+backfill semantics, checkpoints with multiple entry points, and final audits containing multiple
+invariants. Confirm every product distinction has a direct contract representation and every new
+field has a complete lifecycle. Confirm presentation does not substitute for required system
+consumers. Resolve technical gaps directly; ask only when the answer changes user-visible behavior
+or valued data. Restore omissions and split invalid checkpoints before writing.
+
+Claim the plan is ready to implement only when no product decision or technical gap remains
+unresolved. Write the plan, then report its path and deferred decisions. Do not delegate
 implementation, modify production code, commit, or push.
