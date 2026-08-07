@@ -161,13 +161,26 @@ cross-component behavior, and before deployment or marking a plan complete. Tiny
 configuration, and behavior-preserving edits do not require an audit unless repository rules say
 otherwise.
 
+The primary owns acceptance decomposition. When the user requests acceptance for a broad feature or
+phase, inspect the plan and range, then partition independently verifiable component boundaries.
+Use one fresh audit per boundary and one final audit only for named cross-boundary invariants. Do not
+ask the user to design scopes or evidence packets.
+
+Before delegation, build a compact evidence map for each boundary:
+
+- acceptance cases and relevant changed paths or symbols;
+- durable tests or commands, their results, and the revision where they ran;
+- exact removed names for stale-reference checks;
+- missing evidence the auditor must execute.
+
 Pass:
 
 ```txt
-Goal: <completed behavior or phase>
-Scope: <repository surface and commit or diff range>
+Goal: <completed behavior for this boundary>
+Scope: <one independently auditable boundary, paths, and commit or diff range>
 Base: <accepted base revision>
 Acceptance: <complete observable matrix>
+Evidence: <per-case paths, tests or commands and results, exact stale terms, and gaps>
 Context: <applicable plan, known check results, constraints, and intentional exclusions>
 ```
 
@@ -175,9 +188,10 @@ The primary must first complete implementation and its own review. Tell the audi
 checks remain valid on the unchanged tree so it can run only missing acceptance. The auditor returns
 independent evidence and findings; the primary cross-references them and owns the final judgment.
 
-On failure, diagnose and fix the findings directly, then launch a new acceptance task against the
-changed tree. Never resume the previous auditor. After two rejected correction passes, stop and
-report. A passing audit is valid only while the reviewed tree is unchanged.
+On failure, diagnose and fix the findings directly. Launch a fresh audit scoped to failed cases,
+changed paths, affected regressions, and the completion gate. Re-audit dependent boundaries when a
+fix changes a shared contract. Never resume the previous auditor. After two rejected correction
+passes, stop and report. A passing audit is valid only while the reviewed tree is unchanged.
 
 ## Committing changes
 

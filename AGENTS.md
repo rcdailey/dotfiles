@@ -60,7 +60,7 @@ under `~/.config/opencode/` do not have these prefixes.
 - `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory
   contains a `SKILL.md`. Some are managed via `.chezmoiexternal.toml` in this directory.
 - `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). Primary agents
-  (`build`, `dispatch`, `lead`) implement directly and include `opencode-coding-directives.md` plus
+  (`build`, `dispatch`) implement directly and include `opencode-coding-directives.md` plus
   `opencode-primary-shared.md`. `dispatch` is `hidden: true` for headless ticket work. Read-only
   `acceptance` audits completed local work with a fresh Sol-class model. Other specialists (`commit`,
   `researcher`, `reviewer`, `upgrade-analyst`) are plain Markdown with self-contained protocols.
