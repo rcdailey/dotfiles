@@ -35,8 +35,8 @@ For each slice, specify:
 Outcome: <one observable result>
 Owner: <one component that owns the state or contract>
 Boundary: <one transaction, endpoint, worker, contract, or UI transition>
-Produces: <artifact or durable state made available>
-Depends on: <accepted earlier slices or existing contracts>
+Introduces: <new reusable contract or artifact, or n/a>
+Consumes: <existing or earlier accepted contracts and artifacts, or n/a>
 Excludes: <adjacent behavior reserved for later slices>
 States: <every reachable variant and legal or stale transition, or n/a>
 Acceptance:
@@ -45,7 +45,12 @@ Acceptance:
 
 ## Decomposition
 
-Inventory each behavior's owner, production boundary, produced artifact, consumer, and stable test
+Build the contract graph before behavior slices. Every new reusable schema, API, event, repository
+contract, or persisted artifact gets a foundation slice with direct contract acceptance. A later
+slice may consume it only after that foundation is accepted. No slice may introduce and behaviorally
+consume the same reusable contract.
+
+Then inventory each behavior's owner, boundary, consumed contracts, state matrix, and stable test
 seam. Behaviors may share a slice only when those facts match.
 
 Split distinct:
@@ -75,11 +80,13 @@ stale transition, and observable route. "Use the existing contract" is not an ac
 
 Before writing, verify:
 
-1. Every slice has one owner, boundary, artifact, state matrix, and stable acceptance seam.
-2. Every acceptance case maps to exactly one slice.
-3. Dependencies are explicit and no slice consumes an undefined contract.
-4. Exclusions prevent later behavior from leaking into earlier slices.
-5. No slice combines recovery, cleanup, or presentation with an independent production boundary.
+1. Every reusable contract has one foundation slice with direct contract acceptance.
+2. No slice introduces and behaviorally consumes the same reusable contract.
+3. Every consumed contract already exists or comes from an earlier accepted slice.
+4. Every behavior slice has one owner, boundary, state matrix, and stable acceptance seam.
+5. Every acceptance case maps to exactly one slice.
+6. Exclusions prevent later behavior from leaking into earlier slices.
+7. No slice combines recovery, cleanup, or presentation with an independent production boundary.
 
 Resolve audit failures by splitting the plan. If splitting exposes an unsettled architectural
 decision, ask one bounded question and stop until answered.

@@ -174,6 +174,8 @@ Use this structured prompt format (copy the template, fill in values):
 ```txt
 Goal: <testable outcome and required behavior>
 Scope: <directory or file list the coder can read and modify within>
+Introduces: <new reusable contract or artifact; omit if none>
+Dependencies: <accepted contracts or artifacts consumed; omit if none>
 Constraints: <optional; binding design, approach, or implementation requirements>
 Context: <required after prior discovery; otherwise optional requirements, decisions, or evidence>
 Acceptance: <observable cases durable tests must prove; required when behavior changes>
@@ -184,6 +186,10 @@ Acceptance: <observable cases durable tests must prove; required when behavior c
   scopes (`src/api/`); file lists are valid only for genuinely surgical tasks where the blast radius
   is already known (e.g., renaming one export and its test). If you find yourself reading the source
   files to decide which files to list, use a directory scope instead and let the coder discover.
+- `Introduces` names reusable schemas, APIs, events, repository contracts, or persisted artifacts
+  established by this outcome. `Dependencies` names existing or previously accepted contracts the
+  outcome consumes. A delegation MUST NOT introduce and behaviorally consume the same reusable
+  contract.
 - `Constraints` carries binding decisions and task-specific requirements. Exact specifications are
   valid; the coder implements rather than revisits them.
 - `Context` carries the evidence packet from prior discovery plus relevant errors and external API
@@ -202,11 +208,14 @@ Acceptance: <observable cases durable tests must prove; required when behavior c
 2. Re-read the full brief and preserve every requirement and decision that can affect the outcome.
 3. Check your Scope. If it names specific files you had to read to identify, widen to the containing
    directory and let the coder discover.
-4. List the independently reviewable outcomes and component boundaries. If the work can be
+4. Build the contract graph. List reusable contracts introduced and consumed. Every consumed
+   contract must already exist or come from an accepted foundation slice; split any outcome that
+   both establishes and behaviorally uses one.
+5. List the independently reviewable outcomes and component boundaries. If the work can be
    implemented and accepted in phases, split it. Do not combine boundaries to reduce agent calls.
-5. Check granularity against Bifurcation. A single-file spec is almost never worth a delegation on
+6. Check granularity against Bifurcation. A single-file spec is almost never worth a delegation on
    its own.
-6. When discovery occurred, pass its evidence packet. Include findings that constrain
+7. When discovery occurred, pass its evidence packet. Include findings that constrain
    implementation, explain a failure, or prevent duplicate work; omit incidental details and
    unsupported preferences.
 
@@ -270,11 +279,15 @@ Delegation Heuristic to each slice. A slice is not automatically an agent call; 
 directly and route deterministic work to `mechanic`. When a slice requires a coder, give it one
 implementation outcome and accept it before delegating a dependent slice.
 
-Contract definition, production, action orchestration, durable hydration or recovery, state
-reduction, consumption, and presentation are separate slices when independently reviewable. A
-shared feature or final goal is not sufficient reason to combine them. A contract slice may include
-generated output or nonbehavioral exhaustiveness scaffolding required to keep compilation green;
-behavioral consumers remain later slices.
+Build a contract graph before behavior slices. Every new reusable schema, API, event, repository
+contract, or persisted artifact gets a foundation slice with direct contract acceptance. Its first
+behavioral producer and consumer depend on that accepted foundation; neither may share its
+delegation. Generated output or nonbehavioral exhaustiveness scaffolding required to keep compilation
+green may accompany the foundation.
+
+Production, action orchestration, durable hydration or recovery, state reduction, consumption, and
+presentation are separate slices when independently reviewable. A shared feature or final goal is
+not sufficient reason to combine them.
 
 A numbered plan item is not automatically one delegation. Apply Bifurcation inside every item before
 briefing an implementation agent. If an agent blocks because a brief combines independent outcomes,
