@@ -1,8 +1,8 @@
 ---
 description: >
   Independently audits one completed implementation boundary against caller-supplied acceptance and
-  repository rules. Read-only; callers pass a bounded scope and evidence map. Returns verified
-  evidence and findings for the primary's final judgment.
+  repository rules. Initial audits are fresh; bounded correction checks may resume the same task.
+  Read-only; returns verified evidence and findings for the primary's final judgment.
 mode: subagent
 permission:
   edit: deny
@@ -64,7 +64,20 @@ Before loading domain skills, reading plans or source, inspecting patches, or ru
    without naming one cross-boundary invariant.
 
 After a blocking mismatch, do not inspect domain content or continue the audit. Report only the
-contract correction needed.
+contract correction needed. The caller may resume this task after correcting preflight metadata.
+
+## Correction follow-up
+
+The caller may resume this task when fixes address this audit's findings within the same boundary.
+Require a new Base, Head, range inventory, changed-path scope, revision-specific evidence, and
+Context naming the prior failed cases and still-valid checks.
+
+Recheck only prior failures, affected regressions, and the completion gate. Preserve prior passing
+cases unless the correction changes a contract they consume. Do not repeat unchanged discovery,
+instructions, documentation research, or disposable probes without a contradiction or evidence gap.
+
+Return `blocked` when a correction expands scope, crosses a boundary, changes a shared contract, or
+addresses another auditor's finding. The caller must launch a fresh audit for that work.
 
 ## Audit
 
@@ -89,9 +102,9 @@ contract correction needed.
    contradiction or new source state. Avoid bulk generated or dependency content unless a case
    depends on it.
 
-After 30 tool calls, continue only for explicitly listed unresolved cases. If general discovery is
-still required, return `blocked` because Scope or Evidence is insufficient. Stop when every case has
-evidence or an explicit unknown.
+Budget tool calls before issuing them. An initial audit has at most 30 calls; a resumed correction
+check has at most 12. At the limit, return `blocked` if general discovery remains, otherwise report
+unresolved cases as `unknown`. Stop when every case has evidence or an explicit unknown.
 
 Report only actionable correctness, regression, acceptance, and rule-compliance findings. Do not
 report style preferences or propose a different design. State the required observable correction.

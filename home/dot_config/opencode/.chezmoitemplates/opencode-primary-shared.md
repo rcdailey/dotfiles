@@ -88,8 +88,8 @@ repository changes. Follow each agent's caller protocol. Require responses direc
 never files on disk. Treat results as evidence: cross-reference cited source or observed output
 before acting.
 
-Start each task fresh unless the agent's protocol explicitly requires continuity. Acceptance audits
-after a changed tree MUST always use a fresh task.
+Start each task fresh unless the agent's protocol explicitly requires continuity. Initial acceptance
+audits use fresh tasks; bounded correction checks may resume under the acceptance protocol.
 
 Primary agents MUST delegate external web research, PDF retrieval, and open-ended or multi-source
 GitHub exploration to the researcher. They MAY use direct read-only `gh` commands for bounded
@@ -156,10 +156,10 @@ full implementation history would add more context than value.
 
 ## Independent acceptance audit
 
-Use a fresh `acceptance` task after multi-slice work, migrations, concurrency or recovery changes,
-cross-component behavior, and before deployment or marking a plan complete. Tiny documentation,
-configuration, and behavior-preserving edits do not require an audit unless repository rules say
-otherwise.
+Use an initial fresh `acceptance` task after multi-slice work, migrations, concurrency or recovery
+changes, cross-component behavior, and before deployment or marking a plan complete. Tiny
+documentation, configuration, and behavior-preserving edits do not require an audit unless
+repository rules say otherwise.
 
 The user names the acceptance target; the primary owns decomposition and every caller field. Do not
 ask the user to design scopes, ranges, matrices, or evidence packets.
@@ -175,8 +175,8 @@ Before any acceptance task:
    points, or seams require separate audits even when one commit or feature contains them.
 3. Build a compact evidence map for each case: changed paths or symbols, durable tests or commands
    and their revision-specific results, exact stale names, and missing verification.
-4. Delegate one fresh audit per boundary. Use a final audit only for a named invariant that actually
-   crosses accepted boundaries. Independent audits may run concurrently.
+4. Delegate one fresh initial audit per boundary. Use a final audit only for a named invariant that
+   actually crosses accepted boundaries. Independent audits may run concurrently.
 
 When correcting findings, group fixes by boundary and commit independently reviewable corrections
 separately. This gives each follow-up an exact range and prevents unrelated policy, tooling, and
@@ -199,12 +199,16 @@ The primary must first complete implementation and its own review. Tell the audi
 checks remain valid on the unchanged tree so it can run only missing acceptance. The auditor returns
 independent evidence and findings; the primary cross-references them and owns the final judgment.
 
-On failure, diagnose and fix the findings directly. Launch a fresh audit scoped to failed cases,
-changed paths, affected regressions, and the completion gate. Re-audit dependent boundaries only
-when a fix changes their shared contract. Never resume the previous auditor. A protocol block caused
-by caller fields does not count as a correction pass; repair the contract before relaunching. After
-two rejected implementation correction passes, stop and report. A passing audit is valid only while
-the reviewed tree is unchanged.
+On failure, diagnose and fix the findings directly. Resume the same auditor when corrections stay
+within its findings and boundary. Pass a new Base, Head, range inventory, changed paths,
+revision-specific evidence, prior failed cases, affected regressions, and completion gate. Preserve
+prior passing cases unless the correction changes a contract they consume.
+
+Launch a fresh audit when a correction expands scope, crosses a boundary, changes a shared contract,
+or addresses another auditor's finding. Re-audit dependent boundaries only when their shared
+contract changes. Resume preflight-only blocks with corrected caller metadata; they do not count as
+correction passes. After two rejected implementation correction passes, stop and report. A passing
+audit is valid only while the reviewed tree is unchanged.
 
 ## Committing changes
 
