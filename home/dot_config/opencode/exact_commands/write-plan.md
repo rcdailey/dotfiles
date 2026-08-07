@@ -38,6 +38,7 @@ Boundary: <one transaction, endpoint, worker, contract, or UI transition>
 Produces: <artifact or durable state made available>
 Depends on: <accepted earlier slices or existing contracts>
 Excludes: <adjacent behavior reserved for later slices>
+States: <every reachable variant and legal or stale transition, or n/a>
 Acceptance:
 - <observable case through the direct stable seam>
 ```
@@ -50,7 +51,9 @@ seam. Behaviors may share a slice only when those facts match.
 Split distinct:
 
 - Transactions or lifecycle entry points
-- Contract definition, production, consumption, and presentation
+- Contract definition, production, and behavioral consumption
+- Pure state reduction, request or action orchestration, durable hydration or recovery, and
+  presentation
 - Schema ownership from runtime consumers
 - Backend behavior from frontend state and presentation
 - Acceptance requiring fixtures from different subsystems
@@ -60,11 +63,19 @@ Each slice must be independently reviewable, revertible, and committable. It own
 tests; do not create a later catch-all testing slice. Shared feature names or invariants do not
 justify combining boundaries.
 
+Slices are acceptance units, not mandatory agent calls. Do not prescribe an agent or session per
+slice; implementation routing follows the primary's delegation heuristic. A contract slice may
+include generated output or nonbehavioral exhaustiveness scaffolding needed to keep compilation
+green, but not behavioral consumption.
+
+For a finite response union or state machine, enumerate every reachable variant, legal transition,
+stale transition, and observable route. "Use the existing contract" is not an acceptance matrix.
+
 ## Audit
 
 Before writing, verify:
 
-1. Every slice has one owner, boundary, artifact, and stable acceptance seam.
+1. Every slice has one owner, boundary, artifact, state matrix, and stable acceptance seam.
 2. Every acceptance case maps to exactly one slice.
 3. Dependencies are explicit and no slice consumes an undefined contract.
 4. Exclusions prevent later behavior from leaking into earlier slices.

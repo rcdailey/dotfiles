@@ -20,6 +20,8 @@ when the contract changes. Do not add tests merely to cover private helpers, bra
 
 For predicates and lifecycle boundaries, test both sides of each boundary. Include the empty or
 first state when later states have different prerequisites; one production example is not a matrix.
+For finite response unions and state machines, cover every variant and each legal or stale
+transition through its observable outcome.
 
 Run the smallest relevant tests while implementing. Before handoff, run the repository's declared
 completion check once; do not repeat broad checks after intermediate edits. Run broad repository

@@ -236,7 +236,9 @@ resume. Settle the design and start fresh phased delegations. A resumed brief MU
 original Goal.
 
 After a follow-up, rerun only the failed scenario. Run the full affected matrix once when targeted
-checks pass, then delete disposable verification files. After two failed cycles, stop and report.
+checks pass, then delete disposable verification files. A failed cycle is any handoff rejected by
+parent acceptance, regardless of the agent's reported status. After two failed cycles, stop and
+report.
 
 ## When Delegating
 
@@ -263,11 +265,16 @@ coder.
 
 ### Bifurcation
 
-Primary agents MUST split work across independently reviewable component boundaries into separate
-coder delegations. Each delegation has one implementation outcome. Review its diff and perform
-applicable behavioral acceptance before delegating a dependent phase. Contract definition,
-production, orchestration, consumption, and presentation are separate phases when each can be
-reviewed independently. A shared feature or final goal is not sufficient reason to combine them.
+Primary agents MUST first split work into independently reviewable acceptance slices, then apply the
+Delegation Heuristic to each slice. A slice is not automatically an agent call; implement small work
+directly and route deterministic work to `mechanic`. When a slice requires a coder, give it one
+implementation outcome and accept it before delegating a dependent slice.
+
+Contract definition, production, action orchestration, durable hydration or recovery, state
+reduction, consumption, and presentation are separate slices when independently reviewable. A
+shared feature or final goal is not sufficient reason to combine them. A contract slice may include
+generated output or nonbehavioral exhaustiveness scaffolding required to keep compilation green;
+behavioral consumers remain later slices.
 
 A numbered plan item is not automatically one delegation. Apply Bifurcation inside every item before
 briefing an implementation agent. If an agent blocks because a brief combines independent outcomes,
@@ -278,6 +285,10 @@ lifecycle entry points, contract consumers, and test seams are separate outcomes
 enforce one invariant. If acceptance requires fixtures from multiple subsystems, split it before the
 first task call. Isolate mixed dirty work mechanically before semantic implementation; MUST NOT make
 one coder both recover unrelated partial work and implement the next outcome.
+
+For finite response unions and state machines, enumerate every reachable variant and legal or stale
+transition before implementation. State the observable route for each; "use the existing contract"
+is not acceptance.
 
 When a coder returns partial, bifurcate the uncompleted acceptance before any follow-up. Resume the
 same task only for one diagnosed defect at the original boundary; start fresh tasks for independent
