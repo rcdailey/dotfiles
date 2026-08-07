@@ -110,11 +110,11 @@ patterns, constraints, and risks. They MUST NOT request designs, proposals, trad
 recommended approaches or scopes, implementation phases, or acceptance cases. The primary derives
 and evaluates options after cross-referencing the reported evidence.
 
-When discovery informs a later delegation, the caller MUST pass a compact evidence packet instead
-of making the next agent rediscover it. Include relevant paths and symbols, confirmed flow,
-applicable constraints, analogous code when known, verification commands, unresolved uncertainty,
-and any repository revision or dirty-state detail that affects the findings. Omit search history and
-dead ends.
+When discovery informs a later delegation, the caller MUST pass a compact evidence packet instead of
+making the next agent rediscover it. Include relevant paths and symbols, confirmed flow, applicable
+constraints, analogous code when known, verification commands, unresolved uncertainty, and any
+repository revision or dirty-state detail that affects the findings. Omit search history and dead
+ends.
 
 ## Primary-only skills
 
@@ -161,24 +161,35 @@ cross-component behavior, and before deployment or marking a plan complete. Tiny
 configuration, and behavior-preserving edits do not require an audit unless repository rules say
 otherwise.
 
-The primary owns acceptance decomposition. When the user requests acceptance for a broad feature or
-phase, inspect the plan and range, then partition independently verifiable component boundaries.
-Use one fresh audit per boundary and one final audit only for named cross-boundary invariants. Do not
-ask the user to design scopes or evidence packets.
+The user names the acceptance target; the primary owns decomposition and every caller field. Do not
+ask the user to design scopes, ranges, matrices, or evidence packets.
 
-Before delegation, build a compact evidence map for each boundary:
+Before any acceptance task:
 
-- acceptance cases and relevant changed paths or symbols;
-- durable tests or commands, their results, and the revision where they ran;
-- exact removed names for stale-reference checks;
-- missing evidence the auditor must execute.
+1. Resolve the exact base and head from Git. Inventory every commit and changed path in the range.
+   Account for each path as included in this audit or excluded with its owning sibling audit. Fix a
+   stale base or incomplete inventory before delegation; never send a range known to disagree with
+   Scope.
+2. Partition by independently verifiable boundary. A boundary shares one owner, lifecycle or
+   transaction entry point, consumed contracts, and stable test seam. Different owners, entry
+   points, or seams require separate audits even when one commit or feature contains them.
+3. Build a compact evidence map for each case: changed paths or symbols, durable tests or commands
+   and their revision-specific results, exact stale names, and missing verification.
+4. Delegate one fresh audit per boundary. Use a final audit only for a named invariant that actually
+   crosses accepted boundaries. Independent audits may run concurrently.
+
+When correcting findings, group fixes by boundary and commit independently reviewable corrections
+separately. This gives each follow-up an exact range and prevents unrelated policy, tooling, and
+behavior changes from contaminating one audit.
 
 Pass:
 
 ```txt
 Goal: <completed behavior for this boundary>
-Scope: <one independently auditable boundary, paths, and commit or diff range>
-Base: <accepted base revision>
+Scope: <one independently auditable boundary and included paths>
+Base: <revision immediately before the audited changes>
+Head: <exact commit or WORKTREE>
+Range inventory: <every commit and path, marked included or excluded with its sibling audit>
 Acceptance: <complete observable matrix>
 Evidence: <per-case paths, tests or commands and results, exact stale terms, and gaps>
 Context: <applicable plan, known check results, constraints, and intentional exclusions>
@@ -189,9 +200,11 @@ checks remain valid on the unchanged tree so it can run only missing acceptance.
 independent evidence and findings; the primary cross-references them and owns the final judgment.
 
 On failure, diagnose and fix the findings directly. Launch a fresh audit scoped to failed cases,
-changed paths, affected regressions, and the completion gate. Re-audit dependent boundaries when a
-fix changes a shared contract. Never resume the previous auditor. After two rejected correction
-passes, stop and report. A passing audit is valid only while the reviewed tree is unchanged.
+changed paths, affected regressions, and the completion gate. Re-audit dependent boundaries only
+when a fix changes their shared contract. Never resume the previous auditor. A protocol block caused
+by caller fields does not count as a correction pass; repair the contract before relaunching. After
+two rejected implementation correction passes, stop and report. A passing audit is valid only while
+the reviewed tree is unchanged.
 
 ## Committing changes
 
