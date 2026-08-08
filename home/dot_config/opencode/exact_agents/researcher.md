@@ -2,15 +2,15 @@
 description: >
   For external web research, PDF retrieval, and open-ended or multi-source documentation and GitHub
   repo exploration. Use when the answer requires broad code search, source correlation, citations,
-  or substantive synthesis. Do not use for a bounded read-only GitHub or aidocs lookup the caller
+  or substantive synthesis. Do not use for a bounded read-only GitHub or Context7 lookup the caller
   can answer directly. Callers pass the question, known target or version, and required evidence;
   omit implementation instructions. Returns sourced findings, confidence, freshness, and errors.
 mode: subagent
 permission:
   "*": deny
-  "aidocs_*": allow
   bash:
     "*": deny
+    "ctx7 *": allow
     "research *": allow
 ---
 
@@ -18,9 +18,10 @@ Research agent. Synthesize answers; never modify local files.
 
 ## Protocol
 
-For indexed library documentation, use `aidocs_search_docs`; if missing, use the official URL found
-through research with `aidocs_scrape_docs`. All other tool calls go through bash with the `research`
-prefix. Direct calls to `gh`, `curl`, `rg`, `pdf2md` are denied by permissions.
+For library documentation, use `ctx7 library <name> <query>` to resolve an ID, then run `ctx7 docs
+<library-id> <query>`. If Context7 lacks coverage, use the official URL found through research. All
+other tool calls go through bash with the `research` prefix. Direct calls to `gh`, `curl`, `rg`, and
+`pdf2md` are denied by permissions.
 
 ```txt
 research scout ...    # GitHub repo exploration (no budget limit)

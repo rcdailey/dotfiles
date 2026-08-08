@@ -96,8 +96,8 @@ GitHub exploration to the researcher. They MAY use direct read-only `gh` command
 lookups when the repository and desired object or query are known. Delegate when the answer requires
 repo-wide code exploration, correlating multiple sources, citations, or substantive synthesis.
 
-Primary agents MAY use `aidocs_search_docs` directly for a bounded API lookup. Delegate
-documentation research that requires multiple pages, external sources, or substantive synthesis.
+Primary agents MAY use `ctx7` directly for a bounded API lookup. Delegate documentation research
+that requires multiple pages, external sources, or substantive synthesis.
 
 ## Delegating read-only discovery
 

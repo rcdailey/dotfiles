@@ -21,11 +21,9 @@
 
 ## Documentation
 
-- For current library or framework APIs, MUST use `aidocs_search_docs` first. If a library is
-  missing, MUST index its official documentation with `aidocs_scrape_docs` before using other
-  sources.
-- Documentation MCP results are research leads. Fetch a result URL through an allowed fetch tool
-  before citing it.
+- For current library or framework APIs, MUST use `ctx7` first. Run `ctx7 library <name> <query>`
+  to resolve a library ID, then `ctx7 docs <library-id> <query>` for the relevant API. Use official
+  sources when Context7 lacks coverage.
 
 ## Skills
 

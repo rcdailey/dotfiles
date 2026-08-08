@@ -24,10 +24,9 @@ If focus area provided, prioritize analysis of that directory/module.
 
 ## Phase 2: Tool Documentation
 
-After Phase 1, use `aidocs_search_docs` to research each major library/framework discovered. If a
-library is missing, index its official documentation with `aidocs_scrape_docs` before researching it:
+After Phase 1, use `ctx7` to research each major library/framework discovered:
 
-- Check current best practices
+- Resolve the library ID, then query its current best practices
 - Focus on contribution guidelines specific to each tool
 
 ## Output

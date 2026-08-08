@@ -27,6 +27,7 @@ node = "latest"
 bun = "latest"
 "npm:@commitlint/cli" = "latest"
 "npm:@commitlint/config-conventional" = "latest"
+"npm:ctx7" = "latest"
 topgrade = "latest"
 
 # Don't use this because it doesn't update frequently enough

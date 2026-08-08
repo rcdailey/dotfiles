@@ -8,13 +8,13 @@ description: >
 mode: subagent
 permission:
   "*": deny
-  "aidocs_*": allow
   grep: allow
   read: allow
   glob: allow
   external_directory: allow
   bash:
     "*": deny
+    "ctx7 *": allow
     "research *": allow
     "rg *": allow
     "gh run view *": allow
@@ -32,8 +32,8 @@ You research dependency upgrades and return structured findings. Read-only; inve
 
 Two toolsets with distinct purposes:
 
-- **Documentation**: use `aidocs_search_docs`; if a dependency is missing, index its official docs
-  with `aidocs_scrape_docs`.
+- **Documentation**: use `ctx7 library <name> <query>` to resolve an ID, then query it with `ctx7
+  docs <library-id> <query>`.
 - **Other upstream evidence**: use the `research` CLI exclusively.
 - **Local repo analysis**: use `rg`, read/grep/glob, `gh pr view/checks`, and
   `git log/diff/show` directly.

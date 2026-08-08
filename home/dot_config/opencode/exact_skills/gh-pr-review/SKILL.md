@@ -46,9 +46,8 @@ NUMBER` (e.g. `gh-review view sketchy/cortex-backend 2794`, `gh-review start own
 
 ### Verification
 
-Use `aidocs_search_docs` to verify unfamiliar patterns, best practices, and security implications
-before writing comments. If a library is missing, index its official documentation with
-`aidocs_scrape_docs` before continuing. Every technical claim must be verified.
+Use `ctx7` to verify unfamiliar patterns, best practices, and security implications before writing
+comments. Use web search when Context7 lacks coverage. Every technical claim must be verified.
 
 ## Reading a PR
 

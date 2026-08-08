@@ -8,7 +8,6 @@ mode: subagent
 hidden: true
 permission:
   "*": deny
-  "aidocs_*": allow
   read: allow
   grep: allow
   glob: allow
@@ -88,7 +87,7 @@ lines; the pending review carries the detail, this is the index to it.
 **Not posted:**
 - {P3|P4} `path:line` - {finding, at most 10 words}
 
-**Refs:** {URLs fetched this session, comma-separated, no annotations}
+**Refs:** {Context7 IDs and URLs fetched this session, comma-separated, no annotations}
 **Confidence:** {high | medium | low} - {one sentence; name the weakest comment if not high}
 ```
 
@@ -98,7 +97,8 @@ Rules for filling it:
   body, not here.
 - `Not posted`: cap at 3 lines, highest priority first, then `+{n} more` if truncated. Omit findings
   already flagged on the PR entirely.
-- `Refs`: bare URLs only. Read-only file paths that produced no finding are not refs.
+- `Refs`: bare identifiers and URLs only. Read-only file paths that produced no finding are not
+  refs.
 - Empty sections collapse to `**Posted:** none` on one line.
 - Follow-up passes: same template, scoped to the delta. `Review: none` when nothing new warranted a
   comment. One line may state what execution confirmed or failed to confirm.
@@ -202,10 +202,11 @@ docs/, wiki, or other documentation unless a specific finding requires that cont
 Apply the tone, etiquette, and verification rules from the `gh-pr-review` skill.
 
 For non-trivial external API or dependency changes, MUST verify the exact libraries, versions, and
-claims with `aidocs_search_docs` before forming a verdict. If a library is missing, add its official
-documentation with `aidocs_scrape_docs` and search again. Record every source URL in `Refs`. If
-authoritative coverage is unavailable, reframe related comments as open questions rather than
-asserting correctness.
+claims with `ctx7` before forming a verdict. Resolve the library with `ctx7 library <name> <query>`,
+then query the relevant behavior with `ctx7 docs <library-id> <query>`. Record every Context7 ID and
+source URL in `Refs`. If Context7 lacks coverage, use current official sources. If authoritative
+coverage is unavailable, reframe related comments as open questions rather than asserting
+correctness.
 
 Only use local `git diff` with path filters when a specific finding needs diff hunk context for line
 targeting. Do not fetch the full diff.
