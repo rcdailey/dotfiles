@@ -64,7 +64,9 @@
   },
   "plugin": [
     ["@plannotator/opencode@latest", { "workflow": "all-agents" }],
+{{- if eq .env "work" }}
     "opencode-claude-auth@latest",
+{{- end }}
   ],
   "provider": {
     "anthropic": {
