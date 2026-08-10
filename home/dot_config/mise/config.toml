@@ -28,10 +28,7 @@ bun = "latest"
 "npm:@commitlint/config-conventional" = "latest"
 "npm:ctx7" = "latest"
 topgrade = "latest"
-
-# Don't use this because it doesn't update frequently enough
-# Use: curl -fsSL https://opencode.ai/install | bash
-# opencode = "latest"
+opencode = "latest"
 
 [settings]
 # both must be off so hook-env strips the shims dir from interactive PATH
