@@ -59,11 +59,11 @@ under `~/.config/opencode/` do not have these prefixes.
 - `dcp.jsonc`, `tui.jsonc` - Additional config files
 - `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory
   contains a `SKILL.md`. Some are managed via `.chezmoiexternal.toml` in this directory.
-- `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). Primary agents
-  (`build`, `dispatch`) implement directly and include `opencode-coding-directives.md` plus
-  `opencode-primary-shared.md`. `dispatch` is `hidden: true` for headless ticket work. Read-only
-  `acceptance` audits completed local work with a fresh Sol-class model. Other specialists (`commit`,
-  `researcher`, `reviewer`, `upgrade-analyst`) are plain Markdown with self-contained protocols.
+- `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). The primary
+  `build` agent implements directly and includes `opencode-coding-directives.md` plus
+  `opencode-primary-shared.md`. Read-only `acceptance` audits completed local work with a fresh
+  Sol-class model. Other specialists (`commit`, `researcher`, `reviewer`, `upgrade-analyst`) are
+  plain Markdown with self-contained protocols.
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
 - `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`)
 - `.chezmoitemplates/` - Reusable template partials scoped to OpenCode config. Template names share
