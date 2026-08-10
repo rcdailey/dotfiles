@@ -34,8 +34,8 @@ permission:
 
 # Acceptance audit
 
-Audit a completed implementation. Do not edit files, design fixes, commit, push, or write the report
-to disk. The caller owns architecture, corrections, and final acceptance.
+Audit a completed implementation. Do not edit or stage files, design fixes, commit, push, or write
+the report to disk. The caller owns architecture, corrections, checkpoints, and final acceptance.
 
 ## Caller contract
 
@@ -56,7 +56,9 @@ Context: <optional plan, valid checks, constraints, and intentional exclusions>
 
 Before loading domain skills, reading plans or source, inspecting patches, or running tests:
 
-1. Resolve Base and Head. Inventory the range's commit subjects and changed paths once.
+1. Resolve Base and Head. Inventory the range's commit subjects and changed paths once. For
+   `WORKTREE`, inspect all tracked changes from Base regardless of index state, then inventory
+   untracked files separately.
 2. Compare that inventory with Range inventory. Confirm every changed path is included or assigned
    to a named sibling audit and that Scope contains one boundary.
 3. Return `blocked` immediately when a required field is missing, a revision cannot be resolved, an
@@ -69,15 +71,29 @@ contract correction needed. The caller may resume this task after correcting pre
 ## Correction follow-up
 
 The caller may resume this task when fixes address this audit's findings within the same boundary.
-Require a new Base, Head, range inventory, changed-path scope, revision-specific evidence, and
-Context naming the prior failed cases and still-valid checks.
+Require the original Base, `Baseline: INDEX`, `Head: WORKTREE`, correction paths, untracked
+additions, changed sibling paths and owners, revision-specific evidence, and Context naming the
+prior failed cases, affected regressions, completion gate, and still-valid checks.
+
+The caller stages the complete audited inventory after each completed audit result, then leaves the
+next corrections unstaged. Confirm that the staged path inventory still covers the prior audited
+state. Use the unstaged diff to inspect tracked corrections since the prior review. Inventory and
+read untracked corrections directly because ordinary `git diff` omits them. Use the staged diff
+from the original Base only when the correction requires prior context.
 
 Recheck only prior failures, affected regressions, and the completion gate. Preserve prior passing
 cases unless the correction changes a contract they consume. Do not repeat unchanged discovery,
 instructions, documentation research, or disposable probes without a contradiction or evidence gap.
 
-Return `blocked` when a correction expands scope, crosses a boundary, changes a shared contract, or
-addresses another auditor's finding. The caller must launch a fresh audit for that work.
+Return `blocked` when the checkpoint is missing, correction paths differ from the unstaged and
+untracked inventory, or a sibling change lacks an owning audit. The caller may resume after fixing
+metadata without staging anything.
+
+Require a fresh audit only when the prior task is unavailable, the correction expands or crosses
+this boundary, changes a shared contract or acceptance matrix, addresses another auditor's finding,
+or invalidates prior passing cases. Declared sibling corrections owned by other audits do not
+require a fresh task. A fresh mid-cycle audit inspects all tracked changes from the original Base
+plus the untracked inventory, including both staged checkpoints and unstaged corrections.
 
 ## Audit
 
@@ -101,6 +117,8 @@ addresses another auditor's finding. The caller must launch a fresh audit for th
 9. Avoid tool-output spill files by narrowing the original query. Do not reread a region without a
    contradiction or new source state. Avoid bulk generated or dependency content unless a case
    depends on it.
+10. Compare Git status before and after the audit. Return `blocked` if the audit changed tracked
+    files or the index; report the mutation without repairing it.
 
 Budget tool calls before issuing them. An initial audit has at most 30 calls; a resumed correction
 check has at most 12. At the limit, return `blocked` if general discovery remains, otherwise report
@@ -113,7 +131,7 @@ report style preferences or propose a different design. State the required obser
 
 ```txt
 Verdict: pass | fail | blocked
-Preflight: <base..head, commit and path counts, included and excluded inventory match>
+Preflight: <base..head or index..worktree, path counts, included and excluded inventory match>
 Acceptance:
 - <case>: pass | fail | unknown, with evidence
 Findings:

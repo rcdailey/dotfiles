@@ -151,8 +151,8 @@ is not acceptance.
 
 Implement test-first when practical. Run targeted checks while editing and the repository completion
 check once after the final change for the slice. A successful check remains valid while the tree is
-unchanged. At a major component boundary, commit and start a fresh primary session when carrying the
-full implementation history would add more context than value.
+unchanged. After acceptance, commit at a major component boundary and start a fresh primary session
+when carrying the full implementation history would add more context than value.
 
 ## Independent acceptance audit
 
@@ -166,21 +166,26 @@ ask the user to design scopes, ranges, matrices, or evidence packets.
 
 Before any acceptance task:
 
-1. Resolve the exact base and head from Git. Inventory every commit and changed path in the range.
-   Account for each path as included in this audit or excluded with its owning sibling audit. Fix a
-   stale base or incomplete inventory before delegation; never send a range known to disagree with
-   Scope.
-2. Partition by independently verifiable boundary. A boundary shares one owner, lifecycle or
+1. Start work that will require acceptance with a clean index. Leave implementation changes
+   unstaged through all initial sibling audits. If the index already contains changes, do not alter
+   it or start this checkpoint workflow until the owner resolves that state.
+2. Resolve the exact base and head from Git. Inventory every commit and changed path in the range,
+   including untracked files. Account for each path as included in this audit or excluded with its
+   owning sibling audit. Fix a stale base or incomplete inventory before delegation; never send a
+   range known to disagree with Scope.
+3. Partition by independently verifiable boundary. A boundary shares one owner, lifecycle or
    transaction entry point, consumed contracts, and stable test seam. Different owners, entry
    points, or seams require separate audits even when one commit or feature contains them.
-3. Build a compact evidence map for each case: changed paths or symbols, durable tests or commands
+4. Build a compact evidence map for each case: changed paths or symbols, durable tests or commands
    and their revision-specific results, exact stale names, and missing verification.
-4. Delegate one fresh initial audit per boundary. Use a final audit only for a named invariant that
+5. Delegate one fresh initial audit per boundary. Use a final audit only for a named invariant that
    actually crosses accepted boundaries. Independent audits may run concurrently.
 
-When correcting findings, group fixes by boundary and commit independently reviewable corrections
-separately. This gives each follow-up an exact range and prevents unrelated policy, tooling, and
-behavior changes from contaminating one audit.
+Wait until every initial sibling audit returns `pass` or `fail`. If any returns preflight-only
+`blocked`, correct its metadata and resume it before staging. Then stage the complete audited path
+inventory as one checkpoint. Use path-scoped `git add -A -- <paths>`, not an unbounded `git add -A`.
+The index now represents the state seen by the initial auditors; do not commit before acceptance
+passes.
 
 Pass:
 
@@ -199,16 +204,27 @@ The primary must first complete implementation and its own review. Tell the audi
 checks remain valid on the unchanged tree so it can run only missing acceptance. The auditor returns
 independent evidence and findings; the primary cross-references them and owns the final judgment.
 
-On failure, diagnose and fix the findings directly. Resume the same auditor when corrections stay
-within its findings and boundary. Pass a new Base, Head, range inventory, changed paths,
-revision-specific evidence, prior failed cases, affected regressions, and completion gate. Preserve
-prior passing cases unless the correction changes a contract they consume.
+On failure, fix findings within their owning boundaries and leave corrections unstaged. Resume the
+same auditor with the original Base, `Baseline: INDEX`, `Head: WORKTREE`, the correction paths,
+untracked additions, changed sibling paths and owners, revision-specific evidence, prior failed
+cases, affected regressions, and completion gate. The auditor uses the unstaged diff as the delta
+from its prior review and preserves unaffected passing cases.
 
-Launch a fresh audit when a correction expands scope, crosses a boundary, changes a shared contract,
-or addresses another auditor's finding. Re-audit dependent boundaries only when their shared
-contract changes. Resume preflight-only blocks with corrected caller metadata; they do not count as
-correction passes. After two rejected implementation correction passes, stop and report. A passing
-audit is valid only while the reviewed tree is unchanged.
+Wait until every concurrent correction audit returns `pass` or `fail`, then stage its reviewed
+correction paths before another round, including after `pass`. Do not stage while an auditor is
+running or after a preflight-only `blocked` result; resume blocked tasks with corrected metadata.
+Only the primary stages checkpoints. The acceptance agent remains read-only.
+
+Launch a fresh audit only when the prior task is unavailable, the correction expands or crosses its
+boundary, changes a shared contract or acceptance matrix, addresses another auditor's finding, or
+invalidates prior passing cases. A fresh mid-cycle auditor reviews the complete implementation with
+`git diff <original-base>` plus the untracked-file inventory; staged checkpoints do not prevent a
+fresh audit. Declared sibling corrections remain with their owning audits and do not force a fresh
+task. Re-audit dependent boundaries only when their shared contract changes.
+
+Continue bounded correction rounds until acceptance passes or the user stops the work. A pass
+remains valid after staging identical content; any later content change requires the owning resumed
+or fresh audit before commit.
 
 ## Committing changes
 
