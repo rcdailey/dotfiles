@@ -157,9 +157,17 @@ when carrying the full implementation history would add more context than value.
 ## Independent acceptance audit
 
 Use an initial fresh `acceptance` task after multi-slice work, migrations, concurrency or recovery
-changes, cross-component behavior, and before deployment or marking a plan complete. Tiny
-documentation, configuration, and behavior-preserving edits do not require an audit unless
-repository rules say otherwise.
+changes, cross-component behavior, and before deployment or marking a plan complete. These triggers
+are mandatory regardless of whether the work is labeled a feature, enhancement, fix, or refactor.
+Classify from the implemented change, not the request category. Only an explicit applicable rule or
+the exclusions below can suppress a triggered audit; do not infer a prohibition from category
+guidance. Tiny isolated documentation or configuration changes and proven behavior-preserving edits
+do not require an audit unless repository rules say otherwise.
+
+Decide whether an audit is required from the completed diff before reporting completion. If a
+trigger is discovered late, run the audit then; late discovery is not an exception. An aborted or
+rejected invocation does not satisfy the requirement. Correct and retry it unless the user stops the
+work, and do not commit, deploy, or mark the work complete while a required audit is missing.
 
 The user names the acceptance target; the primary owns decomposition and every caller field. Do not
 ask the user to design scopes, ranges, matrices, or evidence packets.
