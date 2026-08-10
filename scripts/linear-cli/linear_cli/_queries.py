@@ -413,14 +413,31 @@ mutation AttachmentDelete($id: String!) {
 """
 
 PROJECTS_QUERY = """
-query Projects($filter: ProjectFilter) {
-  projects(filter: $filter, first: 50) {
+query Projects($filter: ProjectFilter, $first: Int, $after: String) {
+  projects(filter: $filter, first: $first, after: $after) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
     nodes {
       id
       name
       state
       startDate
       targetDate
+    }
+  }
+}
+"""
+
+PROJECT_UPDATE_MUTATION = """
+mutation ProjectUpdate($id: String!, $input: ProjectUpdateInput!) {
+  projectUpdate(id: $id, input: $input) {
+    success
+    project {
+      id
+      name
+      description
     }
   }
 }

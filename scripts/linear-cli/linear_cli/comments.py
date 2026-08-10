@@ -9,6 +9,7 @@ from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute, paginate
 from linear_cli._models import Comment
 from linear_cli._queries import COMMENT_CREATE_MUTATION, COMMENT_UPDATE_MUTATION, COMMENTS_QUERY
+from linear_cli._render import echo_comment
 
 
 @click.group(cls=HelpfulGroup)
@@ -33,8 +34,7 @@ def list_comments(issue_id: str) -> None:
         click.echo("no comments")
         return
     for node in nodes:
-        comment = Comment.from_graphql(node)
-        click.echo(f"[{comment.created_at}] {comment.user_name}: {comment.body}")
+        echo_comment(Comment.from_graphql(node))
 
 
 @cli.command("add")

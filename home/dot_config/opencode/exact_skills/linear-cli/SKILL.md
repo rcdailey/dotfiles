@@ -31,12 +31,12 @@ linear issues list [--team KEY] [--state TYPE] [--assignee USER] [--label NAME]
 linear issues search <QUERY> [--team KEY] [--state TYPE] [--assignee USER]
                      [--label NAME] [--cycle CYCLE] [--estimate EST]
                      [--project NAME] [--milestone NAME] [--limit N]
-linear issues view <ID>
+linear issues view <ID> [--comments]
 linear issues create --title TEXT --team KEY [--description TEXT] [--state NAME]
                      [--priority 0-4] [--assignee USER] [--label NAME]...
                      [--parent ID] [--estimate N] [--project NAME]
                      [--milestone NAME]
-linear issues update <ID> [--title TEXT] [--description TEXT] [--state NAME]
+linear issues update <ID>... [--title TEXT] [--description TEXT] [--state NAME]
                      [--priority 0-4] [--assignee USER] [--add-label NAME]...
                      [--remove-label NAME]... [--estimate N] [--parent ID]
                      [--project NAME] [--milestone NAME]
@@ -51,6 +51,7 @@ linear links add <ISSUE_ID> <URL> [--title TEXT]
 linear links remove <LINK_ID>
 linear projects list [--team KEY]
 linear projects view <ID_OR_NAME>  (includes teams and workflow states)
+linear projects update <ID_OR_NAME> [--name TEXT] [--description TEXT]
 linear project-updates list [PROJECT_ID_OR_NAME]
 linear project-updates add <PROJECT_ID_OR_NAME> --body TEXT [--health onTrack|atRisk|offTrack]
 linear milestones list --project <NAME_OR_UUID>
@@ -171,10 +172,17 @@ Three distinct mechanisms; pick by intent:
 ## Comments and updates
 
 `linear issues view` shows a comment count. Use `linear comments list` to read them
-when relevant. `linear comments add` for new threads and `--parent` to reply to an
-existing comment. `linear comments edit` updates an existing comment's body. Use
-`linear issues update` only for fields that change after creation (state
-transitions, reassignments, label changes, parent linkage).
+when relevant, or use `issues view --comments` to retrieve the issue and comments
+in one process. `linear comments add` creates threads, `--parent` replies, and
+`linear comments edit` changes a comment. Use `linear issues update` only for
+fields that change after creation.
+
+Pass multiple issue IDs to assign one project or milestone in a batch. Multi-issue
+updates accept only `--project` and `--milestone`.
+
+Never chain mutations with `&&`; an earlier mutation remains applied if a later
+one fails. Run independent verification reads separately so one timeout does not
+skip the remaining checks.
 
 ## Project updates
 

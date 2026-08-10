@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute
 from linear_cli._queries import (
@@ -14,14 +16,24 @@ from linear_cli._queries import (
     VIEWER_QUERY,
 )
 
+_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.I,
+)
+
+
+def _query_nodes(query: str, variables: dict | None, connection: str) -> list[dict]:
+    """Execute a resolver query and return its connection nodes."""
+    try:
+        data = execute(query, variables)
+    except LinearError as exc:
+        die(str(exc))
+    return (data.get(connection) or {}).get("nodes", [])
+
 
 def resolve_team_id(team_key: str) -> str:
     """Resolve a team key (e.g. ENG) to its UUID."""
-    try:
-        data = execute(TEAMS_QUERY)
-    except LinearError as exc:
-        die(str(exc))
-    nodes = (data.get("teams") or {}).get("nodes", [])
+    nodes = _query_nodes(TEAMS_QUERY, None, "teams")
     for node in nodes:
         if node.get("key", "").upper() == team_key.upper():
             return node["id"]
@@ -30,12 +42,8 @@ def resolve_team_id(team_key: str) -> str:
 
 def resolve_state_id(state_name: str, team_id: str | None) -> str:
     """Resolve a state display name to its UUID."""
-    try:
-        filt = {"team": {"id": {"eq": team_id}}} if team_id else None
-        data = execute(STATES_QUERY, {"filter": filt})
-    except LinearError as exc:
-        die(str(exc))
-    nodes = (data.get("workflowStates") or {}).get("nodes", [])
+    filt = {"team": {"id": {"eq": team_id}}} if team_id else None
+    nodes = _query_nodes(STATES_QUERY, {"filter": filt}, "workflowStates")
     for node in nodes:
         if node.get("name", "").lower() == state_name.lower():
             return node["id"]
@@ -48,12 +56,8 @@ def resolve_label_id(label_name: str) -> str:
     Filters by exact name server-side to avoid pagination issues with large
     label sets. Labels are workspace-scoped; no team filter applied.
     """
-    try:
-        filt = {"name": {"eqIgnoreCase": label_name}}
-        data = execute(LABELS_QUERY, {"filter": filt})
-    except LinearError as exc:
-        die(str(exc))
-    nodes = (data.get("issueLabels") or {}).get("nodes", [])
+    filt = {"name": {"eqIgnoreCase": label_name}}
+    nodes = _query_nodes(LABELS_QUERY, {"filter": filt}, "issueLabels")
     if nodes:
         return nodes[0]["id"]
     die(f"label '{label_name}' not found")
@@ -61,28 +65,39 @@ def resolve_label_id(label_name: str) -> str:
 
 def resolve_project_id(project_name: str) -> str:
     """Resolve a project name to its UUID."""
-    try:
-        data = execute(PROJECTS_QUERY, {"filter": None})
-    except LinearError as exc:
-        die(str(exc))
-    nodes = (data.get("projects") or {}).get("nodes", [])
+    if _UUID_RE.match(project_name):
+        return project_name
+    filt = {"name": {"eqIgnoreCase": project_name}}
+    nodes = _query_nodes(
+        PROJECTS_QUERY,
+        {"filter": filt, "first": 2},
+        "projects",
+    )
     for node in nodes:
-        if node.get("name", "").lower() == project_name.lower():
+        if node.get("name", "").casefold() == project_name.casefold():
             return node["id"]
     die(f"project '{project_name}' not found")
 
 
 def resolve_milestone_id(milestone_name: str, project_id: str) -> str:
     """Resolve a milestone name to its UUID within a project."""
-    try:
-        filt = {"project": {"id": {"eq": project_id}}}
-        data = execute(MILESTONES_QUERY, {"filter": filt})
-    except LinearError as exc:
-        die(str(exc))
-    nodes = (data.get("projectMilestones") or {}).get("nodes", [])
+    return resolve_milestone(milestone_name, project_id)["id"]
+
+
+def resolve_milestone(milestone_name: str, project_id: str) -> dict:
+    """Resolve a milestone name to its GraphQL node within a project."""
+    filt = {
+        "project": {"id": {"eq": project_id}},
+        "name": {"eqIgnoreCase": milestone_name},
+    }
+    nodes = _query_nodes(
+        MILESTONES_QUERY,
+        {"filter": filt},
+        "projectMilestones",
+    )
     for node in nodes:
         if (node.get("name") or "").lower() == milestone_name.lower():
-            return node["id"]
+            return node
     die(f"milestone '{milestone_name}' not found in project")
 
 

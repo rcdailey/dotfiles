@@ -6,10 +6,11 @@ import click
 
 from linear_cli._click import HelpfulGroup
 from linear_cli._errors import LinearError, die
-from linear_cli._graphql import execute
+from linear_cli._graphql import execute, paginate
 from linear_cli._models import Project, ProjectUpdate
-from linear_cli._queries import PROJECT_QUERY, PROJECTS_QUERY
-from linear_cli._resolve import resolve_team_id
+from linear_cli._queries import PROJECT_QUERY, PROJECT_UPDATE_MUTATION, PROJECTS_QUERY
+from linear_cli._render import percentage_text
+from linear_cli._resolve import resolve_project_id, resolve_team_id
 
 
 @click.group(cls=HelpfulGroup)
@@ -27,11 +28,14 @@ def list_projects(team_key: str | None) -> None:
         filt = {"accessibleTeams": {"id": {"eq": team_id}}}
 
     try:
-        data = execute(PROJECTS_QUERY, {"filter": filt})
+        nodes = paginate(
+            PROJECTS_QUERY,
+            {"filter": filt, "first": 50, "after": None},
+            ["projects"],
+        )
     except LinearError as exc:
         die(str(exc))
 
-    nodes = (data.get("projects") or {}).get("nodes", [])
     if not nodes:
         click.echo("no projects found")
         return
@@ -47,31 +51,12 @@ def list_projects(team_key: str | None) -> None:
 @click.argument("id_or_name")
 def view_project(id_or_name: str) -> None:
     """View project detail by ID or name."""
-    node: dict | None = None
-
-    # Try direct ID lookup first.
     try:
-        data = execute(PROJECT_QUERY, {"id": id_or_name})
-        node = data.get("project")
-    except LinearError:
-        node = None
-
-    # Fall back to name search.
-    if not node:
-        try:
-            list_data = execute(PROJECTS_QUERY, {"filter": None})
-        except LinearError as exc:
-            die(str(exc))
-        all_nodes = (list_data.get("projects") or {}).get("nodes", [])
-        for n in all_nodes:
-            if (n.get("name") or "").lower() == id_or_name.lower():
-                # Fetch full detail by ID.
-                try:
-                    detail_data = execute(PROJECT_QUERY, {"id": n["id"]})
-                    node = detail_data.get("project")
-                except LinearError as exc:
-                    die(str(exc))
-                break
+        project_id = resolve_project_id(id_or_name)
+        data = execute(PROJECT_QUERY, {"id": project_id})
+    except LinearError as exc:
+        die(str(exc))
+    node = data.get("project")
 
     if not node:
         die(f"project '{id_or_name}' not found")
@@ -106,7 +91,7 @@ def view_project(id_or_name: str) -> None:
             status = ms.get("status") or "unknown"
             date = ms.get("targetDate") or "no date"
             raw_progress = ms.get("progress")
-            pct = f"{raw_progress * 100:.0f}%" if raw_progress is not None else "0%"
+            pct = percentage_text(raw_progress)
             click.echo(f"  {ms.get('name')}  [{status}]  target: {date}  progress: {pct}")
     if proj.project_updates:
         click.echo("")
@@ -120,3 +105,36 @@ def view_project(id_or_name: str) -> None:
             click.echo(f"  [{update.health}] {update.created_at} by {update.user_name}")
             if preview:
                 click.echo(f"    {preview}")
+
+
+@cli.command("update")
+@click.argument("id_or_name")
+@click.option("--name", default=None, help="New project name.")
+@click.option("--description", default=None, help="New project description.")
+def update_project(
+    id_or_name: str,
+    name: str | None,
+    description: str | None,
+) -> None:
+    """Update a project by ID or name."""
+    input_data: dict = {}
+    if name:
+        input_data["name"] = name
+    if description is not None:
+        input_data["description"] = description
+    if not input_data:
+        die("no updates specified")
+
+    project_id = resolve_project_id(id_or_name)
+    try:
+        data = execute(
+            PROJECT_UPDATE_MUTATION,
+            {"id": project_id, "input": input_data},
+        )
+    except LinearError as exc:
+        die(str(exc))
+    result = data.get("projectUpdate") or {}
+    if not result.get("success"):
+        die("project update failed")
+    project = result.get("project") or {}
+    click.echo(f"updated project: {project.get('name', id_or_name)}")
