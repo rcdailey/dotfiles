@@ -190,10 +190,11 @@ Before any acceptance task:
    actually crosses accepted boundaries. Independent audits may run concurrently.
 
 Wait until every initial sibling audit returns `pass` or `fail`. If any returns preflight-only
-`blocked`, correct its metadata and resume it before staging. Then stage the complete audited path
-inventory as one checkpoint. Use path-scoped `git add -A -- <paths>`, not an unbounded `git add -A`.
-The index now represents the state seen by the initial auditors; do not commit before acceptance
-passes.
+`blocked`, correct its metadata and resume it before staging. After all results, stage the complete
+audited path inventory as one checkpoint, whether the verdicts pass or fail. This checkpoint MUST
+happen before editing any audit finding. Use path-scoped `git add -A -- <paths>`, not an unbounded
+`git add -A`. The index now represents the exact state seen by the initial auditors; do not commit
+before acceptance passes.
 
 Pass:
 
@@ -212,11 +213,12 @@ The primary must first complete implementation and its own review. Tell the audi
 checks remain valid on the unchanged tree so it can run only missing acceptance. The auditor returns
 independent evidence and findings; the primary cross-references them and owns the final judgment.
 
-On failure, fix findings within their owning boundaries and leave corrections unstaged. Resume the
-same auditor with the original Base, `Baseline: INDEX`, `Head: WORKTREE`, the correction paths,
-untracked additions, changed sibling paths and owners, revision-specific evidence, prior failed
-cases, affected regressions, and completion gate. The auditor uses the unstaged diff as the delta
-from its prior review and preserves unaffected passing cases.
+On failure, confirm the audited checkpoint is staged before changing any file. Then fix findings
+within their owning boundaries and leave corrections unstaged. Resume the same auditor with the
+original Base, `Baseline: INDEX`, `Head: WORKTREE`, the correction paths, untracked additions,
+changed sibling paths and owners, revision-specific evidence, prior failed cases, affected
+regressions, and completion gate. The auditor uses the unstaged diff as the delta from its prior
+review and preserves unaffected passing cases.
 
 Wait until every concurrent correction audit returns `pass` or `fail`, then stage its reviewed
 correction paths before another round, including after `pass`. Do not stage while an auditor is
