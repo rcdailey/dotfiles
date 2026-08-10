@@ -13,6 +13,7 @@ permission:
   bash:
     "*git *": deny
     "*git diff*": allow
+    "*git ls-files*": allow
     "*git log*": allow
     "*git merge-base*": allow
     "*git rev-parse*": allow
