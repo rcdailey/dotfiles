@@ -1,11 +1,11 @@
 #!/usr/bin/env zsh
 # Launch opencode with non-default settings.
-# On `oc upgrade`, auto-clear @latest plugin cache if the version changed.
+# Route `oc upgrade` through mise and clear @latest plugins if the version changed.
 
 if [[ "${1-}" == "upgrade" ]]; then
   local before after rc
   before=$(opencode --version 2>/dev/null)
-  OPENCODE_ENABLE_EXA=false opencode --log-level DEBUG "$@"
+  mise upgrade opencode "${@:2}"
   rc=$?
   after=$(opencode --version 2>/dev/null)
   if (( rc == 0 )) && [[ -n "$before" && -n "$after" && "$before" != "$after" ]]; then
