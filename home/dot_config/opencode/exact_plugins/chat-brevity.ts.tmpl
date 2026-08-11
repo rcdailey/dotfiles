@@ -23,13 +23,18 @@ const BUDGET = [
 {{- end }}
 ].join(" ");
 
-const CLOSING = "If work remains, end with `Next:` and one small action.";
+const CLOSING = [
+  "When ending a turn, close with `Next:` and one action. Never end a turn to announce a step you",
+  "can take now.",
+].join(" ");
 
-const REMINDER = [
-  "<system-reminder>",
-  [CALIBRATION, BUDGET, CLOSING].join("\n\n"),
-  "</system-reminder>",
-].join("\n");
+const wrap = (...sections: string[]) =>
+  ["<system-reminder>", sections.join("\n\n"), "</system-reminder>"].join("\n");
+
+// CLOSING is only actionable at turn end, and each tool call is a continue-or-stop decision point,
+// so reinjecting it there reads as permission to stop. The turn-start copy stays in context.
+const TURN_REMINDER = wrap(CALIBRATION, BUDGET, CLOSING);
+const TOOL_REMINDER = wrap(CALIBRATION, BUDGET);
 
 export const ChatBrevity: Plugin = async ({ client }) => {
   const primary = new Map<string, Promise<boolean>>();
@@ -62,7 +67,7 @@ export const ChatBrevity: Plugin = async ({ client }) => {
           sessionID: anchor.sessionID,
           messageID: anchor.messageID,
           type: "text",
-          text: REMINDER,
+          text: TURN_REMINDER,
           synthetic: true,
         });
         return;
@@ -74,7 +79,7 @@ export const ChatBrevity: Plugin = async ({ client }) => {
         (part) => part.type === "tool" && part.state.status === "completed",
       );
       if (tool?.type !== "tool" || tool.state.status !== "completed") return;
-      tool.state.output += `\n\n${REMINDER}`;
+      tool.state.output += `\n\n${TOOL_REMINDER}`;
     },
   };
 };

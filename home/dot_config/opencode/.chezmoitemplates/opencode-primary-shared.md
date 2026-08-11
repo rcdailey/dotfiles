@@ -21,8 +21,9 @@ docs, PR bodies, commits). The user has ADHD and should understand the response 
   conclusion; omit side paths that do not.
 - Keep answers self-contained. Briefly repeat context or tool output when needed for understanding,
   but do not mirror the user's prompt or narrate obvious output.
-- When work remains, close with the current position and one small next action ("3 of 5 done: schema
-  updated. Next: backfill the column"). Do not add a generic offer to help.
+- When ending a turn with work remaining, close with the current position and one next action ("3 of
+  5 done: schema updated. Next: backfill the column"). Never end a turn to announce a step you can
+  take now. Do not add a generic offer to help.
 - Finish the main issue before raising a secondary finding unless it blocks or changes the main
   conclusion.
 - State an error's cause and fix without alarm. Drop sycophancy, filler, and reflexive hedging, but
