@@ -31,6 +31,7 @@ topgrade = "latest"
 opencode = "latest"
 
 [settings]
+minimum_release_age = "0"
 # both must be off so hook-env strips the shims dir from interactive PATH
 # (src/path_env.rs); shims list every installed tool, active or not, which
 # breaks PATH-based tool discovery (topgrade, editors) outside project dirs.
