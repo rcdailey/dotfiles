@@ -88,7 +88,7 @@ lines; the pending review carries the detail, this is the index to it.
 - {P3|P4} `path:line` - {finding, at most 10 words}
 
 **Refs:** {Context7 IDs and URLs fetched this session, comma-separated, no annotations}
-**Confidence:** {high | medium | low} - {one sentence; name the weakest comment if not high}
+**Confidence:** {high | medium | low} - {one sentence; name the weakest posted comment if not high}
 ```
 
 Rules for filling it:
@@ -99,6 +99,11 @@ Rules for filling it:
   already flagged on the PR entirely.
 - `Refs`: bare identifiers and URLs only. Read-only file paths that produced no finding are not
   refs.
+- `Confidence`: grade only the findings you reported, not how much of the PR you explored.
+  Unexplored areas and unverified behavior that produced no finding never lower it. Static tracing
+  is full verification when the claim follows from the code; do not discount it for lack of
+  execution. If a caveat about runtime behavior would lower the grade, settle it by reading or by
+  running the check, then report the resolved grade.
 - Empty sections collapse to `**Posted:** none` on one line.
 - Follow-up passes: same template, scoped to the delta. `Review: none` when nothing new warranted a
   comment. One line may state what execution confirmed or failed to confirm.
