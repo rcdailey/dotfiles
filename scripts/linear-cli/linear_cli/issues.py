@@ -16,6 +16,7 @@ from linear_cli._queries import (
     ISSUE_UPDATE_MUTATION,
     ISSUES_QUERY,
 )
+from linear_cli._render import echo_comment, echo_issue_summary, estimate_text
 from linear_cli._resolve import (
     resolve_assignee_id,
     resolve_cycle_number,
@@ -25,7 +26,6 @@ from linear_cli._resolve import (
     resolve_state_id,
     resolve_team_id,
 )
-from linear_cli._render import echo_comment, echo_issue_summary, estimate_text
 
 
 def _print_scope(project_name: str | None, milestone_name: str | None) -> None:

@@ -22,8 +22,10 @@ def percentage_text(value: float | None) -> str:
 def echo_issue_summary(issue: Issue, *, indent: str = "") -> None:
     """Print one issue summary line."""
     parts = [
-        f"{indent}{issue.identifier}  {issue.state_name}  "
-        f"[{priority_label(issue.priority)}]  {issue.title}"
+        (
+            f"{indent}{issue.identifier}  {issue.state_name}  "
+            f"[{priority_label(issue.priority)}]  {issue.title}"
+        )
     ]
     if issue.assignee_name:
         parts.append(f"assignee: {issue.assignee_name}")

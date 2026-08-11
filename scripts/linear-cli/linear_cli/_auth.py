@@ -111,7 +111,7 @@ def get_access_token() -> str | None:
     if time.time() >= expires_at - 300:
         try:
             tokens = refresh_access_token(tokens)
-        except Exception:
+        except (httpx.HTTPError, KeyError, OSError, ValueError):
             return None
     return tokens.get("access_token")
 
@@ -169,7 +169,7 @@ def run_oauth_flow(client_id: str, port: int) -> dict:
             self.wfile.write(_HTML_SUCCESS)
             event.set()
 
-        def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
+        def log_message(self, format: str, *args: Any) -> None:
             pass
 
     server = http.server.HTTPServer(("localhost", port), _CallbackHandler)

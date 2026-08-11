@@ -31,8 +31,10 @@ def _validate_api_key(key: str) -> str | None:
         )
         response.raise_for_status()
         body = response.json()
+        if not isinstance(body, dict):
+            return None
         return body.get("data", {}).get("viewer", {}).get("email")
-    except Exception:
+    except (httpx.HTTPError, ValueError):
         return None
 
 
