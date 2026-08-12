@@ -30,6 +30,7 @@ Options:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import math
 import os
 import re
@@ -40,6 +41,7 @@ import urllib.request
 # Characters-per-PDF-page threshold. If average extractable text per
 # page falls below this, the PDF is considered scanned and needs OCR.
 OCR_THRESHOLD = 100
+CACHE_VERSION = 1
 
 
 def _is_url(source: str) -> bool:
@@ -47,9 +49,7 @@ def _is_url(source: str) -> bool:
 
 
 def _download(url: str, dest: str) -> None:
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "pdf2md/1.0"}
-    )
+    req = urllib.request.Request(url, headers={"User-Agent": "pdf2md/1.0"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         with open(dest, "wb") as f:
             while True:
@@ -57,6 +57,48 @@ def _download(url: str, dest: str) -> None:
                 if not chunk:
                     break
                 f.write(chunk)
+
+
+def _cache_path(source: str, *, is_url: bool, force_ocr: bool) -> str:
+    if is_url:
+        source_identity = source
+    else:
+        source_path = os.path.abspath(source)
+        stat = os.stat(source_path)
+        source_identity = f"{source_path}\0{stat.st_size}\0{stat.st_mtime_ns}"
+
+    cache_key = hashlib.sha256(
+        f"{CACHE_VERSION}\0{source_identity}\0{force_ocr}".encode()
+    ).hexdigest()
+    cache_root = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
+    return os.path.join(cache_root, "pdf2md", f"{cache_key}.md")
+
+
+def _read_cache(path: str) -> str | None:
+    try:
+        with open(path, encoding="utf-8") as cache_file:
+            return cache_file.read()
+    except OSError:
+        return None
+
+
+def _write_cache(path: str, content: str) -> None:
+    cache_dir = os.path.dirname(path)
+    try:
+        os.makedirs(cache_dir, mode=0o700, exist_ok=True)
+        fd, temp_path = tempfile.mkstemp(prefix=".pdf2md-", suffix=".md", dir=cache_dir)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as cache_file:
+                cache_file.write(content)
+            os.replace(temp_path, path)
+        except Exception:
+            try:
+                os.unlink(temp_path)
+            except OSError:
+                pass
+            raise
+    except OSError as error:
+        print(f"warning: could not cache markdown: {error}", file=sys.stderr)
 
 
 def _needs_ocr(pdf_path: str) -> bool:
@@ -78,9 +120,7 @@ def _needs_ocr(pdf_path: str) -> bool:
         return True
 
 
-def _run_ocr(
-    input_path: str, output_path: str, *, force: bool = False
-) -> str:
+def _run_ocr(input_path: str, output_path: str, *, force: bool = False) -> str:
     """Run ocrmypdf. Returns path to the OCR'd PDF."""
     import ocrmypdf
 
@@ -253,10 +293,7 @@ def _paginate(text: str, page_size: int, page: int) -> str:
     total_pages = max(1, math.ceil(total_chars / page_size))
 
     if page < 1 or page > total_pages:
-        return (
-            f"error: page {page} out of range "
-            f"(1-{total_pages} available)"
-        )
+        return f"error: page {page} out of range (1-{total_pages} available)"
 
     start = (page - 1) * page_size
     end = start + page_size
@@ -275,31 +312,42 @@ def main() -> None:
     )
     parser.add_argument("source", help="local file path or URL")
     parser.add_argument(
-        "--force-ocr", action="store_true",
+        "--force-ocr",
+        action="store_true",
         help="always run OCR regardless of text detection",
     )
     parser.add_argument(
-        "--ocr-inplace", action="store_true",
+        "--ocr-inplace",
+        action="store_true",
         help="write OCR result back to the source file (local only)",
     )
     parser.add_argument(
-        "--page-size", type=int, default=20000,
+        "--page-size",
+        type=int,
+        default=20000,
         help="characters per page of output (default: 20000)",
     )
     parser.add_argument(
-        "--page", type=int, default=1,
+        "--page",
+        type=int,
+        default=1,
         help="which page of output to return (default: 1)",
     )
     parser.add_argument(
-        "--find", default=None,
+        "--find",
+        default=None,
         help="search output by paragraph (regex or literal)",
     )
     parser.add_argument(
-        "-C", "--context", type=int, default=1,
+        "-C",
+        "--context",
+        type=int,
+        default=1,
         help="paragraphs of context around --find matches (default: 1)",
     )
     parser.add_argument(
-        "--raw", action="store_true",
+        "--raw",
+        action="store_true",
         help="skip post-conversion sanitization",
     )
     opts = parser.parse_args()
@@ -309,44 +357,48 @@ def main() -> None:
     if opts.ocr_inplace and is_url:
         parser.error("--ocr-inplace cannot be used with URLs")
 
+    if not is_url and not os.path.isfile(opts.source):
+        print(f"error: file not found: {opts.source}", file=sys.stderr)
+        sys.exit(1)
+
+    cache_path = _cache_path(opts.source, is_url=is_url, force_ocr=opts.force_ocr)
+    output = _read_cache(cache_path)
+
     tmpdir = tempfile.mkdtemp(prefix="pdf2md-")
     tmp_files: list[str] = []
 
     try:
-        # Resolve source to a local file
-        if is_url:
-            pdf_path = os.path.join(tmpdir, "input.pdf")
-            tmp_files.append(pdf_path)
-            try:
-                _download(opts.source, pdf_path)
-            except Exception as e:
-                print(f"error: download failed: {e}", file=sys.stderr)
-                sys.exit(1)
-        else:
-            pdf_path = os.path.abspath(opts.source)
-            if not os.path.isfile(pdf_path):
-                print(
-                    f"error: file not found: {opts.source}",
-                    file=sys.stderr,
-                )
-                sys.exit(1)
-
-        # OCR decision
-        do_ocr = opts.force_ocr or _needs_ocr(pdf_path)
-
-        if do_ocr:
-            if opts.ocr_inplace:
-                ocr_out = pdf_path
+        if output is None:
+            if is_url:
+                pdf_path = os.path.join(tmpdir, "input.pdf")
+                tmp_files.append(pdf_path)
+                try:
+                    _download(opts.source, pdf_path)
+                except Exception as e:
+                    print(f"error: download failed: {e}", file=sys.stderr)
+                    sys.exit(1)
             else:
-                ocr_out = os.path.join(tmpdir, "ocr.pdf")
-                tmp_files.append(ocr_out)
+                pdf_path = os.path.abspath(opts.source)
 
-            pdf_path = _run_ocr(
-                pdf_path, ocr_out, force=opts.force_ocr
-            )
+            do_ocr = opts.force_ocr or _needs_ocr(pdf_path)
 
-        # Convert
-        output = _convert_to_markdown(pdf_path)
+            if do_ocr:
+                if opts.ocr_inplace:
+                    ocr_out = pdf_path
+                else:
+                    ocr_out = os.path.join(tmpdir, "ocr.pdf")
+                    tmp_files.append(ocr_out)
+
+                pdf_path = _run_ocr(pdf_path, ocr_out, force=opts.force_ocr)
+
+            output = _convert_to_markdown(pdf_path)
+            if opts.ocr_inplace:
+                cache_path = _cache_path(
+                    opts.source,
+                    is_url=False,
+                    force_ocr=opts.force_ocr,
+                )
+            _write_cache(cache_path, output)
 
         # Sanitize unless --raw
         if not opts.raw:
@@ -354,9 +406,7 @@ def main() -> None:
 
         # Apply --find if requested
         if opts.find:
-            output = _paragraph_find(
-                output, opts.find, opts.context
-            )
+            output = _paragraph_find(output, opts.find, opts.context)
 
         # Paginate
         output = _paginate(output, opts.page_size, opts.page)
