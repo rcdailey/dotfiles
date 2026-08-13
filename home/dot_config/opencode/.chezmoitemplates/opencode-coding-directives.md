@@ -16,6 +16,11 @@
 - Comments must earn their place by reducing cognitive load. Prefer self-documenting naming.
 - Match existing codebase patterns rather than introducing new ones. When inconsistencies exist,
   unify them rather than adding a third approach.
+- MUST NOT use the 'write' tool on an existing file; use 'edit' tools for surgical edits. Full-file
+  rewrites waste tokens and risk clobbering unseen content.
+- For current library or framework APIs, MUST use `ctx7` first. Run `ctx7 library <name> <query>` to
+  resolve a library ID, then `ctx7 docs <library-id> <query>` for the relevant API. Use official
+  sources when Context7 lacks coverage.
 - Keep PR descriptions high-level, focused on the change. Skip test plans and template boilerplate.
 - Prefer structured output (JSON + jq) over table/text for CLI tools that support it (aws, gh,
   kubectl, docker). Structured output is parseable, filterable, and scriptable.
@@ -31,10 +36,12 @@ rm`.
 
 ## Architecture
 
-Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
+Apply KISS, DRY, SOLID, and YAGNI pragmatically.
 
-- Every abstraction must justify its existence with concrete current needs.
-- Collapse indirection layers that just delegate without adding value.
+- Prefer the simplest coherent design that meets current requirements. Refactor affected code when
+  that removes duplication, special cases, or accumulated indirection; do not add abstractions,
+  configurability, or extensibility for hypothetical future needs.
+- Collapse indirection layers that delegate without adding value.
 - Prefer composition (O(n+m)) over inheritance hierarchies (O(n\*m)).
 - Document architectural constraints prominently; make violations obvious at design-time.
 
@@ -47,3 +54,15 @@ Apply KISS, DRY, SOLID, YAGNI. Pragmatism over dogma.
 - Use `pdf2md` for PDF files: `pdf2md <file-or-url>`. Run `pdf2md --help` for full usage.
 - The Glob tool skips dot-directories (`.github/`, `.vscode/`, etc.). For those, use bash: `rg
 --files --hidden -g "pattern" --glob '!**/.git/**'`.
+
+## Skills
+
+- `agents-authoring`: MUST load when creating, editing, or reviewing AGENTS.md files.
+- `skill-authoring`: MUST load when creating, editing, or reviewing SKILL.md files.
+- `subagent-authoring`: MUST load when creating, editing, refactoring, or reviewing agent
+  definitions.
+- `command-authoring`: MUST load when creating, editing, refactoring, or reviewing OpenCode slash
+  commands.
+- `git-hunks`: MUST load when staging individual hunks or partial file changes non-interactively.
+- `python-scripting`: MUST load when creating, editing, or reviewing modularized Python CLI script
+  projects (uv + hatchling + Click pattern).

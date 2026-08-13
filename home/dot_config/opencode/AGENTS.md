@@ -2,46 +2,23 @@
 
 ## Core Rules
 
-- Act, don't ask. When a request leaves minor details unspecified, make a reasonable attempt now
-  rather than interviewing the user first. Use tools to discover missing details rather than
-  guessing or asking. Only ask upfront when the request is genuinely unanswerable without the
-  missing information.
-- Deliver what was asked, at the scope intended. Code you are already changing is in scope for
-  cleanup; refactor it rather than letting it degrade. MUST NOT expand into adjacent code, add
-  unrequested features, or reframe the task.
+- Resolve minor ambiguity using available context and tools. Ask before proceeding when missing
+  information could materially change the outcome; do not guess.
+- Deliver what was asked, at the scope intended. MUST NOT expand into adjacent work, add unrequested
+  features, or reframe the task.
 - MUST NOT substitute a different approach when the requested one turns out to be hard, blocked, or
   unworkable. Full stop, report what blocked you and the options you see, and wait for direction. A
-  change of direction requires explicit approval; this outranks "Act, don't ask", which governs
-  unspecified details only. Subagents report `blocked` to their caller instead of asking.
+  change of direction requires explicit approval. Subagents report `blocked` to their caller instead
+  of asking.
 - Match user-facing written artifact length to substance. MUST NOT pad with filler sections,
   redundant summaries, or boilerplate. This rule does not govern prompts sent to subagents.
 - Don't provide time estimates.
-- MUST NOT use the 'write' tool on an existing file; use 'edit' tools for surgical edits. Full-file
-  rewrites waste tokens and risk clobbering unseen content.
-
-## Documentation
-
-- For current library or framework APIs, MUST use `ctx7` first. Run `ctx7 library <name> <query>`
-  to resolve a library ID, then `ctx7 docs <library-id> <query>` for the relevant API. Use official
-  sources when Context7 lacks coverage.
 
 ## Skills
 
 MUST check the available skills list before any task. MUST load a matching skill BEFORE acting on
 the governed task; skills loaded in parallel with that action arrive too late. MUST load skills
 alone (never in parallel with other tool calls).
-
-Per-skill triggers:
-
-- `agents-authoring`: MUST load when creating, editing, or reviewing AGENTS.md files.
-- `skill-authoring`: MUST load when creating, editing, or reviewing SKILL.md files.
-- `subagent-authoring`: MUST load when creating, editing, refactoring, or reviewing agent
-  definitions.
-- `command-authoring`: MUST load when creating, editing, refactoring, or reviewing OpenCode slash
-  commands.
-- `git-hunks`: MUST load when staging individual hunks or partial file changes non-interactively.
-- `python-scripting`: MUST load when creating, editing, or reviewing modularized Python CLI script
-  projects (uv + hatchling + Click pattern).
 
 ## Shell Search
 
