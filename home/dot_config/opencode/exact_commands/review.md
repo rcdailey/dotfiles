@@ -20,44 +20,32 @@ or `"all"`. Pass the priority scope through to every spawned task unchanged.
 
 ## PR Selection
 
-Resolve the repo target for `gh`:
+Resolve `{target}` to `owner/repo`:
 
-- Directory path: derive with `gh repo view --json nameWithOwner -q .nameWithOwner` executed in that
-  directory, or pass via `workdir`
-- `owner/repo` or bare repo name: pass directly as `--repo {target}`
+- Directory path: run `gh repo view --json nameWithOwner -q .nameWithOwner` in that directory
+- `owner/repo` or bare repo name: use directly
 - No target: derive the current repo with `gh repo view --json nameWithOwner -q .nameWithOwner`
 
-Build the work list as the union of two queries:
-
-**1. Never reviewed** — PRs the user has not yet reviewed:
+Build the work list with one call:
 
 ```bash
-gh pr list --repo {target} --state open \
-  --search "-author:@me -reviewed-by:@me -is:draft" \
-  --json number,title,url,author,updatedAt
+gh-review inbox {target}
 ```
 
-**2. Re-review** — PRs the user reviewed but new commits arrived since:
+Each block is labelled with its trigger and the deltas since your last review:
 
-```bash
-gh pr list --repo {target} --state open \
-  --search "-author:@me reviewed-by:@me -is:draft" \
-  --json number,title,url,author,updatedAt
-```
+- **NEW** — never reviewed; always a candidate.
+- **RE-REVIEW** — commits landed since your last review; the commit subjects are listed.
+- **REPLY** — no new commits, but a human left a follow-up in one of your threads or a PR-level
+  comment since your last review; author and comment previews are listed.
+- **SKIP** — nothing changed since your last review.
 
-For each PR in the re-review list, fetch the user's latest review timestamp and the head commit
-date, then include it only when commits were pushed after the last review:
+The block content is sufficient to decide without further tool calls. Select NEW and RE-REVIEW
+PRs, plus any REPLY PR whose comments warrant another pass (a direct question or pushback, not
+acknowledgement). Disregard the rest; do not spawn a reviewer for a delta not worth a review pass.
 
-```bash
-gh pr view {number} --json latestReviews,commits \
-  --jq '{reviews: .latestReviews, lastCommit: (.commits | last)}'
-```
-
-If a PR in the re-review list has no new commits since the last review, skip it and note it in the
-aggregate output.
-
-**Empty work list:** STOP and report: no open PRs are awaiting review in `{target}`. Do not fall
-back to reviewing local changes.
+**Empty inbox:** if `inbox` reports no PRs awaiting review, STOP and relay that. Do not fall back
+to reviewing local changes.
 
 ## Execution
 
@@ -98,7 +86,8 @@ analysis of your own.
 If a report exceeds its 20-line budget or pads findings with prose, resume the reviewer task and
 require a compliant report rather than editing it in the caller context.
 
-Close with any PRs skipped from the re-review list and why.
+Close with any inbox PRs you did not review (SKIP entries, and any REPLY entry you judged not
+worth a pass) and why.
 
 ## After the Reports
 
