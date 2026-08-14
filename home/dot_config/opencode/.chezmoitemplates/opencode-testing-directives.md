@@ -4,10 +4,10 @@ SHOULD write a failing test before implementing features and fixes (test-first).
 scope that's practical; push to lower-scoped tests only when higher-scoped tests cannot reach
 specific code paths.
 
-Add durable tests when behavior changes and a stable observable boundary exists. The primary owns
-acceptance cases and writes their smallest proof. Show that each new test fails for the expected
-reason before changing production code when practical. If no stable seam exists, state why instead
-of adding an implementation-coupled test.
+Add durable tests when behavior changes and a stable observable boundary exists. You own acceptance
+cases and write their smallest proof. Show that each new test fails for the expected reason before
+changing production code when practical. If no stable seam exists, state why instead of adding an
+implementation-coupled test.
 
 **Assert outcomes, not interactions.** Verify the result, side effect, or state change rather than
 asserting a mock method was called. Interaction verification couples tests to implementation; they

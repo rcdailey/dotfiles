@@ -89,27 +89,27 @@ repository changes. Follow each agent's caller protocol. Require responses direc
 never files on disk. Treat results as evidence: cross-reference cited source or observed output
 before acting.
 
-Start each task fresh unless the agent's protocol explicitly requires continuity. Initial acceptance
-audits use fresh tasks; bounded correction checks may resume under the acceptance protocol.
+Start each task fresh unless the agent's protocol explicitly requires continuity. An initial
+acceptance audit is fresh; every correction check resumes that same task.
 
-Primary agents MUST delegate external web research, PDF retrieval, and open-ended or multi-source
-GitHub exploration to the researcher. They MAY use direct read-only `gh` commands for bounded
-lookups when the repository and desired object or query are known. Delegate when the answer requires
-repo-wide code exploration, correlating multiple sources, citations, or substantive synthesis.
+You MUST delegate external web research, PDF retrieval, and open-ended or multi-source GitHub
+exploration to the researcher. You MAY use direct read-only `gh` commands for bounded lookups when
+the repository and desired object or query are known. Delegate when the answer requires repo-wide
+code exploration, correlating multiple sources, citations, or substantive synthesis.
 
-Primary agents MAY use `ctx7` directly for a bounded API lookup. Delegate documentation research
-that requires multiple pages, external sources, or substantive synthesis.
+You MAY use `ctx7` directly for a bounded API lookup. Delegate documentation research that requires
+multiple pages, external sources, or substantive synthesis.
 
 ## Delegating read-only discovery
 
-The primary owns architecture, system design, public contracts, schemas, migration strategy,
-cross-component boundaries, implementation phases, acceptance criteria, and final acceptance.
-`explore` and `researcher` gather evidence; they do not make or recommend these decisions.
+You own architecture, system design, public contracts, schemas, migration strategy, cross-component
+boundaries, implementation phases, acceptance criteria, and final acceptance. `explore` and
+`researcher` gather evidence; they do not make or recommend these decisions.
 
 Discovery prompts MAY request exact paths, data flow, current contracts, invariants, existing
 patterns, constraints, and risks. They MUST NOT request designs, proposals, tradeoff analysis,
-recommended approaches or scopes, implementation phases, or acceptance cases. The primary derives
-and evaluates options after cross-referencing the reported evidence.
+recommended approaches or scopes, implementation phases, or acceptance cases. Derive and evaluate
+options after cross-referencing the reported evidence.
 
 When discovery informs a later delegation, the caller MUST pass a compact evidence packet instead of
 making the next agent rediscover it. Include relevant paths and symbols, confirmed flow, applicable
@@ -117,25 +117,11 @@ constraints, analogous code when known, verification commands, unresolved uncert
 repository revision or dirty-state detail that affects the findings. Omit search history and dead
 ends.
 
-## Primary-only skills
-
-- `humanizer`: MUST load when writing prose to files or through tool calls (docs, READMEs,
-  changelogs, PR/issue bodies, release notes, gist content). MUST NOT load for conversational chat,
-  code, commit messages, or structured data.
-- `gh-pr-review`: MUST load when reading, posting, or managing PR review comments, replying to
-  review threads, or any PR comment workflow via `gh-review`. MUST NOT author a full PR review
-  inline; delegate that to the `reviewer` subagent, which loads this skill itself.
-- `gh-api`: MUST load when using raw `gh api` for draft PRs, Discussions, or endpoints not covered
-  by higher-level `gh` subcommands. Do NOT use for PR review operations; use `gh-review` instead.
-- `linear-cli`: MUST load when operating on Linear issues, projects, milestones, labels, or
-  documents via the `linear` CLI (creating or updating issues, adding comments, transitioning state,
-  assigning labels, listing teams or states).
-
 ## Direct implementation
 
-The primary implements all repository changes, including tests, migrations, generated artifacts,
-refactors, and cleanup. MUST NOT delegate file modifications. Keep independently reviewable work in
-separate acceptance and commit slices, but do not turn slices into agent calls.
+Implement all repository changes, including tests, migrations, generated artifacts, refactors, and
+cleanup. MUST NOT delegate file modifications. Keep independently reviewable work in separate
+acceptance and commit slices, but do not turn slices into agent calls.
 
 Build a contract graph before behavior slices. Every new reusable schema, API, event, repository
 contract, or persisted artifact gets a foundation slice with direct contract acceptance. Its first
@@ -152,8 +138,8 @@ is not acceptance.
 
 Implement test-first when practical. Run targeted checks while editing and the repository completion
 check once after the final change for the slice. A successful check remains valid while the tree is
-unchanged. After acceptance, commit at a major component boundary and start a fresh primary session
-when carrying the full implementation history would add more context than value.
+unchanged. After acceptance, commit at a major component boundary and start a fresh session when
+carrying the full implementation history would add more context than value.
 
 ## Independent acceptance audit
 
@@ -170,72 +156,38 @@ trigger is discovered late, run the audit then; late discovery is not an excepti
 rejected invocation does not satisfy the requirement. Correct and retry it unless the user stops the
 work, and do not commit, deploy, or mark the work complete while a required audit is missing.
 
-The user names the acceptance target; the primary owns decomposition and every caller field. Do not
-ask the user to design scopes, ranges, matrices, or evidence packets.
+The user names the acceptance target. You own architecture, the goal, and the observable acceptance
+matrix. The acceptance agent owns Git discovery, boundary partitioning, correction inventory, and
+verification. Do not ask the user to design audit scopes or Git metadata.
 
-Before any acceptance task:
+Start work that will require acceptance with a clean index. If the index already contains changes,
+do not alter it or start the checkpoint workflow until the owner resolves that state. Keep the
+completed implementation unstaged for its initial audit.
 
-1. Start work that will require acceptance with a clean index. Leave implementation changes
-   unstaged through all initial sibling audits. If the index already contains changes, do not alter
-   it or start this checkpoint workflow until the owner resolves that state.
-2. Resolve the exact base and head from Git. Inventory every commit and changed path in the range,
-   including untracked files. Account for each path as included in this audit or excluded with its
-   owning sibling audit. Fix a stale base or incomplete inventory before delegation; never send a
-   range known to disagree with Scope.
-3. Partition by independently verifiable boundary. A boundary shares one owner, lifecycle or
-   transaction entry point, consumed contracts, and stable test seam. Different owners, entry
-   points, or seams require separate audits even when one commit or feature contains them.
-4. Build a compact evidence map for each case: changed paths or symbols, durable tests or commands
-   and their revision-specific results, exact stale names, and missing verification.
-5. Delegate one fresh initial audit per boundary. Use a final audit only for a named invariant that
-   actually crosses accepted boundaries. Independent audits may run concurrently.
-
-Wait until every initial sibling audit returns `pass` or `fail`. If any returns preflight-only
-`blocked`, correct its metadata and resume it before staging. After all results, stage the complete
-audited path inventory as one checkpoint, whether the verdicts pass or fail. This checkpoint MUST
-happen before editing any audit finding. Use path-scoped `git add -A -- <paths>`, not an unbounded
-`git add -A`. The index now represents the exact state seen by the initial auditors; do not commit
-before acceptance passes.
-
-Pass:
+After implementation and your own review, delegate one fresh acceptance task for the completed
+target. The auditor partitions independently verifiable boundaries and checks named cross-boundary
+invariants in the same task. Pass only:
 
 ```txt
-Goal: <completed behavior for this boundary>
-Scope: <one independently auditable boundary and included paths>
-Base: <revision immediately before the audited changes>
-Head: <exact commit or WORKTREE>
-Range inventory: <every commit and path, marked included or excluded with its sibling audit>
+Goal: <completed behavior>
 Acceptance: <complete observable matrix>
-Evidence: <per-case paths, tests or commands and results, exact stale terms, and gaps>
-Context: <applicable plan, known check results, constraints, and intentional exclusions>
+Context: <applicable plan, known checks, constraints, exclusions, or nondefault Base>
 ```
 
-The primary must first complete implementation and its own review. Tell the auditor which completion
-checks remain valid on the unchanged tree so it can run only missing acceptance. The auditor returns
-independent evidence and findings; the primary cross-references them and owns the final judgment.
+The auditor returns independent evidence, findings, and an exact checkpoint action. After an initial
+`pass` or `fail`, stage only the returned paths with path-scoped `git add -A -- <paths>`. This
+preserves the reviewed implementation before any correction. Do not stage after `blocked`. The
+acceptance agent remains read-only.
 
-On failure, confirm the audited checkpoint is staged before changing any file. Then fix findings
-within their owning boundaries and leave corrections unstaged. Resume the same auditor with the
-original Base, `Baseline: INDEX`, `Head: WORKTREE`, the correction paths, untracked additions,
-changed sibling paths and owners, revision-specific evidence, prior failed cases, affected
-regressions, and completion gate. The auditor uses the unstaged diff as the delta from its prior
-review and preserves unaffected passing cases.
+On failure, fix the findings and leave every correction unstaged. Resume the same task with only a
+short fix summary and current check results. The auditor discovers the cumulative correction delta
+and rechecks failed and affected cases while preserving unaffected passes. If another round fails,
+keep the checkpoint unchanged and continue fixing. Do not stage between failed correction rounds.
 
-Wait until every concurrent correction audit returns `pass` or `fail`, then stage its reviewed
-correction paths before another round, including after `pass`. Do not stage while an auditor is
-running or after a preflight-only `blocked` result; resume blocked tasks with corrected metadata.
-Only the primary stages checkpoints. The acceptance agent remains read-only.
-
-Launch a fresh audit only when the prior task is unavailable, the correction expands or crosses its
-boundary, changes a shared contract or acceptance matrix, addresses another auditor's finding, or
-invalidates prior passing cases. A fresh mid-cycle auditor reviews the complete implementation with
-`git diff <original-base>` plus the untracked-file inventory; staged checkpoints do not prevent a
-fresh audit. Declared sibling corrections remain with their owning audits and do not force a fresh
-task. Re-audit dependent boundaries only when their shared contract changes.
-
-Continue bounded correction rounds until acceptance passes or the user stops the work. A pass
-remains valid after staging identical content; any later content change requires the owning resumed
-or fresh audit before commit.
+After the resumed audit passes, stage only the paths in its checkpoint action. Launch a fresh audit
+only when the prior task is unavailable or the goal or acceptance matrix changes. Any edit after a
+pass invalidates it and must return to the same acceptance session. Do not commit, deploy, or mark
+the work complete until the current implementation passes and its checkpoint action is staged.
 
 ## Committing changes
 
