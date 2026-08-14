@@ -188,37 +188,3 @@ After the resumed audit passes, stage only the paths in its checkpoint action. L
 only when the prior task is unavailable or the goal or acceptance matrix changes. Any edit after a
 pass invalidates it and must return to the same acceptance session. Do not commit, deploy, or mark
 the work complete until the current implementation passes and its checkpoint action is staged.
-
-## Committing changes
-
-Delegate to the `commit` subagent. MUST NOT run `git diff`, `git status`, `git log`, or any other
-git inspection commands before delegating; the commit agent handles all diff analysis internally.
-
-Use this structured prompt format (copy the template, fill in values):
-
-```txt
-Files: [staged only | all | <file list>]
-Workdir: <path> (omit if current repo)
-Context: <why the change was made; motivation from session context>
-Issues: <issue keys> (omit if none)
-```
-
-- `Files` controls what gets committed AND how many commits result. Default is one commit. Use
-  "split: `<file list>`" or "split: all" when the work should be broken into multiple commits; the
-  commit agent then decides grouping. Without "split:", expect exactly one commit regardless of how
-  many concerns the diff touches.
-- `Workdir` is only needed when committing in a different repository than the current working
-  directory. The commit agent passes this as the `workdir` parameter on every bash call.
-- `Context` provides motivation, not a description of changes. The commit agent reads the diff
-  itself; it does not need to be told what changed. State the goal or problem that prompted the
-  work. Phrasing matters: "extracted validation to reduce duplication" reads as context, while
-  "extract validation to reduce duplication" reads as a directive to do work.
-- `Issues` are passed through verbatim to the commit message footer.
-
-Example (stage and commit everything):
-
-```txt
-Files: all
-Context: The description lacked explicit boundaries, causing a caller to mis-delegate a content
-authoring task.
-```

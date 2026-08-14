@@ -26,7 +26,6 @@ permission:
     command-authoring: deny
     gh-api: deny
     gh-pr-review: deny
-    git-hunks: deny
     humanizer: deny
     linear-cli: deny
     skill-authoring: deny

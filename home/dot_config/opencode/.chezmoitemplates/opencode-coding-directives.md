@@ -63,6 +63,6 @@ Apply KISS, DRY, SOLID, and YAGNI pragmatically.
   definitions.
 - `command-authoring`: MUST load when creating, editing, refactoring, or reviewing OpenCode slash
   commands.
-- `git-hunks`: MUST load when staging individual hunks or partial file changes non-interactively.
+- `commit-workflow`: MUST load before staging changes or creating commits.
 - `python-scripting`: MUST load when creating, editing, or reviewing modularized Python CLI script
   projects (uv + hatchling + Click pattern).

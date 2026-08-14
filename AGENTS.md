@@ -62,8 +62,8 @@ under `~/.config/opencode/` do not have these prefixes.
 - `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). The primary
   `build` agent implements directly and includes `opencode-coding-directives.md` plus
   `opencode-primary-shared.md`. Read-only `acceptance` audits completed local work with a fresh
-  Sol-class model. Other specialists (`commit`, `researcher`, `reviewer`, `upgrade-analyst`) are
-  plain Markdown with self-contained protocols.
+  Sol-class model. Other specialists (`researcher`, `reviewer`, `upgrade-analyst`) are plain
+  Markdown with self-contained protocols.
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
 - `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`)
 - `.chezmoitemplates/` - Reusable template partials scoped to OpenCode config. Template names share
@@ -71,7 +71,7 @@ under `~/.config/opencode/` do not have these prefixes.
   with `opencode-` to avoid collisions. Current partials: `opencode-coding-directives.md` (coding
   chat style, development, tools, git, architecture, authoring), `opencode-testing-directives.md`
   (behavioral testing and failure diagnosis), `opencode-primary-shared.md` (direct implementation,
-  independent acceptance, specialist delegation, commit protocols, primary-only skills).
+  independent acceptance, specialist delegation, and primary-only skills).
 
 **Tool configs:** `home/dot_config/` contains per-tool configuration directories (git, kitty, mise,
 lazygit, etc.). Browse the directory to discover what's managed.

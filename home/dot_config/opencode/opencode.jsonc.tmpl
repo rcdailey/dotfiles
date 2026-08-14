@@ -38,10 +38,6 @@
       "model": {{ $models.acceptance.model | quote }},
       "variant": {{ $models.acceptance.variant | quote }},
     },
-    "commit": {
-      "model": {{ $models.commit.model | quote }},
-      "variant": {{ $models.commit.variant | quote }},
-    },
     "researcher": {
       "model": {{ $models.researcher.model | quote }},
       "variant": {{ $models.researcher.variant | quote }},
@@ -96,7 +92,7 @@
       "*git branch -D*": "ask",
       "*git stash drop*": "ask",
       "*git stash clear*": "ask",
-      // "git commit*": "ask",
+      "*git commit*": "deny",
       // "git add*": "ask",
 
       // file operations
