@@ -118,6 +118,8 @@ class Issue:
     parent_title: str | None = None
     children: list[dict] = field(default_factory=list)
     comment_count: int = 0
+    project_name: str | None = None
+    project_state: str | None = None
 
     @classmethod
     def from_graphql(cls, data: dict) -> Self:
@@ -128,6 +130,7 @@ class Issue:
         parent = data.get("parent") or {}
         child_nodes = (data.get("children") or {}).get("nodes", [])
         comment_nodes = (data.get("comments") or {}).get("nodes", [])
+        project = data.get("project") or {}
         comment_count = len(comment_nodes)
         return cls(
             id=data.get("id"),
@@ -147,6 +150,8 @@ class Issue:
             parent_title=parent.get("title"),
             children=child_nodes,
             comment_count=comment_count,
+            project_name=project.get("name"),
+            project_state=project.get("state"),
         )
 
 

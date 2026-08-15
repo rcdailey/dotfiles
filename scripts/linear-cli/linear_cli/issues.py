@@ -274,6 +274,9 @@ def view(issue_id: str, include_comments: bool) -> None:
     click.echo(f"labels:      {', '.join(issue.labels) if issue.labels else 'none'}")
     click.echo(f"estimate:    {estimate_text(issue.estimate)}")
     click.echo(f"comments:    {issue.comment_count}")
+    if issue.project_name:
+        project_state = f" ({issue.project_state})" if issue.project_state else ""
+        click.echo(f"project:     {issue.project_name}{project_state}")
     if issue.parent_identifier:
         click.echo(f"parent:      {issue.parent_identifier}  {issue.parent_title}")
     click.echo(f"url:         {issue.url}")

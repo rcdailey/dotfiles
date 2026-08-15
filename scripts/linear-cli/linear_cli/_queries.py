@@ -231,6 +231,7 @@ query Issue($id: String!) {
     project {
       id
       name
+      state
     }
     parent {
       identifier
