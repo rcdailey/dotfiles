@@ -8,8 +8,8 @@ description: >-
 
 # Commit workflow
 
-Use session context as the authority for why the change exists and repository state as the
-authority for what changed. Create commits directly; do not delegate them.
+Use session context as the authority for why the change exists and repository state as the authority
+for what changed. Create commits directly; do not delegate them.
 
 ## Inspect and group
 
@@ -27,16 +27,26 @@ Follow repository-owned commit rules. Otherwise use `type(scope): description` w
 `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, or `revert`.
 
 - Choose the type by intent: behavior uses `feat` or `fix`; structure-only changes use `refactor`;
-  documentation uses `docs`; tests use `test`; tooling, configuration, and dependencies use
-  `chore`; pipelines use `ci`; performance work uses `perf`.
+  documentation uses `docs`; tests use `test`; tooling, configuration, and dependencies use `chore`;
+  pipelines use `ci`; performance work uses `perf`.
 - Use imperative mood, no trailing period, and describe the outcome rather than the editing action.
 - Treat session context as authoritative for motivation and the diff as authoritative for
   implementation. Do not infer implementation claims from intent alone.
-- Before saving, enumerate every distinct motivation and material outcome internally. Each
-  motivation must appear in the subject or a `-p` paragraph; each outcome must appear in the
-  subject, paragraph, or a `-c` entry.
-- Add a paragraph when the subject cannot preserve valuable motivation, root cause, constraints,
-  migration details, or design decisions. Paragraphs explain why; changelog entries state what.
+- Before drafting, inventory:
+  - motivation or root cause
+  - durable contract, data-flow, and architectural changes
+  - constraints and behavior deliberately preserved
+  - temporary migration scaffolding and its removal condition
+  - deferred work and the issue or boundary that owns it
+  - the compatibility boundary: released behavior, user data, wire API, or branch-local transition
+- Treat an item as material when it changes a contract, boundary, invariant, or future decision.
+  Tests, file counts, and implementation mechanics are not material unless they explain safety.
+- Cover every material inventory item in the subject, a `-p` paragraph, or a `-c` entry. Related
+  items may share a paragraph; an issue reference never substitutes for commit-local rationale.
+- For a cross-boundary or migration commit, the body MUST distinguish the durable design from the
+  temporary bridge and state what remains intentionally unchanged or deferred.
+- Preview with `commit save -n`, then compare the rendered message against the inventory. Revise
+  before saving if a reviewer could not recover the design constraints and migration boundary.
 - Add one changelog entry per material outcome when a commit has multiple distinct outcomes. Do not
   repeat those details in the paragraph.
 - Pass issue references supplied by the user with `-i`; never invent them.
