@@ -188,3 +188,19 @@ After the resumed audit passes, stage only the paths in its checkpoint action. L
 only when the prior task is unavailable or the goal or acceptance matrix changes. Any edit after a
 pass invalidates it and must return to the same acceptance session. Do not commit, deploy, or mark
 the work complete until the current implementation passes and its checkpoint action is staged.
+
+## Commits
+
+When explicitly authorized to commit:
+
+- Run `git status --short`, then one
+  `commit save <paths> -s "<subject>" -p "<durable session context>"` command.
+- The body MUST preserve non-obvious context needed to understand or evaluate the change, including
+  its motivation, constraints, decisions, outcomes, and supporting evidence. Omit routine process
+  details and facts obvious from the diff.
+- Pass the smallest safe path set. Collapse files to a directory only when every change below it
+  belongs in the commit; file and directory paths may be mixed.
+- `commit save` resets the index and stages the supplied paths. Do not separately prepare the index,
+  preview the message, or inspect history unless uncertainty requires it.
+- For partial-file commits, load `hunk-staging` and follow it instead.
+- Follow repository commit rules and report the resulting short SHA and subject.

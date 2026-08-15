@@ -171,7 +171,6 @@ def cmd_save(args: list[str]) -> None:
     parser.add_argument("-p", action="append", default=[], help="body paragraph")
     parser.add_argument("-c", action="append", default=[], help="changelog entry")
     parser.add_argument("-i", action="append", default=[], help="issue reference")
-    parser.add_argument("-n", action="store_true", help="print the message without committing")
     parser.add_argument("-a", action="store_true", help="stage all changes")
     args_parsed = parser.parse_args(args)
 
@@ -194,10 +193,6 @@ def cmd_save(args: list[str]) -> None:
         sys.exit(1)
 
     message = format_message(subject, args_parsed.p, args_parsed.c, args_parsed.i)
-
-    if args_parsed.n:
-        print(message, end="")
-        return
 
     def stage(restage: bool = False) -> None:
         """Put the caller's requested content into the index."""
