@@ -111,6 +111,23 @@ def validate_paragraphs(paragraphs: list[str]) -> list[str]:
     return errors
 
 
+def validate_literal_line_breaks(options: dict[str, list[str]]) -> list[str]:
+    """Reject escaped line breaks that should be repeated CLI options."""
+    errors = []
+    for option, values in options.items():
+        for value in values:
+            if not re.search(r"\\[nr]", value):
+                continue
+            errors.append(
+                f'{option} contains a literal "\\n" or "\\r" escape'
+            )
+            if option == "-s":
+                errors.append("  use a single-line -s value instead")
+            else:
+                errors.append(f"  use repeated {option} options instead")
+    return errors
+
+
 def _stage_files(files: list[str]) -> None:
     """Reset the index, stage whole files, and print the resulting stat."""
     git("reset", "HEAD", check=False, capture=True)
@@ -186,7 +203,15 @@ def cmd_save(args: list[str]) -> None:
             f" {SUBJECT_WIDTH}-char limit"
         )
 
-    errors = validate_paragraphs(args_parsed.p)
+    errors = validate_literal_line_breaks(
+        {
+            "-s": [subject],
+            "-p": args_parsed.p,
+            "-c": args_parsed.c,
+            "-i": args_parsed.i,
+        }
+    )
+    errors.extend(validate_paragraphs(args_parsed.p))
     if errors:
         for err in errors:
             print(f"error: {err}", file=sys.stderr)

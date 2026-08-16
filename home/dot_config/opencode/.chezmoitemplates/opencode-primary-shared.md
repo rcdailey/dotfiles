@@ -193,8 +193,19 @@ the work complete until the current implementation passes and its checkpoint act
 
 When explicitly authorized to commit:
 
-- Run `git status --short`, then one
-  `commit save <paths> -s "<subject>" -p "<durable session context>"` command.
+- Run `git status --short`, then one `commit save` command. Repeat `-p` for body paragraphs and `-c`
+  for bullet entries; never embed `\n` escapes in an argument.
+
+  ```sh
+  commit save \
+    path/to/first path/to/second \
+    -s "Summarize the durable change" \
+    -p "Explain why the change was needed and which constraint shaped it." \
+    -p "Record the resulting behavior and evidence needed to evaluate it." \
+    -c "Added the first user-visible outcome" \
+    -c "Removed the obsolete behavior"
+  ```
+
 - The body MUST preserve non-obvious context needed to understand or evaluate the change, including
   its motivation, constraints, decisions, outcomes, and supporting evidence. Omit routine process
   details and facts obvious from the diff.
