@@ -9,7 +9,7 @@ opencodeModels:
       model: anthropic/claude-sonnet-5
       variant: low
     acceptance:
-      model: anthropic/claude-opus-4-8
+      model: anthropic/claude-opus-5
       variant: high
     researcher:
       model: anthropic/claude-sonnet-5
