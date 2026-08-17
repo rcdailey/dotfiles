@@ -42,6 +42,7 @@ def _build_issue_filter(
     team_key: str | None,
     state_type: str | None,
     assignee: str | None,
+    creator: str | None,
     label: str | None,
     cycle: str | None,
     estimate_filter: str | None,
@@ -51,6 +52,7 @@ def _build_issue_filter(
     """Resolve CLI filter values into one Linear IssueFilter."""
     team_id = resolve_team_id(team_key) if team_key else None
     assignee_id = resolve_assignee_id(assignee) if assignee else None
+    creator_id = resolve_assignee_id(creator) if creator else None
     issue_filter: dict = {}
     if team_id:
         issue_filter["team"] = {"id": {"eq": team_id}}
@@ -58,6 +60,8 @@ def _build_issue_filter(
         issue_filter["state"] = {"type": {"eq": state_type}}
     if assignee_id:
         issue_filter["assignee"] = {"id": {"eq": assignee_id}}
+    if creator_id:
+        issue_filter["creator"] = {"id": {"eq": creator_id}}
     if label:
         issue_filter["labels"] = {"name": {"eq": label}}
     if cycle:
@@ -132,6 +136,7 @@ def cli() -> None:
     help="Filter by state type.",
 )
 @click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
+@click.option("--creator", default=None, help="Creator user UUID or 'me'.")
 @click.option("--label", default=None, help="Label name to filter by.")
 @click.option("--cycle", default=None, type=str, help="Cycle: 'active', 'previous', or number.")
 @click.option(
@@ -146,6 +151,7 @@ def list_issues(
     team_key: str | None,
     state_type: str | None,
     assignee: str | None,
+    creator: str | None,
     label: str | None,
     cycle: str | None,
     estimate_filter: str | None,
@@ -162,6 +168,7 @@ def list_issues(
         team_key,
         state_type,
         assignee,
+        creator,
         label,
         cycle,
         estimate_filter,
@@ -197,6 +204,7 @@ def list_issues(
     help="Filter by state type.",
 )
 @click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
+@click.option("--creator", default=None, help="Creator user UUID or 'me'.")
 @click.option("--label", default=None, help="Label name to filter by.")
 @click.option("--cycle", default=None, type=str, help="Cycle: 'active', 'previous', or number.")
 @click.option(
@@ -212,6 +220,7 @@ def search(
     team_key: str | None,
     state_type: str | None,
     assignee: str | None,
+    creator: str | None,
     label: str | None,
     cycle: str | None,
     estimate_filter: str | None,
@@ -228,6 +237,7 @@ def search(
         team_key,
         state_type,
         assignee,
+        creator,
         label,
         cycle,
         estimate_filter,
