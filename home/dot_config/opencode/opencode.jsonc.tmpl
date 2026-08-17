@@ -65,6 +65,19 @@
 {{- end }}
   ],
   "provider": {
+    "openai": {
+      "models": {
+        "gpt-5.6-sol": {
+          "limit": { "context": 400000, "input": 272000, "output": 128000 },
+        },
+        "gpt-5.6-terra": {
+          "limit": { "context": 400000, "input": 272000, "output": 128000 },
+        },
+        "gpt-5.6-luna": {
+          "limit": { "context": 400000, "input": 272000, "output": 128000 },
+        },
+      },
+    },
     "anthropic": {
       "options": {
         // Disable hard timeout; extended thinking can exceed the 300s default
