@@ -17,10 +17,9 @@ for command routing. The sole audience is LLMs; never humans.
 
 ## Philosophy
 
-These scripts are means to an end. They serve LLMs. Refactor mercilessly. Do not constrain changes
-by scope, backward compatibility, or conservatism. A proper end result matters more than a minimal
-diff. If touching a file reveals violations or suboptimal patterns, fix them regardless of whether
-they relate to the original task.
+These scripts serve LLM workflows. Prefer a coherent end state over preserving obsolete internal
+structure. Refactor affected code when needed to remove duplication, inconsistency, or dead
+indirection. Keep unrelated cleanup separate.
 
 ## Project Structure
 

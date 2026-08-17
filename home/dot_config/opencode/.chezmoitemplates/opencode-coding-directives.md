@@ -1,3 +1,23 @@
+## Implementation Discipline
+
+Before editing, trace the affected flow and inspect relevant callers.
+
+- Build only for current requirements. Add abstractions, configuration, extensibility, or scaffolding
+  only when a current variation or boundary requires them.
+- Prefer, in order: existing coherent code, standard-library or native platform/framework behavior,
+  an installed dependency, then the smallest new implementation.
+- Add a dependency only when it reduces lifecycle complexity enough to justify its operational and
+  security cost.
+- Optimize for lifecycle simplicity, not line or file count. Do not trade away required
+  architecture, tests, operability, trust-boundary validation, data-loss prevention, security, or
+  accessibility.
+- Reuse code only when semantics and change cadence align; do not couple unrelated behavior merely
+  to remove similar lines.
+- Fix defects at the narrowest shared invariant and keep unrelated cleanup separate.
+- Between equally simple options, choose the one correct at the relevant boundaries.
+- When a deliberate simplification has a known ceiling, document the ceiling and the trigger for
+  replacing it.
+
 ## General
 
 - Fenced code blocks require a language specifier (use `txt` if none applies).
@@ -7,15 +27,13 @@
 ## Development
 
 - Use latest stable versions of tools, languages, libraries, frameworks.
-- Prefer idiomatic patterns: use framework-native solutions over hand-rolled equivalents, current
-  API surfaces over deprecated predecessors, and official usage recommendations over ad-hoc
+- Prefer current, idiomatic APIs and official usage recommendations over deprecated or ad-hoc
   approaches.
 - Reduce nesting: invert conditions, exit early.
 - YAML: don't quote values unless required for disambiguation.
 - Prefer defaults by omission over explicit configuration.
 - Comments must earn their place by reducing cognitive load. Prefer self-documenting naming.
-- Match existing codebase patterns rather than introducing new ones. When inconsistencies exist,
-  unify them rather than adding a third approach.
+- When affected code uses inconsistent patterns, unify them rather than adding a third approach.
 - MUST NOT use the 'write' tool on an existing file; use 'edit' tools for surgical edits. Full-file
   rewrites waste tokens and risk clobbering unseen content.
 - For current library or framework APIs, MUST use `ctx7` first. Run `ctx7 library <name> <query>` to
@@ -38,10 +56,9 @@ rm`.
 
 Apply KISS, DRY, SOLID, and YAGNI pragmatically.
 
-- Prefer the simplest coherent design that meets current requirements. Refactor affected code when
-  that removes duplication, special cases, or accumulated indirection; do not add abstractions,
-  configurability, or extensibility for hypothetical future needs.
+- Refactor affected code when that removes duplication, special cases, or accumulated indirection.
 - Collapse indirection layers that delegate without adding value.
+- Prefer removing obsolete code and straightforward solutions over parallel paths or cleverness.
 - Prefer composition (O(n+m)) over inheritance hierarchies (O(n\*m)).
 - Document architectural constraints prominently; make violations obvious at design-time.
 
