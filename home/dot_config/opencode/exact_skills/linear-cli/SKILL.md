@@ -83,7 +83,8 @@ teams, states, or labels; use display names or keys instead.
   `started`, `completed`, `canceled`)
 - `--state` on `issues create` and `issues update` takes a display name
   (e.g. `"Ready For Dev"`, `"In Progress"`)
-- `--assignee` accepts `me` (resolves via viewer query) or a user UUID
+- `--assignee` accepts `me` (resolves via viewer query) or a user UUID; on `issues update`, `none`
+  clears the assignee
 - `--label` takes a label display name, case-insensitive
 - `--project` takes a project display name
 - `--milestone` takes a milestone display name, resolved within the project

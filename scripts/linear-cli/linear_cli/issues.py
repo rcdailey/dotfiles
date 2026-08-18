@@ -390,7 +390,7 @@ def create(
 @click.option("--description", default=None, help="New description (markdown).")
 @click.option("--state", "state_name", default=None, help="New state display name.")
 @click.option("--priority", default=None, type=click.IntRange(0, 4), help="New priority (0-4).")
-@click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
+@click.option("--assignee", default=None, help="Assignee user UUID, 'me', or 'none' to unassign.")
 @click.option("--add-label", "add_labels", multiple=True, help="Label name to add (repeatable).")
 @click.option(
     "--remove-label", "remove_labels", multiple=True, help="Label name to remove (repeatable)."
@@ -477,8 +477,10 @@ def update(
         input_data["stateId"] = resolve_state_id(state_name, team_id)
     if priority is not None:
         input_data["priority"] = priority
-    if assignee:
-        input_data["assigneeId"] = resolve_assignee_id(assignee)
+    if assignee is not None:
+        input_data["assigneeId"] = (
+            None if assignee.lower() == "none" else resolve_assignee_id(assignee)
+        )
 
     if add_labels or remove_labels:
         current_label_nodes: list[dict] = (node.get("labels") or {}).get("nodes", [])
