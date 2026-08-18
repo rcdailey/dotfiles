@@ -1,0 +1,172 @@
+tools:
+  approvalMode: write
+  approval:
+    bash: allow
+    task: allow
+
+disabledProviders:
+  - opencode
+
+setupVersion: 1
+
+modelRoles:
+{{ if eq .env "work" }}
+  acceptance: anthropic/claude-opus-5:high
+  reviewer: anthropic/claude-opus-4-8:high
+  upgrade_analyst: anthropic/claude-sonnet-5:low
+{{ else }}
+  acceptance: openai-codex/gpt-5.6-sol:medium
+  reviewer: openai-codex/gpt-5.6-sol:low
+  upgrade_analyst: openai-codex/gpt-5.6-terra:high
+{{ end }}
+
+bash:
+  patterns:
+    - match: '*git commit*'
+      approval: deny
+    - match: '*git add*'
+      approval: prompt
+    - match: '*git push*'
+      approval: prompt
+    - match: '*git reset --hard*'
+      approval: prompt
+    - match: '*git clean*'
+      approval: prompt
+    - match: '*git branch -D*'
+      approval: prompt
+    - match: '*git stash drop*'
+      approval: prompt
+    - match: '*git stash clear*'
+      approval: prompt
+    - match: 'rm -r*'
+      approval: prompt
+    - match: 'sudo*'
+      approval: prompt
+    - match: 'kill*'
+      approval: prompt
+    - match: 'pkill*'
+      approval: prompt
+    - match: 'shutdown*'
+      approval: prompt
+    - match: 'reboot*'
+      approval: prompt
+    - match: '*gh pr create*'
+      approval: prompt
+    - match: '*gh pr merge*'
+      approval: prompt
+    - match: '*gh pr close*'
+      approval: prompt
+    - match: '*gh pr reopen*'
+      approval: prompt
+    - match: '*gh pr comment*'
+      approval: prompt
+    - match: '*gh pr edit*'
+      approval: prompt
+    - match: '*gh pr review*'
+      approval: prompt
+    - match: '*gh pr ready*'
+      approval: prompt
+    - match: '*gh issue create*'
+      approval: prompt
+    - match: '*gh issue close*'
+      approval: prompt
+    - match: '*gh issue reopen*'
+      approval: prompt
+    - match: '*gh issue delete*'
+      approval: prompt
+    - match: '*gh issue edit*'
+      approval: prompt
+    - match: '*gh issue comment*'
+      approval: prompt
+    - match: '*gh issue transfer*'
+      approval: prompt
+    - match: '*gh release create*'
+      approval: prompt
+    - match: '*gh release delete*'
+      approval: prompt
+    - match: '*gh release edit*'
+      approval: prompt
+    - match: '*gh release upload*'
+      approval: prompt
+    - match: '*gh repo create*'
+      approval: prompt
+    - match: '*gh repo delete*'
+      approval: prompt
+    - match: '*gh repo fork*'
+      approval: prompt
+    - match: '*gh repo archive*'
+      approval: prompt
+    - match: '*gh repo rename*'
+      approval: prompt
+    - match: '*gh repo edit*'
+      approval: prompt
+    - match: '*gh workflow run*'
+      approval: prompt
+    - match: '*gh run cancel*'
+      approval: prompt
+    - match: '*gh run rerun*'
+      approval: prompt
+    - match: '*gh label create*'
+      approval: prompt
+    - match: '*gh label delete*'
+      approval: prompt
+    - match: '*gh secret set*'
+      approval: prompt
+    - match: '*gh secret delete*'
+      approval: prompt
+    - match: '*gh variable set*'
+      approval: prompt
+    - match: '*gh variable delete*'
+      approval: prompt
+    - match: '*gh api* --method POST*'
+      approval: prompt
+    - match: '*gh api* --method PUT*'
+      approval: prompt
+    - match: '*gh api* --method PATCH*'
+      approval: prompt
+    - match: '*gh api* --method DELETE*'
+      approval: prompt
+    - match: '*gh api* -X POST*'
+      approval: prompt
+    - match: '*gh api* -X PUT*'
+      approval: prompt
+    - match: '*gh api* -X PATCH*'
+      approval: prompt
+    - match: '*gh api* -X DELETE*'
+      approval: prompt
+    - match: '*gh api* -f *'
+      approval: prompt
+    - match: '*gh api* -F *'
+      approval: prompt
+    - match: '*gh api* --field *'
+      approval: prompt
+    - match: '*gh api* --raw-field *'
+      approval: prompt
+    - match: '*gh api* --input *'
+      approval: prompt
+    - match: '*gh-review reply*'
+      approval: prompt
+    - match: '*gh-review delete*'
+      approval: prompt
+
+bashInterceptor:
+  enabled: true
+
+github:
+  enabled: true
+
+web_search:
+  enabled: true
+
+edit:
+  mode: hashline
+
+compaction:
+  enabled: true
+  strategy: snapcompact
+
+memory:
+  backend: off
+
+autolearn:
+  enabled: false
