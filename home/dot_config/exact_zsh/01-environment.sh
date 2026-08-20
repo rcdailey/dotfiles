@@ -46,12 +46,6 @@ export NETRC="$HOME/.netrc.terraform"
 # OpenCode environment
 source "$XDG_CONFIG_HOME/opencode/env.sh"
 
-# Force opencode's embedded Bun to bypass its global package cache when
-# resolving @latest plugin versions. Without this, Bun serves stale metadata
-# and plugins don't upgrade until the cache is manually cleared.
-# See: https://github.com/oven-sh/bun/issues/19936
-export CI=1
-
 # zsh-autosuggestions: async fetch keeps keystrokes responsive; strategy prefers
 # history over completions for faster, more relevant suggestions.
 export ZSH_AUTOSUGGEST_USE_ASYNC=1
