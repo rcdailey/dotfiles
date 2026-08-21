@@ -32,8 +32,8 @@ def fenced_code(content: str, language: str = "") -> str:
     return f"\n```{language}\n{content}\n```\n"
 
 
-DEFAULT_MAX_CHARS = 20000
-DEFAULT_SCOUT_MAX_CHARS = 12000
+DEFAULT_MAX_CHARS = 12000
+DEFAULT_SCOUT_MAX_CHARS = DEFAULT_MAX_CHARS
 
 
 def truncate_output(text: str, max_chars: int, hint: str | None = None) -> str:

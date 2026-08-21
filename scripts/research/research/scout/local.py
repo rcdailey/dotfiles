@@ -27,7 +27,7 @@ _TYPE_ALIASES: dict[str, str] = {
 @cli.command(name="rg")
 @click.argument("repo")
 @click.argument("pattern")
-@click.option("--path", default=".", help="subdirectory to search within")
+@click.option("--path", "paths", multiple=True, help="search path (repeatable; default: repo root)")
 @click.option("--glob", "-g", "globs", multiple=True, help="file glob filter (repeatable)")
 @click.option("--type", "filetypes", multiple=True, help="ripgrep type filter (repeatable)")
 @click.option("--context", "-C", type=int, default=0, help="lines of context around matches")
@@ -42,7 +42,7 @@ _TYPE_ALIASES: dict[str, str] = {
 def rg_cmd(
     repo: str,
     pattern: str,
-    path: str,
+    paths: tuple[str, ...],
     globs: tuple[str, ...],
     filetypes: tuple[str, ...],
     context: int,
@@ -68,9 +68,7 @@ def rg_cmd(
             args.append(f"-C{context}")
         args.extend(["-e", pattern, sha])
         # Pathspecs go after -- separator; use raw extension globs for git-grep
-        pathspecs: list[str] = []
-        if path and path != ".":
-            pathspecs.append(path)
+        pathspecs = list(paths)
         pathspecs.extend(globs)
         for ft in filetypes:
             pathspecs.append(f"*.{ft}")
@@ -100,7 +98,8 @@ def rg_cmd(
             args.extend(["--glob", g])
         if context > 0:
             args.extend(["-C", str(context)])
-        args.extend([pattern, path])
+        args.append(pattern)
+        args.extend(paths or (".",))
         result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir, check=False)
 
     if result.returncode == 0:

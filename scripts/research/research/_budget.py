@@ -42,8 +42,8 @@ def budget_message(count: int) -> str:
         return (
             f"\n=== WARNING: {count}/{MAX_CALLS} calls used, "
             f"{remaining} remaining ===\n"
-            "Begin synthesizing your answer NOW. Use remaining calls "
-            "only for critical gaps."
+            "Synthesize your answer NOW. Do not launch another batch.\n"
+            "A later call requires --critical and one named blocking gap."
         )
     return f"\n{counter}"
 
@@ -56,7 +56,11 @@ def _session_key(key: str) -> str | None:
     return f"budget:{session_id}:{key}" if session_id else None
 
 
-def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
+def budget_reserve(
+    cache: Cache,
+    cached_url: str | None = None,
+    critical: bool = False,
+) -> None:
     """Reserve a budget slot and print the footer.
 
     Called BEFORE the tool performs any work so the printed counter reflects
@@ -83,6 +87,14 @@ def budget_reserve(cache: Cache, cached_url: str | None = None) -> None:
 
         if count >= MAX_CALLS:
             click.echo(budget_message(MAX_CALLS + 1))
+            sys.exit(1)
+
+        if count >= WARNING_AT and not critical:
+            click.echo(
+                f"\n=== CRITICAL RESERVE ({count}/{MAX_CALLS} calls used) ===\n"
+                f"The final {MAX_CALLS - count} calls are reserved. Synthesize now.\n"
+                "Use --critical for one specific gap that prevents an answer."
+            )
             sys.exit(1)
 
         count += 1
@@ -138,4 +150,6 @@ def format_status(cache: Cache) -> str:
     url_count = sum(1 for k in cache if isinstance(k, str) and k.startswith(seen_prefix or ""))
     if url_count:
         lines.append(f"cached URLs: {url_count}")
+    if WARNING_AT <= count < MAX_CALLS:
+        lines.append(f"critical reserve: {MAX_CALLS - count} calls")
     return "\n".join(lines)

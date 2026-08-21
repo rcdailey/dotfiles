@@ -18,12 +18,27 @@ from research._render import DEFAULT_MAX_CHARS, apply_find, truncate_output
 @click.option("-C", "--context", type=int, default=0, help="paragraphs of context around matches")
 @click.option("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
 @click.option("--offset", type=int, default=0, help="char offset into content for pagination")
-def cli(url: str, find: str | None, context: int, max_chars: int, offset: int) -> None:
+@click.option("--critical", is_flag=True, help="use a reserved post-warning call")
+def cli(
+    url: str,
+    find: str | None,
+    context: int,
+    max_chars: int,
+    offset: int,
+    critical: bool,
+) -> None:
     """Download, OCR, and convert PDF to markdown."""
-    _do_pdf(url, find, context, max_chars, offset)
+    _do_pdf(url, find, context, max_chars, offset, critical)
 
 
-def _do_pdf(url: str, find: str | None, context: int, max_chars: int, offset: int = 0) -> None:
+def _do_pdf(
+    url: str,
+    find: str | None,
+    context: int,
+    max_chars: int,
+    offset: int = 0,
+    critical: bool = False,
+) -> None:
     """Internal PDF handler shared with web reroute."""
     base_url = cache_url(url)
     cache = get_cache()
@@ -32,7 +47,7 @@ def _do_pdf(url: str, find: str | None, context: int, max_chars: int, offset: in
     if cached is not None:
         text = cached
     else:
-        budget_reserve(cache, base_url)
+        budget_reserve(cache, base_url, critical=critical)
         try:
             result = subprocess.run(
                 ["pdf2md", url],
@@ -67,4 +82,4 @@ def _do_pdf(url: str, find: str | None, context: int, max_chars: int, offset: in
     if offset > 0:
         output = f"[starting at char offset {offset}; total length {total_len}]\n\n" + output
 
-    click.echo(truncate_output(output, max_chars))
+    click.echo(truncate_output(output, max_chars), nl=False)

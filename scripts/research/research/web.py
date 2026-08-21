@@ -39,9 +39,10 @@ def cli() -> None:
 
 @cli.command(name="search")
 @click.argument("query")
-@click.option("--max-results", type=int, default=DEFAULT_MAX_RESULTS)
+@click.option("--max-results", type=click.IntRange(min=1, max=10), default=DEFAULT_MAX_RESULTS)
 @click.option("--results", is_flag=True, help="return search results instead of a sourced answer")
-def search_cmd(query: str, max_results: int, results: bool) -> None:
+@click.option("--critical", is_flag=True, help="use a reserved post-warning call")
+def search_cmd(query: str, max_results: int, results: bool, critical: bool) -> None:
     """Search the web via Linkup."""
     sourced_answer = not results
     cache_key = f"{sourced_answer}:{max_results}:{query}"
@@ -51,7 +52,7 @@ def search_cmd(query: str, max_results: int, results: bool) -> None:
         return
 
     cache = get_cache()
-    budget_reserve(cache, None)
+    budget_reserve(cache, None, critical=critical)
 
     try:
         from research._linkup import search
@@ -76,7 +77,15 @@ def search_cmd(query: str, max_results: int, results: bool) -> None:
 @click.option("-C", "--context", type=int, default=0, help="paragraphs of context around matches")
 @click.option("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
 @click.option("--offset", type=int, default=0, help="char offset into content for pagination")
-def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: int) -> None:
+@click.option("--critical", is_flag=True, help="use a reserved post-warning call")
+def fetch_cmd(
+    url: str,
+    find: str | None,
+    context: int,
+    max_chars: int,
+    offset: int,
+    critical: bool,
+) -> None:
     """Fetch a URL as clean markdown."""
     # Check for reroutes before burning budget
     if is_github_url(url):
@@ -328,7 +337,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
         reroute_message(url, f"pdf {url}", "URL points to a PDF")
         from research.pdf import _do_pdf
 
-        _do_pdf(url, find, context, max_chars, offset)
+        _do_pdf(url, find, context, max_chars, offset, critical)
         return
 
     base_url = cache_url(url)
@@ -338,7 +347,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
     if cached is not None:
         markdown = cached
     else:
-        budget_reserve(cache, base_url)
+        budget_reserve(cache, base_url, critical=critical)
         try:
             markdown = fetch_markdown(url)
         except FetchError as e:
@@ -347,7 +356,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
                 reroute_message(url, f"pdf {url}", "response is a file, not HTML")
                 from research.pdf import _do_pdf
 
-                _do_pdf(url, find, context, max_chars, offset)
+                _do_pdf(url, find, context, max_chars, offset, critical)
                 return
             budget_refund(cache, base_url)
             click.echo(f"error: fetch failed: {msg}", err=True)
@@ -366,4 +375,4 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
     if offset > 0:
         output = f"[starting at char offset {offset}; total length {total_len}]\n\n" + output
 
-    click.echo(truncate_output(output, max_chars))
+    click.echo(truncate_output(output, max_chars), nl=False)

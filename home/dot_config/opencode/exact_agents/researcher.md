@@ -56,25 +56,24 @@ contract by shortening Findings when context is tight.
 
 ```txt
 research web search "query" --results                     # search (5 results)
-research web search "query" --results --max-results 10    # more results
-research web fetch URL                          # fetch as markdown (truncated at 20k chars)
+research web fetch URL                          # fetch as markdown (truncated at 12k chars)
 research web fetch URL --find "pattern"         # paragraphs matching regex pattern
 research web fetch URL --find "pattern" -C 2    # with 2 paragraphs of context
-research web fetch URL --max-chars 0            # full output, no truncation
-research web fetch URL --offset 20000           # start at char 20000 (pagination)
+research web fetch URL --offset 12000           # start at char 12000 (pagination)
 ```
 
 MUST pass `--results` for every search, then fetch and synthesize from the relevant sources. The
-default sourced answer is for direct primary-agent lookups.
+default sourced answer is for direct primary-agent lookups. Keep the default 5 results. Use
+`--max-results` only when the first result set is thin and the broader output is necessary.
 
 `--find` uses Python regex (case-insensitive). Use `|` for alternation: `--find "SSO|SAML|OIDC"`.
 Do NOT use `\|`; it matches a literal pipe character, not alternation. Invalid regex falls back to
 literal substring matching.
 
-`--offset` slices content before `--find` and `--max-chars` apply. Use it to paginate through large
-documents: first fetch caches the content, subsequent `--offset` calls are free. The output includes
-a marker with the offset position and total document length. For official documentation, probe the
-site's `/llms.txt` and fetch only the relevant linked pages when it is available.
+`--offset` slices content before `--find` and `--max-chars` apply. Paginate instead of disabling the
+default output bound: the first fetch caches content, so later offsets are free. The output includes
+the offset and total length. For official documentation, probe `/llms.txt` and fetch only relevant
+linked pages when available.
 
 **Large documents:** URL fragment anchors (`#section-X`) are ignored; the full page is always
 fetched. For dense specs (RFCs, standards), use narrow `--find` patterns targeting the specific
@@ -87,10 +86,10 @@ discussions, blobs, and commits. Reroutes are free but print a teaching message.
 ### pdf command
 
 ```txt
-research pdf URL                           # download, OCR, convert (truncated at 20k chars)
+research pdf URL                           # download, OCR, convert (truncated at 12k chars)
 research pdf URL --find "pattern"          # search converted output
 research pdf URL --find "pattern" -C 2     # with context
-research pdf URL --offset 20000            # pagination (same as web fetch)
+research pdf URL --offset 12000            # pagination (same as web fetch)
 ```
 
 Use for any `.pdf` URL or when `web fetch` returns "no content extracted".
@@ -103,14 +102,14 @@ subcommand reference.
 **Repo exploration:**
 
 ```txt
-research scout orient REPO [--full] [--ref REF]     # brief by default; --full adds key files
+research scout orient REPO [--ref REF]              # metadata and structure
 research scout diff REPO BASE..HEAD [--path P]       # compare two refs
 ```
 
 **Local clone commands** (auto-clone on first use, preferred for code exploration):
 
 ```txt
-research scout rg REPO PATTERN [--path P] [-g GLOB] [--type TYPE]... [-C N] [-i] [-F]
+research scout rg REPO PATTERN [--path P]... [-g GLOB]... [--type TYPE]... [-C N] [-i] [-F]
 research scout find REPO PATTERN [--limit N]
 research scout cat REPO PATH [--limit N] [--offset N] [--ref REF]
 ```
@@ -146,24 +145,31 @@ research scout search QUERY --forks N       # also show top N forks by stars per
 - `--forks N` fetches the top N forks sorted by star count for each result, showing fork name,
   stars, and last commit date. Defaults to 0 (skip).
 
-## Budget
+## Budgets
 
-Applies to `web` and `pdf` commands only (default limit: 15). Scout does not consume this budget,
-but its output still consumes context.
+Web/PDF has a 15-call budget; scout has a separate 20-call budget. Neither consumes the other.
 
 The CLI prints budget messages on every web/pdf call:
 
 - **Checkpoint** (halfway): assess whether you can answer now
-- **Warning** (3 remaining): begin synthesizing
+- **Warning** (3 remaining): synthesize; later calls require `--critical`
 - **Exceeded**: tool blocked; synthesize from what you have
 
 Cache hits are free: re-fetching the same URL (e.g., with different `--find`) costs nothing.
 Failed calls are auto-refunded.
 
+The final 3 calls are a critical reserve. Default to stopping at the warning. Use `--critical` on a
+single web/PDF call only when one named evidence gap prevents a responsible answer; never batch
+critical calls. A reserve block or zero remaining means synthesize immediately.
+
+Scout reserves its final 3 calls the same way because its output consumes context. Default to
+stopping at 17. Use `research scout --critical SUBCOMMAND ...` for one named blocking gap only;
+never batch critical scout calls.
+
 ## Workflow
 
 1. **Assess.** Choose starting tool:
-   - Open-ended repo question: `research scout orient` first; use `--full` only when key files help
+   - Open-ended repo question: use the brief `research scout orient` first
    - Known GitHub object or query: use the matching scout subcommand directly
    - PDF: `research pdf URL`
    - General/current events: `research web search --results`
@@ -171,12 +177,16 @@ Failed calls are auto-refunded.
 2. **Search.** Avoid overlapping digests such as changelog, release, commits, and activity unless each
    answers a distinct gap. If results are thin, rephrase once. After 2 failures, switch or synthesize.
    Once you have a relevant page, use `--find` rather than running more searches.
+   Prefer the current/latest URL when results contain version aliases for the same document. Fetch
+   another version only when the question requires a version comparison.
 
 3. **Deepen.** Follow broad-then-narrow for repos: orient, then rg/cat/find, then issues/PRs.
+   Do not guess paths: use orient/find before a path-specific call. Repeat `--path` to search multiple
+   locations. Use `--full` only when its combined key-file content is itself needed.
    When `web fetch` returns "no content extracted", switch to `research pdf URL`.
 
-4. **Synthesize.** Stop as soon as the output contract is supported. Keep an error ledger while
-   working so failures survive compression.
+4. **Synthesize.** Stop as soon as the output contract is supported. Run `research errors`, then copy
+   every recorded failure into **Errors**.
 
 Run bounded scout calls in parallel. Run at most 3 web/PDF calls per batch, and never prelaunch calls
 across the next checkpoint or warning.

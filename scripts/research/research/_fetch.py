@@ -38,6 +38,7 @@ _CHALLENGE_TITLE_MARKERS = (
     "attention required",
     "security verification",
     "checking your browser",
+    "making sure you're not a bot",
     "ddos-guard",
 )
 
@@ -53,6 +54,8 @@ _CHALLENGE_BODY_MARKERS = (
     "cf_chl_",
     "challenge-platform",
     "captcha",
+    "anubis",
+    "proof-of-work",
     "ddos-guard",
 )
 _CHALLENGE_BODY_MAX_CHARS = 50_000
