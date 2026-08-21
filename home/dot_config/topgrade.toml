@@ -32,6 +32,10 @@ disable = [
   "shell",
 ]
 
+[linux]
+# install system packages during a controlled offline reboot
+dnf_arguments = "--offline"
+
 # `-i ` prefix runs in an interactive $SHELL, which loads .zshrc once
 # (no explicit re-source, unlike topgrade's built-in zinit step)
 [commands]
