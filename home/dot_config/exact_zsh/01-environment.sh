@@ -43,9 +43,6 @@ export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 # CLI) hardcodes ~/.netrc and writes non-RFC keywords that break Terraform parsing.
 export NETRC="$HOME/.netrc.terraform"
 
-# OpenCode environment
-source "$XDG_CONFIG_HOME/opencode/env.sh"
-
 # zsh-autosuggestions: async fetch keeps keystrokes responsive; strategy prefers
 # history over completions for faster, more relevant suggestions.
 export ZSH_AUTOSUGGEST_USE_ASYNC=1
