@@ -5,7 +5,7 @@ Stages changes and creates consistently formatted commits without multi-step
 Git command sequences.
 
 Usage:
-    commit save [files] -s "..." [-p "..."] [-c "..."] [-i "..."]
+    commit save [files] -s "..." [-p "..."] [-b "..."] [-i "..."]
 
 Environment:
     GIT_COMMIT_FMT_SUBJECT_WIDTH  Subject char limit (default: 72)
@@ -40,7 +40,7 @@ USAGE = """\
 usage: commit <subcommand> [args...]
 
 subcommands:
-  save [files] -s "..."      stage files and commit (atomic)
+  save [files] -s "..."      stage files and commit
 
 Use 'commit <subcommand> --help' for subcommand details."""
 
@@ -83,8 +83,8 @@ def wrap_paragraph(text: str) -> str:
     return textwrap.fill(text.strip(), width=BODY_WIDTH)
 
 
-def wrap_changelog(text: str) -> str:
-    """Wrap a changelog entry as a bullet item with continuation indent."""
+def wrap_bullet(text: str) -> str:
+    """Wrap a technical outline bullet with continuation indent."""
     return textwrap.fill(
         text.strip(),
         width=BODY_WIDTH,
@@ -94,18 +94,18 @@ def wrap_changelog(text: str) -> str:
 
 
 def validate_paragraphs(paragraphs: list[str]) -> list[str]:
-    """Reject -p values that should be -c entries or are bare headers."""
+    """Reject -p values that should be -b entries or are bare headers."""
     errors = []
     for p in paragraphs:
         stripped = p.strip()
         if stripped.startswith(("- ", "* ")):
             label = f'"{stripped[:40]}..."' if len(stripped) > 40 else f'"{stripped}"'
             errors.append(f"-p looks like a bullet item: {label}")
-            errors.append("  use -c for changelog/list entries instead")
+            errors.append("  use -b for technical outline bullets instead")
         elif _BARE_HEADER_RE.match(stripped):
             errors.append(f'-p looks like a bare header: "{stripped}"')
             errors.append(
-                "  headers are unnecessary; -c entries render"
+                "  headers are unnecessary; -b entries render"
                 " as bullets automatically"
             )
     return errors
@@ -134,9 +134,9 @@ def _stage_files(files: list[str]) -> None:
 
     for f in files:
         if Path(f).exists():
-            git("add", f)
+            git("add", "--", f)
         else:
-            git("add", "-u", f)
+            git("add", "-u", "--", f)
 
     stat = git_output("diff", "--cached", "--stat")
     if not stat.strip():
@@ -149,7 +149,7 @@ def _stage_files(files: list[str]) -> None:
 def format_message(
     subject: str,
     paragraphs: list[str],
-    changelogs: list[str],
+    bullets: list[str],
     issues: list[str],
 ) -> str:
     """Assemble the full commit message in enforced structural order."""
@@ -161,9 +161,9 @@ def format_message(
             "\n\n".join(wrap_paragraph(p) for p in paragraphs)
         )
 
-    if changelogs:
+    if bullets:
         body_sections.append(
-            "\n".join(wrap_changelog(c) for c in changelogs)
+            "\n".join(wrap_bullet(bullet) for bullet in bullets)
         )
 
     if issues:
@@ -186,7 +186,12 @@ def cmd_save(args: list[str]) -> None:
     parser.add_argument("files", nargs="*", help="whole files to stage")
     parser.add_argument("-s", required=True, help="subject")
     parser.add_argument("-p", action="append", default=[], help="body paragraph")
-    parser.add_argument("-c", action="append", default=[], help="changelog entry")
+    parser.add_argument(
+        "-b",
+        action="append",
+        default=[],
+        help="technical outline bullet",
+    )
     parser.add_argument("-i", action="append", default=[], help="issue reference")
     parser.add_argument("-a", action="store_true", help="stage all changes")
     args_parsed = parser.parse_args(args)
@@ -196,7 +201,11 @@ def cmd_save(args: list[str]) -> None:
     if args_parsed.a and has_files:
         die("-a and file arguments are mutually exclusive")
 
+    if "\n" in args_parsed.s or "\r" in args_parsed.s:
+        die("subject must be a single line")
     subject = args_parsed.s.strip()
+    if not subject:
+        die("subject must not be empty")
     if len(subject) > SUBJECT_WIDTH:
         die(
             f"subject is {len(subject)} chars, exceeds"
@@ -207,7 +216,7 @@ def cmd_save(args: list[str]) -> None:
         {
             "-s": [subject],
             "-p": args_parsed.p,
-            "-c": args_parsed.c,
+            "-b": args_parsed.b,
             "-i": args_parsed.i,
         }
     )
@@ -217,7 +226,16 @@ def cmd_save(args: list[str]) -> None:
             print(f"error: {err}", file=sys.stderr)
         sys.exit(1)
 
-    message = format_message(subject, args_parsed.p, args_parsed.c, args_parsed.i)
+    staged = git("diff", "--cached", "--quiet", check=False, capture=True)
+    if staged.returncode not in (0, 1):
+        die(staged.stderr.strip() or "could not inspect the index")
+    if (has_files or args_parsed.a) and staged.returncode == 1:
+        die(
+            "index is not empty; inspect it, then use staged-only mode"
+            " or clear it explicitly"
+        )
+
+    message = format_message(subject, args_parsed.p, args_parsed.b, args_parsed.i)
 
     def stage(restage: bool = False) -> None:
         """Put the caller's requested content into the index."""

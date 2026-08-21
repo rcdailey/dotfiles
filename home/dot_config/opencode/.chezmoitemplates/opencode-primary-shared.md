@@ -193,25 +193,31 @@ the work complete until the current implementation passes and its checkpoint act
 
 When explicitly authorized to commit:
 
-- Run `git status --short`, then one `commit save` command. Repeat `-p` for body paragraphs and `-c`
-  for bullet entries; never embed `\n` escapes in an argument.
+- Inspect `git status --short` and the exact intended diff before composing. Use `git diff --
+  <paths>` for unstaged content, `git diff --cached` for staged content, and read untracked files
+  directly.
+- Compose one `commit save` command. Repeat `-p` for paragraphs and `-b` for bullets; never embed
+  `\n` escapes in an argument.
 
-  ```sh
-  commit save \
-    path/to/first path/to/second \
-    -s "Summarize the durable change" \
-    -p "Explain why the change was needed and which constraint shaped it." \
-    -p "Record the resulting behavior and evidence needed to evaluate it." \
-    -c "Added the first user-visible outcome" \
-    -c "Removed the obsolete behavior"
-  ```
+Compose the message in semantic order:
 
-- The body MUST preserve non-obvious context needed to understand or evaluate the change, including
-  its motivation, constraints, decisions, outcomes, and supporting evidence. Omit routine process
-  details and facts obvious from the diff.
+1. The required subject states the durable outcome.
+2. Optional paragraphs document all non-obvious context needed to understand the change later,
+   including applicable causes, constraints, decisions, tradeoffs, consequences, and evidence. Each
+   paragraph develops a connected idea as technical documentation. A single sentence is valid only
+   when it completely explains a non-obvious relationship; a sentence that merely names a change
+   belongs in a bullet. Do not compress contextual explanation into bullets for brevity.
+3. Optional bullets provide a technical outline of distinct implementation outcomes, boundaries, or
+   notable details. They may follow the subject directly when no contextual explanation is needed.
+
+- Every layer MUST contribute different information. Bullets must not repeat the subject or
+  paragraphs, and paragraphs must not be bullets with their markers removed. Omit an optional layer
+  only when it has no unique information; do not invent content to complete the structure.
+- Every claim must match the reviewed diff or verified session evidence. Omit routine process
+  details and exhaustive inventories of facts already obvious from the diff.
+- If the index already contains the exact intended commit, omit paths and `-a`. If a nonempty index
+  does not match, stop; path and `-a` modes are only for an empty index.
 - Pass the smallest safe path set. Collapse files to a directory only when every change below it
   belongs in the commit; file and directory paths may be mixed.
-- `commit save` resets the index and stages the supplied paths. Do not separately prepare the index,
-  preview the message, or inspect history unless uncertainty requires it.
 - For partial-file commits, load `hunk-staging` and follow it instead.
 - Follow repository commit rules and report the resulting short SHA and subject.
