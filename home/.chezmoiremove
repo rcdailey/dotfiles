@@ -5,5 +5,7 @@
 .local/bin/setup-mcp-github
 .local/bin/setup-serena
 .serena
+.octocode
+.omp
 
 .claude/CLAUDE.md
