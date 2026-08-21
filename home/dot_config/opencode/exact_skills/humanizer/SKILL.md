@@ -1,11 +1,12 @@
 ---
 name: humanizer
 description: >-
-  Use when writing prose intended for people: documentation, changelogs, pull request or issue
-  text, email drafts, READMEs, release notes, announcements, blog posts, or gist content. Do NOT
-  use for machine-to-machine text, including subagent prompts, delegation briefs, coding
-  instructions, implementation handoffs, or other agent communication. Also exclude in-session
-  chat, code, commit messages, and structured data (JSON, YAML, tables).
+  Use when writing text intended for people: pull request titles and descriptions, including when
+  opening a pull request, documentation, changelogs, issue text, email drafts, READMEs, release
+  notes, announcements, blog posts, or gist content. Do NOT use for machine-to-machine text,
+  including subagent prompts, delegation briefs, coding instructions, implementation handoffs, or
+  other agent communication. Also exclude in-session chat, code, commit messages, and structured
+  data (JSON, YAML, tables).
 ---
 
 # Humanizer
