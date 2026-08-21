@@ -11,7 +11,7 @@ import click
 if TYPE_CHECKING:
     from diskcache import Cache
 
-MAX_CALLS: int = int(os.environ.get("RESEARCH_BUDGET_LIMIT") or 25)
+MAX_CALLS: int = int(os.environ.get("RESEARCH_BUDGET_LIMIT") or 15)
 CHECKPOINT_AT: int = MAX_CALLS // 2  # mid-session assessment
 WARNING_AT: int = MAX_CALLS - 3  # final warning
 

@@ -6,13 +6,21 @@ import click
 
 from research._ghapi import APIError, file_history, list_commits, view_commit
 from research._render import (
+    DEFAULT_SCOUT_MAX_CHARS,
     fenced_code,
     format_commit_item,
     kv_line,
     section_heading,
+    truncate_output,
 )
 from research.scout import cli
-from research.scout._common import die, parse_repo
+from research.scout._common import (
+    die,
+    github_url,
+    more_results_hint,
+    parse_repo,
+    take_limited,
+)
 
 
 def _first_line(text: str) -> str:
@@ -29,7 +37,7 @@ def _commit_date(c: dict) -> str:
 @click.option("--until", help="ISO 8601 date")
 @click.option("--path", help="filter by path")
 @click.option("--author", help="filter by author")
-@click.option("--limit", "-L", type=int, default=30)
+@click.option("--limit", "-L", type=click.IntRange(min=1), default=30)
 def commits(
     repo: str,
     since: str | None,
@@ -41,27 +49,39 @@ def commits(
     """List commits."""
     owner, name = parse_repo(repo)
     try:
-        commits_list = list_commits(owner, name, since, until, path, author, limit)
+        commits_list = list_commits(owner, name, since, until, path, author, limit + 1)
     except APIError as e:
         die(str(e))
     if not commits_list:
         click.echo("No commits found")
         return
-    for c in commits_list:
+    shown, has_more = take_limited(commits_list, limit)
+    for c in shown:
+        sha = c.get("sha", "N/A")
         click.echo(
             format_commit_item(
-                c.get("sha", "N/A"),
+                sha,
                 _commit_date(c),
                 _first_line(c.get("commit", {}).get("message", "")),
+                source_url=c.get("html_url") or github_url(owner, name, "commit", sha),
             )
         )
+    if has_more:
+        click.echo(more_results_hint(limit))
 
 
 @cli.command()
 @click.argument("repo")
 @click.argument("sha")
-def commit(repo: str, sha: str) -> None:
-    """View a specific commit with diff."""
+@click.option("--patch", is_flag=True, help="include file patches")
+@click.option("--path", help="filter files by path prefix")
+@click.option(
+    "--max-chars",
+    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
+    default=DEFAULT_SCOUT_MAX_CHARS,
+)
+def commit(repo: str, sha: str, patch: bool, path: str | None, max_chars: int) -> None:
+    """View a commit summary; add --patch for diffs."""
     owner, name = parse_repo(repo)
     try:
         data = view_commit(owner, name, sha)
@@ -72,50 +92,78 @@ def commit(repo: str, sha: str) -> None:
     committer = commit_obj.get("committer", {})
     author = commit_obj.get("author", {})
 
-    click.echo(f"## Commit {sha[:8]}\n")
-    click.echo(kv_line("Date", committer.get("date", "N/A")[:10]))
-    click.echo(kv_line("Author", author.get("name", "N/A")))
-    click.echo("")
+    resolved_sha = data.get("sha", sha)
+    lines = [
+        f"## Commit {resolved_sha[:8]}\n",
+        kv_line("Date", committer.get("date", "N/A")[:10]),
+        kv_line("Author", author.get("name", "N/A")),
+        kv_line(
+            "Source",
+            data.get("html_url") or github_url(owner, name, "commit", resolved_sha),
+        ),
+        "",
+    ]
     if commit_obj.get("message"):
-        click.echo(commit_obj["message"])
-        click.echo("")
+        lines.extend([commit_obj["message"], ""])
 
     stats = data.get("stats", {})
     if stats:
-        click.echo(
+        lines.append(
             f"**Changes:** +{stats.get('additions', 0)} -{stats.get('deletions', 0)} "
             f"({stats.get('total', 0)} total)"
         )
 
     files = data.get("files", [])
+    if path:
+        files = [item for item in files if item.get("filename", "").startswith(path)]
     if files:
-        click.echo(section_heading("Files changed"))
+        lines.append(section_heading("Files changed"))
         for f in files:
-            click.echo(f"\n**{f.get('filename', 'unknown')}** ({f.get('status', 'modified')})")
-            if f.get("patch"):
-                click.echo(fenced_code(f["patch"], "diff"))
+            filename = f.get("filename", "unknown")
+            status = f.get("status", "modified")
+            additions = f.get("additions", 0)
+            deletions = f.get("deletions", 0)
+            lines.append(f"\n**{filename}** ({status}, +{additions} -{deletions})")
+            if patch and f.get("patch"):
+                lines.append(fenced_code(f["patch"], "diff"))
+        if not patch:
+            lines.append("\nPatches omitted; rerun with --patch and optionally --path PATH.")
+    elif path:
+        lines.append(f"\nNo changed files matched path: {path}")
+    click.echo(
+        truncate_output(
+            "\n".join(lines),
+            max_chars,
+            "narrow patches with --path PATH",
+        )
+    )
 
 
 @cli.command()
 @click.argument("repo")
 @click.argument("path")
-@click.option("--limit", "-L", type=int, default=30)
+@click.option("--limit", "-L", type=click.IntRange(min=1), default=30)
 def history(repo: str, path: str, limit: int) -> None:
     """Commit history for a file."""
     owner, name = parse_repo(repo)
     try:
-        commits_list = file_history(owner, name, path, limit)
+        commits_list = file_history(owner, name, path, limit + 1)
     except APIError as e:
         die(str(e))
     if not commits_list:
         click.echo(f"No history found for {path}")
         return
     click.echo(f"## History for {path}\n")
-    for c in commits_list:
+    shown, has_more = take_limited(commits_list, limit)
+    for c in shown:
+        sha = c.get("sha", "N/A")
         click.echo(
             format_commit_item(
-                c.get("sha", "N/A"),
+                sha,
                 _commit_date(c),
                 _first_line(c.get("commit", {}).get("message", "")),
+                source_url=c.get("html_url") or github_url(owner, name, "commit", sha),
             )
         )
+    if has_more:
+        click.echo(more_results_hint(limit))

@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import fcntl
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -195,10 +196,19 @@ def ensure_ref(owner: str, repo: str, ref: str) -> str:
     if sha:
         return sha
 
+    fetch_ref = ref
+    if re.fullmatch(r"[0-9a-fA-F]{7,39}", ref):
+        from research._ghapi import APIError, view_commit
+
+        try:
+            fetch_ref = view_commit(owner, repo, ref).get("sha", ref)
+        except APIError:
+            pass
+
     # Fetch the ref, then resolve. Only use FETCH_HEAD if fetch succeeds.
     with _repo_lock(owner, repo):
         result = subprocess.run(
-            ["git", "fetch", "--depth=1", "origin", ref],
+            ["git", "fetch", "--depth=1", "origin", fetch_ref],
             cwd=repo_dir,
             capture_output=True,
             text=True,
@@ -209,7 +219,7 @@ def ensure_ref(owner: str, repo: str, ref: str) -> str:
         sys.exit(1)
 
     # After successful fetch, try the ref again and FETCH_HEAD.
-    sha = _try_resolve(repo_dir, ref)
+    sha = _try_resolve(repo_dir, fetch_ref) or _try_resolve(repo_dir, ref)
     if sha:
         return sha
     sha = _resolve_one(repo_dir, "FETCH_HEAD")
@@ -240,3 +250,8 @@ def _resolve_one(repo_dir: Path, ref: str) -> str | None:
     if result.returncode == 0:
         return result.stdout.strip()
     return None
+
+
+def current_head(repo_dir: Path) -> str:
+    """Return the clone's current full commit SHA."""
+    return _resolve_one(repo_dir, "HEAD") or "HEAD"

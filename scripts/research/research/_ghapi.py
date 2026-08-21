@@ -107,7 +107,7 @@ def list_issues(
     args = ["issue", "list", "-R", f"{owner}/{repo}", "-s", state, "-L", str(limit)]
     if search:
         args.extend(["-S", search])
-    args.extend(["--json", "number,title,state,createdAt,closedAt"])
+    args.extend(["--json", "number,title,state,createdAt,closedAt,url"])
 
     result = _run_gh(args, check=False)
     if result.returncode != 0:
@@ -118,17 +118,19 @@ def list_issues(
         raise APIError(f"invalid JSON: {e}") from e
 
 
-def view_issue(owner: str, repo: str, number: int) -> dict:
-    """Get detailed issue information including comments."""
+def view_issue(owner: str, repo: str, number: int, include_comments: bool = False) -> dict:
+    """Get issue details, optionally including comments."""
+    fields = "title,state,body,createdAt,number,url"
+    if include_comments:
+        fields += ",comments"
     args = [
         "issue",
         "view",
         str(number),
         "-R",
         f"{owner}/{repo}",
-        "-c",
         "--json",
-        "title,state,body,comments,createdAt,number",
+        fields,
     ]
     result = _run_gh(args, check=False)
     if result.returncode != 0:
@@ -150,7 +152,7 @@ def list_prs(
     args = ["pr", "list", "-R", f"{owner}/{repo}", "-s", state, "-L", str(limit)]
     if search:
         args.extend(["-S", search])
-    args.extend(["--json", "number,title,state,createdAt,mergedAt"])
+    args.extend(["--json", "number,title,state,createdAt,mergedAt,url"])
 
     result = _run_gh(args, check=False)
     if result.returncode != 0:
@@ -161,17 +163,27 @@ def list_prs(
         raise APIError(f"invalid JSON: {e}") from e
 
 
-def view_pr(owner: str, repo: str, number: int) -> dict:
-    """Get detailed PR information including comments and reviews."""
+def view_pr(
+    owner: str,
+    repo: str,
+    number: int,
+    include_comments: bool = False,
+    include_reviews: bool = False,
+) -> dict:
+    """Get PR details, optionally including comments and reviews."""
+    fields = "title,state,body,createdAt,number,mergedAt,url"
+    if include_comments:
+        fields += ",comments"
+    if include_reviews:
+        fields += ",reviews"
     args = [
         "pr",
         "view",
         str(number),
         "-R",
         f"{owner}/{repo}",
-        "-c",
         "--json",
-        "title,state,body,comments,reviews,createdAt,number,mergedAt",
+        fields,
     ]
     result = _run_gh(args, check=False)
     if result.returncode != 0:
@@ -317,7 +329,7 @@ def list_discussions(
 query($owner:String!,$repo:String!,$limit:Int!) {
   repository(owner:$owner,name:$repo) {
     discussions(first:$limit,orderBy:{field:CREATED_AT,direction:DESC}) {
-      nodes { number title createdAt author { login } category { name } }
+      nodes { number title url createdAt author { login } category { name } }
     }
   }
 }"""
@@ -339,7 +351,7 @@ def view_discussion(owner: str, repo: str, number: int) -> dict:
 query($owner:String!,$repo:String!,$number:Int!) {
   repository(owner:$owner,name:$repo) {
     discussion(number:$number) {
-      number title body createdAt
+      number title body url createdAt
       author { login }
       category { name }
       comments(first:50) {

@@ -20,6 +20,7 @@ from research._fetch import FetchError, fetch_markdown
 from research._linkup import SearchError, format_search_results, format_sourced_answer
 from research._render import (
     DEFAULT_MAX_CHARS,
+    DEFAULT_SCOUT_MAX_CHARS,
     apply_find,
     is_github_url,
     is_pdf_url,
@@ -87,8 +88,6 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
             owner, repo_name = parts[0], parts[1]
 
             if len(parts) >= 4 and parts[2] == "discussions" and parts[3].isdigit():
-                cache = get_cache()
-                budget_reserve(cache, cache_url(url))
                 number = int(parts[3])
                 reroute_message(
                     url,
@@ -97,7 +96,7 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
                 )
                 from research._ghapi import APIError, view_discussion
                 from research._render import format_issue_body
-                from research.scout.issues import _render_comments
+                from research.scout.issues import _format_comments
 
                 try:
                     data = view_discussion(owner, repo_name, number)
@@ -106,54 +105,59 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
                     sys.exit(1)
                 category = data.get("category", {}).get("name", "")
                 cat_str = f" [{category}]" if category else ""
+                output = format_issue_body(
+                    data["number"],
+                    data.get("title", "N/A") + cat_str,
+                    "open",
+                    data.get("createdAt", ""),
+                    data.get("body", ""),
+                    url,
+                )
+                output += _format_comments(data.get("comments", []))
                 click.echo(
-                    format_issue_body(
-                        data["number"],
-                        data.get("title", "N/A") + cat_str,
-                        "open",
-                        data.get("createdAt", ""),
-                        data.get("body", ""),
+                    truncate_output(
+                        output,
+                        DEFAULT_SCOUT_MAX_CHARS,
+                        "use scout discussion for narrower follow-up",
                     )
                 )
-                _render_comments(data.get("comments", []))
                 return
 
             elif len(parts) >= 4 and parts[2] == "issues" and parts[3].isdigit():
-                cache = get_cache()
-                budget_reserve(cache, cache_url(url))
                 number = int(parts[3])
                 reroute_message(
                     url, f"scout issue {owner}/{repo_name} {number}", "github.com issue"
                 )
                 from research._ghapi import APIError, view_issue
                 from research._render import format_issue_body
-                from research.scout.issues import _render_comments
 
                 try:
                     data = view_issue(owner, repo_name, number)
                 except APIError as e:
                     click.echo(f"error: {e}", err=True)
                     sys.exit(1)
+                output = format_issue_body(
+                    data["number"],
+                    data.get("title", "N/A"),
+                    data.get("state", "unknown"),
+                    data.get("createdAt", ""),
+                    data.get("body", ""),
+                    url,
+                )
                 click.echo(
-                    format_issue_body(
-                        data["number"],
-                        data.get("title", "N/A"),
-                        data.get("state", "unknown"),
-                        data.get("createdAt", ""),
-                        data.get("body", ""),
+                    truncate_output(
+                        output,
+                        DEFAULT_SCOUT_MAX_CHARS,
+                        "use scout issue for narrower follow-up",
                     )
                 )
-                _render_comments(data.get("comments", []))
                 return
 
             elif len(parts) >= 4 and parts[2] in ("pull", "pulls") and parts[3].isdigit():
-                cache = get_cache()
-                budget_reserve(cache, cache_url(url))
                 number = int(parts[3])
                 reroute_message(url, f"scout pr {owner}/{repo_name} {number}", "github.com PR")
                 from research._ghapi import APIError, view_pr
                 from research._render import format_issue_body
-                from research.scout.issues import _render_comments
 
                 try:
                     data = view_pr(owner, repo_name, number)
@@ -164,21 +168,71 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
                 state_str = data.get("state", "unknown")
                 if merged_at:
                     state_str += f" (merged {merged_at[:10]})"
+                output = format_issue_body(
+                    data["number"],
+                    data.get("title", "N/A"),
+                    state_str,
+                    data.get("createdAt", ""),
+                    data.get("body", ""),
+                    url,
+                )
                 click.echo(
-                    format_issue_body(
-                        data["number"],
-                        data.get("title", "N/A"),
-                        state_str,
-                        data.get("createdAt", ""),
-                        data.get("body", ""),
+                    truncate_output(
+                        output,
+                        DEFAULT_SCOUT_MAX_CHARS,
+                        "use scout pr for narrower follow-up",
                     )
                 )
-                _render_comments(data.get("comments", []))
+                return
+
+            elif len(parts) >= 5 and parts[2:4] == ["releases", "tag"]:
+                tag = "/".join(parts[4:])
+                reroute_message(url, f"scout release {owner}/{repo_name} {tag}", "GitHub release")
+                from research._ghapi import APIError, view_release
+
+                try:
+                    data = view_release(owner, repo_name, tag)
+                except APIError as e:
+                    click.echo(f"error: {e}", err=True)
+                    sys.exit(1)
+                lines = [
+                    f"## Release: {data.get('tagName', tag)}",
+                    f"Source: {data.get('url') or url}",
+                ]
+                if data.get("publishedAt"):
+                    lines.append(f"Published: {data['publishedAt'][:10]}")
+                if data.get("body"):
+                    lines.extend(["", data["body"]])
+                click.echo(
+                    truncate_output(
+                        "\n".join(lines),
+                        DEFAULT_SCOUT_MAX_CHARS,
+                        "use linked PRs or commits for narrower evidence",
+                    )
+                )
+                return
+
+            elif len(parts) == 3 and parts[2] == "releases":
+                reroute_message(url, f"scout release {owner}/{repo_name}", "GitHub releases")
+                from research._ghapi import APIError, list_releases
+
+                try:
+                    releases = list_releases(owner, repo_name, 31)
+                except APIError as e:
+                    click.echo(f"error: {e}", err=True)
+                    sys.exit(1)
+                for release in releases[:30]:
+                    tag = release.get("tagName", "N/A")
+                    published = (release.get("publishedAt") or "")[:10] or "N/A"
+                    source = release.get("url")
+                    if not source:
+                        source = f"https://github.com/{owner}/{repo_name}/releases/tag/{tag}"
+                    click.echo(f"- {tag} ({published})\n  Source: {source}")
+                if len(releases) > 30:
+                    click.echo("... more results available; use scout release --limit 31")
                 return
 
             elif len(parts) >= 4 and parts[2] == "blob":
-                cache = get_cache()
-                budget_reserve(cache, cache_url(url))
                 ref = parts[3]
                 file_path = "/".join(parts[4:])
                 reroute_message(
@@ -205,16 +259,18 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
                     output = apply_find(content, find, context)
                 else:
                     output = content
-                click.echo(truncate_output(output, max_chars))
+                output = f"Source: {url}\n\n{output}"
+                github_max = min(max_chars, DEFAULT_SCOUT_MAX_CHARS)
+                if github_max <= 0:
+                    github_max = DEFAULT_SCOUT_MAX_CHARS
+                click.echo(truncate_output(output, github_max))
                 return
 
             elif len(parts) >= 4 and parts[2] == "commit":
-                cache = get_cache()
-                budget_reserve(cache, cache_url(url))
                 sha = parts[3]
                 reroute_message(url, f"scout commit {owner}/{repo_name} {sha}", "github.com commit")
                 from research._ghapi import APIError, view_commit
-                from research._render import fenced_code, kv_line, section_heading
+                from research._render import kv_line, section_heading
 
                 try:
                     data = view_commit(owner, repo_name, sha)
@@ -224,39 +280,48 @@ def fetch_cmd(url: str, find: str | None, context: int, max_chars: int, offset: 
                 commit_obj = data.get("commit", {})
                 committer = commit_obj.get("committer", {})
                 author = commit_obj.get("author", {})
-                click.echo(f"## Commit {sha[:8]}\n")
-                click.echo(kv_line("Date", committer.get("date", "N/A")[:10]))
-                click.echo(kv_line("Author", author.get("name", "N/A")))
-                click.echo("")
+                lines = [
+                    f"## Commit {sha[:8]}\n",
+                    kv_line("Date", committer.get("date", "N/A")[:10]),
+                    kv_line("Author", author.get("name", "N/A")),
+                    kv_line("Source", url),
+                    "",
+                ]
                 if commit_obj.get("message"):
-                    click.echo(commit_obj["message"])
+                    lines.append(commit_obj["message"])
                 stats = data.get("stats", {})
                 if stats:
-                    click.echo(
+                    lines.append(
                         f"\n**Changes:** +{stats.get('additions', 0)} -{stats.get('deletions', 0)}"
                     )
                 files = data.get("files", [])
                 if files:
-                    click.echo(section_heading("Files changed"))
+                    lines.append(section_heading("Files changed"))
                     for f in files:
-                        click.echo(
-                            f"\n**{f.get('filename', '?')}** ({f.get('status', 'modified')})"
+                        additions = f.get("additions", 0)
+                        deletions = f.get("deletions", 0)
+                        lines.append(
+                            f"\n**{f.get('filename', '?')}** "
+                            f"({f.get('status', 'modified')}, +{additions} -{deletions})"
                         )
-                        if f.get("patch"):
-                            click.echo(fenced_code(f["patch"], "diff"))
+                    lines.append("\nPatches omitted; use scout commit --patch for bounded diffs.")
+                click.echo(
+                    truncate_output(
+                        "\n".join(lines),
+                        DEFAULT_SCOUT_MAX_CHARS,
+                        "use scout commit --path PATH for narrower evidence",
+                    )
+                )
                 return
 
             elif len(parts) >= 3 and parts[2] == "wiki":
                 pass  # fall through to web fetch; wiki pages are HTML
 
-            else:
-                # Default: scout orient for bare owner/repo URLs
-                cache = get_cache()
-                budget_reserve(cache, cache_url(url))
+            elif len(parts) == 2:
                 reroute_message(url, f"scout orient {owner}/{repo_name}", "github.com pages")
                 from research.scout.explore import _render_orient
 
-                _render_orient(owner, repo_name, ref=None, brief=False)
+                _render_orient(owner, repo_name, ref=None, brief=True)
                 return
 
     if is_pdf_url(url):

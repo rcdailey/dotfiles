@@ -39,9 +39,9 @@ Two toolsets with distinct purposes:
   `git log/diff/show` directly.
 
 ```txt
-research scout changelog REPO [--since TAG]
+research scout changelog REPO [--since-tag TAG]
 research scout release REPO [TAG]
-research scout read REPO PATH [--ref TAG]
+research scout cat REPO PATH [--ref TAG]
 research scout diff REPO BASE..HEAD
 research web search "query" --results
 research web fetch URL [--find "pattern"]

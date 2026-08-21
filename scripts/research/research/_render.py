@@ -33,20 +33,21 @@ def fenced_code(content: str, language: str = "") -> str:
 
 
 DEFAULT_MAX_CHARS = 20000
+DEFAULT_SCOUT_MAX_CHARS = 12000
 
 
-def truncate_output(text: str, max_chars: int) -> str:
+def truncate_output(text: str, max_chars: int, hint: str | None = None) -> str:
     """Truncate text with helpful message.
 
     max_chars <= 0 disables truncation.
     """
     if max_chars <= 0 or len(text) <= max_chars:
         return text
-    msg = (
-        f'\n\n[truncated at {max_chars} chars; prefer --find "pattern" '
-        "to target specific sections; --max-chars 0 disables truncation]"
-    )
-    return text[:max_chars] + msg
+    guidance = hint or 'prefer --find "pattern"; --max-chars 0 disables truncation'
+    msg = f"\n\n[truncated at {max_chars} chars; {guidance}]"
+    if len(msg) >= max_chars:
+        return msg[:max_chars]
+    return text[: max_chars - len(msg)] + msg
 
 
 _MEGA_PARA_THRESHOLD = 1500  # chars; paragraphs above this get line-level matching
@@ -133,9 +134,18 @@ def format_error(action: str, reason: str) -> str:
     return f"error: {action} failed: {reason}"
 
 
-def format_issue_body(number: int, title: str, state: str, created: str, body: str) -> str:
+def format_issue_body(
+    number: int,
+    title: str,
+    state: str,
+    created: str,
+    body: str,
+    source_url: str | None = None,
+) -> str:
     """Format an issue/PR as markdown."""
     lines = [f"## #{number}: {title}", "", f"- **State:** {state}", f"- **Created:** {created}"]
+    if source_url:
+        lines.append(f"- **Source:** {source_url}")
     if body:
         lines.extend(["", body])
     return "\n".join(lines)
@@ -147,18 +157,31 @@ def format_comment(author: str, date: str, body: str) -> str:
 
 
 def format_list_item(
-    number: int, state: str, date: str, title: str, max_title_len: int = 80
+    number: int,
+    state: str,
+    date: str,
+    title: str,
+    max_title_len: int = 80,
+    source_url: str | None = None,
 ) -> str:
     """Format a list entry as a bullet item."""
     short_title = title[:max_title_len] + "..." if len(title) > max_title_len else title
-    return f"- #{number} ({state}) {date[:10]} {short_title}"
+    item = f"- #{number} ({state}) {date[:10]} {short_title}"
+    return f"{item}\n  Source: {source_url}" if source_url else item
 
 
-def format_commit_item(sha: str, date: str, message: str, max_msg_len: int = 100) -> str:
+def format_commit_item(
+    sha: str,
+    date: str,
+    message: str,
+    max_msg_len: int = 100,
+    source_url: str | None = None,
+) -> str:
     """Format a commit list entry as a bullet item."""
     short_msg = message[:max_msg_len] + "..." if len(message) > max_msg_len else message
     short_sha = sha[:8] if len(sha) > 8 else sha
-    return f"- {short_sha} ({date[:10]}) {short_msg}"
+    item = f"- {short_sha} ({date[:10]}) {short_msg}"
+    return f"{item}\n  Source: {source_url}" if source_url else item
 
 
 def strip_github_host(url: str) -> str:

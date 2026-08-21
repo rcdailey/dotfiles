@@ -8,9 +8,10 @@ import sys
 
 import click
 
+from research._render import DEFAULT_SCOUT_MAX_CHARS, truncate_output
 from research.scout import cli
-from research.scout._clone import ensure_ref, ensure_repo
-from research.scout._common import parse_repo
+from research.scout._clone import current_head, ensure_ref, ensure_repo
+from research.scout._common import github_url, parse_repo
 
 # Map common file extension aliases to ripgrep type names.
 # Only applied on the rg --type= path; git-grep uses raw extension globs.
@@ -33,6 +34,11 @@ _TYPE_ALIASES: dict[str, str] = {
 @click.option("--ignore-case", "-i", is_flag=True, help="case-insensitive search")
 @click.option("--fixed-strings", "-F", is_flag=True, help="treat pattern as literal string")
 @click.option("--ref", help="branch, tag, or SHA (uses git grep)")
+@click.option(
+    "--max-chars",
+    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
+    default=DEFAULT_SCOUT_MAX_CHARS,
+)
 def rg_cmd(
     repo: str,
     pattern: str,
@@ -43,6 +49,7 @@ def rg_cmd(
     ignore_case: bool,
     fixed_strings: bool,
     ref: str | None,
+    max_chars: int,
 ) -> None:
     """Search cloned repo with ripgrep (auto-clones on first use)."""
     owner, name = parse_repo(repo)
@@ -50,6 +57,7 @@ def rg_cmd(
 
     if ref:
         sha = ensure_ref(owner, name, ref)
+        source_ref = sha
         # git grep [opts] -e PATTERN REV [-- pathspec...]
         args = ["git", "grep", "--line-number", "--no-color"]
         if ignore_case:
@@ -71,6 +79,7 @@ def rg_cmd(
             args.extend(pathspecs)
         result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir, check=False)
     else:
+        source_ref = current_head(repo_dir)
         args = [
             "rg",
             "--line-number",
@@ -95,7 +104,15 @@ def rg_cmd(
         result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir, check=False)
 
     if result.returncode == 0:
-        click.echo(result.stdout, nl=False)
+        output = f"source: {github_url(owner, name, 'tree', source_ref)}\n\n{result.stdout}"
+        click.echo(
+            truncate_output(
+                output,
+                max_chars,
+                "narrow the pattern, --path, or file globs",
+            ),
+            nl=False,
+        )
     elif result.returncode == 1:
         click.echo("no matches")
     else:
@@ -108,13 +125,25 @@ def rg_cmd(
 @click.argument("pattern")
 @click.option("--limit", "-L", type=int, default=100, help="max results (0 = no limit)")
 @click.option("--ref", help="branch, tag, or SHA (uses git ls-tree)")
-def find_cmd(repo: str, pattern: str, limit: int, ref: str | None) -> None:
+@click.option(
+    "--max-chars",
+    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
+    default=DEFAULT_SCOUT_MAX_CHARS,
+)
+def find_cmd(
+    repo: str,
+    pattern: str,
+    limit: int,
+    ref: str | None,
+    max_chars: int,
+) -> None:
     """Find files in cloned repo by glob pattern (auto-clones on first use)."""
     owner, name = parse_repo(repo)
     repo_dir = ensure_repo(owner, name)
 
     if ref:
         sha = ensure_ref(owner, name, ref)
+        source_ref = sha
         result = subprocess.run(
             ["git", "ls-tree", "-r", "--name-only", sha],
             capture_output=True,
@@ -130,6 +159,7 @@ def find_cmd(repo: str, pattern: str, limit: int, ref: str | None) -> None:
             p for p in paths if fnmatch.fnmatch(p, pattern) or fnmatch.fnmatch(p, f"*/{pattern}")
         )
     else:
+        source_ref = current_head(repo_dir)
         matches = sorted(
             p.relative_to(repo_dir) for p in repo_dir.rglob(pattern) if ".git" not in p.parts
         )
@@ -140,25 +170,45 @@ def find_cmd(repo: str, pattern: str, limit: int, ref: str | None) -> None:
     total = len(matches)
     if limit > 0:
         matches = matches[:limit]
-    for m in matches:
-        click.echo(m)
+    output = f"source: {github_url(owner, name, 'tree', source_ref)}\n\n"
+    output += "\n".join(str(match) for match in matches)
     if limit > 0 and total > limit:
-        click.echo(f"\n... {total - limit} more matches (use --limit 0 to show all)")
+        output += f"\n\n... {total - limit} more matches (increase --limit)"
+    click.echo(
+        truncate_output(
+            output,
+            max_chars,
+            "narrow the filename pattern or reduce --limit",
+        )
+    )
 
 
 @cli.command(name="cat")
 @click.argument("repo")
 @click.argument("path")
-@click.option("--limit", "-L", type=int, default=0, help="max lines (0 = no limit)")
+@click.option("--limit", "-L", type=int, default=240, help="max lines (0 = no limit)")
 @click.option("--offset", type=int, default=0, help="skip first N lines")
 @click.option("--ref", help="branch, tag, or SHA (uses git show)")
-def cat_cmd(repo: str, path: str, limit: int, offset: int, ref: str | None) -> None:
+@click.option(
+    "--max-chars",
+    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
+    default=DEFAULT_SCOUT_MAX_CHARS,
+)
+def cat_cmd(
+    repo: str,
+    path: str,
+    limit: int,
+    offset: int,
+    ref: str | None,
+    max_chars: int,
+) -> None:
     """Read file from cloned repo (auto-clones on first use)."""
     owner, name = parse_repo(repo)
     repo_dir = ensure_repo(owner, name)
 
     if ref:
         sha = ensure_ref(owner, name, ref)
+        source_ref = sha
         result = subprocess.run(
             ["git", "show", f"{sha}:{path}"],
             capture_output=True,
@@ -175,6 +225,7 @@ def cat_cmd(repo: str, path: str, limit: int, offset: int, ref: str | None) -> N
             sys.exit(1)
         content = result.stdout
     else:
+        source_ref = current_head(repo_dir)
         file_path = repo_dir / path
         if not file_path.exists():
             click.echo(f"error: file not found: {path}", err=True)
@@ -189,9 +240,24 @@ def cat_cmd(repo: str, path: str, limit: int, offset: int, ref: str | None) -> N
             click.echo(f"error: binary file: {path}", err=True)
             sys.exit(1)
 
-    lines = content.split("\n")
+    all_lines = content.split("\n")
+    total = len(all_lines)
+    lines = all_lines
     if offset:
         lines = lines[offset:]
     if limit > 0:
         lines = lines[:limit]
-    click.echo("\n".join(lines))
+    source = github_url(owner, name, "blob", source_ref, path)
+    output = f"source: {source}\n\n" + "\n".join(lines)
+    shown_through = offset + len(lines)
+    if shown_through < total:
+        output += (
+            f"\n\n... {total - shown_through} more lines; continue with --offset {shown_through}"
+        )
+    click.echo(
+        truncate_output(
+            output,
+            max_chars,
+            "reduce --limit, then continue with --offset",
+        )
+    )

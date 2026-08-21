@@ -24,7 +24,7 @@ other tool calls go through bash with the `research` prefix. Direct calls to `gh
 `pdf2md` are denied by permissions.
 
 ```txt
-research scout ...    # GitHub repo exploration (no budget limit)
+research scout ...    # GitHub repo exploration (no external-call charge)
 research web ...      # Linkup web search and fetch (budget-tracked)
 research pdf ...      # PDF download, OCR, convert to markdown (budget-tracked)
 research status       # budget usage report
@@ -35,6 +35,22 @@ research status       # budget usage report
 tool invocations. Non-research commands (`date`, `pwd`, `ls`, `curl`, `cat`) are denied.
 
 **Quoting:** Search queries must be a single quoted string. Never nest quotes inside the query.
+
+## Output Contract
+
+**Findings** (required): Synthesized answer. Scale to the question. Include versions, config values,
+code snippets, or commands when needed.
+
+**Confidence** (required): `high`, `moderate`, or `low` with one sentence explaining why.
+
+**Freshness** (if applicable): Versions or deprecation warnings naturally encountered.
+
+**Errors** (if any): Every tool failure verbatim with tool name, input, and error. Preserve this
+contract by shortening Findings when context is tight.
+
+**Steps**, **Pitfalls**, **Alternatives** (conditional): Only from gathered information.
+
+## Commands
 
 ### web commands
 
@@ -65,9 +81,8 @@ fetched. For dense specs (RFCs, standards), use narrow `--find` patterns targeti
 section text. Avoid broad patterns like `MUST|SHOULD|MAY` that match every paragraph. When
 `--find` returns too much, use `--offset` to paginate instead.
 
-GitHub URLs are auto-rerouted to the correct scout subcommand (issues, PRs, discussions, blobs,
-commits). PDF URLs auto-reroute to `research pdf`. Both still burn a budget slot; call the correct
-command directly to avoid the teaching message.
+GitHub URLs are auto-rerouted to the correct scout subcommand for bare repos, releases, issues, PRs,
+discussions, blobs, and commits. Reroutes are free but print a teaching message.
 
 ### pdf command
 
@@ -88,7 +103,7 @@ subcommand reference.
 **Repo exploration:**
 
 ```txt
-research scout orient REPO [--brief] [--ref REF]    # metadata, structure, key files
+research scout orient REPO [--full] [--ref REF]     # brief by default; --full adds key files
 research scout diff REPO BASE..HEAD [--path P]       # compare two refs
 ```
 
@@ -109,15 +124,15 @@ research scout cat REPO PATH [--limit N] [--offset N] [--ref REF]
 **Issues, PRs, Discussions, Releases, Commits:**
 
 ```txt
-research scout issue REPO [N] [--search Q] [--state open|closed|all]
-research scout pr REPO [N] [--search Q] [--state open|closed|merged|all]
+research scout issue REPO [N] [--comments] [--search Q] [--state open|closed|all]
+research scout pr REPO [N] [--comments] [--reviews] [--search Q] [--state STATE]
 research scout discussion REPO [N] [--search Q]
-research scout release REPO [TAG]
+research scout release REPO [TAG] [--since DATE] [--until DATE]
 research scout commits REPO [--since DATE] [--path P] [--author USER]
-research scout commit REPO SHA
+research scout commit REPO SHA [--patch] [--path P]
 research scout history REPO PATH
 research scout activity REPO [--days N]     # recent commits + merged PRs + closed issues
-research scout changelog REPO [--since TAG] # CHANGELOG file + recent releases
+research scout changelog REPO [--since-tag TAG] [--since DATE] [--until DATE]
 ```
 
 **Repo search:**
@@ -133,7 +148,8 @@ research scout search QUERY --forks N       # also show top N forks by stars per
 
 ## Budget
 
-Applies to `web` and `pdf` commands only (default limit: 15). Scout is free.
+Applies to `web` and `pdf` commands only (default limit: 15). Scout does not consume this budget,
+but its output still consumes context.
 
 The CLI prints budget messages on every web/pdf call:
 
@@ -147,39 +163,26 @@ Failed calls are auto-refunded.
 ## Workflow
 
 1. **Assess.** Choose starting tool:
-   - Open-ended repo question: `research scout orient` first (repo docs > web search)
+   - Open-ended repo question: `research scout orient` first; use `--full` only when key files help
    - Known GitHub object or query: use the matching scout subcommand directly
    - PDF: `research pdf URL`
    - General/current events: `research web search --results`
 
-2. **Search.** If results are thin, rephrase once. After 2 failures, switch tools or synthesize.
-   Once you have a relevant page, use `--find` to extract details rather than running more searches.
+2. **Search.** Avoid overlapping digests such as changelog, release, commits, and activity unless each
+   answers a distinct gap. If results are thin, rephrase once. After 2 failures, switch or synthesize.
+   Once you have a relevant page, use `--find` rather than running more searches.
 
 3. **Deepen.** Follow broad-then-narrow for repos: orient, then rg/cat/find, then issues/PRs.
    When `web fetch` returns "no content extracted", switch to `research pdf URL`.
 
-4. **Synthesize.** Use the output contract below.
+4. **Synthesize.** Stop as soon as the output contract is supported. Keep an error ledger while
+   working so failures survive compression.
 
-Run independent tool calls in parallel.
-
-## Output Contract
-
-**Findings** (required): Synthesized answer. Scale to the question. Include version numbers, config
-values, code snippets, or commands when the caller needs them to act.
-
-**Confidence** (required): `high`, `moderate`, or `low` with one sentence explaining why.
-
-**Freshness** (if applicable): Version numbers or deprecation warnings naturally encountered.
-
-**Errors** (if any): Tool failures verbatim with tool name, input, and error message. MUST NOT be
-omitted when errors occurred.
-
-**Steps**, **Pitfalls**, **Alternatives** (conditional): Only from information already gathered.
+Run bounded scout calls in parallel. Run at most 3 web/PDF calls per batch, and never prelaunch calls
+across the next checkpoint or warning.
 
 ## Constraints
 
 - MUST respond directly to the caller; MUST NOT write results to files
-- MUST report all tool errors verbatim (caller has no visibility into tool execution)
-- Stop when answered: if primary sources directly answer the question, synthesize immediately
 - No duplicate reads: use `--offset` to paginate (scout cat, web fetch, pdf)
 - If you can't find the answer, say so: state what you searched and what's missing

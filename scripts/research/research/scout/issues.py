@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import datetime
+
 import click
 
 from research._ghapi import (
@@ -16,23 +18,34 @@ from research._ghapi import (
     view_release,
 )
 from research._render import (
+    DEFAULT_SCOUT_MAX_CHARS,
     format_comment,
     format_issue_body,
     format_list_item,
     section_heading,
+    truncate_output,
 )
 from research.scout import cli
-from research.scout._common import die, parse_repo
+from research.scout._common import (
+    date_text,
+    die,
+    filter_release_dates,
+    github_url,
+    more_results_hint,
+    parse_repo,
+    take_limited,
+)
 
 
-def _render_comments(comments: list[dict], heading: str = "Comments") -> None:
+def _format_comments(comments: list[dict], heading: str = "Comments") -> str:
+    """Return comments as a Markdown section."""
     if not comments:
-        return
-    click.echo(section_heading(heading))
+        return ""
+    parts = [section_heading(heading)]
     for c in comments:
         author = c.get("author", {}).get("login", "unknown")
-        click.echo(format_comment(author, c.get("createdAt", ""), c.get("body", "")))
-        click.echo("")
+        parts.append(format_comment(author, c.get("createdAt", ""), c.get("body", "")))
+    return "\n\n".join(parts)
 
 
 @cli.command()
@@ -40,8 +53,22 @@ def _render_comments(comments: list[dict], heading: str = "Comments") -> None:
 @click.argument("number", required=False)
 @click.option("--search", "-S", help="search query")
 @click.option("--state", "-s", default="open", type=click.Choice(["open", "closed", "all"]))
-@click.option("--limit", "-L", type=int, default=30)
-def issue(repo: str, number: str | None, search: str | None, state: str, limit: int) -> None:
+@click.option("--limit", "-L", type=click.IntRange(min=1), default=30)
+@click.option("--comments", is_flag=True, help="include comments when viewing one issue")
+@click.option(
+    "--max-chars",
+    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
+    default=DEFAULT_SCOUT_MAX_CHARS,
+)
+def issue(
+    repo: str,
+    number: str | None,
+    search: str | None,
+    state: str,
+    limit: int,
+    comments: bool,
+    max_chars: int,
+) -> None:
     """List or view issues."""
     owner, name = parse_repo(repo)
 
@@ -51,32 +78,48 @@ def issue(repo: str, number: str | None, search: str | None, state: str, limit: 
         except ValueError:
             raise click.UsageError(f"invalid issue number: {number}")
         try:
-            data = view_issue(owner, name, n)
+            data = view_issue(owner, name, n, include_comments=comments)
         except APIError as e:
             die(str(e))
+        output = format_issue_body(
+            data["number"],
+            data.get("title", "N/A"),
+            data.get("state", "unknown"),
+            data.get("createdAt", ""),
+            data.get("body", ""),
+            data.get("url") or github_url(owner, name, "issues", n),
+        )
+        if comments:
+            output += _format_comments(data.get("comments", []))
         click.echo(
-            format_issue_body(
-                data["number"],
-                data.get("title", "N/A"),
-                data.get("state", "unknown"),
-                data.get("createdAt", ""),
-                data.get("body", ""),
+            truncate_output(
+                output,
+                max_chars,
+                "omit --comments or use a narrower source",
             )
         )
-        _render_comments(data.get("comments", []))
         return
 
     try:
-        issues = list_issues(owner, name, state, search, limit)
+        issues = list_issues(owner, name, state, search, limit + 1)
     except APIError as e:
         die(str(e))
     if not issues:
         click.echo(f"No issues found in {repo} (state: {state})")
         return
-    for i in issues:
+    shown, has_more = take_limited(issues, limit)
+    for i in shown:
         click.echo(
-            format_list_item(i["number"], i["state"], i.get("createdAt", ""), i.get("title", "N/A"))
+            format_list_item(
+                i["number"],
+                i["state"],
+                i.get("createdAt", ""),
+                i.get("title", "N/A"),
+                source_url=i.get("url") or github_url(owner, name, "issues", i["number"]),
+            )
         )
+    if has_more:
+        click.echo(more_results_hint(limit))
 
 
 @cli.command()
@@ -89,8 +132,24 @@ def issue(repo: str, number: str | None, search: str | None, state: str, limit: 
     default="open",
     type=click.Choice(["open", "closed", "merged", "all"]),
 )
-@click.option("--limit", "-L", type=int, default=30)
-def pr(repo: str, number: str | None, search: str | None, state: str, limit: int) -> None:
+@click.option("--limit", "-L", type=click.IntRange(min=1), default=30)
+@click.option("--comments", is_flag=True, help="include comments when viewing one PR")
+@click.option("--reviews", is_flag=True, help="include reviews when viewing one PR")
+@click.option(
+    "--max-chars",
+    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
+    default=DEFAULT_SCOUT_MAX_CHARS,
+)
+def pr(
+    repo: str,
+    number: str | None,
+    search: str | None,
+    state: str,
+    limit: int,
+    comments: bool,
+    reviews: bool,
+    max_chars: int,
+) -> None:
     """List or view pull requests."""
     owner, name = parse_repo(repo)
 
@@ -100,7 +159,13 @@ def pr(repo: str, number: str | None, search: str | None, state: str, limit: int
         except ValueError:
             raise click.UsageError(f"invalid PR number: {number}")
         try:
-            data = view_pr(owner, name, n)
+            data = view_pr(
+                owner,
+                name,
+                n,
+                include_comments=comments,
+                include_reviews=reviews,
+            )
         except APIError as e:
             die(str(e))
 
@@ -109,35 +174,42 @@ def pr(repo: str, number: str | None, search: str | None, state: str, limit: int
         if merged_at:
             state_str += f" (merged {merged_at[:10]})"
 
-        click.echo(
-            format_issue_body(
-                data["number"],
-                data.get("title", "N/A"),
-                state_str,
-                data.get("createdAt", ""),
-                data.get("body", ""),
-            )
+        output = format_issue_body(
+            data["number"],
+            data.get("title", "N/A"),
+            state_str,
+            data.get("createdAt", ""),
+            data.get("body", ""),
+            data.get("url") or github_url(owner, name, "pull", n),
         )
-        _render_comments(data.get("comments", []))
+        if comments:
+            output += _format_comments(data.get("comments", []))
 
-        reviews = data.get("reviews", [])
-        if reviews:
-            click.echo(section_heading("Reviews"))
-            for r in reviews:
+        review_items = data.get("reviews", []) if reviews else []
+        if review_items:
+            output += section_heading("Reviews")
+            for r in review_items:
                 author = r.get("author", {}).get("login", "unknown")
                 rstate = r.get("state", "unknown")
-                click.echo(f"**@{author} ({rstate}):**\n\n{r.get('body', '')}")
-                click.echo("")
+                output += f"\n**@{author} ({rstate}):**\n\n{r.get('body', '')}\n"
+        click.echo(
+            truncate_output(
+                output,
+                max_chars,
+                "omit --comments/--reviews or use a narrower source",
+            )
+        )
         return
 
     try:
-        prs = list_prs(owner, name, state, search, limit)
+        prs = list_prs(owner, name, state, search, limit + 1)
     except APIError as e:
         die(str(e))
     if not prs:
         click.echo(f"No PRs found in {repo} (state: {state})")
         return
-    for p in prs:
+    shown, has_more = take_limited(prs, limit)
+    for p in shown:
         label = p["state"]
         if p.get("mergedAt"):
             label += " (merged)"
@@ -147,43 +219,80 @@ def pr(repo: str, number: str | None, search: str | None, state: str, limit: int
                 label,
                 p.get("createdAt", p.get("mergedAt", "")),
                 p.get("title", "N/A"),
+                source_url=p.get("url") or github_url(owner, name, "pull", p["number"]),
             )
         )
+    if has_more:
+        click.echo(more_results_hint(limit))
 
 
 @cli.command()
 @click.argument("repo")
 @click.argument("tag", required=False)
-@click.option("--limit", "-L", type=int, default=30)
-def release(repo: str, tag: str | None, limit: int) -> None:
+@click.option("--limit", "-L", type=click.IntRange(min=1), default=30)
+@click.option("--since", type=click.DateTime(formats=["%Y-%m-%d"]))
+@click.option("--until", type=click.DateTime(formats=["%Y-%m-%d"]))
+@click.option(
+    "--max-chars",
+    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
+    default=DEFAULT_SCOUT_MAX_CHARS,
+)
+def release(
+    repo: str,
+    tag: str | None,
+    limit: int,
+    since: datetime.datetime | None,
+    until: datetime.datetime | None,
+    max_chars: int,
+) -> None:
     """List or view releases."""
     owner, name = parse_repo(repo)
 
     if tag:
+        if since or until:
+            raise click.UsageError("TAG cannot be combined with --since or --until")
         try:
             data = view_release(owner, name, tag)
         except APIError as e:
             die(str(e))
-        click.echo(f"## Release: {data.get('tagName', tag)}\n")
+        lines = [f"## Release: {data.get('tagName', tag)}\n"]
         if data.get("name"):
-            click.echo(f"**Name:** {data['name']}")
+            lines.append(f"**Name:** {data['name']}")
         if data.get("publishedAt"):
-            click.echo(f"**Published:** {data['publishedAt'][:10]}")
+            lines.append(f"**Published:** {data['publishedAt'][:10]}")
         if data.get("author"):
-            click.echo(f"**Author:** @{data['author'].get('login', 'unknown')}")
-        click.echo("")
+            lines.append(f"**Author:** @{data['author'].get('login', 'unknown')}")
+        source = data.get("url") or github_url(owner, name, "releases", "tag", tag)
+        lines.append(f"**Source:** {source}")
         if data.get("body"):
-            click.echo(data["body"])
+            lines.extend(["", data["body"]])
+        click.echo(
+            truncate_output(
+                "\n".join(lines),
+                max_chars,
+                "use the release's linked PRs or commits for narrower evidence",
+            )
+        )
         return
 
+    since_text = date_text(since)
+    until_text = date_text(until)
+    if since_text and until_text and since_text > until_text:
+        raise click.UsageError("--since must not be after --until")
+    fetch_limit = 1000 if since_text or until_text else limit + 1
     try:
-        releases = list_releases(owner, name, limit)
+        releases = list_releases(owner, name, fetch_limit)
     except APIError as e:
         die(str(e))
     if not releases:
         click.echo(f"No releases found in {repo}")
         return
-    for r in releases:
+    releases = filter_release_dates(releases, since_text, until_text)
+    if not releases:
+        click.echo("No releases found for the requested range")
+        return
+    shown, has_more = take_limited(releases, limit)
+    for r in shown:
         tag_name = r.get("tagName", "N/A")
         published = r.get("publishedAt", "")[:10] if r.get("publishedAt") else "N/A"
         flags = []
@@ -195,15 +304,29 @@ def release(repo: str, tag: str | None, limit: int) -> None:
         line = f"- {tag_name}{flag_str} ({published})"
         if r.get("name"):
             line += f" {r['name']}"
-        click.echo(line)
+        source = r.get("url") or github_url(owner, name, "releases", "tag", tag_name)
+        click.echo(f"{line}\n  Source: {source}")
+    if has_more:
+        click.echo(more_results_hint(limit))
 
 
 @cli.command()
 @click.argument("repo")
 @click.argument("number", required=False)
 @click.option("--search", "-S", help="search query (filters by title)")
-@click.option("--limit", "-L", type=int, default=30)
-def discussion(repo: str, number: str | None, search: str | None, limit: int) -> None:
+@click.option("--limit", "-L", type=click.IntRange(min=1), default=30)
+@click.option(
+    "--max-chars",
+    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
+    default=DEFAULT_SCOUT_MAX_CHARS,
+)
+def discussion(
+    repo: str,
+    number: str | None,
+    search: str | None,
+    limit: int,
+    max_chars: int,
+) -> None:
     """List or view GitHub Discussions."""
     owner, name = parse_repo(repo)
 
@@ -218,26 +341,33 @@ def discussion(repo: str, number: str | None, search: str | None, limit: int) ->
             die(str(e))
         category = data.get("category", {}).get("name", "")
         cat_str = f" [{category}]" if category else ""
+        output = format_issue_body(
+            data["number"],
+            data.get("title", "N/A") + cat_str,
+            "open",
+            data.get("createdAt", ""),
+            data.get("body", ""),
+            data.get("url") or github_url(owner, name, "discussions", n),
+        )
+        output += _format_comments(data.get("comments", []))
         click.echo(
-            format_issue_body(
-                data["number"],
-                data.get("title", "N/A") + cat_str,
-                "open",
-                data.get("createdAt", ""),
-                data.get("body", ""),
+            truncate_output(
+                output,
+                max_chars,
+                "use the discussion body or comments as separate narrower evidence",
             )
         )
-        _render_comments(data.get("comments", []))
         return
 
     try:
-        discussions = list_discussions(owner, name, search, limit)
+        discussions = list_discussions(owner, name, search, limit + 1)
     except APIError as e:
         die(str(e))
     if not discussions:
         click.echo(f"No discussions found in {repo}")
         return
-    for d in discussions:
+    shown, has_more = take_limited(discussions, limit)
+    for d in shown:
         category = d.get("category", {}).get("name", "")
         cat_str = f" [{category}]" if category else ""
         click.echo(
@@ -246,5 +376,8 @@ def discussion(repo: str, number: str | None, search: str | None, limit: int) ->
                 category or "discussion",
                 d.get("createdAt", ""),
                 d.get("title", "N/A"),
+                source_url=d.get("url") or github_url(owner, name, "discussions", d["number"]),
             )
         )
+    if has_more:
+        click.echo(more_results_hint(limit))

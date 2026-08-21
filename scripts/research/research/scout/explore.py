@@ -8,8 +8,9 @@ from collections import Counter
 import click
 
 from research._ghapi import APIError, api, api_raw
+from research._render import DEFAULT_SCOUT_MAX_CHARS, truncate_output
 from research.scout import cli
-from research.scout._common import die, parse_repo
+from research.scout._common import die, github_url, parse_repo
 
 ORIENT_MAX_FILES = 8
 ORIENT_MAX_FILE_LINES = 150
@@ -52,6 +53,7 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
         ("private", str(meta.get("private", False)).lower()),
         ("disk usage", f"{meta.get('size', 0)} KB"),
         ("ref", resolved),
+        ("source", github_url(owner, repo, "tree", resolved)),
     ]:
         click.echo(f"{label}: {value}")
 
@@ -90,6 +92,9 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
         for directory, count, exts in rows[:100]:
             click.echo(f"{directory:<{col1}}  {f'{count} files':<{col2}}  {exts}")
 
+    if brief:
+        return
+
     readme_path = next((p for p in blob_paths if KEY_FILE_PATTERNS[0].match(p)), None)
     if readme_path:
         try:
@@ -105,9 +110,6 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
                 click.echo(f"... plus {remaining} more lines")
         except APIError:
             pass
-
-    if brief:
-        return
 
     shown = 0
     for pattern in KEY_FILE_PATTERNS:
@@ -130,19 +132,24 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
 
 @cli.command()
 @click.argument("repo")
-@click.option("--brief", is_flag=True, help="skip key file contents")
+@click.option("--full", is_flag=True, help="include key file contents")
 @click.option("--ref", help="branch, tag, or SHA (default: repo's default branch)")
-def orient(repo: str, brief: bool, ref: str | None) -> None:
+def orient(repo: str, full: bool, ref: str | None) -> None:
     """Overview: metadata, structure summary, key files."""
     owner, name = parse_repo(repo)
-    _render_orient(owner, name, ref, brief)
+    _render_orient(owner, name, ref, brief=not full)
 
 
 @cli.command(name="diff")
 @click.argument("repo")
 @click.argument("spec")
 @click.option("--path", help="filter files by path prefix")
-def diff_cmd(repo: str, spec: str, path: str | None) -> None:
+@click.option(
+    "--max-chars",
+    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
+    default=DEFAULT_SCOUT_MAX_CHARS,
+)
+def diff_cmd(repo: str, spec: str, path: str | None, max_chars: int) -> None:
     """Compare two refs: `scout diff REPO base..head`."""
     if ".." not in spec:
         raise click.UsageError("spec must be BASE..HEAD (e.g., v1.0..v2.0)")
@@ -156,22 +163,32 @@ def diff_cmd(repo: str, spec: str, path: str | None) -> None:
     except APIError as e:
         die(str(e))
 
-    click.echo(
-        f"ahead: {data['ahead_by']}, behind: {data['behind_by']}, "
-        f"total commits: {data['total_commits']}"
-    )
+    lines = [
+        (
+            f"ahead: {data['ahead_by']}, behind: {data['behind_by']}, "
+            f"total commits: {data['total_commits']}"
+        ),
+        f"source: {github_url(owner, name, 'compare', f'{base}...{head}')}",
+    ]
     commits_list = data.get("commits", [])
     files = data.get("files", [])
     if path:
         files = [f for f in files if f["filename"].startswith(path)]
 
     if commits_list:
-        click.echo("\n=== COMMITS ===")
+        lines.append("\n=== COMMITS ===")
         for c in commits_list:
             sha = c["sha"][:8]
             msg = c["commit"]["message"].split("\n", 1)[0]
-            click.echo(f"{sha} {msg[:120]}")
+            lines.append(f"{sha} {msg[:120]}")
     if files:
-        click.echo("\n=== FILES ===")
+        lines.append("\n=== FILES ===")
         for f in files:
-            click.echo(f"{f['status']:<12} +{f['additions']}-{f['deletions']} {f['filename']}")
+            lines.append(f"{f['status']:<12} +{f['additions']}-{f['deletions']} {f['filename']}")
+    click.echo(
+        truncate_output(
+            "\n".join(lines),
+            max_chars,
+            "narrow the comparison with --path PATH",
+        )
+    )

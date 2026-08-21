@@ -7,11 +7,12 @@ import json
 import click
 
 from research._ghapi import APIError, _run_gh, api
+from research._render import DEFAULT_SCOUT_MAX_CHARS, truncate_output
 from research.scout import cli
-from research.scout._common import die
+from research.scout._common import die, github_url, more_results_hint, take_limited
 
 _SEARCH_FIELDS = (
-    "fullName,stargazersCount,forksCount,pushedAt,updatedAt,isArchived,language,description"
+    "fullName,url,stargazersCount,forksCount,pushedAt,updatedAt,isArchived,language,description"
 )
 
 
@@ -47,38 +48,48 @@ def _top_forks(full_name: str, count: int) -> list[dict]:
     return api(f"repos/{full_name}/forks", params={"sort": "stargazers", "per_page": str(count)})
 
 
-def _render_result(repo: dict, forks: int) -> None:
+def _render_result(repo: dict, forks: int) -> str:
     full_name = repo.get("fullName", "?")
-    click.echo(f"=== {full_name} ===")
+    lines = [f"=== {full_name} ==="]
     description = repo.get("description") or "none"
-    click.echo(f"description: {description}")
-    click.echo(f"language: {repo.get('language') or 'none'}")
-    click.echo(f"stars: {repo.get('stargazersCount', 0)}")
-    click.echo(f"forks: {repo.get('forksCount', 0)}")
-    click.echo(f"last push: {repo.get('pushedAt', 'unknown')[:10]}")
-    click.echo(f"last updated: {repo.get('updatedAt', 'unknown')[:10]}")
+    lines.extend(
+        [
+            f"description: {description}",
+            f"language: {repo.get('language') or 'none'}",
+            f"stars: {repo.get('stargazersCount', 0)}",
+            f"forks: {repo.get('forksCount', 0)}",
+            f"last push: {repo.get('pushedAt', 'unknown')[:10]}",
+            f"last updated: {repo.get('updatedAt', 'unknown')[:10]}",
+        ]
+    )
+    if repo.get("url"):
+        lines.append(f"source: {repo['url']}")
+    elif "/" in full_name:
+        owner, name = full_name.split("/", 1)
+        lines.append(f"source: {github_url(owner, name)}")
     if repo.get("isArchived"):
-        click.echo("archived: true")
+        lines.append("archived: true")
 
     if forks <= 0:
-        return
+        return "\n".join(lines)
 
     try:
         top_forks = _top_forks(full_name, forks)
     except APIError as e:
-        click.echo(f"forks: failed to fetch ({e})")
-        return
+        lines.append(f"forks: failed to fetch ({e})")
+        return "\n".join(lines)
 
     if not top_forks:
-        click.echo("top forks: none")
-        return
+        lines.append("top forks: none")
+        return "\n".join(lines)
 
-    click.echo("top forks:")
+    lines.append("top forks:")
     for fork in top_forks:
         fork_name = fork.get("full_name", "?")
         fork_stars = fork.get("stargazers_count", 0)
         fork_pushed = (fork.get("pushed_at") or "unknown")[:10]
-        click.echo(f"  {fork_name} (stars: {fork_stars}, last commit: {fork_pushed})")
+        lines.append(f"  {fork_name} (stars: {fork_stars}, last commit: {fork_pushed})")
+    return "\n".join(lines)
 
 
 @cli.command()
@@ -93,6 +104,11 @@ def _render_result(repo: dict, forks: int) -> None:
 @click.option("--language", help="filter by language")
 @click.option("--stars", type=int, help="minimum star count")
 @click.option("--forks", type=int, default=0, help="show top N forks by stars per result")
+@click.option(
+    "--max-chars",
+    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
+    default=DEFAULT_SCOUT_MAX_CHARS,
+)
 def search(
     query: str,
     limit: int,
@@ -100,10 +116,11 @@ def search(
     language: str | None,
     stars: int | None,
     forks: int,
+    max_chars: int,
 ) -> None:
     """Search GitHub repositories."""
     try:
-        results = _search_repos(query, limit, sort, language, stars)
+        results = _search_repos(query, limit + 1, sort, language, stars)
     except APIError as e:
         die(str(e))
 
@@ -111,7 +128,14 @@ def search(
         click.echo(f"No repositories found for query: {query}")
         return
 
-    for i, repo in enumerate(results):
-        if i:
-            click.echo("")
-        _render_result(repo, forks)
+    shown, has_more = take_limited(results, limit)
+    output = "\n\n".join(_render_result(repo, forks) for repo in shown)
+    if has_more:
+        output += f"\n\n{more_results_hint(limit)}"
+    click.echo(
+        truncate_output(
+            output,
+            max_chars,
+            "reduce --limit or narrow the repository query",
+        )
+    )
