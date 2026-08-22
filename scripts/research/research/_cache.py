@@ -73,7 +73,7 @@ def get_cache() -> Cache | _InMemoryCache:
 
 def get_session_id() -> str | None:
     """Return the opt-in budget session identifier, if supplied."""
-    return os.environ.get("RESEARCH_SESSION_ID") or None
+    return os.environ.get("OPENCODE_SESSION_ID") or None
 
 
 def cache_url(url: str) -> str:

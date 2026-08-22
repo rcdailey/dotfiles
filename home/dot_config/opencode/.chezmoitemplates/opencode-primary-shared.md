@@ -157,12 +157,8 @@ rejected invocation does not satisfy the requirement. Correct and retry it unles
 work, and do not commit, deploy, or mark the work complete while a required audit is missing.
 
 The user names the acceptance target. You own architecture, the goal, and the observable acceptance
-matrix. The acceptance agent owns Git discovery, boundary partitioning, correction inventory, and
-verification. Do not ask the user to design audit scopes or Git metadata.
-
-Start work that will require acceptance with a clean index. If the index already contains changes,
-do not alter it or start the checkpoint workflow until the owner resolves that state. Keep the
-completed implementation unstaged for its initial audit.
+matrix. The acceptance agent owns target discovery, boundary partitioning, snapshot continuity,
+correction inventory, and verification. Do not ask the user to design audit scopes or Git metadata.
 
 After implementation and your own review, delegate one fresh acceptance task for the completed
 target. The auditor partitions independently verifiable boundaries and checks named cross-boundary
@@ -174,20 +170,15 @@ Acceptance: <complete observable matrix>
 Context: <applicable plan, known checks, constraints, exclusions, or nondefault Base>
 ```
 
-The auditor returns independent evidence, findings, and an exact checkpoint action. After an initial
-`pass` or `fail`, stage only the returned paths with path-scoped `git add -A -- <paths>`. This
-preserves the reviewed implementation before any correction. Do not stage after `blocked`. The
-acceptance agent remains read-only.
+The auditor returns independent evidence, findings, snapshot state, and one exact resume action. On
+failure, fix the findings and resume the same task with only a short fix summary and current check
+results. The auditor discovers the iteration delta and rechecks failed and affected cases while
+preserving unaffected passes.
 
-On failure, fix the findings and leave every correction unstaged. Resume the same task with only a
-short fix summary and current check results. The auditor discovers the cumulative correction delta
-and rechecks failed and affected cases while preserving unaffected passes. If another round fails,
-keep the checkpoint unchanged and continue fixing. Do not stage between failed correction rounds.
-
-After the resumed audit passes, stage only the paths in its checkpoint action. Launch a fresh audit
-only when the prior task is unavailable or the goal or acceptance matrix changes. Any edit after a
-pass invalidates it and must return to the same acceptance session. Do not commit, deploy, or mark
-the work complete until the current implementation passes and its checkpoint action is staged.
+On `retry`, resume the same task without restoring or editing files. Launch a fresh audit only when
+the prior task or snapshot state is unavailable, or the goal or acceptance matrix changes. Any edit
+after a pass invalidates it and must return to the same acceptance session. Do not commit, deploy, or
+mark the work complete until the current implementation passes with a stable snapshot.
 
 ## Commits
 
