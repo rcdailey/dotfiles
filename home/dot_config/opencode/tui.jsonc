@@ -22,6 +22,8 @@
     "session_list": "alt+l",
     "session_new": "alt+n",
     "display_thinking": "alt+t",
+    "variant_cycle": "none",
+    "variant_list": "ctrl+t",
     "prompt_skills": "alt+s",
 
     // these conflict with home/end keys above
