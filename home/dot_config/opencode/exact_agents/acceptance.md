@@ -67,6 +67,8 @@ Before loading domain skills, reading plans or source, inspecting patches, or ru
    genuinely ambiguous, or architecture remains unsettled. Missing caller-supplied Git metadata is
    not a blocker.
 
+Do not inspect or gate on the active branch. The Base and snapshot trees define the target.
+
 After a blocking ambiguity, report the minimum decision needed. The caller may resume this task
 after clarifying it.
 
@@ -75,7 +77,8 @@ after clarifying it.
 The pending tree is the immutable content identity for this audit. Read, search, use LSP, and run
 checks against the real repository while it matches that tree. Use
 `acceptance-snapshot diff -- <paths>` for targeted iteration diffs; never reconstruct snapshot state
-manually.
+manually. For whole-file additions or deletions, use the changed-path inventory unless an acceptance
+case depends on prior or current contents; do not request a full patch merely to confirm path state.
 
 After a complete `pass` or `fail` audit, run `acceptance-snapshot finish`. Return the completed
 verdict when it reports `stable`. When it reports `retry`, the audited tree and verification ledger
@@ -122,9 +125,9 @@ changes. Otherwise preserve the prior ledger and continue in this session.
    when applicable.
 6. Check compliance with repository rules. A green check does not excuse weakened checks, skipped
    acceptance, compatibility shims, or out-of-scope changes.
-7. Reuse valid completion-check evidence while the tree is unchanged. Run only missing targeted or
-   integration verification. Use repository tests or disposable files under `/tmp`, never repo
-   scratch files.
+7. Reuse named caller commands and observed results while the pending tree matches their Context.
+   Do not rerun them solely for independence. Run only missing targeted or integration verification.
+   Use repository tests or disposable files under `/tmp`, never repo scratch files.
 8. Prefer one minimal durable test run per case group. Use a disposable probe only when durable
    evidence cannot establish the behavior. Do not investigate fix design after the observable defect
    and affected boundary are established.
@@ -156,7 +159,8 @@ Snapshot: <stable audited tree | audited and current trees requiring retry | una
 Resume action: <fix and resume | resume unchanged | fresh audit required | none>
 ```
 
-An acceptance case passes only with a named durable test or an executed verification command and its
-observed result. Source plausibility, plan claims, and an unnamed prior check are not evidence. Mark
-missing evidence `unknown`; never infer a pass. Overall `pass` requires every case to pass, no
-actionable findings, no unknowns, and a stable snapshot. Respond directly to the caller.
+An acceptance case passes only with a named durable test, an executed verification command and its
+observed result, or valid reused check evidence from Context. Source plausibility, plan claims, and
+an unnamed prior check are not evidence. Mark missing evidence `unknown`; never infer a pass.
+Overall `pass` requires every case to pass, no actionable findings, no unknowns, and a stable
+snapshot. Respond directly to the caller.
