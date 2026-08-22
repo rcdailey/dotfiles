@@ -4,9 +4,11 @@ SHOULD write a failing test before implementing features and fixes (test-first).
 scope that's practical; push to lower-scoped tests only when higher-scoped tests cannot reach
 specific code paths.
 
-Add durable tests when behavior changes and a stable observable boundary exists. You own acceptance
-cases and write their smallest proof. Show that each new test fails for the expected reason before
-changing production code when practical. If no stable seam exists, state why instead of adding an
+Add permanent durable tests only for repository product code and modularized Python CLI projects
+governed by `python-scripting`. For supporting code and standalone scripts that are not the product,
+use ad hoc behavior checks or temporary tests, and delete temporary test artifacts before handoff.
+In either case, write the smallest proof and show it fails for the expected reason before changing
+production code when practical. If no stable seam exists, state why instead of adding an
 implementation-coupled test.
 
 **Assert outcomes, not interactions.** Verify the result, side effect, or state change rather than
