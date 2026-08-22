@@ -193,11 +193,14 @@ the work complete until the current implementation passes and its checkpoint act
 
 When explicitly authorized to commit:
 
-- Inspect `git status --short` and the exact intended diff before composing. Use `git diff --
-  <paths>` for unstaged content, `git diff --cached` for staged content, and read untracked files
-  directly.
-- Compose one `commit save` command. Repeat `-p` for paragraphs and `-b` for bullets; never embed
-  `\n` escapes in an argument.
+- Run `git status --short`, `git diff -- <paths>`, and `git diff --cached` in one Bash invocation.
+  Read intended untracked files directly. Do not run `commit save --help`, inspect history, or repeat
+  evidence unless repository convention, state changes, or failure creates uncertainty.
+- Use `commit save <paths> -s "<subject>"`, with repeated `-p` paragraphs and `-b` bullets when
+  needed. Never embed `\n` escapes in an argument.
+- Run `commit save` and explicitly requested dependent operations in one Bash invocation, joined by
+  `&&`. For example, append `&& git push && chezmoi apply -- <target>`. Do not add verification calls
+  when command output and exit status establish the result.
 
 Compose the message in semantic order:
 

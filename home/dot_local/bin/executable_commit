@@ -15,8 +15,11 @@ Environment:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import re
+import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -64,6 +67,16 @@ def git(*args: str, check: bool = True, capture: bool = False) -> subprocess.Com
 def git_output(*args: str) -> str:
     """Run a git command and return stdout."""
     result = git(*args, check=True, capture=True)
+    return result.stdout
+
+
+def git_bytes(*args: str) -> bytes:
+    """Run a git command and return stdout without decoding paths or content."""
+    result = subprocess.run(
+        ["git", *args],
+        check=True,
+        capture_output=True,
+    )
     return result.stdout
 
 
@@ -129,21 +142,8 @@ def validate_literal_line_breaks(options: dict[str, list[str]]) -> list[str]:
 
 
 def _stage_files(files: list[str]) -> None:
-    """Reset the index, stage whole files, and print the resulting stat."""
-    git("reset", "HEAD", check=False, capture=True)
-
-    for f in files:
-        if Path(f).exists():
-            git("add", "--", f)
-        else:
-            git("add", "-u", "--", f)
-
-    stat = git_output("diff", "--cached", "--stat")
-    if not stat.strip():
-        die(f"no changes staged after adding: {' '.join(files)}")
-
-    print_section("STAGED", stat)
-    sys.stdout.flush()
+    """Stage complete paths without disturbing other index entries."""
+    git("add", "-A", "--", *files)
 
 
 def format_message(
@@ -179,6 +179,58 @@ def format_message(
 def _commit_output(result: subprocess.CompletedProcess) -> str:
     """Merge git commit's stdout and stderr in that order."""
     return (result.stdout or "") + (result.stderr or "")
+
+
+def _untracked_digest(repo_root: Path) -> bytes:
+    """Hash untracked paths and content without following symbolic links."""
+    digest = hashlib.sha256()
+    paths = git_bytes(
+        "ls-files",
+        "--others",
+        "--exclude-standard",
+        "--full-name",
+        "-z",
+    )
+    for raw_path in paths.split(b"\0"):
+        if not raw_path:
+            continue
+        digest.update(len(raw_path).to_bytes(8, "big"))
+        digest.update(raw_path)
+
+        path = repo_root / os.fsdecode(raw_path)
+        try:
+            file_stat = path.lstat()
+        except FileNotFoundError:
+            digest.update(b"missing")
+            continue
+
+        file_type = stat.S_IFMT(file_stat.st_mode)
+        digest.update(file_type.to_bytes(4, "big"))
+        if stat.S_ISLNK(file_stat.st_mode):
+            digest.update(os.fsencode(os.readlink(path)))
+            continue
+        if not stat.S_ISREG(file_stat.st_mode):
+            digest.update(file_stat.st_size.to_bytes(8, "big"))
+            digest.update(file_stat.st_mtime_ns.to_bytes(8, "big"))
+            continue
+
+        with path.open("rb") as file:
+            while chunk := file.read(1024 * 1024):
+                digest.update(chunk)
+    return digest.digest()
+
+
+def _commit_state(repo_root: Path) -> tuple[bytes, bytes, bytes, bytes]:
+    """Fingerprint visible paths and commit-relevant repository content."""
+    status = git_bytes("status", "--porcelain", "-z")
+    staged = git_bytes("diff", "--cached", "--binary", "--no-ext-diff")
+    unstaged = git_bytes("diff", "--binary", "--no-ext-diff")
+    return (
+        status,
+        hashlib.sha256(staged).digest(),
+        hashlib.sha256(unstaged).digest(),
+        _untracked_digest(repo_root),
+    )
 
 
 def cmd_save(args: list[str]) -> None:
@@ -237,39 +289,55 @@ def cmd_save(args: list[str]) -> None:
 
     message = format_message(subject, args_parsed.p, args_parsed.b, args_parsed.i)
 
-    def stage(restage: bool = False) -> None:
+    def stage() -> None:
         """Put the caller's requested content into the index."""
         if has_files:
             _stage_files(args_parsed.files)
         elif args_parsed.a:
             git("add", "-A")
-        else:
-            # Staged-only mode: never widen the index except to pick up hook edits
-            if restage:
-                git("update-index", "--again", check=False, capture=True)
-            stat = git_output("diff", "--cached", "--stat")
-            if not stat.strip():
-                die("nothing staged; pass files or -a")
-            print_section("STAGED", stat)
-            sys.stdout.flush()
+
+        stat = git_output("diff", "--cached", "--stat")
+        if not stat.strip():
+            die("nothing staged; pass files or -a")
+        print_section("STAGED", stat)
+        sys.stdout.flush()
 
     stage()
 
     fd, msg_path = tempfile.mkstemp(prefix="commit-msg-", suffix=".txt")
+    index_backup: Path | None = None
     try:
         with os.fdopen(fd, "w") as f:
             f.write(message)
 
-        worktree_before = git_output("status", "--porcelain")
+        index_path = Path(
+            git_output(
+                "rev-parse",
+                "--path-format=absolute",
+                "--git-path",
+                "index",
+            ).strip()
+        )
+        index_fd, index_backup_name = tempfile.mkstemp(
+            prefix="commit-index-",
+            dir=index_path.parent,
+        )
+        os.close(index_fd)
+        index_backup = Path(index_backup_name)
+        shutil.copy2(index_path, index_backup)
+
+        repo_root = Path(git_output("rev-parse", "--show-toplevel").strip())
+        repository_state_before = _commit_state(repo_root)
         result = git("commit", "-F", msg_path, check=False, capture=True)
 
-        # Hooks that auto-fix files abort the commit and expect a restage
-        if result.returncode != 0 and git_output("status", "--porcelain") != worktree_before:
-            print(_commit_output(result), end="", file=sys.stderr)
-            print("\n=== HOOKS MODIFIED FILES; RESTAGING AND RETRYING ===")
-            sys.stdout.flush()
-            stage(restage=True)
-            result = git("commit", "-F", msg_path, check=False, capture=True)
+        repository_state_changed = False
+        if result.returncode != 0:
+            repository_state_after = _commit_state(repo_root)
+            repository_state_changed = (
+                repository_state_after != repository_state_before
+            )
+            if repository_state_after[1] != repository_state_before[1]:
+                os.replace(index_backup, index_path)
 
         if result.returncode == 0:
             print(_commit_output(result), end="")
@@ -277,10 +345,17 @@ def cmd_save(args: list[str]) -> None:
             print(f"\n=== COMMITTED === {sha_line}")
         else:
             print(_commit_output(result), end="", file=sys.stderr)
+            if repository_state_changed:
+                print(
+                    "\n=== REPOSITORY CHANGED DURING COMMIT; REVIEW BEFORE RETRYING ===",
+                    file=sys.stderr,
+                )
             print("\n=== COMMIT FAILED ===", file=sys.stderr)
         sys.exit(result.returncode)
     finally:
         os.unlink(msg_path)
+        if index_backup is not None:
+            index_backup.unlink(missing_ok=True)
 
 
 # -- main ------------------------------------------------------------------
