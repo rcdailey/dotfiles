@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import click
 
-from research._ghapi import APIError, file_history, list_commits, view_commit
+from research._ghapi import (
+    APIError,
+    file_history,
+    list_commit_pulls,
+    list_commits,
+    view_commit,
+)
 from research._render import (
     DEFAULT_SCOUT_MAX_CHARS,
     fenced_code,
@@ -81,10 +87,12 @@ def commits(
     default=DEFAULT_SCOUT_MAX_CHARS,
 )
 def commit(repo: str, sha: str, patch: bool, path: str | None, max_chars: int) -> None:
-    """View a commit summary; add --patch for diffs."""
+    """View a commit summary and associated PRs; add --patch for diffs."""
     owner, name = parse_repo(repo)
     try:
         data = view_commit(owner, name, sha)
+        resolved_sha = data.get("sha", sha)
+        pulls = list_commit_pulls(owner, name, resolved_sha)
     except APIError as e:
         die(str(e))
 
@@ -92,7 +100,6 @@ def commit(repo: str, sha: str, patch: bool, path: str | None, max_chars: int) -
     committer = commit_obj.get("committer", {})
     author = commit_obj.get("author", {})
 
-    resolved_sha = data.get("sha", sha)
     lines = [
         f"## Commit {resolved_sha[:8]}\n",
         kv_line("Date", committer.get("date", "N/A")[:10]),
@@ -103,6 +110,13 @@ def commit(repo: str, sha: str, patch: bool, path: str | None, max_chars: int) -
         ),
         "",
     ]
+    for pull in pulls:
+        number = pull.get("number", "N/A")
+        state = "merged" if pull.get("merged_at") else pull.get("state", "unknown")
+        url = pull.get("html_url") or github_url(owner, name, "pull", number)
+        lines.append(f"- **Associated PR:** #{number} ({state}) {url}")
+    if pulls:
+        lines.append("")
     if commit_obj.get("message"):
         lines.extend([commit_obj["message"], ""])
 

@@ -128,7 +128,7 @@ research scout pr REPO [N] [--comments] [--reviews] [--search Q] [--state STATE]
 research scout discussion REPO [N] [--search Q]
 research scout release REPO [TAG] [--since DATE] [--until DATE]
 research scout commits REPO [--since DATE] [--path P] [--author USER]
-research scout commit REPO SHA [--patch] [--path P]
+research scout commit REPO SHA [--patch] [--path P]  # includes associated PRs
 research scout history REPO PATH
 research scout activity REPO [--days N]     # recent commits + merged PRs + closed issues
 research scout changelog REPO [--since-tag TAG] [--since DATE] [--until DATE]

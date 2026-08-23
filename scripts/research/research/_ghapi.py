@@ -307,6 +307,14 @@ def view_commit(owner: str, repo: str, sha: str) -> dict:
     return api(f"repos/{owner}/{repo}/commits/{sha}")
 
 
+def list_commit_pulls(owner: str, repo: str, sha: str) -> list[dict]:
+    """List pull requests associated with a commit."""
+    data = api(f"repos/{owner}/{repo}/commits/{sha}/pulls")
+    if not isinstance(data, list):
+        raise APIError("unexpected response type from commit pull requests API")
+    return data
+
+
 def file_history(owner: str, repo: str, path: str, limit: int = 30) -> list[dict]:
     """Get commit history for a specific file."""
     return list_commits(owner, repo, path=path, limit=limit)
