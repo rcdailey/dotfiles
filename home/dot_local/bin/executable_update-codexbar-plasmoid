@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly package_id="com.github.psimaker.codexbar"
+readonly repository="psimaker/codexbar-plasmoid"
+readonly state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/codexbar-plasmoid"
+readonly state_file="$state_dir/version"
+
+if [[ $(uname -s) != "Linux" ]]; then
+  printf 'Skipping CodexBar Plasma widget update outside Linux.\n'
+  exit 0
+fi
+
+if ! command -v kpackagetool6 >/dev/null 2>&1; then
+  printf 'Skipping CodexBar Plasma widget update: Plasma 6 is unavailable.\n'
+  exit 0
+fi
+
+if ! codexbar_path="$(mise which codexbar 2>/dev/null)"; then
+  printf 'CodexBar CLI is not installed. Run mise install first.\n' >&2
+  exit 1
+fi
+
+latest_url="$({
+  curl -fsSL -o /dev/null -w '%{url_effective}' \
+    "https://github.com/$repository/releases/latest"
+})"
+latest_tag="${latest_url##*/}"
+
+if [[ ! $latest_tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  printf 'Invalid CodexBar Plasma widget release tag: %s\n' "$latest_tag" >&2
+  exit 1
+fi
+
+version="${latest_tag#v}"
+asset="com.github.psimaker.codexbar-$version.plasmoid"
+installed=false
+if kpackagetool6 --type Plasma/Applet --list | rg -Fxq "$package_id"; then
+  installed=true
+fi
+needs_configuration=false
+if [[ ! -f $state_file ]]; then
+  needs_configuration=true
+fi
+
+if [[ $installed == true && -f $state_file ]]; then
+  installed_tag="$(<"$state_file")"
+  if [[ $installed_tag == "$latest_tag" ]]; then
+    printf 'CodexBar Plasma widget is current at %s.\n' "$latest_tag"
+    exit 0
+  fi
+fi
+
+temporary_dir="$(mktemp -d)"
+trap 'rm -rf "$temporary_dir"' EXIT
+
+release_url="https://github.com/$repository/releases/download/$latest_tag"
+curl -fsSL "$release_url/$asset" -o "$temporary_dir/$asset"
+curl -fsSL "$release_url/$asset.sha256" -o "$temporary_dir/$asset.sha256"
+(
+  cd "$temporary_dir"
+  sha256sum --check "$asset.sha256"
+)
+
+operation="--install"
+if [[ $installed == true ]]; then
+  operation="--upgrade"
+fi
+
+kpackagetool6 --type Plasma/Applet "$operation" "$temporary_dir/$asset"
+
+if [[ $installed == true ]]; then
+  systemctl --user restart plasma-plasmashell.service
+fi
+
+if [[ $needs_configuration == true ]]; then
+  plasma_script="$(cat <<EOF
+var ps = panels();
+var widget = null;
+for (var i = 0; i < ps.length; i++) {
+    var widgets = ps[i].widgets("$package_id");
+    for (var j = 0; j < widgets.length; j++) {
+        if (widget === null) widget = widgets[j];
+        else widgets[j].remove();
+    }
+}
+if (widget === null && ps.length > 0) widget = ps[0].addWidget("$package_id");
+if (widget !== null) {
+    widget.currentConfigGroup = ["General"];
+    widget.writeConfig("enabledProviders", "codex");
+    widget.writeConfig("showPercentInPanel", true);
+    widget.writeConfig("panelPercentSource", "weekly");
+    widget.writeConfig("percentStyle", "remaining");
+    widget.writeConfig("panelDisplayMode", "logos-and-meters");
+    widget.writeConfig("cliPath", "$codexbar_path");
+    widget.reloadConfig();
+}
+EOF
+)"
+  busctl --user call org.kde.plasmashell /PlasmaShell \
+    org.kde.PlasmaShell evaluateScript s "$plasma_script" >/dev/null
+fi
+
+mkdir -p "$state_dir"
+printf '%s\n' "$latest_tag" >"$state_file.tmp"
+mv "$state_file.tmp" "$state_file"
+printf 'CodexBar Plasma widget updated to %s.\n' "$latest_tag"

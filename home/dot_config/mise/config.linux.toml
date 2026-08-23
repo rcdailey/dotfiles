@@ -1,0 +1,7 @@
+[tools]
+"npm:@openai/codex" = "latest"
+
+[tools."github:steipete/CodexBar"]
+version = "latest"
+matching = "linux-musl"
+rename_exe = "codexbar"

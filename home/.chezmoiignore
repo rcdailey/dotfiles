@@ -43,5 +43,8 @@ AppData/**
 
 # Exclude Linux-specific files on non-Linux platforms
 {{ if ne .chezmoi.os "linux" }}
+.chezmoiscripts/run_once_after_migrate-ai-usagebar.sh
 .config/systemd/**
+.config/topgrade.d/codexbar.toml
+.local/bin/update-codexbar-plasmoid
 {{ end }}
