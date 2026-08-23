@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+
+import json
+import re
+import sys
+from pathlib import Path
+
+
+TARGET_MODE = (7680, 2160)
+THREE_COLUMN_LAYOUT = (
+    '{"layoutDirection":"horizontal","tiles":['
+    '{"width":0.3333333333333333},{"width":0.3333333333333333},'
+    '{"width":0.3333333333333333}]}'
+)
+TILING_SECTION = re.compile(r"^\[Tiling\]\[[^]]+\]\[([^]]+)]\s*$")
+
+
+def target_output_ids() -> set[str]:
+    config_path = Path.home() / ".config" / "kwinoutputconfig.json"
+
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, TypeError, json.JSONDecodeError):
+        return set()
+
+    output_ids = set()
+    for section in config:
+        if not isinstance(section, dict) or section.get("name") != "outputs":
+            continue
+
+        for output in section.get("data", []):
+            if not isinstance(output, dict):
+                continue
+
+            mode = output.get("mode", {})
+            size = (mode.get("width"), mode.get("height"))
+            output_id = output.get("uuid")
+            if size == TARGET_MODE and isinstance(output_id, str):
+                output_ids.add(output_id)
+
+    return output_ids
+
+
+def update_layout(config: str, output_ids: set[str]) -> str:
+    if not output_ids:
+        return config
+
+    updated_lines = []
+    update_section = False
+
+    for line in config.splitlines(keepends=True):
+        if line.startswith("["):
+            section = TILING_SECTION.match(line)
+            update_section = bool(section and section.group(1) in output_ids)
+
+        if update_section and line.startswith("tiles="):
+            line_ending = "\n" if line.endswith("\n") else ""
+            line = f"tiles={THREE_COLUMN_LAYOUT}{line_ending}"
+
+        updated_lines.append(line)
+
+    return "".join(updated_lines)
+
+
+current_config = sys.stdin.read()
+sys.stdout.write(update_layout(current_config, target_output_ids()))
