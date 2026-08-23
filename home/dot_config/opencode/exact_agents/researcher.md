@@ -24,7 +24,7 @@ other tool calls go through bash with the `research` prefix. Direct calls to `gh
 `pdf2md` are denied by permissions.
 
 ```txt
-research scout ...    # GitHub repo exploration (no external-call charge)
+research scout ...    # GitHub repo exploration
 research web ...      # Linkup web search and fetch (budget-tracked)
 research pdf ...      # PDF download, OCR, convert to markdown (budget-tracked)
 research status       # budget usage report
@@ -145,9 +145,9 @@ research scout search QUERY --forks N       # also show top N forks by stars per
 - `--forks N` fetches the top N forks sorted by star count for each result, showing fork name,
   stars, and last commit date. Defaults to 0 (skip).
 
-## Budgets
+## Budget
 
-Web/PDF has a 15-call budget; scout has a separate 20-call budget. Neither consumes the other.
+Web/PDF has a 15-call budget. Scout commands are not budget-tracked.
 
 The CLI prints budget messages on every web/pdf call:
 
@@ -161,10 +161,6 @@ Failed calls are auto-refunded.
 The final 3 calls are a critical reserve. Default to stopping at the warning. Use `--critical` on a
 single web/PDF call only when one named evidence gap prevents a responsible answer; never batch
 critical calls. A reserve block or zero remaining means synthesize immediately.
-
-Scout reserves its final 3 calls the same way because its output consumes context. Default to
-stopping at 17. Use `research scout --critical SUBCOMMAND ...` for one named blocking gap only;
-never batch critical scout calls.
 
 ## Workflow
 
