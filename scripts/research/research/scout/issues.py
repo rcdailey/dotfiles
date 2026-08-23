@@ -25,6 +25,7 @@ from research._render import (
     section_heading,
     truncate_output,
 )
+from research._source_ledger import record_sources, record_visible_sources
 from research.scout import cli
 from research.scout._common import (
     date_text,
@@ -81,23 +82,24 @@ def issue(
             data = view_issue(owner, name, n, include_comments=comments)
         except APIError as e:
             die(str(e))
+        source = data.get("url") or github_url(owner, name, "issues", n)
         output = format_issue_body(
             data["number"],
             data.get("title", "N/A"),
             data.get("state", "unknown"),
             data.get("createdAt", ""),
             data.get("body", ""),
-            data.get("url") or github_url(owner, name, "issues", n),
+            source,
         )
         if comments:
             output += _format_comments(data.get("comments", []))
-        click.echo(
-            truncate_output(
-                output,
-                max_chars,
-                "omit --comments or use a narrower source",
-            )
+        rendered = truncate_output(
+            output,
+            max_chars,
+            "omit --comments or use a narrower source",
         )
+        record_visible_sources(rendered, [source])
+        click.echo(rendered)
         return
 
     try:
@@ -108,6 +110,9 @@ def issue(
         click.echo(f"No issues found in {repo} (state: {state})")
         return
     shown, has_more = take_limited(issues, limit)
+    record_sources(
+        item.get("url") or github_url(owner, name, "issues", item["number"]) for item in shown
+    )
     for i in shown:
         click.echo(
             format_list_item(
@@ -174,13 +179,14 @@ def pr(
         if merged_at:
             state_str += f" (merged {merged_at[:10]})"
 
+        source = data.get("url") or github_url(owner, name, "pull", n)
         output = format_issue_body(
             data["number"],
             data.get("title", "N/A"),
             state_str,
             data.get("createdAt", ""),
             data.get("body", ""),
-            data.get("url") or github_url(owner, name, "pull", n),
+            source,
         )
         if comments:
             output += _format_comments(data.get("comments", []))
@@ -192,13 +198,13 @@ def pr(
                 author = r.get("author", {}).get("login", "unknown")
                 rstate = r.get("state", "unknown")
                 output += f"\n**@{author} ({rstate}):**\n\n{r.get('body', '')}\n"
-        click.echo(
-            truncate_output(
-                output,
-                max_chars,
-                "omit --comments/--reviews or use a narrower source",
-            )
+        rendered = truncate_output(
+            output,
+            max_chars,
+            "omit --comments/--reviews or use a narrower source",
         )
+        record_visible_sources(rendered, [source])
+        click.echo(rendered)
         return
 
     try:
@@ -209,6 +215,9 @@ def pr(
         click.echo(f"No PRs found in {repo} (state: {state})")
         return
     shown, has_more = take_limited(prs, limit)
+    record_sources(
+        item.get("url") or github_url(owner, name, "pull", item["number"]) for item in shown
+    )
     for p in shown:
         label = p["state"]
         if p.get("mergedAt"):
@@ -266,13 +275,13 @@ def release(
         lines.append(f"**Source:** {source}")
         if data.get("body"):
             lines.extend(["", data["body"]])
-        click.echo(
-            truncate_output(
-                "\n".join(lines),
-                max_chars,
-                "use the release's linked PRs or commits for narrower evidence",
-            )
+        rendered = truncate_output(
+            "\n".join(lines),
+            max_chars,
+            "use the release's linked PRs or commits for narrower evidence",
         )
+        record_visible_sources(rendered, [source])
+        click.echo(rendered)
         return
 
     since_text = date_text(since)
@@ -292,6 +301,10 @@ def release(
         click.echo("No releases found for the requested range")
         return
     shown, has_more = take_limited(releases, limit)
+    record_sources(
+        item.get("url") or github_url(owner, name, "releases", "tag", item.get("tagName", "N/A"))
+        for item in shown
+    )
     for r in shown:
         tag_name = r.get("tagName", "N/A")
         published = r.get("publishedAt", "")[:10] if r.get("publishedAt") else "N/A"
@@ -341,22 +354,23 @@ def discussion(
             die(str(e))
         category = data.get("category", {}).get("name", "")
         cat_str = f" [{category}]" if category else ""
+        source = data.get("url") or github_url(owner, name, "discussions", n)
         output = format_issue_body(
             data["number"],
             data.get("title", "N/A") + cat_str,
             "open",
             data.get("createdAt", ""),
             data.get("body", ""),
-            data.get("url") or github_url(owner, name, "discussions", n),
+            source,
         )
         output += _format_comments(data.get("comments", []))
-        click.echo(
-            truncate_output(
-                output,
-                max_chars,
-                "use the discussion body or comments as separate narrower evidence",
-            )
+        rendered = truncate_output(
+            output,
+            max_chars,
+            "use the discussion body or comments as separate narrower evidence",
         )
+        record_visible_sources(rendered, [source])
+        click.echo(rendered)
         return
 
     try:
@@ -367,6 +381,9 @@ def discussion(
         click.echo(f"No discussions found in {repo}")
         return
     shown, has_more = take_limited(discussions, limit)
+    record_sources(
+        item.get("url") or github_url(owner, name, "discussions", item["number"]) for item in shown
+    )
     for d in shown:
         category = d.get("category", {}).get("name", "")
         cat_str = f" [{category}]" if category else ""

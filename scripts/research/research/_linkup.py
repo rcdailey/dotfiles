@@ -5,8 +5,6 @@ from __future__ import annotations
 import subprocess
 from typing import TYPE_CHECKING
 
-from research._errors import die
-
 if TYPE_CHECKING:
     from linkup import LinkupClient
 
@@ -21,6 +19,10 @@ _ERROR_MESSAGES = {
     "LinkupTimeoutError": "timeout",
     "LinkupTooManyRequestsError": "rate limited, try again later",
 }
+
+
+class SearchError(Exception):
+    """Search operation failed."""
 
 
 def get_linkup_api_key() -> str:
@@ -38,13 +40,13 @@ def get_linkup_api_key() -> str:
             check=True,
         )
     except FileNotFoundError:
-        die("LINKUP_API_KEY not set and `rbw` binary not found")
+        raise SearchError("LINKUP_API_KEY not set and `rbw` binary not found") from None
     except subprocess.CalledProcessError as e:
         msg = e.stderr.strip() or f"rbw exited {e.returncode}"
-        die(f"failed to read Linkup API key from rbw ({RBW_ITEM}): {msg}")
+        raise SearchError(f"failed to read Linkup API key from rbw ({RBW_ITEM}): {msg}") from e
     key = result.stdout.strip()
     if not key:
-        die(f"rbw returned empty value for {RBW_ITEM}")
+        raise SearchError(f"rbw returned empty value for {RBW_ITEM}")
     return key
 
 
@@ -69,8 +71,8 @@ def translate_error(action: str, e: Exception) -> str:
 
 def search(query: str, max_results: int = 5, sourced_answer: bool = True) -> object:
     """Execute a Linkup search or sourced-answer request."""
-    client = get_client()
     try:
+        client = get_client()
         response = client.search(
             query=query,
             depth="standard",
@@ -78,12 +80,10 @@ def search(query: str, max_results: int = 5, sourced_answer: bool = True) -> obj
             max_results=max_results,
         )
         return response
+    except SearchError:
+        raise
     except Exception as e:
         raise SearchError(translate_error("search", e)) from e
-
-
-class SearchError(Exception):
-    """Search operation failed."""
 
 
 def format_search_results(results: list) -> str:

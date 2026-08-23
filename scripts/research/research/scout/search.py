@@ -8,6 +8,7 @@ import click
 
 from research._ghapi import APIError, _run_gh, api
 from research._render import DEFAULT_SCOUT_MAX_CHARS, truncate_output
+from research._source_ledger import record_visible_sources
 from research.scout import cli
 from research.scout._common import die, github_url, more_results_hint, take_limited
 
@@ -129,13 +130,18 @@ def search(
         return
 
     shown, has_more = take_limited(results, limit)
+    sources = [
+        repo.get("url") or github_url(*repo["fullName"].split("/", 1))
+        for repo in shown
+        if "/" in repo.get("fullName", "")
+    ]
     output = "\n\n".join(_render_result(repo, forks) for repo in shown)
     if has_more:
         output += f"\n\n{more_results_hint(limit)}"
-    click.echo(
-        truncate_output(
-            output,
-            max_chars,
-            "reduce --limit or narrow the repository query",
-        )
+    rendered = truncate_output(
+        output,
+        max_chars,
+        "reduce --limit or narrow the repository query",
     )
+    record_visible_sources(rendered, sources)
+    click.echo(rendered)

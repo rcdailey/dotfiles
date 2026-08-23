@@ -100,6 +100,12 @@ code exploration, correlating multiple sources, citations, or substantive synthe
 You MAY use `ctx7` directly for a bounded API lookup. Delegate documentation research that requires
 multiple pages, external sources, or substantive synthesis.
 
+Give each researcher task one coherent evidence target. Split tasks when questions have independent
+confidence, require different source ecosystems, can be answered without each other, or cannot fit
+the research budget together. Keep tracks together only when they rely on substantially the same
+sources or require direct correlation. Run independent research tasks in parallel, then synthesize
+their reports; do not make one researcher absorb every question related to the same final decision.
+
 ## Delegating read-only discovery
 
 You own architecture, system design, public contracts, schemas, migration strategy, cross-component

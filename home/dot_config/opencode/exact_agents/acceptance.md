@@ -28,6 +28,7 @@ permission:
     gh-pr-review: deny
     humanizer: deny
     linear-cli: deny
+    research-cli: deny
     skill-authoring: deny
     subagent-authoring: deny
 ---

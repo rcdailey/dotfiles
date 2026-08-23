@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+import sys
 import urllib.error
 import urllib.request
 
@@ -10,6 +11,7 @@ import click
 
 from research._ghapi import APIError, list_commits, list_issues, list_prs, list_releases
 from research._render import format_commit_item, format_list_item, sub_heading, truncate_output
+from research._source_ledger import record_source, record_sources
 from research.scout import cli
 from research.scout._common import (
     date_text,
@@ -56,10 +58,12 @@ def activity(repo: str, days: int) -> None:
     cutoff = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=days)
     since = cutoff.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    failures: list[str] = []
     try:
         commits_list = list_commits(owner, name, since=since, limit=51)
     except APIError as error:
         click.echo(f"warning: commits unavailable: {error}", err=True)
+        failures.append(f"commits unavailable: {error}")
         commits_list = []
     try:
         prs = [
@@ -69,6 +73,7 @@ def activity(repo: str, days: int) -> None:
         ]
     except APIError as error:
         click.echo(f"warning: PRs unavailable: {error}", err=True)
+        failures.append(f"PRs unavailable: {error}")
         prs = []
     try:
         issues = [
@@ -78,12 +83,17 @@ def activity(repo: str, days: int) -> None:
         ]
     except APIError as error:
         click.echo(f"warning: issues unavailable: {error}", err=True)
+        failures.append(f"issues unavailable: {error}")
         issues = []
 
     click.echo(f"## Recent Activity: {repo} (last {days} days)\n")
 
     if commits_list:
         shown_commits, commits_more = take_limited(commits_list, 50)
+        record_sources(
+            item.get("html_url") or github_url(owner, name, "commit", item.get("sha", "N/A"))
+            for item in shown_commits[:20]
+        )
         click.echo(sub_heading(f"Commits ({len(shown_commits)} recent)"))
         for c in shown_commits[:20]:
             sha = c.get("sha", "N/A")
@@ -104,6 +114,9 @@ def activity(repo: str, days: int) -> None:
 
     if prs:
         shown_prs, prs_more = take_limited(prs, 30)
+        record_sources(
+            item.get("url") or github_url(owner, name, "pull", item["number"]) for item in shown_prs
+        )
         click.echo(sub_heading(f"Merged PRs ({len(shown_prs)} recent)"))
         for p in shown_prs:
             click.echo(
@@ -121,6 +134,10 @@ def activity(repo: str, days: int) -> None:
 
     if issues:
         shown_issues, issues_more = take_limited(issues, 30)
+        record_sources(
+            item.get("url") or github_url(owner, name, "issues", item["number"])
+            for item in shown_issues
+        )
         click.echo(sub_heading(f"Closed Issues ({len(shown_issues)} recent)"))
         for i in shown_issues:
             click.echo(
@@ -137,6 +154,9 @@ def activity(repo: str, days: int) -> None:
 
     if not any([commits_list, prs, issues]):
         click.echo(f"No recent activity found in {repo} (last {days} days)")
+    if failures:
+        click.echo(f"error: activity incomplete: {'; '.join(failures)}", err=True)
+        sys.exit(1)
 
 
 @cli.command()
@@ -168,10 +188,11 @@ def changelog(
                 content = response.read().decode("utf-8")
                 source_name = fname
                 break
-        except (urllib.error.URLError, TimeoutError):
+        except (urllib.error.URLError, TimeoutError, UnicodeError):
             continue
 
     if content:
+        record_source(url)
         click.echo(sub_heading(f"From {source_name}"))
         click.echo(f"Source: {url}\n")
         click.echo(
@@ -188,11 +209,17 @@ def changelog(
     if since_text and until_text and since_text > until_text:
         raise click.UsageError("--since must not be after --until")
     fetch_limit = 1000 if since_tag or since_text or until_text else limit + 1
+    release_failure: str | None = None
     try:
         releases = list_releases(owner, name, limit=fetch_limit)
     except APIError as error:
         click.echo(f"warning: releases unavailable: {error}", err=True)
+        release_failure = str(error)
         releases = []
+
+    if release_failure:
+        click.echo(f"error: changelog incomplete: {release_failure}", err=True)
+        sys.exit(1)
 
     if since_tag:
         try:
@@ -203,6 +230,11 @@ def changelog(
 
     if releases:
         shown, has_more = take_limited(releases, limit)
+        record_sources(
+            item.get("url")
+            or github_url(owner, name, "releases", "tag", item.get("tagName", "N/A"))
+            for item in shown
+        )
         click.echo(sub_heading("Recent Releases"))
         for r in shown:
             tag = r.get("tagName", "N/A")

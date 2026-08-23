@@ -11,7 +11,7 @@ import click
 if TYPE_CHECKING:
     from diskcache import Cache
 
-MAX_CALLS: int = int(os.environ.get("RESEARCH_BUDGET_LIMIT") or 15)
+MAX_CALLS: int = int(os.environ.get("RESEARCH_BUDGET_LIMIT") or 20)
 CHECKPOINT_AT: int = MAX_CALLS // 2  # mid-session assessment
 WARNING_AT: int = MAX_CALLS - 3  # final warning
 
@@ -129,6 +129,24 @@ def budget_refund(cache: Cache, cached_url: str | None = None) -> None:
         f"[refund: call failed; budget restored to {count}/{MAX_CALLS} used, "
         f"{remaining} remaining]",
         err=True,
+    )
+
+
+def budget_cache_hit(cache: Cache, cached_url: str | None = None) -> None:
+    """Report a cache hit and mark a cached URL as retrieved this session."""
+    count_key = _session_key(_COUNT_KEY)
+    if count_key is None:
+        click.echo("\n[cache hit; no budget session active]")
+        return
+    seen_key = _session_key(f"{_SEEN_PREFIX}{cached_url}") if cached_url else None
+
+    with cache.transact():
+        count = cache.get(count_key, 0)
+        if seen_key:
+            cache.set(seen_key, True, expire=24 * 3600)
+    remaining = MAX_CALLS - count
+    click.echo(
+        f"\n[cache hit; budget unchanged at {count}/{MAX_CALLS} used, {remaining} remaining]"
     )
 
 

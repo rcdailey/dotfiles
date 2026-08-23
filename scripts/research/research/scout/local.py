@@ -5,10 +5,12 @@ from __future__ import annotations
 import fnmatch
 import subprocess
 import sys
+from pathlib import Path
 
 import click
 
 from research._render import DEFAULT_SCOUT_MAX_CHARS, truncate_output
+from research._source_ledger import record_visible_sources
 from research.scout import cli
 from research.scout._clone import current_head, ensure_ref, ensure_repo
 from research.scout._common import github_url, parse_repo
@@ -22,6 +24,44 @@ _TYPE_ALIASES: dict[str, str] = {
     "kt": "kotlin",
     "cs": "csharp",
 }
+
+
+def _partition_paths(
+    repo_dir: Path,
+    paths: tuple[str, ...],
+    ref: str | None = None,
+) -> tuple[list[str], list[str]]:
+    """Return valid and missing repo-relative search paths."""
+    valid: list[str] = []
+    missing: list[str] = []
+    for path in paths:
+        if ref is None:
+            exists = (repo_dir / path).exists()
+        elif path == ".":
+            exists = True
+        else:
+            result = subprocess.run(
+                ["git", "cat-file", "-e", f"{ref}:{path}"],
+                capture_output=True,
+                text=True,
+                cwd=repo_dir,
+                check=False,
+            )
+            exists = result.returncode == 0
+        (valid if exists else missing).append(path)
+    return valid, missing
+
+
+def _report_missing_paths(valid: list[str], missing: list[str]) -> None:
+    """Warn about omitted paths or fail when none of the requested paths exist."""
+    if not missing:
+        return
+    message = ", ".join(missing)
+    if valid:
+        click.echo(f"warning: omitted missing paths: {message}", err=True)
+        return
+    click.echo(f"error: search paths not found: {message}", err=True)
+    sys.exit(1)
 
 
 @cli.command(name="rg")
@@ -58,6 +98,8 @@ def rg_cmd(
     if ref:
         sha = ensure_ref(owner, name, ref)
         source_ref = sha
+        valid_paths, missing_paths = _partition_paths(repo_dir, paths, sha)
+        _report_missing_paths(valid_paths, missing_paths)
         # git grep [opts] -e PATTERN REV [-- pathspec...]
         args = ["git", "grep", "--line-number", "--no-color"]
         if ignore_case:
@@ -68,7 +110,7 @@ def rg_cmd(
             args.append(f"-C{context}")
         args.extend(["-e", pattern, sha])
         # Pathspecs go after -- separator; use raw extension globs for git-grep
-        pathspecs = list(paths)
+        pathspecs = valid_paths
         pathspecs.extend(globs)
         for ft in filetypes:
             pathspecs.append(f"*.{ft}")
@@ -78,6 +120,8 @@ def rg_cmd(
         result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir, check=False)
     else:
         source_ref = current_head(repo_dir)
+        valid_paths, missing_paths = _partition_paths(repo_dir, paths)
+        _report_missing_paths(valid_paths, missing_paths)
         args = [
             "rg",
             "--line-number",
@@ -99,19 +143,19 @@ def rg_cmd(
         if context > 0:
             args.extend(["-C", str(context)])
         args.append(pattern)
-        args.extend(paths or (".",))
+        args.extend(valid_paths or (".",))
         result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir, check=False)
 
     if result.returncode == 0:
-        output = f"source: {github_url(owner, name, 'tree', source_ref)}\n\n{result.stdout}"
-        click.echo(
-            truncate_output(
-                output,
-                max_chars,
-                "narrow the pattern, --path, or file globs",
-            ),
-            nl=False,
+        source = github_url(owner, name, "tree", source_ref)
+        output = f"source: {source}\n\n{result.stdout}"
+        rendered = truncate_output(
+            output,
+            max_chars,
+            "narrow the pattern, --path, or file globs",
         )
+        record_visible_sources(rendered, [source])
+        click.echo(rendered, nl=False)
     elif result.returncode == 1:
         click.echo("no matches")
     else:
@@ -169,17 +213,18 @@ def find_cmd(
     total = len(matches)
     if limit > 0:
         matches = matches[:limit]
-    output = f"source: {github_url(owner, name, 'tree', source_ref)}\n\n"
+    source = github_url(owner, name, "tree", source_ref)
+    output = f"source: {source}\n\n"
     output += "\n".join(str(match) for match in matches)
     if limit > 0 and total > limit:
         output += f"\n\n... {total - limit} more matches (increase --limit)"
-    click.echo(
-        truncate_output(
-            output,
-            max_chars,
-            "narrow the filename pattern or reduce --limit",
-        )
+    rendered = truncate_output(
+        output,
+        max_chars,
+        "narrow the filename pattern or reduce --limit",
     )
+    record_visible_sources(rendered, [source])
+    click.echo(rendered)
 
 
 @cli.command(name="cat")
@@ -253,10 +298,10 @@ def cat_cmd(
         output += (
             f"\n\n... {total - shown_through} more lines; continue with --offset {shown_through}"
         )
-    click.echo(
-        truncate_output(
-            output,
-            max_chars,
-            "reduce --limit, then continue with --offset",
-        )
+    rendered = truncate_output(
+        output,
+        max_chars,
+        "reduce --limit, then continue with --offset",
     )
+    record_visible_sources(rendered, [source])
+    click.echo(rendered)

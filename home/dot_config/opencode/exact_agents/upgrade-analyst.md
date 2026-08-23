@@ -12,6 +12,9 @@ permission:
   read: allow
   glob: allow
   external_directory: allow
+  skill:
+    "*": deny
+    research-cli: allow
   bash:
     "*": deny
     "ctx7 *": allow
@@ -30,25 +33,13 @@ You research dependency upgrades and return structured findings. Read-only; inve
 
 ## Tools
 
-Two toolsets with distinct purposes:
+Load the `research-cli` skill before using the research CLI. Two toolsets have distinct purposes:
 
 - **Documentation**: use `ctx7 library <name> <query>` to resolve an ID, then query it with `ctx7
   docs <library-id> <query>`.
 - **Other upstream evidence**: use the `research` CLI exclusively.
 - **Local repo analysis**: use `rg`, read/grep/glob, `gh pr view/checks`, and
   `git log/diff/show` directly.
-
-```txt
-research scout changelog REPO [--since-tag TAG]
-research scout release REPO [TAG]
-research scout cat REPO PATH [--ref TAG]
-research scout diff REPO BASE..HEAD
-research web search "query" --results
-research web fetch URL [--find "pattern"]
-```
-
-Search queries MUST be one quoted argument. Do not pipe or chain commands. Run
-`research <group> --help` only for unlisted operations or options.
 
 ## Workflow
 

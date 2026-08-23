@@ -9,6 +9,7 @@ import click
 
 from research._ghapi import APIError, api, api_raw
 from research._render import DEFAULT_SCOUT_MAX_CHARS, truncate_output
+from research._source_ledger import record_source, record_visible_sources
 from research.scout import cli
 from research.scout._common import die, github_url, parse_repo
 
@@ -40,6 +41,8 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
     except APIError as e:
         die(f"failed to fetch repo metadata: {e}")
     resolved = ref or meta.get("default_branch") or "HEAD"
+    source = github_url(owner, repo, "tree", resolved)
+    record_source(source)
 
     click.echo("=== METADATA ===")
     for label, value in [
@@ -53,7 +56,7 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
         ("private", str(meta.get("private", False)).lower()),
         ("disk usage", f"{meta.get('size', 0)} KB"),
         ("ref", resolved),
-        ("source", github_url(owner, repo, "tree", resolved)),
+        ("source", source),
     ]:
         click.echo(f"{label}: {value}")
 
@@ -108,8 +111,8 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
             remaining = len(lines) - ORIENT_MAX_README_LINES
             if remaining > 0:
                 click.echo(f"... plus {remaining} more lines")
-        except APIError:
-            pass
+        except APIError as error:
+            click.echo(f"warning: {readme_path} unavailable: {error}", err=True)
 
     shown = 0
     for pattern in KEY_FILE_PATTERNS:
@@ -123,7 +126,8 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
                 f"repos/{owner}/{repo}/contents/{match_path}",
                 params={"ref": resolved},
             )
-        except APIError:
+        except APIError as error:
+            click.echo(f"warning: {match_path} unavailable: {error}", err=True)
             continue
         click.echo(f"\n=== FILE: {match_path} ===")
         click.echo("\n".join(content.splitlines()[:ORIENT_MAX_FILE_LINES]))
@@ -163,12 +167,13 @@ def diff_cmd(repo: str, spec: str, path: str | None, max_chars: int) -> None:
     except APIError as e:
         die(str(e))
 
+    source = github_url(owner, name, "compare", f"{base}...{head}")
     lines = [
         (
             f"ahead: {data['ahead_by']}, behind: {data['behind_by']}, "
             f"total commits: {data['total_commits']}"
         ),
-        f"source: {github_url(owner, name, 'compare', f'{base}...{head}')}",
+        f"source: {source}",
     ]
     commits_list = data.get("commits", [])
     files = data.get("files", [])
@@ -185,10 +190,10 @@ def diff_cmd(repo: str, spec: str, path: str | None, max_chars: int) -> None:
         lines.append("\n=== FILES ===")
         for f in files:
             lines.append(f"{f['status']:<12} +{f['additions']}-{f['deletions']} {f['filename']}")
-    click.echo(
-        truncate_output(
-            "\n".join(lines),
-            max_chars,
-            "narrow the comparison with --path PATH",
-        )
+    rendered = truncate_output(
+        "\n".join(lines),
+        max_chars,
+        "narrow the comparison with --path PATH",
     )
+    record_visible_sources(rendered, [source])
+    click.echo(rendered)

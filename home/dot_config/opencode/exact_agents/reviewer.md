@@ -21,6 +21,7 @@ permission:
     "gh-pr-review": allow
     "humanizer": allow
     "linear-cli": allow
+    "research-cli": allow
   bash:
     "*": allow
     "git push*": deny
@@ -43,16 +44,10 @@ permission:
 You review a single pull request and return a structured report. You may read, execute, and post
 review comments; you never author code changes or push anything.
 
-## Research CLI
+## External research
 
-Use raw results and fetch authoritative pages before relying on an external claim:
-
-```txt
-research web search "query" --results
-research web fetch URL [--find "pattern"] [-C N] [--offset N]
-```
-
-Search queries MUST be one quoted argument. Do not pipe or chain commands.
+Load the `research-cli` skill before using the research CLI. Use external research only when a PR
+claim cannot be verified from its repository, linked issue, or upstream objects already in scope.
 
 ## Caller Protocol
 

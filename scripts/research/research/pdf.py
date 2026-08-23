@@ -7,9 +7,10 @@ import sys
 
 import click
 
-from research._budget import budget_refund, budget_reserve
+from research._budget import budget_cache_hit, budget_refund, budget_reserve
 from research._cache import cache_url, get_cache, read_cached_content, write_cached_content
 from research._render import DEFAULT_MAX_CHARS, apply_find, truncate_output
+from research._source_ledger import record_source
 
 
 @click.command()
@@ -45,6 +46,7 @@ def _do_pdf(
 
     cached = read_cached_content(base_url)
     if cached is not None:
+        budget_cache_hit(cache, base_url)
         text = cached
     else:
         budget_reserve(cache, base_url, critical=critical)
@@ -82,4 +84,5 @@ def _do_pdf(
     if offset > 0:
         output = f"[starting at char offset {offset}; total length {total_len}]\n\n" + output
 
+    record_source(url)
     click.echo(truncate_output(output, max_chars), nl=False)

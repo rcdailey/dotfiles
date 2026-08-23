@@ -7,7 +7,7 @@ import sys
 
 import click
 
-from research._budget import budget_refund, budget_reserve
+from research._budget import budget_cache_hit, budget_refund, budget_reserve
 from research._cache import (
     cache_url,
     get_cache,
@@ -28,6 +28,7 @@ from research._render import (
     strip_github_host,
     truncate_output,
 )
+from research._source_ledger import record_source, record_visible_sources
 
 DEFAULT_MAX_RESULTS = 5
 
@@ -48,6 +49,7 @@ def search_cmd(query: str, max_results: int, results: bool, critical: bool) -> N
     cache_key = f"{sourced_answer}:{max_results}:{query}"
     cached = read_cached_search(cache_key)
     if cached is not None:
+        budget_cache_hit(get_cache())
         click.echo(cached)
         return
 
@@ -123,6 +125,7 @@ def fetch_cmd(
                     url,
                 )
                 output += _format_comments(data.get("comments", []))
+                record_source(url)
                 click.echo(
                     truncate_output(
                         output,
@@ -153,6 +156,7 @@ def fetch_cmd(
                     data.get("body", ""),
                     url,
                 )
+                record_source(url)
                 click.echo(
                     truncate_output(
                         output,
@@ -185,6 +189,7 @@ def fetch_cmd(
                     data.get("body", ""),
                     url,
                 )
+                record_source(url)
                 click.echo(
                     truncate_output(
                         output,
@@ -204,14 +209,16 @@ def fetch_cmd(
                 except APIError as e:
                     click.echo(f"error: {e}", err=True)
                     sys.exit(1)
+                source = data.get("url") or url
                 lines = [
                     f"## Release: {data.get('tagName', tag)}",
-                    f"Source: {data.get('url') or url}",
+                    f"Source: {source}",
                 ]
                 if data.get("publishedAt"):
                     lines.append(f"Published: {data['publishedAt'][:10]}")
                 if data.get("body"):
                     lines.extend(["", data["body"]])
+                record_source(source)
                 click.echo(
                     truncate_output(
                         "\n".join(lines),
@@ -236,6 +243,7 @@ def fetch_cmd(
                     source = release.get("url")
                     if not source:
                         source = f"https://github.com/{owner}/{repo_name}/releases/tag/{tag}"
+                    record_source(source)
                     click.echo(f"- {tag} ({published})\n  Source: {source}")
                 if len(releases) > 30:
                     click.echo("... more results available; use scout release --limit 31")
@@ -272,7 +280,9 @@ def fetch_cmd(
                 github_max = min(max_chars, DEFAULT_SCOUT_MAX_CHARS)
                 if github_max <= 0:
                     github_max = DEFAULT_SCOUT_MAX_CHARS
-                click.echo(truncate_output(output, github_max))
+                rendered = truncate_output(output, github_max)
+                record_visible_sources(rendered, [url])
+                click.echo(rendered)
                 return
 
             elif len(parts) >= 4 and parts[2] == "commit":
@@ -314,6 +324,7 @@ def fetch_cmd(
                             f"({f.get('status', 'modified')}, +{additions} -{deletions})"
                         )
                     lines.append("\nPatches omitted; use scout commit --patch for bounded diffs.")
+                record_source(url)
                 click.echo(
                     truncate_output(
                         "\n".join(lines),
@@ -345,6 +356,7 @@ def fetch_cmd(
 
     cached = read_cached_content(base_url)
     if cached is not None:
+        budget_cache_hit(cache, base_url)
         markdown = cached
     else:
         budget_reserve(cache, base_url, critical=critical)
@@ -375,4 +387,5 @@ def fetch_cmd(
     if offset > 0:
         output = f"[starting at char offset {offset}; total length {total_len}]\n\n" + output
 
+    record_source(url)
     click.echo(truncate_output(output, max_chars), nl=False)

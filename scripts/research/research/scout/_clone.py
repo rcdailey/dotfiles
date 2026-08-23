@@ -95,21 +95,20 @@ def _do_pull_if_stale(repo_dir: Path, owner: str, repo: str) -> None:
         check=False,
     )
     if result.returncode != 0:
-        click.echo(
-            f"warning: git fetch failed: {result.stderr.strip()}",
-            err=True,
-        )
-        marker.touch()
-        return
+        click.echo(f"error: git fetch failed: {result.stderr.strip()}", err=True)
+        sys.exit(1)
     # Reset to fetched HEAD; safe for read-only clones and robust against
     # force-pushes that break --ff-only on shallow histories.
-    subprocess.run(
+    reset = subprocess.run(
         ["git", "reset", "--hard", "FETCH_HEAD"],
         cwd=repo_dir,
         capture_output=True,
         text=True,
         check=False,
     )
+    if reset.returncode != 0:
+        click.echo(f"error: git reset failed: {reset.stderr.strip()}", err=True)
+        sys.exit(1)
     marker.touch()
 
 

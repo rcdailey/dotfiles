@@ -19,6 +19,7 @@ from research._render import (
     section_heading,
     truncate_output,
 )
+from research._source_ledger import record_sources, record_visible_sources
 from research.scout import cli
 from research.scout._common import (
     die,
@@ -62,6 +63,10 @@ def commits(
         click.echo("No commits found")
         return
     shown, has_more = take_limited(commits_list, limit)
+    record_sources(
+        item.get("html_url") or github_url(owner, name, "commit", item.get("sha", "N/A"))
+        for item in shown
+    )
     for c in shown:
         sha = c.get("sha", "N/A")
         click.echo(
@@ -99,6 +104,11 @@ def commit(repo: str, sha: str, patch: bool, path: str | None, max_chars: int) -
     commit_obj = data.get("commit", {})
     committer = commit_obj.get("committer", {})
     author = commit_obj.get("author", {})
+    source = data.get("html_url") or github_url(owner, name, "commit", resolved_sha)
+    pull_sources = [
+        pull.get("html_url") or github_url(owner, name, "pull", pull.get("number", "N/A"))
+        for pull in pulls
+    ]
 
     lines = [
         f"## Commit {resolved_sha[:8]}\n",
@@ -106,7 +116,7 @@ def commit(repo: str, sha: str, patch: bool, path: str | None, max_chars: int) -
         kv_line("Author", author.get("name", "N/A")),
         kv_line(
             "Source",
-            data.get("html_url") or github_url(owner, name, "commit", resolved_sha),
+            source,
         ),
         "",
     ]
@@ -144,13 +154,13 @@ def commit(repo: str, sha: str, patch: bool, path: str | None, max_chars: int) -
             lines.append("\nPatches omitted; rerun with --patch and optionally --path PATH.")
     elif path:
         lines.append(f"\nNo changed files matched path: {path}")
-    click.echo(
-        truncate_output(
-            "\n".join(lines),
-            max_chars,
-            "narrow patches with --path PATH",
-        )
+    rendered = truncate_output(
+        "\n".join(lines),
+        max_chars,
+        "narrow patches with --path PATH",
     )
+    record_visible_sources(rendered, [source, *pull_sources])
+    click.echo(rendered)
 
 
 @cli.command()
@@ -169,6 +179,10 @@ def history(repo: str, path: str, limit: int) -> None:
         return
     click.echo(f"## History for {path}\n")
     shown, has_more = take_limited(commits_list, limit)
+    record_sources(
+        item.get("html_url") or github_url(owner, name, "commit", item.get("sha", "N/A"))
+        for item in shown
+    )
     for c in shown:
         sha = c.get("sha", "N/A")
         click.echo(

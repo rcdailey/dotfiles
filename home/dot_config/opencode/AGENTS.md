@@ -48,4 +48,5 @@ rg --hidden -g "!**/.git/**"    # include dot-directories
 - Citations MUST be literal URLs fetched in the current session (via webfetch or a subagent's
   designated fetch tool). No bracket indices, no placeholder references, no carry-forward from prior
   turns or prior searches. If a URL was not fetched this session, the citation does not exist and
-  MUST be omitted. A missing citation beats an unverified one.
+  MUST be omitted. Search results and snippets are discovery only; they do not make linked URLs
+  citable. A missing citation beats an unverified one.

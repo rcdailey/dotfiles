@@ -19,7 +19,7 @@ def _session_key() -> str | None:
     return f"research:{session_id}:{_ERRORS_KEY}" if session_id else None
 
 
-def record_error(arguments: list[str], message: str) -> None:
+def record_error(arguments: list[str], message: str, kind: str = "retrieval") -> None:
     """Append one failed invocation to the active session ledger."""
     from research._cache import get_cache
 
@@ -27,7 +27,7 @@ def record_error(arguments: list[str], message: str) -> None:
     if key is None:
         return
     command = shlex.join(["research", *arguments])
-    entry = f"Tool: research\nInput: {command}\nError:\n{message.strip()}"
+    entry = f"Kind: {kind}\nTool: research\nInput: {command}\nError:\n{message.strip()}"
     cache = get_cache()
     with cache.transact():
         entries = list(cache.get(key, []))
@@ -76,7 +76,7 @@ def run_with_error_ledger(command: Callable[[], Any]) -> None:
     except SystemExit as error:
         if error.code not in (None, 0):
             message = recorder.getvalue() or f"command exited with status {error.code}"
-            _record_safely(sys.argv[1:], message)
+            _record_safely(sys.argv[1:], message, _error_kind(error.code, message))
         raise
     except BaseException as error:
         message = recorder.getvalue()
@@ -88,7 +88,16 @@ def run_with_error_ledger(command: Callable[[], Any]) -> None:
         sys.stderr = original_stderr
 
 
-def _record_safely(arguments: list[str], message: str) -> None:
+def _error_kind(code: object, message: str) -> str:
+    """Classify failures so expected guards are not confused with retrieval errors."""
+    if "CRITICAL RESERVE" in message or "BUDGET EXCEEDED" in message:
+        return "guard"
+    if code == 2 or "Usage:" in message:
+        return "usage"
+    return "retrieval"
+
+
+def _record_safely(arguments: list[str], message: str, kind: str = "retrieval") -> None:
     """Never replace the original command failure with a ledger failure."""
     with contextlib.suppress(Exception):
-        record_error(arguments, message)
+        record_error(arguments, message, kind)
