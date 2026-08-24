@@ -14,12 +14,6 @@
   redundant summaries, or boilerplate. This rule does not govern prompts sent to subagents.
 - Don't provide time estimates.
 
-## Skills
-
-MUST check the available skills list before any task. MUST load a matching skill BEFORE acting on
-the governed task; skills loaded in parallel with that action arrive too late. MUST load skills
-alone (never in parallel with other tool calls).
-
 ## Shell Search
 
 MUST use `rg` (ripgrep) over `grep`. MUST use `rg --files -g` over `find -name`. Both are enforced

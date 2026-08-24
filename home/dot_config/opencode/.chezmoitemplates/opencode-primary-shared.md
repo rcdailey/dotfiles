@@ -219,5 +219,4 @@ Compose the message in semantic order:
   does not match, stop; path and `-a` modes are only for an empty index.
 - Pass the smallest safe path set. Collapse files to a directory only when every change below it
   belongs in the commit; file and directory paths may be mixed.
-- For partial-file commits, load `hunk-staging` and follow it instead.
 - Follow repository commit rules and report the resulting short SHA and subject.
