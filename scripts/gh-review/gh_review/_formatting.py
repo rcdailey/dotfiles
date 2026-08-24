@@ -74,60 +74,103 @@ def _is_pending(comment: dict[str, Any]) -> bool:
     return (comment.get("pullRequestReview") or {}).get("state") == "PENDING"
 
 
-def format_review_threads(
-    threads: list[dict[str, Any]],
+def _comment_lines(
+    comment: dict[str, Any],
+    *,
+    indent: str,
+    max_body: int,
+    no_bots: bool,
+    node_id: bool = True,
+    extra_markers: str = "",
+) -> list[str] | None:
+    """Render one comment as attribution header plus indented body, or None if dropped."""
+    login, typename = _author_info(comment.get("author"))
+    processed = _format_body(
+        (comment.get("body") or "").strip(),
+        login,
+        typename,
+        max_body,
+        no_bots,
+    )
+    if processed is None:
+        return None
+
+    markers = (" [bot, sanitized]" if is_bot(login, typename) else "") + extra_markers
+    header = _comment_header(
+        login,
+        (comment.get("createdAt") or "")[:10],
+        markers,
+        comment.get("databaseId"),
+        indent,
+        comment.get("id") if node_id else None,
+    )
+    if not processed:
+        return [header]
+
+    body_lines = processed.splitlines()
+    if len(body_lines) == 1:
+        return [f"{header} {body_lines[0]}"]
+    return [header, *(f"{indent}  {bl}" for bl in body_lines)]
+
+
+def _thread_lines(thread: dict[str, Any], max_body: int, no_bots: bool) -> list[str]:
+    """Render one review thread: location header plus its comments."""
+    location = f"{thread.get('path', '?')} {_line_label(thread)}".strip()
+    lines: list[str] = []
+    for c in (thread.get("comments") or {}).get("nodes", []):
+        extra = PENDING_MARKER if _is_pending(c) else ""
+        rendered = _comment_lines(
+            c,
+            indent="    ",
+            max_body=max_body,
+            no_bots=no_bots,
+            extra_markers=extra,
+        )
+        if rendered is not None:
+            lines.extend(rendered)
+    if not lines:
+        return []
+    return [f"  [{_thread_status(thread)}] {location}", *lines]
+
+
+def format_reviews(
+    groups: list[tuple[dict[str, Any] | None, list[dict[str, Any]]]],
     max_body: int,
     no_bots: bool,
 ) -> str:
-    """Format review threads as prose output."""
-    if not threads:
-        return "no review threads"
-
-    lines: list[str] = []
-    for t in threads:
-        status = _thread_status(t)
-        path = t.get("path", "?")
-        line_label = _line_label(t)
-        location = f"{path} {line_label}".strip()
-
-        lines.append(f"\n[{status}] {location}")
-
-        comments = (t.get("comments") or {}).get("nodes", [])
-        for c in comments:
-            login, typename = _author_info(c.get("author"))
-            raw_body = (c.get("body") or "").strip()
-            created = (c.get("createdAt") or "")[:10]
-            db_id = c.get("databaseId")
-
-            processed = _format_body(
-                raw_body,
-                login,
-                typename,
-                max_body,
-                no_bots,
+    """Format reviews with their inline threads nested under each review."""
+    blocks: list[str] = []
+    for review, threads in groups:
+        lines: list[str] = []
+        if review is not None:
+            if not (review.get("body") or "").strip() and not threads:
+                continue
+            state = (review.get("state") or "").lower()
+            rendered = _comment_lines(
+                review,
+                indent="",
+                max_body=max_body,
+                no_bots=no_bots,
+                node_id=False,
+                extra_markers=f" [{state}]" if state else "",
             )
-            if processed is None:
+            if rendered is None and not threads:
                 continue
+            if rendered is not None:
+                lines.extend(rendered)
 
-            bot = is_bot(login, typename)
-            markers = " [bot, sanitized]" if bot else ""
-            if _is_pending(c):
-                markers += PENDING_MARKER
-            header = _comment_header(login, created, markers, db_id, "  ", c.get("id"))
-
-            if not processed:
-                lines.append(header)
+        for t in threads:
+            thread_lines = _thread_lines(t, max_body, no_bots)
+            if not thread_lines:
                 continue
+            if lines:
+                lines.append("")
+            lines.extend(thread_lines)
 
-            body_lines = processed.splitlines()
-            if len(body_lines) == 1:
-                lines.append(f"{header} {body_lines[0]}")
-            else:
-                lines.append(header)
-                for bl in body_lines:
-                    lines.append(f"    {bl}")
+        if lines:
+            blocks.append("\n".join(lines))
 
-    return "\n".join(lines)
+    return "\n\n".join(blocks) if blocks else "no reviews"
 
 
 def format_conversation_comments(
@@ -141,86 +184,17 @@ def format_conversation_comments(
 
     lines: list[str] = []
     for c in comments:
-        login, typename = _author_info(c.get("author"))
-        raw_body = (c.get("body") or "").strip()
-        created = (c.get("createdAt") or "")[:10]
-        db_id = c.get("databaseId")
-
-        processed = _format_body(
-            raw_body,
-            login,
-            typename,
-            max_body,
-            no_bots,
+        rendered = _comment_lines(
+            c,
+            indent="",
+            max_body=max_body,
+            no_bots=no_bots,
+            node_id=False,
         )
-        if processed is None:
-            continue
-
-        bot = is_bot(login, typename)
-        bot_marker = " [bot, sanitized]" if bot else ""
-        header = _comment_header(login, created, bot_marker, db_id, "")
-
-        if not processed:
-            lines.append(header)
-            continue
-
-        body_lines = processed.splitlines()
-        if len(body_lines) == 1:
-            lines.append(f"{header} {body_lines[0]}")
-        else:
-            lines.append(header)
-            for bl in body_lines:
-                lines.append(f"  {bl}")
+        if rendered is not None:
+            lines.extend(rendered)
 
     return "\n".join(lines) if lines else "no conversation comments"
-
-
-def format_review_bodies(
-    reviews: list[dict[str, Any]],
-    max_body: int,
-    no_bots: bool,
-) -> str:
-    """Format top-level review body comments (the summary left on a review submission)."""
-    if not reviews:
-        return "no review comments"
-
-    lines: list[str] = []
-    for r in reviews:
-        login, typename = _author_info(r.get("author"))
-        raw_body = (r.get("body") or "").strip()
-        created = (r.get("createdAt") or "")[:10]
-        db_id = r.get("databaseId")
-        state = (r.get("state") or "").lower()
-
-        processed = _format_body(
-            raw_body,
-            login,
-            typename,
-            max_body,
-            no_bots,
-        )
-        if processed is None:
-            continue
-
-        bot = is_bot(login, typename)
-        bot_marker = " [bot, sanitized]" if bot else ""
-        state_marker = f" [{state}]" if state else ""
-        id_suffix = f" #{db_id}" if db_id else ""
-        header = f"@{login} ({created}){bot_marker}{state_marker}{id_suffix}:"
-
-        if not processed:
-            lines.append(header)
-            continue
-
-        body_lines = processed.splitlines()
-        if len(body_lines) == 1:
-            lines.append(f"{header} {body_lines[0]}")
-        else:
-            lines.append(header)
-            for bl in body_lines:
-                lines.append(f"  {bl}")
-
-    return "\n".join(lines) if lines else "no review comments"
 
 
 def format_pending_reviews(reviews: list[dict[str, Any]], max_body: int) -> str:

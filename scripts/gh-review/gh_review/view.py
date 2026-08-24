@@ -13,8 +13,7 @@ from gh_review._errors import GhError, die
 from gh_review._formatting import (
     format_conversation_comments,
     format_pending_reviews,
-    format_review_bodies,
-    format_review_threads,
+    format_reviews,
 )
 from gh_review._gh import gh_graphql, split_repo
 from gh_review._sanitize import is_bot
@@ -168,9 +167,9 @@ def _filter_conversation(
             created = _parse_iso(c.get("createdAt", ""))
             if created < since:
                 continue
-        author = c.get("author") or {}
-        login = author.get("login", "")
-        typename = author.get("__typename", "")
+        comment_author = c.get("author") or {}
+        login = comment_author.get("login", "")
+        typename = comment_author.get("__typename", "")
         if no_bots and is_bot(login, typename):
             continue
         result.append(c)
@@ -184,26 +183,50 @@ def _filter_review_bodies(
     no_bots: bool,
     author: str | None,
 ) -> list[dict[str, Any]]:
-    """Filter reviews to those with a non-empty body, excluding pending."""
+    """Filter submitted reviews whose body should be shown."""
     result = []
     for r in reviews:
         if r.get("state") == "PENDING":
             continue
         if author and _login(r) != author:
             continue
-        if not (r.get("body") or "").strip():
-            continue
         if since:
             created = _parse_iso(r.get("createdAt", ""))
             if created < since:
                 continue
-        author = r.get("author") or {}
-        login = author.get("login", "")
-        typename = author.get("__typename", "")
+        review_author = r.get("author") or {}
+        login = review_author.get("login", "")
+        typename = review_author.get("__typename", "")
         if no_bots and is_bot(login, typename):
             continue
         result.append(r)
     return result
+
+
+def _group_reviews(
+    reviews: list[dict[str, Any]],
+    shown_review_ids: set[str],
+    threads: list[dict[str, Any]],
+) -> list[tuple[dict[str, Any] | None, list[dict[str, Any]]]]:
+    """Attach each thread to the review that created it, preserving review order."""
+    by_review: dict[str, list[dict[str, Any]]] = {}
+    orphans: list[dict[str, Any]] = []
+    for t in threads:
+        comments = (t.get("comments") or {}).get("nodes", [])
+        first = comments[0] if comments else {}
+        review_id = (first.get("pullRequestReview") or {}).get("id")
+        if review_id:
+            by_review.setdefault(review_id, []).append(t)
+            continue
+        orphans.append(t)
+
+    groups: list[tuple[dict[str, Any] | None, list[dict[str, Any]]]] = []
+    for r in reviews:
+        review = r if r.get("id") in shown_review_ids else {**r, "body": ""}
+        groups.append((review, by_review.get(r.get("id"), [])))
+    if orphans:
+        groups.append((None, orphans))
+    return groups
 
 
 @click.command()
@@ -331,17 +354,16 @@ def cli(
         if pending_out:
             click.echo(f"\n{pending_out}")
 
-        # Review comments (top-level body on a review submission)
-        if review_bodies:
-            click.echo("\n--- review comments ---")
-            click.echo(format_review_bodies(review_bodies, max_body, no_bots))
-
-        # Review threads
-        click.echo("\n--- review threads ---")
-        click.echo(format_review_threads(threads, max_body, no_bots))
+        # Reviews, each with its inline threads nested underneath
+        submitted = [r for r in all_reviews if r.get("state") != "PENDING"]
+        shown_review_ids = {r.get("id") for r in review_bodies if r.get("id")}
+        click.echo("\n--- reviews ---\n")
+        click.echo(
+            format_reviews(_group_reviews(submitted, shown_review_ids, threads), max_body, no_bots)
+        )
 
         # Conversation comments
-        click.echo("\n--- conversation comments ---")
+        click.echo("\n--- conversation comments ---\n")
         click.echo(format_conversation_comments(convo, max_body, no_bots))
 
     except GhError as exc:
