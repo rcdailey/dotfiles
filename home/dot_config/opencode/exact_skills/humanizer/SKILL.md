@@ -54,23 +54,32 @@ writing does not need artificial personality. It still needs natural rhythm and 
 
 ## Pattern catalog
 
-Look for clusters, not isolated words. Rewrite only patterns that are actually present.
+Look for clusters, not isolated words. Rewrite only patterns that are actually present. Preserve
+every source claim even when changing depth or structure. Never add or remove a fact, name, number,
+date, quote, citation, ranking, or other claim. Ask for a missing detail or use a simpler sentence.
+Fiction is exempt when invention is part of the task.
 
-### 1. Undue emphasis on significance, legacy, and broader trends
+Rewrite from the point instead of patching one watched phrase at a time. If a sentence stays
+awkward, rewrite the paragraph around its main point.
 
-**Watch for:** `stands as`, `serves as`, `testament`, `pivotal`, `crucial`, `underscores`, `reflects
-broader`, `symbolizing`, `setting the stage`, `evolving landscape`, `indelible mark`.
+### 1. Inflated claims about importance and legacy
+
+**Watch for:** `stands as`, `serves as`, `testament`, `reminder`, `vital`, `significant`, `crucial`,
+`pivotal`, or `key` roles and moments; `underscores` or `highlights` importance; `reflects broader`,
+`symbolizing`, `contributing to`, `setting the stage`, `marking`, `shaping`, `marks a shift`,
+`represents a shift`, `turning point`, `evolving landscape`, `focal point`, `indelible mark`, and
+`deeply rooted`.
 
 **Problem:** The text inflates an ordinary fact into evidence of importance or a wider trend.
 
 > Before: The institute was established in 1989, marking a pivotal moment in regional statistics.
 >
-> After: The institute was established in 1989 as part of Spain's administrative decentralization.
+> After: The institute was established in 1989.
 
-### 2. Undue emphasis on notability and media coverage
+### 2. Name-dropping to prove importance
 
-**Watch for:** `independent coverage`, lists of media outlets, `leading expert`, and follower
-counts.
+**Watch for:** `independent coverage`, lists of local, regional, or national media outlets, `written
+by a leading expert`, `active social media presence`, and follower counts.
 
 **Problem:** The text asserts notability by listing coverage instead of explaining relevant context.
 
@@ -80,7 +89,7 @@ counts.
 
 Keep real context supplied by the source. Never invent what someone said to improve a citation.
 
-### 3. Superficial analysis with `-ing` endings
+### 3. Shallow analysis with -ing phrases
 
 **Watch for:** `highlighting`, `underscoring`, `ensuring`, `reflecting`, `symbolizing`,
 `contributing`, `cultivating`, `fostering`, `encompassing`, and `showcasing`.
@@ -92,54 +101,66 @@ Keep real context supplied by the source. Never invent what someone said to impr
 >
 > After: The palette uses blue and gold to evoke the region.
 
-### 4. Promotional language
+### 4. Sales language
 
-**Watch for:** `boasts`, `vibrant`, `rich`, `profound`, `showcasing`, `exemplifies`, `renowned`,
-`breathtaking`, `must-visit`, `stunning`, `nestled`, and figurative `groundbreaking`.
+**Watch for:** `boasts`, `vibrant`, figurative `rich`, `profound`, `enhancing its`, `showcasing`,
+`exemplifies`, `commitment to`, `natural beauty`, `nestled`, `in the heart of`, figurative
+`groundbreaking`, `renowned`, `breathtaking`, `must-visit`, and `stunning`.
 
 **Problem:** The prose sounds like an advertisement instead of describing concrete qualities.
 
-> Before: Nestled in a breathtaking region, the vibrant town has a rich cultural heritage.
+> Before: Nestled in Ethiopia's breathtaking Gonder region, the vibrant town has a rich cultural
+> heritage.
 >
 > After: The town is in the Gonder region of Ethiopia.
 
-### 5. Vague attributions and weasel words
+### 5. Vague sources
 
 **Watch for:** `industry reports`, `observers have cited`, `experts argue`, `some critics argue`,
-and `several sources` when no specific source is named.
+and `several sources` or `several publications` when no specific source is named.
 
 **Problem:** The text lends authority to a claim without identifying who made it.
 
-> Before: Experts believe the river plays a crucial role in the regional ecosystem.
+> Before: Researchers study the river's unusual characteristics. Experts believe it plays a crucial
+> role in the regional ecosystem.
 >
-> After: Researchers and conservationists study the river for its unusual characteristics.
+> After: Researchers study the river's unusual characteristics.
 
-Name a real source when the input provides one. Otherwise cut or generalize the unsupported claim.
+Name a real source when the input provides one. Otherwise remove the unsupported claim. Never invent
+a source.
 
-### 6. Formulaic challenge and future-prospect sections
+### 6. Formulaic challenges and outlook sections
 
 **Watch for:** `Despite its... faces several challenges`, `Despite these challenges`, `Challenges
 and Legacy`, and `Future Outlook`.
 
 **Problem:** A stock challenges paragraph ends with vague optimism instead of concrete information.
 
-> Before: Despite its prosperity, the city faces challenges but continues to thrive.
+> Before: Despite recurring traffic congestion and water shortages, the prosperous city continues to
+> thrive.
 >
 > After: The city has recurring traffic congestion and water shortages.
 
-### 7. Overused AI vocabulary
+Add dates, actions, or other specifics only when they come from the source or the user.
 
-**Watch for:** `additionally`, `align with`, `crucial`, `delve`, `enduring`, `enhance`, `fostering`,
-`garner`, `interplay`, `intricate`, `pivotal`, `showcase`, `tapestry`, `testament`, `underscore`,
-`valuable`, `vibrant`, and abstract uses of `landscape`.
+### 7. Overused AI words
+
+**Watch for:** `actually`, `additionally`, `align with`, `crucial`, `delve`, `emphasizing`,
+`enduring`, `enhance`, `fostering`, `garner`, figurative `gate`, `gated`, or `gating`, and
+`highlight` as a verb. Also watch for `interplay`, `intricate`, `key` as an adjective, abstract
+`landscape`, `pivotal`, `quietly`, `showcase`, `tapestry`, `testament`, `underscore` as a verb,
+`valuable`, and `vibrant`.
 
 **Problem:** These words often cluster in generic post-2023 prose and replace simpler language.
 
-> Before: Additionally, pasta is an enduring testament to influence on the culinary landscape.
+> Before: Additionally, pasta introduced during Italian colonization remains part of Somali cuisine,
+> an enduring testament to influence on the culinary landscape.
 >
-> After: Pasta, introduced during Italian colonization, remains common in southern Somalia.
+> After: Pasta introduced during Italian colonization remains part of Somali cuisine.
 
-### 8. Avoidance of `is` and `are`
+Preserve established technical uses of `gate`, such as gating a release on a test result.
+
+### 8. Avoiding is and are
 
 **Watch for:** `serves as`, `stands as`, `marks`, `represents`, `boasts`, `features`, and `offers`.
 
@@ -149,7 +170,7 @@ and Legacy`, and `Future Outlook`.
 >
 > After: Gallery 825 is the exhibition space. It has four rooms.
 
-### 9. Negative parallelisms and tailing negations
+### 9. Not X but Y and clipped negative endings
 
 **Watch for:** `not only...but`, `not just X, but Y`, `not merely`, and clipped endings such as `no
 guessing` or `no wasted motion`.
@@ -160,7 +181,7 @@ guessing` or `no wasted motion`.
 >
 > After: The heavy beat adds to the aggressive tone without wasting time.
 
-### 10. Rule-of-three overuse
+### 10. Forced groups of three
 
 **Problem:** The text repeatedly forces ideas into groups of three to sound comprehensive.
 
@@ -169,15 +190,25 @@ guessing` or `no wasted motion`.
 >
 > After: The event includes talks and panels, with time for informal networking.
 
-### 11. Elegant variation
+### 11. Changing names and repeating sentence openings
 
-**Problem:** The prose cycles through synonyms to avoid repeating the clearest noun.
+**Problem:** The prose manages repetition by rule instead of by ear. It may cycle through synonyms
+for one subject or begin several sentences with the same subject without rhetorical purpose.
 
 > Before: The protagonist faces challenges. The main character overcomes obstacles. The hero wins.
 >
 > After: The protagonist faces several challenges but eventually wins.
 
-### 12. False ranges
+The same pattern can appear without synonym cycling:
+
+> Before: She noted the door. She noted its lock. She filed both away.
+>
+> After: She noted the door and its lock, then filed both away.
+
+Do not ban a repeated word or deliberate anaphora used for rhythm or pressure. Fix only repetition
+that adds nothing; merge sentences, change the subject, or begin with the action.
+
+### 12. False from X to Y ranges
 
 **Problem:** A `from X to Y` construction joins items that are not endpoints on a meaningful scale.
 
@@ -186,7 +217,7 @@ guessing` or `no wasted motion`.
 >
 > After: The book covers the Big Bang, star formation, and theories about dark matter.
 
-### 13. Passive voice and subjectless fragments
+### 13. Passive voice and missing subjects
 
 **Problem:** The text hides the actor or drops the subject when naming it would be clearer.
 
@@ -196,7 +227,7 @@ guessing` or `no wasted motion`.
 
 Passive voice is fine when the actor is unknown or irrelevant.
 
-### 14. Em dashes and en dashes
+### 14. Em and en dashes
 
 **Rule:** The final text contains no em or en dashes unless an authentic user sample establishes
 that they belong to the author's voice. Replace them with a period, comma, colon, parentheses, or a
@@ -206,7 +237,7 @@ restructured sentence. Treat double hyphens used as em dashes the same way.
 >
 > After: The policy, announced without warning, affects thousands of workers.
 
-### 15. Overuse of boldface
+### 15. Too much bold text
 
 **Problem:** The text mechanically emphasizes terms that do not need visual prominence.
 
@@ -214,7 +245,7 @@ restructured sentence. Treat double hyphens used as em dashes the same way.
 >
 > After: It blends OKRs, KPIs, and the Business Model Canvas.
 
-### 16. Inline-header vertical lists
+### 16. Lists with bold mini-headings
 
 **Problem:** Ordinary prose is broken into bullets with bold labels and colons.
 
@@ -232,13 +263,14 @@ Keep lists when the items are genuinely enumerable or easier to use separately.
 >
 > After: Strategic negotiations and global partnerships
 
-### 18. Decorative emoji
+### 18. Emojis
 
 **Problem:** Emoji decorate headings or bullets without carrying meaning.
 
-> Before: Launch phase 🚀 Key insight 💡 Next steps ✅
+> Before: 🚀 Launch phase: the product launches in Q3. 💡 Key insight: users prefer simplicity. ✅
+> Next steps: schedule a follow-up meeting.
 >
-> After: Launch phase. Users prefer simplicity. Next step: schedule a follow-up.
+> After: The product launches in Q3. Users prefer simplicity. Next step: schedule a follow-up.
 
 ### 19. Curly quotation marks
 
@@ -248,21 +280,23 @@ Keep lists when the items are genuinely enumerable or easier to use separately.
 >
 > After: She said "the project is on track."
 
-### 20. Collaborative communication artifacts
+### 20. Chatbot text left in the answer
 
 **Watch for:** `I hope this helps`, `Of course`, `Certainly`, `You're absolutely right`, `Would you
-like`, `Want me to`, `Should I continue`, and generic `let me know`.
+like`, `Want me to`, `Should I continue`, generic `let me know`, and `here is a`.
 
 **Problem:** Chatbot conversation management leaks into the artifact.
 
-> Before: Here is an overview. I hope this helps! Let me know if you'd like more.
+> Before: Here is an overview: the French Revolution began in 1789 amid financial crisis and food
+> shortages. I hope this helps! Let me know if you'd like more.
 >
 > After: The French Revolution began in 1789 amid financial crisis and food shortages.
 
-### 21. Knowledge-cutoff disclaimers and speculative gap-filling
+### 21. Knowledge-limit disclaimers and guesses
 
 **Watch for:** `as of`, `up to my last training update`, `specific details are limited`, `based on
-available information`, `maintains a low profile`, `likely`, `it is believed`, and similar guesses.
+available information`, `not publicly available`, `maintains a low profile`, `keeps personal details
+private`, `prefers to stay out of the spotlight`, `likely`, `it is believed`, and similar guesses.
 
 **Problem:** The text discusses missing knowledge, then fills the gap with plausible invention.
 
@@ -273,11 +307,12 @@ available information`, `maintains a low profile`, `likely`, `it is believed`, a
 
 State what is unknown or omit it. Never decorate a gap with an invented fact.
 
-### 22. Sycophantic or servile tone
+### 22. Overly agreeable tone
 
 **Problem:** The text praises or agrees with the reader before addressing the substance.
 
-> Before: Great question! You're absolutely right that this is a complex topic.
+> Before: Great question! You're absolutely right that this is complex. That's an excellent point
+> about the economic factors.
 >
 > After: The economic factors you mentioned are relevant here.
 
@@ -286,19 +321,26 @@ State what is unknown or omit it. Never decorate a gap with an invented fact.
 **Watch for:** `in order to`, `due to the fact that`, `at this point in time`, `in the event that`,
 `has the ability to`, and `it is important to note`.
 
+**Problem:** Stock padding makes a simple statement longer without adding meaning.
+
 > Before: In order to process the request, the system has the ability to validate the input.
 >
 > After: To process the request, the system validates the input.
 
-### 24. Excessive hedging
+### 24. Too many qualifiers
 
-**Problem:** Several qualifiers weaken one uncertain claim.
+**Watch for:** `to be fair`, `it's also possible`, `could potentially`, `might arguably`, `in some
+cases it may`, and `this is an inference`.
+
+**Problem:** Repeated editing can stack qualifiers until every claim sounds uncertain. Keep one
+honest qualifier when the source and meaning require it. Remove caveats that only repair an earlier
+overstatement.
 
 > Before: It could potentially possibly be argued that the policy might affect outcomes.
 >
 > After: The policy may affect outcomes.
 
-### 25. Generic positive conclusions
+### 25. Generic positive endings
 
 **Problem:** The text ends with vague optimism instead of the final concrete fact.
 
@@ -306,10 +348,10 @@ State what is unknown or omit it. Never decorate a gap with an invented fact.
 >
 > After: Cut the paragraph, or end with a real plan stated in the source.
 
-### 26. Hyphenated word-pair overuse
+### 26. Too many hyphenated word pairs
 
 **Watch for:** `third-party`, `cross-functional`, `client-facing`, `data-driven`, `decision-making`,
-`high-quality`, `real-time`, `long-term`, and `end-to-end`.
+`well-known`, `high-quality`, `real-time`, `long-term`, and `end-to-end`.
 
 **Problem:** Compounds are hyphenated mechanically, including after the noun.
 
@@ -319,29 +361,37 @@ State what is unknown or omit it. Never decorate a gap with an invented fact.
 
 Keep conventional attributive hyphens, as in `a high-quality report`.
 
-### 27. Persuasive-authority tropes
+### 27. Pretending to reveal a deeper truth
 
 **Watch for:** `the real question`, `at its core`, `in reality`, `what really matters`,
 `fundamentally`, `the deeper issue`, and `the heart of the matter`.
 
 **Problem:** The prose claims special insight before stating an ordinary point.
 
-> Before: The real question is whether teams can adapt. At its core, readiness is what matters.
+> Before: The real question is whether teams can adapt. At its core, organizational readiness is
+> what matters.
 >
-> After: Whether teams adapt depends on whether the organization is ready to change its habits.
+> After: Whether teams adapt depends on whether the organization is ready.
 
-### 28. Signposting and announcements
+### 28. Announcing the next point
 
 **Watch for:** `let's dive in`, `let's explore`, `let's break this down`, `here's what you need to
-know`, `now let's look at`, and `without further ado`.
+know`, `now let's look at`, `without further ado`, `heads up`, `quick note`, and `before I forget`.
 
-**Problem:** The text announces what it will explain instead of explaining it.
+**Problem:** The text announces what it will explain instead of explaining it. Casual framing such
+as `one thing that bit me` has the same problem; remove the announcement, not just its formal tone.
 
-> Before: Let's dive into caching. Here's what you need to know.
+> Before: Let's dive into how Next.js caches data at several layers. Here's what you need to know.
 >
 > After: Next.js caches data at several layers.
 
-### 29. Fragmented headers
+The same rule applies in a casual register:
+
+> Before: One thing that bit me, so pay attention: the dev server omits the CORS header by default.
+>
+> After: The dev server omits the CORS header by default.
+
+### 29. A heading repeated in the first sentence
 
 **Problem:** A heading is followed by a warm-up sentence that merely repeats it.
 
@@ -349,36 +399,40 @@ know`, `now let's look at`, and `without further ado`.
 >
 > After: Performance. Slow pages make users leave.
 
-### 30. Diff-anchored writing
+### 30. Writing about the previous version
 
 **Problem:** Documentation narrates a change instead of describing the current behavior.
 
-> Before: This function was added to replace iteration, which caused O(n²) performance.
+> Before: This function was added to use a hash map for O(1) lookups instead of O(n²) iteration.
 >
 > After: This function uses a hash map for O(1) lookups instead of O(n²) iteration.
 
 Change narration is appropriate in changelogs, release notes, and migration guides.
 
-### 31. Manufactured punchlines and staccato drama
+### 31. Forced punchlines and dramatic fragments
 
 **Problem:** Several short declarations are stacked to make an ordinary point sound dramatic.
 
-> Before: Then AlphaEvolve arrived. No symmetry. No nostalgia. The old rules were gone.
+> Before: AlphaEvolve changed the search. No preference for symmetry. No nostalgia for human-looking
+> designs. The old assumptions became less useful.
 >
-> After: AlphaEvolve changed the search because it did not favor symmetry or human-looking designs.
+> After: AlphaEvolve changed the search because it did not favor symmetry or human-looking designs,
+> which made older assumptions less useful.
 
-### 32. Aphorism formulas
+### 32. Formulaic sayings
 
 **Watch for:** `X is the Y of Z`, `X becomes a trap`, `not a tool but a mirror`, `the language of`,
 `the currency of`, and `the architecture of`.
 
 **Problem:** The text turns an ordinary claim into a reusable saying without adding precision.
 
-> Before: Symmetry is the language of trust. Efficiency becomes a trap.
+> Before: Predictable symmetric layouts are the language of trust. Workflow efficiency becomes a
+> trap when teams ignore how people use it.
 >
-> After: Symmetric layouts can feel predictable. Teams can over-optimize workflows.
+> After: Symmetric layouts can feel predictable. Teams can over-optimize workflows and ignore how
+> people use them.
 
-### 33. Conversational rhetorical openers
+### 33. Fake-candid openings
 
 **Watch for:** standalone `Honestly?`, `Look`, `Here's the thing`, `The thing is`, `Let's be
 honest`, and `Real talk`.
@@ -389,23 +443,64 @@ honest`, and `Real talk`.
 >
 > After: Whether it is worth the price depends on how often you will use it.
 
+### 34. Answering objections no one raised
+
+**Watch for:** `this isn't mainly about`, `this isn't really about`, `I'm not saying`, `I'm not
+arguing`, `I'm not trying to`, `to be clear`, `don't get me wrong`, `this is not to say`, `you could
+argue`, `you could frame this differently`, and `some might say...but`.
+
+**Problem:** The prose answers an unattributed objection that never appears in the text, often by
+denying an aim or intent about a topic that appears nowhere else. A direct negative claim such as
+`the API is not thread-safe` is not this pattern.
+
+> Before: This isn't about prompt length, and I'm not arguing that documentation does not matter.
+> The issue is whether the agent can use the instruction when it acts.
+>
+> After: The issue is whether the agent can use the instruction when it acts.
+
+Remove only the unsupported defense. State any real claim directly. Keep useful scope limits, legal
+or safety notices, corrections, named objections, replies, and FAQ answers.
+
+### 35. Rejecting fake alternatives
+
+**Watch for:** `a tempting approach would be`, `one might be tempted to`, `an obvious approach would
+be`, `you might think...but`, `it would be easy to just`, and `some would suggest`.
+
+**Problem:** The prose introduces an option no reader would consider, rejects it in a clause, and
+never uses it again. This often preserves an abandoned idea from the drafting process instead of
+stating the real constraint.
+
+> Before: Tokens rotate every 24 hours. A tempting approach would restart the service, but that
+> would drop active sessions. Rotation happens in place, and clients refresh transparently.
+>
+> After: Tokens rotate every 24 hours in place, and clients refresh transparently.
+
+One rejected option may be real; several short, unrelated rejections are stronger evidence. Keep
+options a reader might consider in a design document, tutorial, or argument. If a sentence only
+records an earlier edit, rewrite the paragraph around its main point.
+
 ## Detection guidance
 
 Do not flag a phrase merely because it appears on a watch list. Look for clusters and consider the
 author's context. These are not reliable indicators on their own:
 
-- Correct grammar, consistent style, formal vocabulary, or complex formatting
+- Correct grammar, consistent style, formal or academic vocabulary, or complex formatting
 - Mixed casual and formal registers
 - Bland or dry prose without specific AI patterns
 - One transition word, short emphatic sentence, curly quote, or em dash
 - A greeting or sign-off in correspondence
-- Unsourced claims, unless the rewrite would invent support for them
+- Deliberate repeated openings used for rhythm or pressure
+- `Honestly` or `look` used naturally rather than as a standalone theatrical opener
+- Useful scope limits, disclaimers, corrections, named objections, replies, or FAQ answers
+- Real alternatives that a reader might consider and the text meaningfully evaluates
+- Unsourced claims; missing citations do not prove AI authorship
 - Watched phrases inside quotations, titles, proper names, or examples
 
 Preserve specific details, mixed feelings, uncertainty, era-bound references, varied sentence
 length, genuine asides, self-corrections, and first-person choices the author can defend. These are
 evidence of a person behind the writing. Over-editing them creates the same blandness this skill is
-meant to prevent.
+meant to prevent. Treat text written before ChatGPT's public launch on November 30, 2022, as human
+except in rare cases with contrary evidence.
 
 ## Internal process
 
