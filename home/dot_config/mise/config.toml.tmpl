@@ -1,3 +1,10 @@
+# The .tmpl extension is load-bearing despite this file containing no chezmoi
+# template syntax: it hides the source file from mise. Named config.toml, mise
+# loads this copy as a project config whenever cwd is at or below this
+# directory, then warns that trusted_config_paths and github.credential_command
+# are ignored (both are global-only settings). Rendering through chezmoi keeps
+# the target ~/.config/mise/config.toml the only name mise recognizes.
+
 [tools]
 age = "latest"
 cosign = "latest"
