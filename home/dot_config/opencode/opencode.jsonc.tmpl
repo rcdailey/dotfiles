@@ -62,6 +62,7 @@
 {{- end }}
   ],
   "provider": {
+{{- if eq .env "personal" }}
     "openai": {
       "models": {
         "gpt-5.6-sol": {
@@ -72,6 +73,7 @@
         },
       },
     },
+{{- else if eq .env "work" }}
     "anthropic": {
       "options": {
         // Disable hard timeout; extended thinking can exceed the 300s default
@@ -80,6 +82,7 @@
         "chunkTimeout": 60000,
       },
     },
+{{- end }}
   },
   "permission": {
     "*": "allow",
