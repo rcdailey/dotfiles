@@ -146,6 +146,51 @@ def _stage_files(files: list[str]) -> None:
     git("add", "-A", "--", *files)
 
 
+def _repo_relative(path: str, repo_root: Path) -> str:
+    """Express a caller path relative to the repository root."""
+    return os.path.relpath(os.path.abspath(path), repo_root)
+
+
+def _staged_paths() -> list[str]:
+    """List staged paths, representing a rename by its destination only.
+
+    A staged rename source no longer exists in the worktree or the index, so
+    `git add` cannot match it. Naming the destination is the only way a caller
+    can express a `git mv`, so the destination stands for the whole rename.
+    """
+    fields = [
+        os.fsdecode(field)
+        for field in git_bytes(
+            "diff", "--cached", "--name-status", "-z", "-M"
+        ).split(b"\0")
+        if field
+    ]
+    paths = []
+    index = 0
+    while index < len(fields):
+        status = fields[index]
+        # Rename and copy statuses carry a similarity score and two paths.
+        if status[0] in ("R", "C"):
+            paths.append(fields[index + 2])
+            index += 3
+            continue
+        paths.append(fields[index + 1])
+        index += 2
+    return paths
+
+
+def _uncovered_staged_paths(files: list[str], repo_root: Path) -> list[str]:
+    """Return staged paths the caller's file arguments do not account for."""
+    prefixes = [_repo_relative(f, repo_root) for f in files]
+    return [
+        path
+        for path in _staged_paths()
+        if not any(
+            path == prefix or path.startswith(f"{prefix}/") for prefix in prefixes
+        )
+    ]
+
+
 def format_message(
     subject: str,
     paragraphs: list[str],
@@ -278,14 +323,29 @@ def cmd_save(args: list[str]) -> None:
             print(f"error: {err}", file=sys.stderr)
         sys.exit(1)
 
+    repo_root = Path(git_output("rev-parse", "--show-toplevel").strip())
+
     staged = git("diff", "--cached", "--quiet", check=False, capture=True)
     if staged.returncode not in (0, 1):
         die(staged.stderr.strip() or "could not inspect the index")
-    if (has_files or args_parsed.a) and staged.returncode == 1:
-        die(
-            "index is not empty; inspect it, then use staged-only mode"
-            " or clear it explicitly"
+    if staged.returncode == 1:
+        if args_parsed.a:
+            die(
+                "index is not empty; inspect it, then use staged-only mode"
+                " or clear it explicitly"
+            )
+        uncovered = (
+            _uncovered_staged_paths(args_parsed.files, repo_root)
+            if has_files
+            else []
         )
+        if uncovered:
+            listing = "\n".join(f"  {path}" for path in uncovered)
+            die(
+                "index holds staged paths outside the files you named:\n"
+                f"{listing}\n"
+                "  name them too, use staged-only mode, or clear the index"
+            )
 
     message = format_message(subject, args_parsed.p, args_parsed.b, args_parsed.i)
 
@@ -326,7 +386,6 @@ def cmd_save(args: list[str]) -> None:
         index_backup = Path(index_backup_name)
         shutil.copy2(index_path, index_backup)
 
-        repo_root = Path(git_output("rev-parse", "--show-toplevel").strip())
         repository_state_before = _commit_state(repo_root)
         result = git("commit", "-F", msg_path, check=False, capture=True)
 
