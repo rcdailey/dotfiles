@@ -111,18 +111,11 @@ Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
 
 ### humanizer skill (upstream sync)
 
-`home/dot_config/opencode/exact_skills/humanizer/SKILL.md` is based on
-[blader/humanizer](https://github.com/blader/humanizer) with two local modifications that MUST
-survive upstream syncs:
-
-1. Tightened frontmatter description
-2. `User Voice Profile` section appended at the end, delimited by `BEGIN LOCAL ADDITION` / `END
-LOCAL ADDITION` HTML comment markers. It lives inside `SKILL.md` (not a sibling file) because
-   `mcp_skill` only injects `SKILL.md` content.
-
-To sync: extract the LOCAL ADDITION block, fetch upstream via `gh api`, drop upstream's Voice
-Calibration section, restore the tightened description, re-append the block. NEVER discard the block
-or merge its content into upstream sections; the markers MUST remain intact for future syncs.
+`home/dot_config/opencode/exact_skills/humanizer/SKILL.md` is a semantic compression of
+[blader/humanizer](https://github.com/blader/humanizer), not a verbatim copy. Use
+`.opencode/commands/sync-humanizer.md` as the authoritative sync procedure. MUST merge upstream
+detection behavior into the local structure; MUST NOT overwrite the skill. Preserve every
+local-owned section exactly, especially the marked `User Voice Profile` block.
 
 ## Constraints
 

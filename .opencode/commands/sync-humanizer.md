@@ -28,6 +28,7 @@ Show a summary of upstream changes and ask whether to proceed.
 Read the local skill. Capture these local-owned sections exactly:
 
 - YAML frontmatter
+- The document introduction from `# Humanizer` through the paragraph before `Choose the mode`
 - `Choose the mode`
 - `Core rules`
 - `Internal process`
@@ -49,12 +50,8 @@ Do not overwrite the local skill with this file.
 
 ### 5. Merge behavior
 
-Read the downloaded upstream skill, then delegate to a `general` subagent. Pass it:
-
-- The local and downloaded file paths
-- The local-owned sections captured in step 3
-- The merge contract below
-- Instruction to edit the local file surgically, never rewrite it wholesale
+Read the downloaded upstream skill, then merge it into the local file surgically. Never rewrite the
+local file wholesale.
 
 Merge contract:
 
@@ -85,8 +82,8 @@ Read the file yourself and verify:
   into local-owned sections
 - No double blank lines or formatting artifacts
 
-Run the repository checks that apply to the changed Markdown file. If issues remain, delegate
-mechanical corrections to the same subagent and review again.
+Run the repository checks that apply to the changed Markdown file. If issues remain, correct them
+and review again.
 
 ### 7. Report
 
@@ -99,5 +96,5 @@ changes. Call out upstream content intentionally omitted as duplication or runti
 - MUST preserve all local-owned sections, especially the marked user voice block
 - MUST preserve upstream detection behavior; effectiveness outranks token reduction
 - MUST NOT collapse numbered patterns into categories or remove their calibration examples
-- MUST delegate mechanical edits to a `general` subagent; review the result yourself
+- MUST edit the local skill surgically; MUST NOT overwrite it with the upstream file
 - MUST NOT commit changes; leave that to the user
