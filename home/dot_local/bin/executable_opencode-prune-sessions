@@ -1,0 +1,496 @@
+#!/usr/bin/env python3
+
+import argparse
+import base64
+import json
+import math
+import os
+import secrets
+import signal
+import socket
+import sqlite3
+import statistics
+import subprocess
+import sys
+import time
+from collections.abc import Iterator
+from contextlib import closing, contextmanager
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from urllib.error import HTTPError
+from urllib.parse import quote
+from urllib.request import Request, urlopen
+
+
+class CleanupError(Exception):
+    pass
+
+
+@dataclass(frozen=True)
+class Session:
+    id: str
+    title: str
+    updated: int
+    project_id: str
+    directory: str
+
+
+def positive_days(value: str) -> int:
+    try:
+        days = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("must be a whole number") from error
+
+    if days < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return days
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="opencode-prune-sessions",
+        description="Delete OpenCode sessions not updated within the given number of days.",
+    )
+    parser.add_argument("days", type=positive_days, help="minimum session age in days")
+    return parser.parse_args()
+
+
+def database_path() -> Path:
+    try:
+        result = subprocess.run(
+            ["opencode", "db", "path"],
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+    except FileNotFoundError as error:
+        raise CleanupError("opencode is not installed or not on PATH") from error
+    except subprocess.CalledProcessError as error:
+        detail = error.stderr.strip() or error.stdout.strip() or "unknown error"
+        raise CleanupError(f"could not locate the OpenCode database: {detail}") from error
+
+    path = result.stdout.strip()
+    if not path:
+        raise CleanupError("opencode returned an empty database path")
+    return Path(path).expanduser().resolve()
+
+
+def load_sessions(cutoff: int) -> list[Session]:
+    # The session CLI truncates large JSON results. Remove this direct database read when
+    # OpenCode provides pagination or native retention.
+    uri = f"{database_path().as_uri()}?mode=ro"
+    try:
+        with closing(sqlite3.connect(uri, uri=True)) as connection:
+            rows = connection.execute(
+                """
+                SELECT id, title, time_updated, project_id, directory
+                FROM session
+                WHERE parent_id IS NULL AND time_updated < ?
+                ORDER BY time_updated
+                """,
+                (cutoff,),
+            ).fetchall()
+    except sqlite3.Error as error:
+        raise CleanupError(f"could not read OpenCode sessions: {error}") from error
+
+    return [
+        Session(
+            id=row[0],
+            title=row[1],
+            updated=row[2],
+            project_id=row[3],
+            directory=row[4],
+        )
+        for row in rows
+    ]
+
+
+def format_updated(updated: int) -> str:
+    return datetime.fromtimestamp(updated / 1_000).astimezone().isoformat(timespec="seconds")
+
+
+def confirm_deletion(sessions: list[Session], days: int) -> bool:
+    print(f"Found {len(sessions)} session(s) not updated in more than {days} days:")
+    candidates = [("Oldest", sessions[0])]
+    if len(sessions) > 1:
+        candidates.append(("Newest", sessions[-1]))
+    for label, session in candidates:
+        title = json.dumps(session.title, ensure_ascii=False)
+        print(f"{label}: {format_updated(session.updated)}  {session.id}  {title}")
+
+    try:
+        answer = input(f"\nDelete these {len(sessions)} session(s)? [y/N] ")
+    except EOFError:
+        return False
+    return answer.strip().lower() in {"y", "yes"}
+
+
+def available_port() -> int:
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        return listener.getsockname()[1]
+
+
+def wait_for_server(process: subprocess.Popen[bytes], port: int) -> None:
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise CleanupError(f"temporary OpenCode server exited with status {process.returncode}")
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                return
+        except OSError:
+            time.sleep(0.05)
+    raise CleanupError("temporary OpenCode server did not start")
+
+
+@contextmanager
+def deletion_server(server_log_path: Path) -> Iterator[tuple[str, str, int]]:
+    port = available_port()
+    password = secrets.token_urlsafe(32)
+    environment = os.environ | {
+        "OPENCODE_SERVER_USERNAME": "opencode",
+        "OPENCODE_SERVER_PASSWORD": password,
+    }
+    credential = base64.b64encode(f"opencode:{password}".encode()).decode()
+    previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT})
+    signals_restored = False
+    process = None
+    try:
+        try:
+            server_log = server_log_path.open("w", encoding="utf-8")
+        except OSError as error:
+            raise CleanupError(f"could not open the OpenCode server log: {error}") from error
+
+        try:
+            try:
+                process = subprocess.Popen(
+                    [
+                        "opencode",
+                        "serve",
+                        "--hostname",
+                        "127.0.0.1",
+                        "--port",
+                        str(port),
+                        "--print-logs",
+                        "--log-level",
+                        "INFO",
+                    ],
+                    stdout=server_log,
+                    stderr=subprocess.STDOUT,
+                    env=environment,
+                    start_new_session=True,
+                )
+            except OSError as error:
+                message = f"could not start a temporary OpenCode server: {error}"
+                raise CleanupError(message) from error
+
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
+            signals_restored = True
+            wait_for_server(process, port)
+            yield f"http://127.0.0.1:{port}", f"Basic {credential}", process.pid
+        finally:
+            server_log.close()
+    finally:
+        if process is not None and process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+        if not signals_restored:
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
+
+
+def request_json(
+    url: str,
+    authorization: str,
+    method: str,
+    timeout: float,
+) -> tuple[object | None, str | None]:
+    request = Request(
+        url,
+        headers={"Authorization": authorization},
+        method=method,
+    )
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            result = json.loads(response.read())
+    except HTTPError as error:
+        detail = error.read().decode(errors="replace").strip()
+        return None, detail or f"HTTP {error.code}"
+    except (OSError, json.JSONDecodeError) as error:
+        return None, str(error)
+    return result, None
+
+
+def prime_server(base_url: str, authorization: str) -> str | None:
+    # OpenCode 1.18.23 stalls its first HTTP request but becomes responsive after
+    # that request is canceled. Remove this workaround once the first health check
+    # completes normally on the supported OpenCode version.
+    result, error = request_json(
+        f"{base_url}/global/health",
+        authorization,
+        "GET",
+        0.25,
+    )
+    if error == "timed out":
+        return None
+    if error is not None:
+        return error
+    if not isinstance(result, dict):
+        return "OpenCode returned an unexpected health response"
+    return None
+
+
+def request_session(
+    base_url: str,
+    authorization: str,
+    session_id: str,
+    method: str,
+    timeout: int,
+) -> tuple[object | None, str | None]:
+    url = f"{base_url}/session/{quote(session_id, safe='')}"
+    return request_json(url, authorization, method, timeout)
+
+
+def warm_instance(base_url: str, authorization: str, directory: str) -> str | None:
+    encoded_directory = quote(directory, safe="")
+    url = f"{base_url}/config?directory={encoded_directory}"
+    result, error = request_json(url, authorization, "GET", 300)
+    if error is not None:
+        return error
+    if not isinstance(result, dict):
+        return "OpenCode returned an unexpected instance initialization response"
+    return None
+
+
+def delete_session(base_url: str, authorization: str, session_id: str) -> str | None:
+    result, error = request_session(base_url, authorization, session_id, "DELETE", 300)
+    if error is not None:
+        return error
+
+    if result is not True:
+        return "OpenCode returned an unexpected response"
+    return None
+
+
+def diagnostics_paths() -> tuple[Path, Path]:
+    state_home = os.environ.get("XDG_STATE_HOME")
+    state_root = Path(state_home).expanduser() if state_home else Path.home() / ".local/state"
+    diagnostics_dir = state_root / "opencode-prune-sessions"
+    try:
+        diagnostics_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        raise CleanupError(f"could not create the diagnostics directory: {error}") from error
+    return diagnostics_dir / "last-run.jsonl", diagnostics_dir / "last-server.log"
+
+
+def record_metric(metrics: object, event: str, **fields: object) -> None:
+    payload = {
+        "timestamp": datetime.now().astimezone().isoformat(timespec="milliseconds"),
+        "event": event,
+        **fields,
+    }
+    print(json.dumps(payload, ensure_ascii=False), file=metrics, flush=True)
+
+
+def timing_fields(started: float, durations: list[float]) -> dict[str, object]:
+    fields: dict[str, object] = {
+        "elapsed_ms": round((time.perf_counter() - started) * 1_000, 3),
+        "request_count": len(durations),
+    }
+    if not durations:
+        return fields
+
+    ordered = sorted(durations)
+    fields.update(
+        {
+            "request_min_ms": round(ordered[0], 3),
+            "request_median_ms": round(statistics.median(ordered), 3),
+            "request_p95_ms": round(ordered[math.ceil(len(ordered) * 0.95) - 1], 3),
+            "request_max_ms": round(ordered[-1], 3),
+            "request_mean_ms": round(sum(ordered) / len(ordered), 3),
+        }
+    )
+    return fields
+
+
+def delete_sessions(sessions: list[Session], days: int) -> tuple[int, int]:
+    deleted = 0
+    failed = 0
+    total = len(sessions)
+    durations = []
+    started = time.perf_counter()
+    metrics_path, server_log_path = diagnostics_paths()
+    try:
+        metrics = metrics_path.open("w", encoding="utf-8")
+    except OSError as error:
+        raise CleanupError(f"could not open the performance log: {error}") from error
+
+    print(f"Performance log: {metrics_path}")
+    print(f"OpenCode server log: {server_log_path}")
+    print("Starting temporary OpenCode server...", flush=True)
+    with metrics:
+        record_metric(metrics, "run_started", retention_days=days, candidate_count=total)
+        try:
+            server_started = time.perf_counter()
+            with deletion_server(server_log_path) as (base_url, authorization, server_pid):
+                record_metric(
+                    metrics,
+                    "server_started",
+                    duration_ms=round((time.perf_counter() - server_started) * 1_000, 3),
+                    server_pid=server_pid,
+                )
+                prime_started = time.perf_counter()
+                prime_error = prime_server(base_url, authorization)
+                prime_duration = (time.perf_counter() - prime_started) * 1_000
+                if prime_error is not None:
+                    record_metric(
+                        metrics,
+                        "server_prime_failed",
+                        duration_ms=round(prime_duration, 3),
+                        error=prime_error,
+                    )
+                    raise CleanupError(f"OpenCode server prime failed: {prime_error}")
+                record_metric(
+                    metrics,
+                    "server_primed",
+                    duration_ms=round(prime_duration, 3),
+                )
+                print("Initializing OpenCode for the first session directory...", flush=True)
+                warmup_started = time.perf_counter()
+                warmup_error = warm_instance(
+                    base_url,
+                    authorization,
+                    sessions[0].directory,
+                )
+                warmup_duration = (time.perf_counter() - warmup_started) * 1_000
+                if warmup_error is not None:
+                    record_metric(
+                        metrics,
+                        "instance_initialization_failed",
+                        duration_ms=round(warmup_duration, 3),
+                        error=warmup_error,
+                    )
+                    message = f"OpenCode instance initialization failed: {warmup_error}"
+                    raise CleanupError(message)
+                record_metric(
+                    metrics,
+                    "instance_initialization_completed",
+                    duration_ms=round(warmup_duration, 3),
+                )
+                elapsed = warmup_duration / 1_000
+                print(f"Instance initialized in {elapsed:.1f} seconds.")
+                try:
+                    for position, session in enumerate(sessions, start=1):
+                        clear_line = "\r\033[2K" if sys.stdout.isatty() else "\r"
+                        print(
+                            f"{clear_line}Processed {position - 1}/{total}; "
+                            f"deleting {position}/{total}...",
+                            end="",
+                            flush=True,
+                        )
+                        request_started = time.perf_counter()
+                        error = delete_session(base_url, authorization, session.id)
+                        duration = (time.perf_counter() - request_started) * 1_000
+                        durations.append(duration)
+                        details = {
+                            "position": position,
+                            "session_id": session.id,
+                            "project_id": session.project_id,
+                            "directory": session.directory,
+                            "duration_ms": round(duration, 3),
+                        }
+                        if error is None:
+                            deleted += 1
+                            record_metric(metrics, "session_deleted", **details)
+                            continue
+
+                        failed += 1
+                        record_metric(metrics, "session_failed", error=error, **details)
+                        print()
+                        print(f"Failed to delete {session.id}: {error}", file=sys.stderr)
+                    print(
+                        f"{clear_line}Processed {total}/{total} session(s).",
+                        end="",
+                        flush=True,
+                    )
+                finally:
+                    print()
+        except KeyboardInterrupt:
+            record_metric(
+                metrics,
+                "run_interrupted",
+                deleted=deleted,
+                failed=failed,
+                **timing_fields(started, durations),
+            )
+            raise
+        except Exception as error:
+            record_metric(
+                metrics,
+                "run_failed",
+                deleted=deleted,
+                failed=failed,
+                error=f"{type(error).__name__}: {error}",
+                **timing_fields(started, durations),
+            )
+            raise
+        record_metric(
+            metrics,
+            "run_completed",
+            deleted=deleted,
+            failed=failed,
+            **timing_fields(started, durations),
+        )
+
+    timing = timing_fields(started, durations)
+    if durations:
+        print(
+            "Request timing: "
+            f"median {timing['request_median_ms']} ms, "
+            f"p95 {timing['request_p95_ms']} ms, "
+            f"max {timing['request_max_ms']} ms."
+        )
+    return deleted, failed
+
+
+def main() -> int:
+    args = parse_args()
+    cutoff = time.time_ns() // 1_000_000 - args.days * 86_400_000
+
+    try:
+        stale_sessions = load_sessions(cutoff)
+    except CleanupError as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
+
+    if not stale_sessions:
+        print(f"No sessions have been inactive for more than {args.days} days.")
+        return 0
+
+    if not confirm_deletion(stale_sessions, args.days):
+        print("No sessions deleted.")
+        return 0
+
+    try:
+        deleted, failed = delete_sessions(stale_sessions, args.days)
+    except CleanupError as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
+    print(f"Deleted {deleted} session(s).")
+    if deleted:
+        print("SQLite may reuse the freed pages even if the database file does not shrink.")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    try:
+        status = main()
+    except KeyboardInterrupt:
+        print("\nStopped. Any completed deletions were preserved.", file=sys.stderr)
+        status = 130
+    raise SystemExit(status)
