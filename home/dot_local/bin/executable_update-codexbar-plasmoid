@@ -6,6 +6,7 @@ readonly package_id="com.github.psimaker.codexbar"
 readonly repository="psimaker/codexbar-plasmoid"
 readonly state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/codexbar-plasmoid"
 readonly state_file="$state_dir/version"
+readonly codexbar_wrapper="$HOME/.local/bin/codexbar-opencode-auth"
 
 if [[ $(uname -s) != "Linux" ]]; then
   printf 'Skipping CodexBar Plasma widget update outside Linux.\n'
@@ -17,10 +18,33 @@ if ! command -v kpackagetool6 >/dev/null 2>&1; then
   exit 0
 fi
 
-if ! codexbar_path="$(mise which codexbar 2>/dev/null)"; then
+if ! mise which codexbar >/dev/null 2>&1; then
   printf 'CodexBar CLI is not installed. Run mise install first.\n' >&2
   exit 1
 fi
+
+if [[ ! -x $codexbar_wrapper ]]; then
+  printf 'CodexBar OpenCode auth wrapper is unavailable: %s\n' "$codexbar_wrapper" >&2
+  exit 1
+fi
+
+configure_existing_cli_path() {
+  local plasma_script
+  plasma_script="$(cat <<EOF
+var ps = panels();
+for (var i = 0; i < ps.length; i++) {
+    var widgets = ps[i].widgets("$package_id");
+    for (var j = 0; j < widgets.length; j++) {
+        widgets[j].currentConfigGroup = ["General"];
+        widgets[j].writeConfig("cliPath", "$codexbar_wrapper");
+        widgets[j].reloadConfig();
+    }
+}
+EOF
+)"
+  busctl --user call org.kde.plasmashell /PlasmaShell \
+    org.kde.PlasmaShell evaluateScript s "$plasma_script" >/dev/null
+}
 
 latest_url="$({
   curl -fsSL -o /dev/null -w '%{url_effective}' \
@@ -39,8 +63,14 @@ installed=false
 if kpackagetool6 --type Plasma/Applet --list | rg -Fxq "$package_id"; then
   installed=true
 fi
+
+if [[ $installed == true ]] \
+  && systemctl --user --quiet is-active plasma-plasmashell.service; then
+  configure_existing_cli_path
+fi
+
 needs_configuration=false
-if [[ ! -f $state_file ]]; then
+if [[ $installed == false || ! -f $state_file ]]; then
   needs_configuration=true
 fi
 
@@ -88,12 +118,12 @@ for (var i = 0; i < ps.length; i++) {
 if (widget === null && ps.length > 0) widget = ps[0].addWidget("$package_id");
 if (widget !== null) {
     widget.currentConfigGroup = ["General"];
-    widget.writeConfig("enabledProviders", "codex");
+    widget.writeConfig("enabledProviders", "codex,opencodego");
     widget.writeConfig("showPercentInPanel", true);
     widget.writeConfig("panelPercentSource", "weekly");
     widget.writeConfig("percentStyle", "remaining");
     widget.writeConfig("panelDisplayMode", "logos-and-meters");
-    widget.writeConfig("cliPath", "$codexbar_path");
+    widget.writeConfig("cliPath", "$codexbar_wrapper");
     widget.reloadConfig();
 }
 EOF

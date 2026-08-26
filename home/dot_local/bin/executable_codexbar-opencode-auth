@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly auth_file="${XDG_DATA_HOME:-$HOME/.local/share}/opencode/auth.json"
+
+if [[ ! -r $auth_file ]]; then
+  printf 'OpenCode auth file is unavailable: %s\n' "$auth_file" >&2
+  exit 1
+fi
+
+if ! api_key="$(
+  jq -er '."opencode-go".key | select(type == "string" and length > 0)' "$auth_file"
+)"; then
+  printf 'OpenCode Go API key is missing from: %s\n' "$auth_file" >&2
+  exit 1
+fi
+
+if ! codexbar_path="$(mise which codexbar 2>/dev/null)"; then
+  printf 'CodexBar CLI is not installed. Run mise install first.\n' >&2
+  exit 1
+fi
+
+export OPENCODE_API_KEY="$api_key"
+exec "$codexbar_path" "$@"
