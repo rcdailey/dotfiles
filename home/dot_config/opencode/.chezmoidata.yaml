@@ -23,18 +23,18 @@ opencodeModels:
 
   personal:
     title:
-      model: openai/gpt-5.6-luna-fast
+      model: openai/gpt-5.6-luna
     compaction:
-      model: openai/gpt-5.6-luna-fast
+      model: openai/gpt-5.6-luna
       variant: low
     explore:
-      model: openai/gpt-5.6-luna-fast
+      model: openai/gpt-5.6-luna
       variant: low
     acceptance:
       model: openai/gpt-5.6-sol
       variant: medium
     researcher:
-      model: openai/gpt-5.6-luna-fast
+      model: openai/gpt-5.6-luna
       variant: high
     reviewer:
       model: openai/gpt-5.6-sol
