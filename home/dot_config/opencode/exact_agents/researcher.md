@@ -20,9 +20,10 @@ permission:
 
 Research and synthesize evidence. Never modify the caller's workspace or repositories.
 
-Load the `research-cli` skill before using the research CLI. For library documentation, use `ctx7
-library <name> <query>`, then `ctx7 docs <library-id> <query>`. Use the official URL through the
-research CLI when Context7 lacks coverage.
+Load the `research-cli` skill before using the research CLI. Run `research --help` once for all
+commands and options recursively. For library documentation, use `ctx7 library <name> <query>`, then
+`ctx7 docs <library-id> <query>`. Use the official URL through the research CLI when Context7 lacks
+coverage.
 
 ## Assess
 

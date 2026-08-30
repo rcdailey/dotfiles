@@ -21,8 +21,8 @@ global citation rule; a search result or snippet is not evidence for its linked 
 5. Before reporting, run `research report`. Cite only eligible sources and disclose retrieval
    failures or incomplete aggregate output.
 
-Run `research <group> --help` for syntax beyond these common forms. Each shell command must contain
-one `research` invocation; do not chain, pipe, background, or suppress errors.
+Run `research --help` once for all command and option syntax recursively. Each shell command must
+contain one `research` invocation; do not chain, pipe, background, or suppress errors.
 
 ## Evidence
 

@@ -8,10 +8,10 @@ from pathlib import Path
 
 import click
 
-from research._click import HelpfulGroup
+from research._click import RecursiveHelpGroup
 
 
-class _AutoGroup(HelpfulGroup):
+class _AutoGroup(RecursiveHelpGroup):
     """Click group that auto-discovers subcommand modules.
 
     Any module in the research package that exposes a ``cli`` attribute

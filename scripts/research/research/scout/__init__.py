@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import click
 
-from research._click import HelpfulGroup
+from research._click import RecursiveHelpGroup
 from research._ghapi import check_deps
 
 
-@click.group(cls=HelpfulGroup)
+@click.group(cls=RecursiveHelpGroup)
 def cli() -> None:
     """Explore GitHub repositories and workflows."""
     check_deps()
