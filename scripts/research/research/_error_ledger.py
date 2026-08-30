@@ -62,7 +62,9 @@ class _TeeStream:
         return self._target.isatty()
 
 
-def run_with_error_ledger(command: Callable[[], Any]) -> None:
+def run_with_error_ledger(
+    command: Callable[[], Any], original_arguments: list[str] | None = None
+) -> None:
     """Run the root CLI and persist its output when the invocation fails."""
     from io import StringIO
 
@@ -76,12 +78,15 @@ def run_with_error_ledger(command: Callable[[], Any]) -> None:
     except SystemExit as error:
         if error.code not in (None, 0):
             message = recorder.getvalue() or f"command exited with status {error.code}"
-            _record_safely(sys.argv[1:], message, _error_kind(error.code, message))
+            kind = _error_kind(error.code, message)
+            arguments = original_arguments if original_arguments is not None else sys.argv[1:]
+            _record_safely(arguments, compact_error(message, kind), kind)
         raise
     except BaseException as error:
         message = recorder.getvalue()
         detail = f"{type(error).__name__}: {error}"
-        _record_safely(sys.argv[1:], f"{message}{detail}")
+        arguments = original_arguments if original_arguments is not None else sys.argv[1:]
+        _record_safely(arguments, f"{message}{detail}")
         raise
     finally:
         sys.stdout = original_stdout
@@ -95,6 +100,15 @@ def _error_kind(code: object, message: str) -> str:
     if code == 2 or "Usage:" in message:
         return "usage"
     return "retrieval"
+
+
+def compact_error(message: str, kind: str) -> str:
+    """Remove repeated command help from persisted usage errors."""
+    cleaned = message.strip()
+    if kind != "usage":
+        return cleaned
+    diagnostic, separator, _ = cleaned.partition("\nUsage:")
+    return diagnostic.strip() if separator and diagnostic.strip() else cleaned
 
 
 def _record_safely(arguments: list[str], message: str, kind: str = "retrieval") -> None:

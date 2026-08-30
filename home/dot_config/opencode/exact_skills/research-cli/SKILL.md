@@ -14,12 +14,12 @@ global citation rule; a search result or snippet is not evidence for its linked 
 ## Workflow
 
 1. Identify the evidence tracks and source types required by the caller.
-2. Search with `research web search "query" --results`.
+2. Search with `research web search "query" --results --max-results 5`.
 3. Fetch relevant pages with `research web fetch URL`; use `research pdf URL` for PDFs.
 4. For GitHub repositories, start with the narrowest applicable Scout command. Use `orient`, then
    `find`, before path-specific `rg` or `cat` calls when paths are unknown.
-5. Before reporting, run `research sources` and `research errors`. Cite only eligible sources and
-   disclose retrieval failures or incomplete aggregate output.
+5. Before reporting, run `research report`. Cite only eligible sources and disclose retrieval
+   failures or incomplete aggregate output.
 
 Run `research <group> --help` for syntax beyond these common forms. Each shell command must contain
 one `research` invocation; do not chain, pipe, background, or suppress errors.
@@ -40,8 +40,9 @@ Web and PDF calls are budgeted; Scout calls and cached pagination are free. Use 
 before a batch that could cross a checkpoint or warning. After a warning, synthesize unless one
 named evidence gap justifies a single sequential `--critical` call.
 
-Use `--find` to narrow large pages and `--offset` to paginate cached content. Do not disable output
-bounds when a narrower query or page can answer the question.
+When the evidence target names a field, option, symbol, or phrase, start page retrieval with
+`--find`. Use `--offset` to paginate cached content. Do not disable output bounds when a narrower
+query or page can answer the question.
 
 ## Recovery
 

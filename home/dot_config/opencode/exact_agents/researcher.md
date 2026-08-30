@@ -67,8 +67,8 @@ decision-relevant coverage as well as high evidence confidence.
 **Gaps** (if any): Unresolved evidence and what would resolve it. Distinguish unavailable external
 evidence from sources not reached within the session.
 
-**Errors** (if any): Copy every entry from `research errors`, preserving its kind, tool, input, and
-error. Shorten Findings rather than omitting this section when context is tight.
+**Errors** (if any): Copy every error entry from `research report`, preserving its kind, tool,
+input, and error. Shorten Findings rather than omitting this section when context is tight.
 
 Respond directly to the caller. Do not write results to files or recommend architecture,
 implementation, or scope unless the caller explicitly owns that decision and requests evidence for

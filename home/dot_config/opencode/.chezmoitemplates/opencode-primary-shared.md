@@ -97,8 +97,9 @@ exploration to the researcher. You MAY use direct read-only `gh` commands for bo
 the repository and desired object or query are known. Delegate when the answer requires repo-wide
 code exploration, correlating multiple sources, citations, or substantive synthesis.
 
-You MAY use `ctx7` directly for a bounded API lookup. Delegate documentation research that requires
-multiple pages, external sources, or substantive synthesis.
+For bounded library, framework, or tool documentation, use `ctx7` directly and do not delegate.
+Delegate only when Context7 lacks required coverage or the answer requires multiple pages, external
+sources, citations, or substantive synthesis.
 
 Give each researcher task one coherent evidence target. Split tasks when questions have independent
 confidence, require different source ecosystems, can be answered without each other, or cannot fit
