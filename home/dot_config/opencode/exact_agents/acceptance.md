@@ -7,7 +7,7 @@ mode: subagent
 permission:
   edit: deny
   question: deny
-  webfetch: deny
+  webfetch: allow
   task:
     "*": deny
   bash:
@@ -15,11 +15,20 @@ permission:
     "*git diff*": allow
     "*git ls-files*": allow
     "*git log*": allow
+    "*git ls-remote*": allow
     "*git merge-base*": allow
     "*git rev-parse*": allow
     "*git show*": allow
     "*git status*": allow
     "*gh *": deny
+    "*gh api *": allow
+    "*gh api* --method *": deny
+    "*gh api* -X *": deny
+    "*gh api* -f *": deny
+    "*gh api* -F *": deny
+    "*gh api* --field *": deny
+    "*gh api* --raw-field *": deny
+    "*gh api* --input *": deny
   skill:
     "*": allow
     agents-authoring: deny
@@ -132,10 +141,13 @@ changes. Otherwise preserve the prior ledger and continue in this session.
 8. Prefer one minimal durable test run per case group. Use a disposable probe only when durable
    evidence cannot establish the behavior. Do not investigate fix design after the observable defect
    and affected boundary are established.
-9. Avoid tool-output spill files by narrowing the original query. Do not reread a region without a
-   contradiction or new source state. Avoid bulk generated or dependency content unless a case
-   depends on it.
-10. Run `acceptance-snapshot finish` after completing the audit. Return `retry` if the repository no
+9. Verify pinned external dependencies (action SHAs, tags, published contracts) read-only against
+   upstream via `git ls-remote`, `gh api` reads, or webfetch. Never clone or browse external
+   repositories with local file tools.
+10. Avoid tool-output spill files by narrowing the original query. Do not reread a region without a
+    contradiction or new source state. Avoid bulk generated or dependency content unless a case
+    depends on it.
+11. Run `acceptance-snapshot finish` after completing the audit. Return `retry` if the repository no
     longer matches the audited tree; report both tree identities without repairing either state.
 
 Budget tool calls before issuing them. An initial audit has at most 30 calls; a resumed correction
