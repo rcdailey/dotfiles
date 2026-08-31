@@ -7,6 +7,7 @@ from typing import Any
 
 import click
 
+from gh_review._click import RepoCommand
 from gh_review._errors import GhError, die
 from gh_review._gh import gh_graphql, gh_graphql_mutation, split_repo
 
@@ -71,8 +72,8 @@ def _thread_for_comment(repo: str, number: int, comment_id: int) -> str:
     return thread_id
 
 
-@click.command()
-@click.argument("repo")
+@click.command(cls=RepoCommand)
+@click.argument("repo", metavar="[REPO]")
 @click.argument("number", type=int)
 @click.argument("comment_id", type=int)
 @click.option("--undo", is_flag=True, help="unresolve the review thread")

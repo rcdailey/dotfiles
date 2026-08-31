@@ -77,6 +77,15 @@ def gh_rest(
     return run_gh(*cmd)
 
 
+def current_repo() -> str:
+    """Return 'owner/name' for the repository in the current directory."""
+    try:
+        out = run_gh("repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner")
+    except GhError as exc:
+        die(f"no repository given and the current directory is not a GitHub repo: {exc}")
+    return out.strip()
+
+
 def split_repo(repo: str) -> tuple[str, str]:
     """Split 'owner/name' into (owner, name). Dies on invalid format."""
     if "/" not in repo:

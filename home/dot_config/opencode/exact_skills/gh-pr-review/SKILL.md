@@ -4,28 +4,31 @@ description: >-
   Use when reading, posting, or managing PR review comments via the `gh-review` tool: viewing
   PR comments with filtering, leaving inline comments on specific diff lines, starting or
   deleting pending reviews, replying to review threads, editing or removing individual review
-  comments. Triggers on phrases like "check for comments", "leave a comment on line X",
-  "start a pending review", "reply to the comment", "edit the comment", "remove that comment",
-  "delete that comment", "fix my comment", "move comment to line X", or any task involving PR
-  comment mechanics. Do NOT use for merging, approving via `gh pr review --approve`, or
-  non-review PR operations. Authoring a full PR review is the `reviewer` subagent's job; it
-  loads this skill itself. Primary agents delegate instead of reviewing inline.
+  comments. Triggers on phrases like "check for comments", "look at the comments on my PR",
+  "what did CodeRabbit/Copilot say", "respond to the review feedback", "leave a comment on
+  line X", "start a pending review", "reply to the comment", "edit the comment", "remove that
+  comment", "delete that comment", "fix my comment", "move comment to line X", or any task
+  involving PR comment mechanics, including reading or answering bot review comments. Do NOT use
+  for merging, approving via `gh pr review --approve`, or non-review PR operations. Authoring a
+  full PR review is the `reviewer` subagent's job; it loads this skill itself. Primary agents
+  delegate instead of reviewing inline.
 ---
 
 # PR Review
 
 All PR comment operations (reading, writing, replying) MUST go through `gh-review`. Do NOT use raw
-`gh api` or `gh pr` for any review-related task. Run `gh-review --help` and `gh-review <command>
---help` for authoritative syntax; this skill covers workflow and semantics only.
+`gh api` or `gh pr` for any review-related task. `gh-review --help` prints every command with its
+full signature in one pass; use `gh-review <command> --help` only for option semantics. This skill
+covers workflow and semantics only.
 
-Unlike `gh`, `gh-review` takes the repository as a positional `owner/repo` argument, NOT a `--repo`
-flag. The reading and review-creating commands share the shape `gh-review <command> owner/repo
-NUMBER` (e.g. `gh-review view sketchy/cortex-backend 2794`, `gh-review start owner/repo 42`).
+The repository is a positional `owner/repo` argument, NOT a `--repo` flag, and it is inferred from
+the current directory when omitted. Pass it only when working outside the checkout.
 
 ## Critical Rules
 
 - NEVER submit reviews. The user manually submits pending reviews via GitHub UI.
-- All new review comments, replies included, MUST go through a pending review. Never post directly.
+- Inline comments MUST go through a pending review; never post them directly. Replies follow the
+  same rule except for the bot-reply case below.
 - Pass Markdown bodies as `--body -` with a single-quoted heredoc. Double-quoted bodies execute
   backticks as shell commands before `gh-review` receives them.
 - When a line target is outside diff hunks, `comment` automatically retries as a file-level comment
@@ -67,7 +70,7 @@ anyone else yet.
 2. `gh-review comment` for each inline comment, passing the review ID.
 3. Stop. The user submits the review manually via the GitHub UI.
 
-To discard a pending review: `gh-review delete PRR_...`.
+`gh-review delete` discards a pending review, by its `PRR_...` ID or by the PR it belongs to.
 
 ## Replying to Comments
 
@@ -76,11 +79,14 @@ it stays invisible until the user submits. It finds the pending review itself; p
 only when more than one exists. With no pending review it errors instead of posting: `start` one
 first, and treat replies as part of the same review pass as your inline comments.
 
-`--publish` skips the pending review and posts the reply immediately. Use it in exactly one case: the
-PR is the user's own and the comment you are answering came from a bot (CodeRabbit, Copilot, Qodana,
-any `[bot]` author). Batching those into a review the user then has to submit on their own PR buys
-nothing. Every other reply, on someone else's PR or to a human on the user's, MUST go through the
-pending review.
+`--publish` skips the pending review and posts the reply immediately. Use it in exactly one case:
+the PR is the user's own and the comment you are answering came from a bot (CodeRabbit, Copilot,
+Qodana, any `[bot]` author). Batching those into a review the user then has to submit on their own
+PR buys nothing, so do NOT `start` a review for bot replies. Every other reply, on someone else's
+PR or to a human on the user's, MUST go through the pending review.
+
+GitHub rejects a published reply while you hold a pending review on that PR. `reply --publish` then
+fails and names the pending review; discard it with `gh-review delete` before retrying.
 
 The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` output headers (e.g.
 `@reviewer (2026-05-14) #98765 PRRC_kwDO...:`). Extract the number after `#`, not the node ID.
@@ -98,13 +104,8 @@ Conversation comments (the PR's main timeline) have no thread and cannot be repl
   so it cannot be inferred). `--path` and `--body` are merged from the current comment when omitted;
   `--side` defaults to `RIGHT` rather than being read from the existing comment.
 
-`gh-review remove` deletes a single review comment.
-
-For pending comments, both commands take the `PRRC_...` node ID. For published comments and replies,
-pass `OWNER/REPO` followed by the numeric comment ID. Published comments support body edits only.
-
-`gh-review resolve OWNER/REPO NUMBER COMMENT_ID` resolves the thread containing a numeric comment
-ID. Pass `--undo` to unresolve it.
+`edit` and `remove` both take the `PRRC_...` node ID for pending comments. For published comments
+and replies, pass `OWNER/REPO` followed by the numeric comment ID; those support body edits only.
 
 ## Line Targeting
 
@@ -116,11 +117,7 @@ same file (using `subjectType: FILE`). The output includes a `note:` field expla
 The comment still lands on the correct file; it just appears at the top of the file's diff rather
 than on a specific line.
 
-To post a file-level comment directly (skipping the line attempt), omit `--line`:
-
-```bash
-gh-review comment --review-id PRR_... --path {file} --body '{body}'
-```
+Omitting `--line` posts a file-level comment directly, skipping the line attempt.
 
 **Suggestion blocks:** Suggestions only work on line-level comments. The `--start-line` to `--line`
 range defines what GitHub replaces when a suggestion is applied. The range MUST exactly match the

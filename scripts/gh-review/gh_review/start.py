@@ -6,6 +6,7 @@ import textwrap
 
 import click
 
+from gh_review._click import RepoCommand
 from gh_review._errors import GhError, die
 from gh_review._gh import gh_graphql, gh_graphql_mutation, split_repo
 
@@ -30,8 +31,8 @@ def _get_pr_identifiers(repo: str, number: int) -> tuple[str, str]:
     return pr["id"], pr["headRefOid"]
 
 
-@click.command()
-@click.argument("repo")
+@click.command(cls=RepoCommand)
+@click.argument("repo", metavar="[REPO]")
 @click.argument("number", type=int)
 def cli(repo: str, number: int) -> None:
     """Start a pending PR review."""

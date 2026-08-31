@@ -8,6 +8,7 @@ from datetime import datetime
 
 import click
 
+from gh_review._click import RepoCommand
 from gh_review._errors import GhError, die
 from gh_review._gh import gh_graphql, split_repo
 from gh_review._sanitize import is_bot, truncate_body
@@ -150,8 +151,8 @@ def _render(pr: dict, me: str) -> str | None:
     return "\n".join(lines)
 
 
-@click.command()
-@click.argument("repo")
+@click.command(cls=RepoCommand)
+@click.argument("repo", metavar="[REPO]")
 def cli(repo: str) -> None:
     """List open PRs awaiting your review and what changed since your last pass."""
     owner, name = split_repo(repo)

@@ -9,8 +9,10 @@ from typing import Any
 import click
 
 from gh_review._body import body_option, read_body
+from gh_review._click import RepoCommand
 from gh_review._errors import GhError, die
 from gh_review._gh import gh_graphql, gh_graphql_mutation, gh_rest, split_repo
+from gh_review._review import pending_reviews
 
 _CONTEXT_QUERY = textwrap.dedent("""\
     query($owner:String!, $repo:String!, $number:Int!) {
@@ -52,6 +54,14 @@ def _find_thread(threads: list[dict[str, Any]], comment_id: int) -> str | None:
     return None
 
 
+def _has_pending(repo: str, number: int) -> bool:
+    """Report whether a pending review exists, treating lookup failure as none."""
+    try:
+        return bool(pending_reviews(repo, number))
+    except GhError:
+        return False
+
+
 def _reply_now(repo: str, number: int, comment_id: int, body: str) -> None:
     """Post a threaded reply immediately, outside any pending review."""
     try:
@@ -67,6 +77,12 @@ def _reply_now(repo: str, number: int, comment_id: int, body: str) -> None:
                 f"comment {comment_id} is not a review comment on {repo}#{number} "
                 "(conversation comments do not support threaded replies)"
             )
+        if exc.status == 422 and _has_pending(repo, number):
+            die(
+                f"cannot publish a reply while you have a pending review on {repo}#{number}; "
+                f"discard it with `gh-review delete {repo} {number}`, or drop --publish to "
+                "attach the reply to it"
+            )
         die(f"failed to post reply: {exc}")
     data = json.loads(raw)
     click.echo(f"id: {data['id']}")
@@ -75,8 +91,8 @@ def _reply_now(repo: str, number: int, comment_id: int, body: str) -> None:
     click.echo("state: PUBLISHED")
 
 
-@click.command()
-@click.argument("repo")
+@click.command(cls=RepoCommand)
+@click.argument("repo", metavar="[REPO]")
 @click.argument("number", type=int)
 @click.argument("comment_id", type=int)
 @body_option(required=True)
@@ -102,8 +118,10 @@ def cli(
 
     The reply stays unsubmitted until the pending review is submitted, so it is
     invisible to everyone else until then. Requires a pending review to attach
-    to; start one with `gh-review start` first, or pass --publish to post the
-    reply immediately.
+    to; start one with `gh-review start` first.
+
+    Pass --publish instead when answering a bot review on the user's own PR:
+    there is no review for the user to submit, so batching buys nothing.
     """
     body = read_body(body)
     if body is None:

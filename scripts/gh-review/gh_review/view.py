@@ -8,6 +8,7 @@ from typing import Any
 
 import click
 
+from gh_review._click import RepoCommand
 from gh_review._duration import parse_duration
 from gh_review._errors import GhError, die
 from gh_review._formatting import (
@@ -229,8 +230,8 @@ def _group_reviews(
     return groups
 
 
-@click.command()
-@click.argument("repo")
+@click.command(cls=RepoCommand)
+@click.argument("repo", metavar="[REPO]")
 @click.argument("number", type=int)
 @click.option("--all", "show_all", is_flag=True, help="show all threads (default: unresolved only)")
 @click.option(

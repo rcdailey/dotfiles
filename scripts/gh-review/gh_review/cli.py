@@ -8,11 +8,11 @@ from pathlib import Path
 
 import click
 
-from gh_review._click import HelpfulGroup
+from gh_review._click import RecursiveHelpGroup
 from gh_review._gh import check_deps
 
 
-class _AutoGroup(HelpfulGroup):
+class _AutoGroup(RecursiveHelpGroup):
     """Click group that auto-discovers subcommand modules.
 
     Any module in the package that exposes a ``cli`` attribute
