@@ -40,3 +40,9 @@ dnf_arguments = "--offline --refresh"
 # (no explicit re-source, unlike topgrade's built-in zinit step)
 [commands]
 "zinit" = "-i zinit self-update && zinit update --all"
+"prepare DNF offline update" = """
+offline_dir=/usr/lib/sysimage/libdnf5/offline
+if test -f "$offline_dir/transaction.json"; then
+  sudo env DNF_SYSTEM_UPGRADE_NO_REBOOT=1 /usr/bin/dnf offline reboot -y
+fi
+"""
