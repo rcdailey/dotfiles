@@ -106,6 +106,8 @@ def rg_cmd(
             args.append("-i")
         if fixed_strings:
             args.append("--fixed-strings")
+        else:
+            args.append("--extended-regexp")
         if context > 0:
             args.append(f"-C{context}")
         args.extend(["-e", pattern, sha])

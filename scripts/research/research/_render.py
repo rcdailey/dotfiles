@@ -45,8 +45,10 @@ def truncate_output(text: str, max_chars: int, hint: str | None = None) -> str:
         return text
     guidance = hint or 'prefer --find "pattern"; --max-chars 0 disables truncation'
     msg = f"\n\n[truncated at {max_chars} chars; {guidance}]"
-    if len(msg) >= max_chars:
-        return msg[:max_chars]
+    if len(msg) >= max_chars or len(msg) > max_chars // 3:
+        msg = "\n\n[truncated]"
+        if len(msg) >= max_chars:
+            return text[:max_chars]
     return text[: max_chars - len(msg)] + msg
 
 

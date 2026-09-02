@@ -6,8 +6,10 @@ import contextlib
 import fcntl
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from collections.abc import Generator
@@ -46,26 +48,32 @@ def _repo_lock(owner: str, repo: str) -> Generator[None, None, None]:
 def _do_clone(repo_dir: Path, owner: str, repo: str) -> None:
     click.echo(f"[cloning {owner}/{repo}]", err=True)
     repo_dir.parent.mkdir(parents=True, exist_ok=True)
+    staging_dir = Path(tempfile.mkdtemp(prefix=f".{repo}.clone-", dir=repo_dir.parent))
     clone_env = {**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"}
-    result = subprocess.run(
-        [
-            "git",
-            "clone",
-            "--depth",
-            "1",
-            "-q",
-            _ssh_url(owner, repo),
-            str(repo_dir),
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-        env=clone_env,
-    )
-    if result.returncode != 0:
-        click.echo(f"error: clone failed: {result.stderr.strip()}", err=True)
-        sys.exit(1)
-    (repo_dir / MARKER).touch()
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "-q",
+                _ssh_url(owner, repo),
+                str(staging_dir),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=clone_env,
+        )
+        if result.returncode != 0:
+            click.echo(f"error: clone failed: {result.stderr.strip()}", err=True)
+            sys.exit(1)
+        (staging_dir / MARKER).touch()
+        staging_dir.replace(repo_dir)
+    finally:
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
 
 
 def _set_ssh_origin(repo_dir: Path, owner: str, repo: str) -> None:
@@ -117,10 +125,32 @@ def _is_ready(repo_dir: Path) -> bool:
     return (repo_dir / MARKER).exists()
 
 
+def _remove_incomplete_clones(repo_dir: Path) -> None:
+    """Remove interrupted target and staging directories while holding the repo lock."""
+    candidates = [repo_dir, *_staging_dirs(repo_dir)]
+    for candidate in candidates:
+        if candidate.is_symlink() or candidate.is_file():
+            candidate.unlink(missing_ok=True)
+        elif candidate.exists():
+            shutil.rmtree(candidate, ignore_errors=True)
+
+
+def _staging_dirs(repo_dir: Path) -> list[Path]:
+    """Return clone staging directories for a repository."""
+    return list(repo_dir.parent.glob(f".{repo_dir.name}.clone-*"))
+
+
+def _remove_staging_dirs(repo_dir: Path) -> None:
+    """Remove abandoned staging directories while holding the repo lock."""
+    for staging_dir in _staging_dirs(repo_dir):
+        if staging_dir.is_symlink() or staging_dir.is_file():
+            staging_dir.unlink(missing_ok=True)
+        else:
+            shutil.rmtree(staging_dir, ignore_errors=True)
+
+
 def _cleanup_stale_clones(skip_owner: str, skip_repo: str) -> None:
     """Remove repo clones whose marker is older than CLONE_MAX_AGE."""
-    import shutil
-
     if not CLONE_BASE.exists():
         return
     now = time.time()
@@ -159,24 +189,23 @@ def ensure_repo(owner: str, repo: str) -> Path:
     """
     repo_dir = _repo_dir(owner, repo)
 
-    if _is_ready(repo_dir):
-        if not (repo_dir / ".git").is_dir():
-            import shutil
-
-            shutil.rmtree(repo_dir, ignore_errors=True)
-        else:
-            _set_ssh_origin(repo_dir, owner, repo)
-            marker = repo_dir / MARKER
-            age = time.time() - marker.stat().st_mtime
-            if age > STALE_SECONDS:
-                with _repo_lock(owner, repo):
-                    _do_pull_if_stale(repo_dir, owner, repo)
-            threading.Thread(target=_cleanup_stale_clones, args=(owner, repo), daemon=True).start()
-            return repo_dir
+    if _is_ready(repo_dir) and (repo_dir / ".git").is_dir():
+        if _staging_dirs(repo_dir):
+            with _repo_lock(owner, repo):
+                _remove_staging_dirs(repo_dir)
+        _set_ssh_origin(repo_dir, owner, repo)
+        marker = repo_dir / MARKER
+        age = time.time() - marker.stat().st_mtime
+        if age > STALE_SECONDS:
+            with _repo_lock(owner, repo):
+                _do_pull_if_stale(repo_dir, owner, repo)
+        threading.Thread(target=_cleanup_stale_clones, args=(owner, repo), daemon=True).start()
+        return repo_dir
 
     # Clone needed; re-check under lock (another process may have won).
     with _repo_lock(owner, repo):
-        if not _is_ready(repo_dir):
+        if not (_is_ready(repo_dir) and (repo_dir / ".git").is_dir()):
+            _remove_incomplete_clones(repo_dir)
             _do_clone(repo_dir, owner, repo)
     threading.Thread(target=_cleanup_stale_clones, args=(owner, repo), daemon=True).start()
     return repo_dir

@@ -16,13 +16,15 @@ global citation rule; a search result or snippet is not evidence for its linked 
 1. Identify the evidence tracks and source types required by the caller.
 2. Search with `research web search "query" --results --max-results 5`.
 3. Fetch relevant pages with `research web fetch URL`; use `research pdf URL` for PDFs.
-4. For GitHub repositories, start with the narrowest applicable Scout command. Use `orient`, then
+4. Retrieve a direct primary result matching the target before broad repository exploration.
+5. For GitHub repositories, start with the narrowest applicable Scout command. Use `orient`, then
    `find`, before path-specific `rg` or `cat` calls when paths are unknown.
-5. Before reporting, run `research report`. Cite only eligible sources and disclose retrieval
+6. Before reporting, run `research report`. Cite only eligible sources and disclose retrieval
    failures or incomplete aggregate output.
 
 Run `research --help` once for all command and option syntax recursively. Each shell command must
-contain one `research` invocation; do not chain, pipe, background, or suppress errors.
+contain one `research` invocation; do not chain, pipe, background, or suppress errors. Validate
+shared options against that help before launching a parallel batch.
 
 ## Evidence
 

@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import subprocess
 import sys
+from collections.abc import Iterable
 
 import click
 
@@ -31,6 +34,33 @@ from research._render import (
 from research._source_ledger import record_source, record_visible_sources
 
 DEFAULT_MAX_RESULTS = 5
+
+
+def _emit_retrieved_output(
+    content: str,
+    urls: Iterable[str],
+    find: str | None,
+    context: int,
+    max_chars: int,
+    offset: int,
+    hint: str | None = None,
+) -> None:
+    """Apply fetch output options and retain visible source URLs."""
+    source_urls = list(urls)
+    total_len = len(content)
+    selected = content[offset:] if offset > 0 else content
+    output = apply_find(selected, find, context) if find else selected
+
+    primary_source = source_urls[0] if source_urls else None
+    if primary_source and primary_source not in output:
+        output = f"Source: {primary_source}\n\n{output}"
+    if offset > 0:
+        page = f"[offset {offset}; total chars {total_len}]"
+        output = f"{output}\n\n{page}"
+
+    rendered = truncate_output(output, max_chars, hint)
+    record_visible_sources(rendered, source_urls)
+    click.echo(rendered, nl=False)
 
 
 @click.group(invoke_without_command=False)
@@ -125,13 +155,14 @@ def fetch_cmd(
                     url,
                 )
                 output += _format_comments(data.get("comments", []))
-                record_source(url)
-                click.echo(
-                    truncate_output(
-                        output,
-                        DEFAULT_SCOUT_MAX_CHARS,
-                        "use scout discussion for narrower follow-up",
-                    )
+                _emit_retrieved_output(
+                    output,
+                    [url],
+                    find,
+                    context,
+                    max_chars,
+                    offset,
+                    "use scout discussion for narrower follow-up",
                 )
                 return
 
@@ -156,13 +187,14 @@ def fetch_cmd(
                     data.get("body", ""),
                     url,
                 )
-                record_source(url)
-                click.echo(
-                    truncate_output(
-                        output,
-                        DEFAULT_SCOUT_MAX_CHARS,
-                        "use scout issue for narrower follow-up",
-                    )
+                _emit_retrieved_output(
+                    output,
+                    [url],
+                    find,
+                    context,
+                    max_chars,
+                    offset,
+                    "use scout issue for narrower follow-up",
                 )
                 return
 
@@ -189,13 +221,14 @@ def fetch_cmd(
                     data.get("body", ""),
                     url,
                 )
-                record_source(url)
-                click.echo(
-                    truncate_output(
-                        output,
-                        DEFAULT_SCOUT_MAX_CHARS,
-                        "use scout pr for narrower follow-up",
-                    )
+                _emit_retrieved_output(
+                    output,
+                    [url],
+                    find,
+                    context,
+                    max_chars,
+                    offset,
+                    "use scout pr for narrower follow-up",
                 )
                 return
 
@@ -218,13 +251,14 @@ def fetch_cmd(
                     lines.append(f"Published: {data['publishedAt'][:10]}")
                 if data.get("body"):
                     lines.extend(["", data["body"]])
-                record_source(source)
-                click.echo(
-                    truncate_output(
-                        "\n".join(lines),
-                        DEFAULT_SCOUT_MAX_CHARS,
-                        "use linked PRs or commits for narrower evidence",
-                    )
+                _emit_retrieved_output(
+                    "\n".join(lines),
+                    [source],
+                    find,
+                    context,
+                    max_chars,
+                    offset,
+                    "use linked PRs or commits for narrower evidence",
                 )
                 return
 
@@ -237,16 +271,27 @@ def fetch_cmd(
                 except APIError as e:
                     click.echo(f"error: {e}", err=True)
                     sys.exit(1)
+                lines = []
+                sources = []
                 for release in releases[:30]:
                     tag = release.get("tagName", "N/A")
                     published = (release.get("publishedAt") or "")[:10] or "N/A"
                     source = release.get("url")
                     if not source:
                         source = f"https://github.com/{owner}/{repo_name}/releases/tag/{tag}"
-                    record_source(source)
-                    click.echo(f"- {tag} ({published})\n  Source: {source}")
+                    sources.append(source)
+                    lines.append(f"- {tag} ({published})\n  Source: {source}")
                 if len(releases) > 30:
-                    click.echo("... more results available; use scout release --limit 31")
+                    lines.append("... more results available; use scout release --limit 31")
+                _emit_retrieved_output(
+                    "\n".join(lines),
+                    [url, *sources],
+                    find,
+                    context,
+                    max_chars,
+                    offset,
+                    "use scout release with a narrower tag or date range",
+                )
                 return
 
             elif len(parts) >= 4 and parts[2] == "blob":
@@ -271,18 +316,18 @@ def fetch_cmd(
                 if result_proc.returncode != 0:
                     click.echo(f"error: file not found: {file_path} at ref {ref}", err=True)
                     sys.exit(1)
-                content = result_proc.stdout
-                if find:
-                    output = apply_find(content, find, context)
-                else:
-                    output = content
-                output = f"Source: {url}\n\n{output}"
+                content = f"Source: {url}\n\n{result_proc.stdout}"
                 github_max = min(max_chars, DEFAULT_SCOUT_MAX_CHARS)
-                if github_max <= 0:
-                    github_max = DEFAULT_SCOUT_MAX_CHARS
-                rendered = truncate_output(output, github_max)
-                record_visible_sources(rendered, [url])
-                click.echo(rendered)
+                if max_chars <= 0:
+                    github_max = max_chars
+                _emit_retrieved_output(
+                    content,
+                    [url],
+                    find,
+                    context,
+                    github_max,
+                    offset,
+                )
                 return
 
             elif len(parts) >= 4 and parts[2] == "commit":
@@ -324,13 +369,14 @@ def fetch_cmd(
                             f"({f.get('status', 'modified')}, +{additions} -{deletions})"
                         )
                     lines.append("\nPatches omitted; use scout commit --patch for bounded diffs.")
-                record_source(url)
-                click.echo(
-                    truncate_output(
-                        "\n".join(lines),
-                        DEFAULT_SCOUT_MAX_CHARS,
-                        "use scout commit --path PATH for narrower evidence",
-                    )
+                _emit_retrieved_output(
+                    "\n".join(lines),
+                    [url],
+                    find,
+                    context,
+                    max_chars,
+                    offset,
+                    "use scout commit --path PATH for narrower evidence",
                 )
                 return
 
@@ -341,7 +387,18 @@ def fetch_cmd(
                 reroute_message(url, f"scout orient {owner}/{repo_name}", "github.com pages")
                 from research.scout.explore import _render_orient
 
-                _render_orient(owner, repo_name, ref=None, brief=True)
+                buffer = io.StringIO()
+                with contextlib.redirect_stdout(buffer):
+                    _render_orient(owner, repo_name, ref=None, brief=True)
+                _emit_retrieved_output(
+                    buffer.getvalue(),
+                    [url],
+                    find,
+                    context,
+                    max_chars,
+                    offset,
+                    "use scout find or scout rg for narrower repository evidence",
+                )
                 return
 
     if is_pdf_url(url):

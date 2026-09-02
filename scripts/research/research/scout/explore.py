@@ -16,6 +16,7 @@ from research.scout._common import die, github_url, parse_repo
 ORIENT_MAX_FILES = 8
 ORIENT_MAX_FILE_LINES = 150
 ORIENT_MAX_README_LINES = 200
+ORIENT_MAX_BUCKETS = 30
 
 KEY_FILE_PATTERNS = [
     re.compile(r"^README(\.md|\.rst|\.txt)?$"),
@@ -90,10 +91,14 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
         rows.append((bucket, len(extensions), " ".join(e for e, _ in counts.most_common(5))))
 
     if rows:
-        col1 = max(len(r[0]) for r in rows[:100])
-        col2 = max(len(f"{r[1]} files") for r in rows[:100])
-        for directory, count, exts in rows[:100]:
+        visible_rows = rows[:ORIENT_MAX_BUCKETS]
+        col1 = max(len(row[0]) for row in visible_rows)
+        col2 = max(len(f"{row[1]} files") for row in visible_rows)
+        for directory, count, exts in visible_rows:
             click.echo(f"{directory:<{col1}}  {f'{count} files':<{col2}}  {exts}")
+        omitted = len(rows) - len(visible_rows)
+        if omitted:
+            click.echo(f"... {omitted} directory groups omitted; use scout find for paths")
 
     if brief:
         return

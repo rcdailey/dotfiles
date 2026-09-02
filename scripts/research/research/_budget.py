@@ -22,7 +22,10 @@ _SEEN_PREFIX = "seen:"
 def budget_message(count: int) -> str:
     """Return a budget message for the current call count."""
     remaining = MAX_CALLS - count
-    counter = f"[budget: {count}/{MAX_CALLS} calls used, {remaining} remaining]"
+    counter = (
+        f"[budget reservation #{count} of {MAX_CALLS}; {remaining} slots remain; "
+        "parallel responses may arrive out of order]"
+    )
 
     if remaining < 0:
         return (
@@ -32,16 +35,18 @@ def budget_message(count: int) -> str:
         )
     if count == CHECKPOINT_AT:
         return (
-            f"\n=== CHECKPOINT: {count}/{MAX_CALLS} calls used, "
-            f"{remaining} remaining ===\n"
+            f"\n=== CHECKPOINT RESERVATION #{count} OF {MAX_CALLS}; "
+            f"{remaining} slots remain ===\n"
+            "Parallel responses may arrive out of reservation order.\n"
             "Stop and assess: can you answer the question now?\n"
             "If yes, synthesize. If not, identify the ONE specific "
             "gap that remains."
         )
     if count == WARNING_AT:
         return (
-            f"\n=== WARNING: {count}/{MAX_CALLS} calls used, "
-            f"{remaining} remaining ===\n"
+            f"\n=== WARNING RESERVATION #{count} OF {MAX_CALLS}; "
+            f"{remaining} slots remain ===\n"
+            "Parallel responses may arrive out of reservation order.\n"
             "Synthesize your answer NOW. Do not launch another batch.\n"
             "A later call requires --critical and one named blocking gap."
         )
