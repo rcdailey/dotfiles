@@ -302,6 +302,9 @@
     f  = fetch
     fa = fetch --all
     fo = fetch origin
+    # Force is required: the unforced refs/tags/* refspec added by --prune-tags rejects
+    # tags that moved upstream ("would clobber existing tag")
+    ft = fetch --prune --prune-tags --force
 
     # Reset
     re = reset
