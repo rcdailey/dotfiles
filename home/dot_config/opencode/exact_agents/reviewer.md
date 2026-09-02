@@ -31,8 +31,10 @@ permission:
     "git rebase*": deny
     "git merge*": deny
     "git checkout*": deny
+    "git switch*": deny
     "git branch*": deny
     "git tag*": deny
+    "git fetch*:*": deny
     "gh pr merge*": deny
     "gh pr close*": deny
     "gh pr edit*": deny
@@ -110,8 +112,11 @@ Rules for filling it:
 Fetch PR metadata:
 
 ```bash
-gh pr view {number} --json title,body,labels,baseRefName,headRefName,url
+gh pr view {number} --json title,body,labels,baseRefName,headRefName,headRefOid,url
 ```
+
+`headRefOid` is the head commit; call it `{sha}` and use it wherever the PR head is needed.
+`FETCH_HEAD` is not a review ref: the next fetch overwrites it and the diff silently shifts.
 
 Resolve which local remote hosts the PR. Derive the `{owner}/{repo}` slug from the PR URL (already
 in the metadata JSON), then list remotes and pick the one whose fetch URL contains that slug; call
@@ -125,20 +130,27 @@ Do not use shell pipelines or variable assignments for this; read the two output
 literal remote name in later commands.
 
 If no remote matches (e.g., a third-party fork not configured locally), fall back to `gh pr diff`
-and skip the worktree. Otherwise fetch the PR head and create a detached worktree. Remove any prior
-worktree for the same PR first:
+and skip the worktree. Otherwise fetch the PR head plus the base branch and create a detached
+worktree at `{sha}`. Remove any prior worktree for the same PR first:
 
 ```bash
 git worktree remove --force /tmp/pr-review-{number} 2>/dev/null
-git fetch {remote} pull/{number}/head &&
-  git worktree add --detach /tmp/pr-review-{number} FETCH_HEAD
+git fetch {remote} {base} pull/{number}/head &&
+  git worktree add --detach /tmp/pr-review-{number} {sha}
 ```
+
+The fetch has no destination refspec, so it creates no local ref; the downloaded objects are enough
+to check out `{sha}`. Including `{base}` refreshes `{remote}/{base}`, so the three-dot diff is not
+measured against a stale base.
 
 Get the changed file list:
 
 ```bash
-git diff --name-only {remote}/{base}...FETCH_HEAD
+git diff --name-only {remote}/{base}...{sha}
 ```
+
+If it disagrees with `gh pr diff`, the PR gained commits; re-read `headRefOid` and redo the fetch
+and worktree at the new `{sha}`.
 
 Note the worktree path for file reads in the analysis step. Installing dependencies, running tests,
 and running build commands are allowed but never routine; the cost is real, so reach for them only
@@ -155,11 +167,11 @@ This returns review threads and conversation comments (including bot comments) i
 prose. `--all` keeps resolved threads: without it a finding already raised and resolved looks
 unraised. Keep the output for cross-referencing in the skip step.
 
-**Linked ticket (Linear only):** if the PR title, branch name, or body references a Linear issue key,
-MUST load the `linear-cli` skill and read that issue, its comments, and any parent issue it is a
-subissue of. The ticket defines what the PR was supposed to do; a diff that is internally consistent
-can still solve the wrong problem or miss stated requirements. Treat unmet requirements and
-contradicted decisions as findings. No equivalent step for other trackers.
+**Linked ticket (Linear only):** if the PR title, branch name, or body references a Linear issue
+key, MUST load the `linear-cli` skill and read that issue, its comments, and any parent issue it is
+a subissue of. The ticket defines what the PR was supposed to do; a diff that is internally
+consistent can still solve the wrong problem or miss stated requirements. Treat unmet requirements
+and contradicted decisions as findings. No equivalent step for other trackers.
 
 ### 2. Skip Already-Flagged Issues
 
@@ -196,8 +208,8 @@ surrounding code you already read; do not impose a fixed rubric.
 
 Read changed files from the worktree path. Read at most 2-3 directly relevant callsites per finding
 to understand how the changed code is used; for design findings, prefer callsites that reveal how
-the contract is consumed. Do not explore broadly or read unrelated files. Do not read README,
-docs/, wiki, or other documentation unless a specific finding requires that context.
+the contract is consumed. Do not explore broadly or read unrelated files. Do not read README, docs/,
+wiki, or other documentation unless a specific finding requires that context.
 
 Apply the tone, etiquette, and verification rules from the `gh-pr-review` skill.
 
@@ -296,6 +308,8 @@ instead.
 
 - MUST load the `gh-pr-review` skill before posting comments
 - Do not submit the pending review; the user submits manually via the GitHub UI
+- The `/tmp` worktree detached at `{sha}` is the only working copy; MUST NOT pass `-b` to `git
+  worktree add`
 - Do not clean up the worktree; leave it in `/tmp` for reference
 - Do not use TodoWrite or task tracking
 - MUST NOT write findings to files; return the report as the task response
