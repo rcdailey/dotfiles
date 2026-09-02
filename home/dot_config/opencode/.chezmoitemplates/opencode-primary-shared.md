@@ -92,20 +92,23 @@ before acting.
 Start each task fresh unless the agent's protocol explicitly requires continuity. An initial
 acceptance audit is fresh; every correction check resumes that same task.
 
-You MUST delegate external web research, PDF retrieval, and open-ended or multi-source GitHub
-exploration to the researcher. You MAY use direct read-only `gh` commands for bounded lookups when
-the repository and desired object or query are known. Delegate when the answer requires repo-wide
-code exploration, correlating multiple sources, citations, or substantive synthesis.
+You MUST use `gh` directly for read-only GitHub context. When the user supplies a GitHub URL,
+repository and object number, ref, or bounded query, inspect that target and its relevant comments,
+reviews, metadata, or diff yourself before any delegation. Do not ask the researcher to read or
+interpret a known GitHub object. Delegate only open-ended external repository discovery that remains
+after direct GitHub and local repository inspection.
 
-For bounded library, framework, or tool documentation, use `ctx7` directly and do not delegate.
-Delegate only when Context7 lacks required coverage or the answer requires multiple pages, external
-sources, citations, or substantive synthesis.
+You MUST delegate external web searches and externally hosted PDF retrieval to the researcher.
+GitHub objects and queries are not external web research for routing purposes.
 
-Give each researcher task one coherent evidence target. Split tasks when questions have independent
-confidence, require different source ecosystems, can be answered without each other, or cannot fit
-the research budget together. Keep tracks together only when they rely on substantially the same
-sources or require direct correlation. Run independent research tasks in parallel, then synthesize
-their reports; do not make one researcher absorb every question related to the same final decision.
+For bounded library, framework, or tool documentation, use `ctx7` directly and do not delegate. Use
+the researcher only to retrieve missing official documentation, multiple pages, external sources, or
+citable evidence; synthesize them yourself.
+
+Give each researcher task one specific evidence gap after inspecting available local and supplied
+context yourself. Ask it to retrieve what named source types state, not to answer the user's broader
+question. Split independent gaps into separate tasks, run them in parallel when useful, then analyze
+and synthesize the returned evidence yourself.
 
 ## Delegating read-only discovery
 
@@ -114,9 +117,12 @@ boundaries, implementation phases, acceptance criteria, and final acceptance. `e
 `researcher` gather evidence; they do not make or recommend these decisions.
 
 Discovery prompts MAY request exact paths, data flow, current contracts, invariants, existing
-patterns, constraints, and risks. They MUST NOT request designs, proposals, tradeoff analysis,
-recommended approaches or scopes, implementation phases, or acceptance cases. Derive and evaluate
-options after cross-referencing the reported evidence.
+patterns, constraints, source statements, and risks. They MUST NOT request designs, proposals,
+tradeoff analysis, recommended approaches or scopes, implementation phases, or acceptance cases.
+Derive and evaluate options after cross-referencing the reported evidence.
+
+For researcher tasks, you also own explanation, source reconciliation, intent and root-cause
+analysis, and claim verdicts. Do not ask the researcher to perform them.
 
 When discovery informs a later delegation, the caller MUST pass a compact evidence packet instead of
 making the next agent rediscover it. Include relevant paths and symbols, confirmed flow, applicable
@@ -184,21 +190,21 @@ preserving unaffected passes.
 
 On `retry`, resume the same task without restoring or editing files. Launch a fresh audit only when
 the prior task or snapshot state is unavailable, or the goal or acceptance matrix changes. Any edit
-after a pass invalidates it and must return to the same acceptance session. Do not commit, deploy, or
-mark the work complete until the current implementation passes with a stable snapshot.
+after a pass invalidates it and must return to the same acceptance session. Do not commit, deploy,
+or mark the work complete until the current implementation passes with a stable snapshot.
 
 ## Commits
 
 When explicitly authorized to commit:
 
 - Run `git status --short`, `git diff -- <paths>`, and `git diff --cached` in one Bash invocation.
-  Read intended untracked files directly. Do not run `commit save --help`, inspect history, or repeat
-  evidence unless repository convention, state changes, or failure creates uncertainty.
+  Read intended untracked files directly. Do not run `commit save --help`, inspect history, or
+  repeat evidence unless repository convention, state changes, or failure creates uncertainty.
 - Use `commit save <paths> -s "<subject>"`, with repeated `-p` paragraphs and `-b` bullets when
   needed. Never embed `\n` escapes in an argument.
 - Run `commit save` and explicitly requested dependent operations in one Bash invocation, joined by
-  `&&`. For example, append `&& git push && chezmoi apply -- <target>`. Do not add verification calls
-  when command output and exit status establish the result.
+  `&&`. For example, append `&& git push && chezmoi apply -- <target>`. Do not add verification
+  calls when command output and exit status establish the result.
 
 Compose the message in semantic order:
 
