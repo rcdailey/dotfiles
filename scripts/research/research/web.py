@@ -20,7 +20,6 @@ from research._cache import (
     write_cached_search,
 )
 from research._fetch import FetchError, fetch_markdown
-from research._linkup import SearchError, format_search_results, format_sourced_answer
 from research._render import (
     DEFAULT_MAX_CHARS,
     DEFAULT_SCOUT_MAX_CHARS,
@@ -32,6 +31,7 @@ from research._render import (
     truncate_output,
 )
 from research._source_ledger import record_source, record_visible_sources
+from research._tavily import TavilyError, format_search_results, format_sourced_answer
 
 DEFAULT_MAX_RESULTS = 5
 
@@ -65,7 +65,7 @@ def _emit_retrieved_output(
 
 @click.group(invoke_without_command=False)
 def cli() -> None:
-    """Web search and page fetching via Linkup."""
+    """Web search via Tavily with local-first page fetching."""
 
 
 @cli.command(name="search")
@@ -74,9 +74,9 @@ def cli() -> None:
 @click.option("--results", is_flag=True, help="return search results instead of a sourced answer")
 @click.option("--critical", is_flag=True, help="use a reserved post-warning call")
 def search_cmd(query: str, max_results: int, results: bool, critical: bool) -> None:
-    """Search the web via Linkup."""
+    """Search the web via Tavily."""
     sourced_answer = not results
-    cache_key = f"{sourced_answer}:{max_results}:{query}"
+    cache_key = f"tavily:{sourced_answer}:{max_results}:{query}"
     cached = read_cached_search(cache_key)
     if cached is not None:
         budget_cache_hit(get_cache())
@@ -87,17 +87,17 @@ def search_cmd(query: str, max_results: int, results: bool, critical: bool) -> N
     budget_reserve(cache, None, critical=critical)
 
     try:
-        from research._linkup import search
+        from research._tavily import search
 
         response = search(query, max_results, sourced_answer)
         rendered = (
-            format_sourced_answer(response)
+            format_sourced_answer(response, max_results)
             if sourced_answer
-            else format_search_results(response.results)
+            else format_search_results(response["results"])
         )
         write_cached_search(cache_key, rendered)
         click.echo(rendered)
-    except SearchError as e:
+    except TavilyError as e:
         budget_refund(cache)
         click.echo(f"error: {e}", err=True)
         sys.exit(1)
@@ -427,9 +427,18 @@ def fetch_cmd(
 
                 _do_pdf(url, find, context, max_chars, offset, critical)
                 return
-            budget_refund(cache, base_url)
-            click.echo(f"error: fetch failed: {msg}", err=True)
-            sys.exit(1)
+            click.echo(f"[local fetch failed: {msg}; trying Tavily]", err=True)
+            try:
+                from research._tavily import fetch_markdown as fetch_with_tavily
+
+                markdown = fetch_with_tavily(url)
+            except TavilyError as tavily_error:
+                budget_refund(cache, base_url)
+                click.echo(
+                    f"error: fetch failed locally ({msg}) and via Tavily ({tavily_error})",
+                    err=True,
+                )
+                sys.exit(1)
         write_cached_content(base_url, markdown)
 
     total_len = len(markdown)

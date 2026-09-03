@@ -7,7 +7,6 @@ description: >
 mode: subagent
 permission:
   "*": deny
-  todowrite: allow
   skill:
     "*": deny
     research-cli: allow
@@ -31,14 +30,6 @@ commands and options recursively.
 Before tool calls, enumerate the caller's evidence tracks and required source types. If independent
 tracks cannot fit one research budget, return `blocked` with the exact task split; do not begin a
 partial survey.
-
-For multi-track work, use TodoWrite as an evidence ledger:
-
-- One todo per evidence track, not per query or URL.
-- Complete a todo only when its required direct evidence is retrieved.
-- Leave unresolved tracks pending and report them under Coverage and Gaps.
-
-Do not use TodoWrite for one bounded track.
 
 ## Research
 
@@ -68,7 +59,7 @@ weakest material support named when not high.
 **Gaps** (if any): Unresolved evidence and what would resolve it. Distinguish unavailable external
 evidence from sources not reached within the session.
 
-**Errors** (if any): Copy every error entry from `research report`, preserving its kind, tool,
-input, and error. Shorten Evidence rather than omitting this section when context is tight.
+**Errors** (if any): Report every tool failure with its kind, tool, input, and error. Shorten
+Evidence rather than omitting this section when context is tight.
 
 Respond directly to the caller. Do not write results to files.

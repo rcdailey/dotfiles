@@ -4,13 +4,13 @@ version = "0.1.0"
 description = "LLM-optimized research CLI for web, GitHub repos, and PDFs"
 requires-python = ">=3.13"
 dependencies = [
-    "click>=8.1",
-    "linkup-sdk>=0.2",
-    "diskcache>=5.6",
-    "trafilatura>=2.0",
-    "curl-cffi>=0.15",
-    "playwright>=1.50",
-    "playwright-stealth>=2.0",
+    "click>=8.5.0",
+    "tavily-python>=0.8.0",
+    "diskcache>=5.6.3",
+    "trafilatura>=2.2.0",
+    "curl-cffi>=0.16.3",
+    "playwright>=1.62.0",
+    "playwright-stealth>=2.0.3",
 ]
 
 [build-system]

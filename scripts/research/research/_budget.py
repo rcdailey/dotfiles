@@ -159,20 +159,3 @@ def get_count(cache: Cache) -> int:
     """Return current call count."""
     count_key = _session_key(_COUNT_KEY)
     return cache.get(count_key, 0) if count_key else 0
-
-
-def format_status(cache: Cache) -> str:
-    """Return status string for status command."""
-    count_key = _session_key(_COUNT_KEY)
-    if count_key is None:
-        return "No budget session active."
-    count = cache.get(count_key, 0)
-    remaining = MAX_CALLS - count
-    lines = [f"{count}/{MAX_CALLS} calls used, {remaining} remaining"]
-    seen_prefix = _session_key(_SEEN_PREFIX)
-    url_count = sum(1 for k in cache if isinstance(k, str) and k.startswith(seen_prefix or ""))
-    if url_count:
-        lines.append(f"cached URLs: {url_count}")
-    if WARNING_AT <= count < MAX_CALLS:
-        lines.append(f"critical reserve: {MAX_CALLS - count} calls")
-    return "\n".join(lines)

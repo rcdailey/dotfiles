@@ -19,8 +19,6 @@ global citation rule; a search result or snippet is not evidence for its linked 
 4. Retrieve a direct primary result matching the target before broad repository exploration.
 5. For GitHub repositories, start with the narrowest applicable Scout command. Use `orient`, then
    `find`, before path-specific `rg` or `cat` calls when paths are unknown.
-6. Before reporting, run `research report`. Cite only eligible sources and disclose retrieval
-   failures or incomplete aggregate output.
 
 Run `research --help` once for all command and option syntax recursively. Each shell command must
 contain one `research` invocation; do not chain, pipe, background, or suppress errors. Validate
@@ -38,9 +36,9 @@ shared options against that help before launching a parallel batch.
 
 ## Budget and output bounds
 
-Web and PDF calls are budgeted; Scout calls and cached pagination are free. Use `research status`
-before a batch that could cross a checkpoint or warning. After a warning, synthesize unless one
-named evidence gap justifies a single sequential `--critical` call.
+Web and PDF calls are budgeted; Scout calls and cached pagination are free. Each budgeted call
+reports current usage. After a warning, synthesize unless one named evidence gap justifies a single
+sequential `--critical` call.
 
 When the evidence target names a field, option, symbol, or phrase, start page retrieval with
 `--find`. Use `--offset` to paginate cached content. Do not disable output bounds when a narrower
