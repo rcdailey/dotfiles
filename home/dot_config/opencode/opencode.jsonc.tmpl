@@ -152,14 +152,9 @@
       "*gh variable set*": "ask",
       "*gh variable delete*": "ask",
 
-      // gh api
-      "*gh api*": "deny",
-      "*gh api* -f *": "ask",
-      "*gh api* -F *": "ask",
-      "*gh api* --*field *": "ask",
-      "*gh api* --input *": "ask",
-      "*gh api* --method *": "ask",
-      "*gh api* --method GET*": "allow",
+      // gh api semantics live in the gh-api-guard plugin (globs cannot tell a real
+      // invocation from 'gh api' text inside a quoted argument)
+      "*gh api*": "ask",
 
       // gh-review script
       "*gh-review reply*": "ask",
