@@ -151,20 +151,15 @@
       "*gh secret delete*": "ask",
       "*gh variable set*": "ask",
       "*gh variable delete*": "ask",
-      "*gh api* --method POST*": "ask",
-      "*gh api* --method PUT*": "ask",
-      "*gh api* --method PATCH*": "ask",
-      "*gh api* --method DELETE*": "ask",
-      "*gh api* -X POST*": "ask",
-      "*gh api* -X PUT*": "ask",
-      "*gh api* -X PATCH*": "ask",
-      "*gh api* -X DELETE*": "ask",
-      // gh api implies POST when data flags are present without explicit method
+
+      // gh api
+      "*gh api*": "deny",
       "*gh api* -f *": "ask",
       "*gh api* -F *": "ask",
-      "*gh api* --field *": "ask",
-      "*gh api* --raw-field *": "ask",
+      "*gh api* --*field *": "ask",
       "*gh api* --input *": "ask",
+      "*gh api* --method *": "ask",
+      "*gh api* --method GET*": "allow",
 
       // gh-review script
       "*gh-review reply*": "ask",

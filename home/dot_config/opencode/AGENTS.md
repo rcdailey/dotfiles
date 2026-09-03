@@ -35,6 +35,10 @@ rg -g "*.py" "pattern" path/    # restrict search to a glob
 rg --hidden -g "!**/.git/**"    # include dot-directories
 ```
 
+## GitHub API
+
+- `gh api` commands MUST use `--method` explicitly.
+
 ## Agents
 
 - Subagents MUST use their designated tools for repo exploration; MUST NOT clone repos or use local

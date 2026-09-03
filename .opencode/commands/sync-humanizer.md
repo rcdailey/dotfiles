@@ -42,7 +42,7 @@ Treat the numbered pattern catalog and detection guidance as upstream-owned beha
 Verify `/tmp/opencode` exists, then download the upstream skill:
 
 ```sh
-gh api repos/blader/humanizer/contents/SKILL.md --jq '.content' | base64 -d > \
+gh api --method GET repos/blader/humanizer/contents/SKILL.md --jq '.content' | base64 -d > \
   /tmp/opencode/humanizer-upstream.md
 ```
 

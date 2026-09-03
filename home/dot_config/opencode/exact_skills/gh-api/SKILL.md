@@ -40,7 +40,7 @@ For cross-repo PRs, use `head="username:branch"`.
 ### Get PR details
 
 ```sh
-gh api repos/:owner/:repo/pulls/<number> --jq '{draft, state, title}'
+gh api --method GET repos/:owner/:repo/pulls/<number> --jq '{draft, state, title}'
 ```
 
 ### Convert draft to ready for review
@@ -55,13 +55,14 @@ Note: Cannot convert back to draft via API once marked ready.
 ### List open draft PRs
 
 ```sh
-gh api repos/:owner/:repo/pulls --jq '.[] | select(.draft) | {number, title}'
+gh api --method GET repos/:owner/:repo/pulls --jq '.[] | select(.draft) | {number, title}'
 ```
 
 ### List my open PRs in a repo
 
 ```sh
-gh api repos/:owner/:repo/pulls -f state=open --jq '.[] | select(.user.login=="USERNAME") | {number, title, draft}'
+gh api --method GET repos/:owner/:repo/pulls -f state=open \
+  --jq '.[] | select(.user.login=="USERNAME") | {number, title, draft}'
 ```
 
 ## Discussions (GraphQL)

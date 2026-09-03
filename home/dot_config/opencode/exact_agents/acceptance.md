@@ -21,14 +21,8 @@ permission:
     "*git show*": allow
     "*git status*": allow
     "*gh *": deny
-    "*gh api *": allow
-    "*gh api* --method *": deny
-    "*gh api* -X *": deny
-    "*gh api* -f *": deny
-    "*gh api* -F *": deny
-    "*gh api* --field *": deny
-    "*gh api* --raw-field *": deny
-    "*gh api* --input *": deny
+    "*gh api*": deny
+    "*gh api* --method GET*": allow
   skill:
     "*": allow
     agents-authoring: deny
