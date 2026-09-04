@@ -8,6 +8,10 @@
   spans components. Do not narrow scope merely to reach internal code.
 - Assert observable output, state, or effects. Verify an interaction only when that interaction is
   the contract, and assert only contract-relevant details.
+- When correctness depends on an external system's semantics, test against the real system or a
+  supported emulator that preserves those semantics. Doubles may isolate callers, but MUST NOT stand
+  in for that system when testing its adapter. If neither is available, report the gap instead of
+  adding a durable test.
 - Durable tests must survive behavior-preserving refactors. Change expected outcomes only when the
   contract changes. Do not test passive data plumbing or add tests merely to exercise private
   internals, branches, or lines. Do not expose implementation details or add production code solely
