@@ -145,14 +145,8 @@ Production, action orchestration, durable hydration or recovery, state reduction
 presentation are separate slices when independently reviewable. A shared feature or final goal is
 not sufficient reason to combine them.
 
-For finite response unions and state machines, enumerate every reachable variant and legal or stale
-transition before implementation. State the observable route for each; "use the existing contract"
-is not acceptance.
-
-Implement test-first when practical. Run targeted checks while editing and the repository completion
-check once after the final change for the slice. A successful check remains valid while the tree is
-unchanged. After acceptance, commit at a major component boundary and start a fresh session when
-carrying the full implementation history would add more context than value.
+After acceptance, commit at a major component boundary and start a fresh session when carrying the
+full implementation history would add more context than value.
 
 ## Independent acceptance audit
 

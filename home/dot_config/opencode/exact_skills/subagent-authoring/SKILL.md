@@ -1,15 +1,19 @@
 ---
 name: subagent-authoring
 description: >-
-  Use when creating, editing, refactoring, or reviewing OpenCode agent definitions in Markdown
-  (`.md`, `.md.tmpl`) or the `agent` section of `opencode.json`, including primary, subagent, and
-  `all` modes and chezmoi source forms. Do NOT use for AGENTS.md, SKILL.md, or slash commands.
+  Use when creating, editing, refactoring, or reviewing an OpenCode agent definition or
+  `opencode.json` agent entry, including chezmoi source forms. Do not use for AGENTS.md, skills, or
+  commands.
 ---
 
 # Subagent Authoring
 
-Agents justify a separate definition through a distinct role, permission boundary, model, or isolated
-context. Put reusable procedures in skills instead of creating persona-only agents.
+Create an agent only for a distinct role, permission boundary, model, or isolated context. Put
+reusable procedures in skills; do not create persona-only agents.
+
+Density is part of correctness. After preserving required behavior, MUST remove every sentence,
+example, heading, or section that does not change routing, ownership, permissions, workflow, failure
+handling, or return contract. Tighten the rest without obscuring conditions or alternatives.
 
 ## Definition and source
 
@@ -17,21 +21,15 @@ Define agents in `.opencode/agents/<name>.md`, `~/.config/opencode/agents/<name>
 section of `opencode.json`. In a generated configuration repository, edit the source template and
 validate the rendered target; do not maintain both independently.
 
-Common fields are:
+Required routing field: `description`. Common optional fields: `mode`, `model`, `variant`,
+`temperature`, `top_p`, `steps`, `disable`, `color`, `hidden`, and `permission`. `mode` defaults to
+`all`; `hidden` affects only subagent autocomplete.
 
-- `description`: required routing summary.
-- `mode`: `primary`, `subagent`, or `all`; defaults to `all`.
-- `model`, `temperature`, `top_p`, `steps`, `disable`, and `color`: optional behavior settings.
-- `hidden`: removes a subagent from user autocomplete, not programmatic invocation.
-- `permission`: tool, Bash, skill, task, and external-directory access.
-
-Provider-specific fields and reasoning options change independently of OpenCode. Verify them against
-the current provider and schema instead of preserving a model catalog here.
+Verify provider options against the current provider and schema; do not preserve a model catalog.
 
 ## Permissions
 
-Use `permission`; `tools` is deprecated. Permission patterns use last-match precedence, so put a
-wildcard before narrower rules.
+Use `permission`; `tools` is deprecated. Last matching permission wins, so put wildcards first.
 
 - Start read-only and specialist agents from deny-by-default permissions.
 - Deny edits and mutation-capable Bash commands for read-only roles.
@@ -41,24 +39,17 @@ wildcard before narrower rules.
 
 ## Routing contract
 
-A subagent description must tell callers:
+A subagent description states when to delegate, required and omitted inputs, the returned result,
+and whether callers must verify it.
 
-- when to delegate and when not to;
-- required inputs and anything callers should omit;
-- the result returned and whether the caller must verify it.
+The prompt defines ownership, workflow boundaries, failure behavior, and output contract.
 
-The prompt defines domain ownership, workflow boundaries, failure behavior, and output contract. It
-must be self-contained about its own protocol, but it need not contain repository knowledge that the
-agent is specifically responsible for discovering.
+Reference companion skills instead of copying them. Include fixed tool syntax only when required to
+act and unavailable from `--help`.
 
-Reference a companion skill by name rather than copying its procedure. Include fixed tool syntax
-only when the agent cannot perform its job without it and `--help` cannot supply it.
-
-The prompt, allowed skills, readable files, and available tools must together provide enough
-information to produce the return contract. Least privilege must not make the workflow impossible.
-Check inherited repository and global rules against the role. State a narrow exception when the
-agent's valid output cannot satisfy an inherited workflow, such as an out-of-repository artifact
-that cannot be committed.
+The prompt, skills, readable files, and tools must support the return contract without defeating
+least privilege. Check inherited rules against the role; state the narrow exception when valid work
+cannot satisfy one.
 
 ## Review
 

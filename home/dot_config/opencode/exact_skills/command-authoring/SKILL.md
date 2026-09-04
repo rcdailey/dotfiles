@@ -1,17 +1,19 @@
 ---
 name: command-authoring
 description: >-
-  Use when creating, editing, refactoring, or reviewing OpenCode custom slash commands;
-  writing or revising command frontmatter, arguments, agent routing, or permissions.
-  Triggers on phrases like "new slash command", "add a /command", "edit the command file",
-  or any edit to files in a commands directory (including chezmoi source forms). Do NOT
-  use for AGENTS.md, SKILL.md, or agent definitions.
+  Use when creating, editing, refactoring, or reviewing OpenCode slash commands or files in a
+  commands directory, including chezmoi source forms. Do not use for AGENTS.md, skills, or agent
+  definitions.
 ---
 
 # Command Authoring
 
-Commands are thin user-facing entry points for repeatable prompts. Put reusable procedures in skills
-and specialized execution contracts in agents.
+Commands are thin user-facing entry points. Put reusable procedures in skills and execution
+contracts in agents.
+
+Density is part of correctness. After preserving required behavior, MUST remove every sentence,
+example, heading, or section that does not change routing, input handling, execution, a stop
+condition, or output. Tighten the rest without obscuring conditions or alternatives.
 
 ## Definition
 
@@ -31,8 +33,8 @@ subtask: true
 - A subagent target runs as a subtask by default; `subtask: false` disables that behavior.
 - `subtask: true` isolates execution even when the selected agent is primary.
 
-The body is the prompt template. It supports `$ARGUMENTS`, positional `$1` values, shell output via
-`` !`command` ``, and file inclusion via `@path`.
+The body supports `$ARGUMENTS`, positional `$1` values, shell output via `` !`command` ``, and file
+inclusion via `@path`.
 
 ## Write the command
 
@@ -43,32 +45,27 @@ The body is the prompt template. It supports `$ARGUMENTS`, positional `$1` value
   conversation.
 - Keep simple commands simple; headings and phases are optional.
 
-The selected agent must support every mode the command advertises. Pass all required and applicable
-optional inputs. Handle each documented return status, including blocked, partial, and retry paths,
-without inventing alternate behavior in the command layer.
+Ensure the selected agent supports the execution mode. Pass every required input and handle each
+documented return status without inventing command-layer behavior.
 
-Keep an interactive orchestration command on the primary agent when it must gather input or confirm
-decisions before delegation. Do not bind the command to the eventual worker merely because that
-worker performs the final step.
+Keep interactive orchestration on the primary agent when it must gather input or confirm decisions.
 
 ## Arguments and injected context
 
-Treat arguments as untrusted text. Do not interpolate `$ARGUMENTS` or positional values inside a
-shell-output expression; OpenCode does not provide shell escaping for command placeholders. Let the
+Treat arguments as untrusted. Never interpolate placeholders into shell-output expressions; let the
 agent validate arguments before running tools.
 
 Shell-output expressions execute in the project root before their output enters the prompt:
 
 - Keep them read-only, deterministic, and bounded.
 - Do not run formatters, migrations, installs, or other mutating commands through injection.
-- Prefer an agent tool call when output depends on user input or requires error handling.
+- Use an agent tool call when output depends on user input or requires error handling.
 - Avoid `@path` inclusion for large files; instruct the agent to read targeted content instead.
 
 ## Review
 
 - Verify frontmatter and placeholder behavior against current OpenCode documentation.
-- Compare the command with the agent's required inputs, optional inputs, statuses, and recovery
-  behavior.
+- Compare the command with the agent's inputs, statuses, and recovery behavior.
 - Check empty, malformed, and adversarial arguments.
 - Bound injected output and isolate large workflows.
 - Remove duplicated skill, agent, and global instructions.
