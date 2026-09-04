@@ -37,9 +37,12 @@ disable = [
 dnf_arguments = "--offline --refresh"
 
 # `-i ` prefix runs in an interactive $SHELL, which loads .zshrc once
-# (no explicit re-source, unlike topgrade's built-in zinit step)
+# (no explicit re-source, unlike topgrade's built-in zinit step).
+# `-u` forces atpull hooks even with no new commits, so the completion
+# generators pinned to zdharma-continuum/null (just, mise) regenerate
+# after the underlying binary is upgraded
 [commands]
-"zinit" = "-i zinit self-update && zinit update --all"
+"zinit" = "-i zinit self-update && zinit update -u --all"
 "prepare DNF offline update" = """
 offline_dir=/usr/lib/sysimage/libdnf5/offline
 if test -f "$offline_dir/transaction.json"; then
