@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import subprocess
 from typing import TYPE_CHECKING
+from urllib.parse import urlsplit
 
 if TYPE_CHECKING:
     from tavily import TavilyClient
 
 RBW_ITEM = "tavily-api-key"
+_DISCOVERY_NOTICE = "[discovery only; fetch a URL before citing it]"
 
 _ERROR_MESSAGES = {
     "InvalidAPIKeyError": "authentication failed",
@@ -103,17 +105,42 @@ def fetch_markdown(url: str) -> str:
     return text
 
 
-def format_search_results(results: list[dict]) -> str:
+def _result_identity(url: str) -> tuple[str, str, str, str]:
+    """Return a stable identity for common equivalent result URLs."""
+    parsed = urlsplit(url)
+    scheme = "" if parsed.scheme.lower() in ("http", "https") else parsed.scheme.lower()
+    host = (parsed.hostname or parsed.netloc).lower().removeprefix("www.")
+    if parsed.port and (parsed.scheme.lower(), parsed.port) not in (("http", 80), ("https", 443)):
+        host = f"{host}:{parsed.port}"
+    path = parsed.path.rstrip("/") or "/"
+    return scheme, host, path, parsed.query
+
+
+def _unique_results(results: list[dict]) -> list[dict]:
+    """Keep the first search result for each canonical URL."""
+    unique = []
+    seen = set()
+    for result in results:
+        identity = _result_identity(result["url"])
+        if identity in seen:
+            continue
+        seen.add(identity)
+        unique.append(result)
+    return unique
+
+
+def format_search_results(results: list[dict], *, include_notice: bool = True) -> str:
     """Format search results as markdown prose."""
     lines: list[str] = []
-    for i, r in enumerate(results, 1):
+    for i, r in enumerate(_unique_results(results), 1):
         title = r.get("title") or "Untitled"
         content = r.get("content") or ""
         snippet = content.strip().replace("\n", " ")
         if len(snippet) > 750:
             snippet = snippet[:750] + "..."
         lines.append(f"{i}. {title}\n   URL: {r['url']}\n   {snippet}")
-    return "\n\n".join(lines) if lines else "[no results]"
+    output = "\n\n".join(lines) if lines else "[no results]"
+    return f"{_DISCOVERY_NOTICE}\n\n{output}" if include_notice else output
 
 
 def format_sourced_answer(response: dict, max_results: int) -> str:
@@ -121,5 +148,6 @@ def format_sourced_answer(response: dict, max_results: int) -> str:
     answer = response.get("answer") or "[no answer]"
     sources = response.get("results", [])
     if not sources:
-        return answer
-    return f"{answer}\n\n## Sources\n\n{format_search_results(list(sources)[:max_results])}"
+        return f"{_DISCOVERY_NOTICE}\n\n{answer}"
+    formatted = format_search_results(list(sources)[:max_results], include_notice=False)
+    return f"{_DISCOVERY_NOTICE}\n\n{answer}\n\n## Sources\n\n{formatted}"

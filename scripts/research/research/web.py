@@ -49,7 +49,7 @@ def _emit_retrieved_output(
     source_urls = list(urls)
     total_len = len(content)
     selected = content[offset:] if offset > 0 else content
-    output = apply_find(selected, find, context) if find else selected
+    output, matched = apply_find(selected, find, context) if find else (selected, True)
 
     primary_source = source_urls[0] if source_urls else None
     if primary_source and primary_source not in output:
@@ -59,8 +59,11 @@ def _emit_retrieved_output(
         output = f"{output}\n\n{page}"
 
     rendered = truncate_output(output, max_chars, hint)
-    record_visible_sources(rendered, source_urls)
-    click.echo(rendered, nl=False)
+    if matched:
+        record_visible_sources(rendered, source_urls)
+    click.echo(rendered, nl=False, err=not matched)
+    if not matched:
+        sys.exit(1)
 
 
 @click.group(invoke_without_command=False)
@@ -76,7 +79,7 @@ def cli() -> None:
 def search_cmd(query: str, max_results: int, results: bool, critical: bool) -> None:
     """Search the web via Tavily."""
     sourced_answer = not results
-    cache_key = f"tavily:{sourced_answer}:{max_results}:{query}"
+    cache_key = f"tavily:v2:{sourced_answer}:{max_results}:{query}"
     cached = read_cached_search(cache_key)
     if cached is not None:
         budget_cache_hit(get_cache())
@@ -446,12 +449,16 @@ def fetch_cmd(
         markdown = markdown[offset:]
 
     if find:
-        output = apply_find(markdown, find, context)
+        output, matched = apply_find(markdown, find, context)
     else:
         output = markdown
+        matched = True
 
     if offset > 0:
         output = f"[starting at char offset {offset}; total length {total_len}]\n\n" + output
 
-    record_source(url)
-    click.echo(truncate_output(output, max_chars), nl=False)
+    if matched:
+        record_source(url)
+    click.echo(truncate_output(output, max_chars), nl=False, err=not matched)
+    if not matched:
+        sys.exit(1)

@@ -38,9 +38,8 @@ direct discussion URLs for opinions. Keep vendor evidence distinct from independ
 broad community questions, retrieve discussions across the caller's named venues rather than using
 one combined search as a proxy for coverage.
 
-At budget checkpoints, reassess every pending evidence track. Do not launch parallel web or PDF
-calls across the next checkpoint or warning. Stop when each track is supported or its attempted
-sources and remaining gap are documented.
+At budget checkpoints, reassess every pending evidence track. Stop when each track is supported or
+its attempted sources and remaining gap are documented.
 
 ## Output contract
 

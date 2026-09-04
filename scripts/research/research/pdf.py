@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 
@@ -11,6 +12,14 @@ from research._budget import budget_cache_hit, budget_refund, budget_reserve
 from research._cache import cache_url, get_cache, read_cached_content, write_cached_content
 from research._render import DEFAULT_MAX_CHARS, apply_find, truncate_output
 from research._source_ledger import record_source
+
+_PDF2MD_NEXT_PAGE = "[use --page 2 for next page]"
+_PDF2MD_FOOTER = re.compile(r"\n\n\[page 1/1, \d+ chars/page\]\s*$")
+
+
+def _strip_pdf2md_footer(text: str) -> str:
+    """Remove pdf2md pagination metadata from complete output."""
+    return _PDF2MD_FOOTER.sub("", text)
 
 
 @click.command()
@@ -45,6 +54,8 @@ def _do_pdf(
     cache = get_cache()
 
     cached = read_cached_content(base_url)
+    if cached is not None and _PDF2MD_NEXT_PAGE in cached:
+        cached = None
     if cached is not None:
         budget_cache_hit(cache, base_url)
         text = cached
@@ -52,7 +63,7 @@ def _do_pdf(
         budget_reserve(cache, base_url, critical=critical)
         try:
             result = subprocess.run(
-                ["pdf2md", url],
+                ["pdf2md", url, "--page-size", str(sys.maxsize)],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -68,7 +79,7 @@ def _do_pdf(
             click.echo(f"error: pdf failed: {err}", err=True)
             sys.exit(1)
 
-        text = result.stdout
+        text = _strip_pdf2md_footer(result.stdout)
         if text:
             write_cached_content(base_url, text)
 
@@ -77,12 +88,16 @@ def _do_pdf(
         text = text[offset:]
 
     if find:
-        output = apply_find(text, find, context)
+        output, matched = apply_find(text, find, context)
     else:
         output = text
+        matched = True
 
     if offset > 0:
         output = f"[starting at char offset {offset}; total length {total_len}]\n\n" + output
 
-    record_source(url)
-    click.echo(truncate_output(output, max_chars), nl=False)
+    if matched:
+        record_source(url)
+    click.echo(truncate_output(output, max_chars), nl=False, err=not matched)
+    if not matched:
+        sys.exit(1)

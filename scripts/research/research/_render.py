@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 
 import click
 
@@ -55,25 +56,84 @@ def truncate_output(text: str, max_chars: int, hint: str | None = None) -> str:
 _MEGA_PARA_THRESHOLD = 1500  # chars; paragraphs above this get line-level matching
 
 
-def _match_lines(para: str, matches: object, context: int) -> str:
+def _add_line_context(
+    keep: set[int],
+    first: int,
+    last: int,
+    line_count: int,
+    context: int,
+) -> None:
+    """Add a matching line range and its context to the retained indexes."""
+    keep.update(range(max(0, first - context), min(line_count, last + context + 1)))
+
+
+def _match_lines(
+    para: str,
+    matches: Callable[[str], bool],
+    compiled: re.Pattern[str] | None,
+    normalized_needle: str,
+    context: int,
+) -> str:
     """Extract matching lines + context lines from a mega-paragraph."""
     lines = para.split("\n")
     keep: set[int] = set()
     for i, line in enumerate(lines):
-        if matches(line):  # type: ignore[operator]
-            lo = max(0, i - context)
-            hi = min(len(lines), i + context + 1)
-            keep.update(range(lo, hi))
+        if matches(line):
+            _add_line_context(keep, i, i, len(lines), context)
+
+    if compiled is not None:
+        for match in compiled.finditer(para):
+            first = para.count("\n", 0, match.start())
+            last_char = max(match.start(), match.end() - 1)
+            last = para.count("\n", 0, last_char)
+            _add_line_context(keep, first, last, len(lines), context)
+
+    normalized_parts: list[str] = []
+    line_spans: list[tuple[int, int, int]] = []
+    cursor = 0
+    for line_index, line in enumerate(lines):
+        normalized_line = " ".join(line.casefold().split())
+        if not normalized_line:
+            continue
+        if normalized_parts:
+            cursor += 1
+        start = cursor
+        normalized_parts.append(normalized_line)
+        cursor += len(normalized_line)
+        line_spans.append((start, cursor, line_index))
+
+    normalized_para = " ".join(normalized_parts)
+    search_from = 0
+    while normalized_needle:
+        match_start = normalized_para.find(normalized_needle, search_from)
+        if match_start < 0:
+            break
+        match_end = match_start + len(normalized_needle)
+        matched_lines = [
+            line_index
+            for start, end, line_index in line_spans
+            if end > match_start and start < match_end
+        ]
+        if matched_lines:
+            _add_line_context(
+                keep,
+                matched_lines[0],
+                matched_lines[-1],
+                len(lines),
+                context,
+            )
+        search_from = match_start + 1
+
     if not keep:
         return ""
     return "\n".join(lines[i] for i in sorted(keep))
 
 
-def apply_find(text: str, pattern: str, context: int) -> str:
-    """Return paragraphs matching pattern with context paragraphs around them.
+def apply_find(text: str, pattern: str, context: int) -> tuple[str, bool]:
+    """Return rendered paragraphs and whether the pattern matched.
 
-    Pattern is tried as a case-insensitive regex. Falls back to literal
-    substring matching when the pattern is not valid regex.
+    Pattern is tried as a case-insensitive regex. Matching also tolerates
+    whitespace changes introduced by content extraction.
     Mega-paragraphs (> _MEGA_PARA_THRESHOLD chars) are matched at line level
     to avoid returning thousands of unrelated characters.
     """
@@ -87,20 +147,27 @@ def apply_find(text: str, pattern: str, context: int) -> str:
 
     paragraphs = text.split("\n\n")
 
+    normalized_needle = " ".join(pattern.casefold().split())
+
     try:
         compiled = re.compile(pattern, re.IGNORECASE)
-        matches = compiled.search
-    except re.error:
-        needle = pattern.lower()
 
-        def matches(para: str) -> bool:
-            return needle in para.lower()
+        def matches(value: str) -> bool:
+            normalized_value = " ".join(value.casefold().split())
+            return bool(compiled.search(value)) or normalized_needle in normalized_value
+
+    except re.error:
+        compiled = None
+
+        def matches(value: str) -> bool:
+            normalized_value = " ".join(value.casefold().split())
+            return normalized_needle in normalized_value
 
     keep: set[int] = set()
     mega_extracts: dict[int, str] = {}
     for i, para in enumerate(paragraphs):
         if len(para) > _MEGA_PARA_THRESHOLD:
-            extracted = _match_lines(para, matches, context)
+            extracted = _match_lines(para, matches, compiled, normalized_needle, context)
             if extracted:
                 mega_extracts[i] = extracted
                 keep.add(i)
@@ -113,14 +180,14 @@ def apply_find(text: str, pattern: str, context: int) -> str:
         if len(preview) > 500:
             preview = preview[:500] + "..."
         return (
-            f"[no paragraphs matched '{pattern}']\n\n"
+            f"error: no paragraphs matched '{pattern}'\n\n"
             f"--- content preview (first 3 paragraphs) ---\n{preview}"
-        )
+        ), False
 
     def _para_text(i: int) -> str:
         return mega_extracts.get(i, paragraphs[i])
 
-    return "\n\n".join(_para_text(i) for i in sorted(keep))
+    return "\n\n".join(_para_text(i) for i in sorted(keep)), True
 
 
 def reroute_message(url: str, new_command: str, reason: str) -> None:

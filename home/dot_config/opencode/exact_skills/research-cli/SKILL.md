@@ -21,8 +21,11 @@ global citation rule; a search result or snippet is not evidence for its linked 
    `find`, before path-specific `rg` or `cat` calls when paths are unknown.
 
 Run `research --help` once for all command and option syntax recursively. Each shell command must
-contain one `research` invocation; do not chain, pipe, background, or suppress errors. Validate
-shared options against that help before launching a parallel batch.
+contain one `research` invocation; do not chain, pipe, background, or suppress errors. Run web and
+PDF commands sequentially so each budget checkpoint can shape the next call.
+
+Before responding, run `research sources` and `research errors`. Cite only URLs listed by `sources`,
+and include every ledger entry from `errors` in the Errors section.
 
 ## Evidence
 
@@ -47,6 +50,7 @@ query or page can answer the question.
 ## Recovery
 
 - After a missing Scout path, run `scout find`; do not guess another path.
-- After two failed searches for one track, change source type or report the gap.
+- If search results miss the required source type, narrow the next query to a named source or domain.
+- A no-match fetch is failed evidence. Retry without `--find` or with a corrected pattern.
 - A partial aggregate warning means that command is incomplete evidence.
 - A budget guard is a workflow limit, not evidence that the requested source does not exist.
