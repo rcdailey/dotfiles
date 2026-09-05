@@ -1,7 +1,8 @@
 ## Testing
 
-- Keep durable tests only for product behavior. Verify support code with ad hoc or temporary checks,
-  and remove temporary artifacts before handoff.
+- Keep durable tests for stable observable behavior, including tooling contracts, permissions,
+  mutation safety, and recovery. Use temporary checks for one-off scaffolding and private details;
+  remove temporary artifacts before handoff.
 - For a feature or fix, write a behavioral test first and confirm it fails for the expected reason
   when practical.
 - Test through the stable observable boundary that owns the behavior. Broaden scope when the outcome

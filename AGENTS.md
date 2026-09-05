@@ -78,6 +78,19 @@ lazygit, etc.). Browse the directory to discover what's managed.
 
 ## Conventions
 
+**Test ownership:**
+
+- Self-contained projects keep tests in their own `tests/` directory (e.g.,
+  `scripts/<project>/tests/`).
+- Managed code without a project-level test directory uses root `tests/<component>/`, grouped by
+  tool or purpose, not language. Create directories only when adding tests.
+
+**Test execution:**
+
+- Run affected behavioral suites separately; pre-commit is for static checks, not test execution.
+- OpenCode plugins: run `bun test tests/opencode` from the repo root.
+- Document new root-suite commands here; project-owned commands belong in that project's guidance.
+
 **Chezmoi prefixes:** `dot_` = dotfile, `private_` = 600 perms, `executable_` = +x, `exact_` =
 directory matches exactly (removes unmanaged files)
 

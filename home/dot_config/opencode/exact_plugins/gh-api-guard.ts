@@ -2,9 +2,9 @@ import type { Plugin } from "@opencode-ai/plugin";
 
 // Self-contained `gh api` permission semantics. The config only needs a single
 // `"*gh api*": "ask"` bash rule; this plugin decides the outcome by parsing the
-// command, because glob patterns match the raw string and cannot tell an actual
-// `gh api` invocation from the literal text inside a quoted argument (e.g.
-// `rg "gh api.*deployments"`). Delete this file to drop the behavior entirely.
+// command. Auto-approval covers only literal direct REST reads and inert rg searches.
+// Shell expansion, composition, and unknown wrappers retain approval. This is not a
+// shell sandbox; broader automatic approval requires a structured execution boundary.
 //
 // Read-only subagents (acceptance, reviewer) keep their own agent-level `gh api`
 // denies on purpose: a hard deny fails fast, while an `ask` stalls an unattended
@@ -83,13 +83,8 @@ function basename(value: string): string {
   return value.includes("/") ? (value.split("/").pop() ?? value) : value;
 }
 
-// Commands that execute a nested command line we cannot parse. Known ceiling:
-// `gh api` inside such an argument stays an "ask" instead of being classified.
-const NESTED_SHELL = /^(sh|bash|zsh|dash|ksh|fish|eval|ssh|docker|podman|kubectl|talosctl)$/;
-
-function leadingCommand(tokens: Token[]): Token | undefined {
-  return tokens.find((token) => !(token.quoted || /^[A-Za-z_][A-Za-z0-9_]*=/.test(token.value)));
-}
+// Complete literal words only: no expansions, redirections, comments, or shell operators.
+const LITERAL_COMMAND = /^(?:[ \t]|'[^'\n]*'|"[^"\\$`\n]*"|[^\s'"\\$`|&;()<>#*?[\]{}~!])+$/;
 
 // Args following each real `gh api` invocation in the command. Scanning every
 // token (not just the leading one) covers wrappers like `xargs -I{} gh api ...`.
@@ -105,22 +100,35 @@ function invocations(command: string): Token[][] {
   return found;
 }
 
-function hidesGhApi(command: string): boolean {
-  return segments(command).some((tokens) => {
-    const lead = leadingCommand(tokens);
-    if (!lead || !NESTED_SHELL.test(basename(lead.value))) return false;
-    return tokens.some((token) => token.quoted && token.value.includes("gh api"));
-  });
-}
-
 function methodOf(args: Token[]): string | undefined {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i].value;
     if (arg === "--method" || arg === "-X") return args[i + 1]?.value;
-    const inline = /^(?:--method|-X)=(.+)$/.exec(arg);
+    const inline = /^(?:--method=|-X=?)(.+)$/.exec(arg);
     if (inline) return inline[1];
   }
   return undefined;
+}
+
+function isLiteralRead(command: string): boolean {
+  if (!LITERAL_COMMAND.test(command)) return false;
+  const parts = segments(command);
+  if (parts.length !== 1) return false;
+  const [lead, subcommand, ...args] = parts[0];
+  if (!lead || lead.quoted) return false;
+
+  if (lead.value === "rg") {
+    return !parts[0].some((token) => /^--pre(?:=|$)/.test(token.value));
+  }
+  if (lead.value !== "gh" || subcommand?.quoted || subcommand?.value !== "api") return false;
+  if (args.some((token) => /^\/?graphql(?:[/?]|$)/.test(token.value))) return false;
+
+  // Do not mistake a field value for an option, or miss method overrides in short clusters.
+  const methods = args.filter((token) => /^(?:--method(?:=|$)|-X)/.test(token.value));
+  if (methods.length !== 1 || methodOf(args) !== "GET") return false;
+  const index = args.indexOf(methods[0]);
+  if (index > 1 || (index === 1 && args[0].value.startsWith("-"))) return false;
+  return !args.some((token) => /^-[^-].+/.test(token.value) && !/^-X=?GET$/.test(token.value));
 }
 
 const MISSING_METHOD =
@@ -151,10 +159,7 @@ export const GhApiGuard: Plugin = async () => {
       const patterns = [input.pattern ?? []].flat();
       if (!patterns.length || !patterns.every((p) => p.includes("gh api"))) return;
 
-      if (hidesGhApi(command)) return;
-
-      const calls = invocations(command);
-      if (calls.some((args) => methodOf(args)?.toUpperCase() !== "GET")) return;
+      if (!isLiteralRead(command)) return;
 
       output.status = "allow";
     },

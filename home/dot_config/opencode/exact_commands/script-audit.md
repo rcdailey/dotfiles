@@ -93,8 +93,8 @@ Confirm output shape, token footprint (eyeball line count), and that the origina
 longer needed.
 
 If the target script has a test suite, MUST run it and fix any failures caused by the audit changes.
-Update test assertions to match new behavior; do not delete tests. Add tests for new commands or
-changed resolver behavior.
+Preserve coverage of existing contracts. Change assertions only for intentional behavior changes;
+add durable tests for changed stable contracts under the active testing policy.
 
 ### 5. Report
 
@@ -115,16 +115,7 @@ Keep it under 20 lines. No diff dumps; the user reads those via git.
 
 ## Rules
 
-- MUST load the matching skill alone before any edits (when one exists)
-- MUST read the full script source before any edits (when no skill exists)
 - MUST NOT commit or push
-- MUST NOT preserve backward compatibility; remove old flags, commands, and output shapes outright
-- MUST NOT add dual-support shims, deprecation warnings, or "legacy" branches
-- MUST NOT introduce structured output (JSON, YAML) as a default; use prose/key-value/tables and
-  gate structure behind an explicit flag
-- MUST NOT scan git history, grep for TODOs, or expand scope beyond session-observed friction
 - MUST delete obsolete documentation in the same pass as the code change
-- MUST cap the audit at friction points actually surfaced this session; inventing hypothetical gaps
-  defeats the purpose
 - MUST NOT defer fixes by claiming they are "too large"; implement every non-dropped fix or classify
   it as out of scope with a concrete reason

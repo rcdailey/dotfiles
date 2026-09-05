@@ -17,7 +17,8 @@
 ## Shell Search
 
 MUST use `rg` (ripgrep) over `grep`. MUST use `rg --files -g` over `find -name`. Both are enforced
-by tool guards that reject the blocked commands.
+by best-effort guards for ordinary shell invocations, not a security boundary. Nested scripts,
+aliases, and unsupported shell syntax still require agent compliance.
 
 ripgrep is recursive by default; no flag enables it. `-r` is `--replace=REPLACEMENT`: it takes an
 argument, so `rg -r "pattern" path/` consumes `pattern` as replacement text and searches for `path/`
@@ -42,7 +43,8 @@ rg --hidden -g "!**/.git/**"    # include dot-directories
 ## Agents
 
 - Subagents MUST use their designated tools for repo exploration; MUST NOT clone repos or use local
-  file tools on external repositories.
+  file tools on external repositories. The reviewer may inspect its assigned PR in task-owned local
+  worktrees under its caller protocol.
 - Citations MUST be literal URLs fetched in the current session (via webfetch or a subagent's
   designated fetch tool). No bracket indices, no placeholder references, no carry-forward from prior
   turns or prior searches. If a URL was not fetched this session, the citation does not exist and

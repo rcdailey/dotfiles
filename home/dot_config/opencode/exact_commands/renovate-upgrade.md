@@ -20,9 +20,8 @@ reference. Collect all results, then present a unified summary.
 
 **Single PR mode** (argument specifies a PR): Launch one subagent for the PR.
 
-The subagent prompt MUST contain only the PR reference (e.g., `PR #123 in owner/repo`). The agent's
-own directives define its workflow, research strategy, output format, and categorization rules. Do
-not repeat, paraphrase, or supplement those instructions in the prompt.
+Pass the canonical PR reference and any already-observed revision or check evidence. The agent owns
+its analysis procedure; do not restate it. Run from the affected repository.
 
 ## Report Format
 
@@ -30,38 +29,42 @@ Present the unified summary using this structure:
 
 ### PRs safe to merge
 
-List PRs with no actionable findings. Include the PR number, package name, and version range.
+List only assessments explicitly marked `safe`: no blocking findings, required CI satisfied, and
+evidence covers the assessed head. Include PR, package, version range, and head SHA.
 
 ### PRs requiring changes before merge
 
-For each PR with breaking changes or deprecations:
+For each assessment marked `requires changes`:
 
 - **PR #N: package vOLD -> vNEW**
   - What changed and which version introduced it
   - Which files in this repo are affected
   - What the fix or adoption looks like (briefly)
 
+### CI blocked or unknown
+
+Keep these states separate. Name failed/pending required checks or missing revision/upstream evidence;
+absence of changelog findings never makes either state safe.
+
 ### Recommended adoptions
 
 New features worth picking up, grouped by PR. Include a brief description of the benefit and which
 files would change.
 
-If no PRs have actionable findings, say so in one line.
+If all assessments are safe and no adoptions are suggested, say so in one line with the assessed PRs
+and head SHAs. Never collapse CI-blocked or unknown assessments into this summary.
 
 ## Merging
 
 ALWAYS use `gh pr merge --rebase`. Never use merge commits or squash.
 
-When merging multiple PRs, merge them sequentially with a minimum 3-second delay between each:
+Before each approved merge, recheck head SHA, required CI, and mergeability. Reassess changed heads;
+skip and report PRs that are no longer safe. Merge sequentially, with at least three seconds between
+attempts; the delay does not establish mergeability. Bind each merge to the assessed head with
+`--match-head-commit <sha>`.
 
-```bash
-for pr in 101 102 103; do gh pr merge "$pr" --rebase && sleep 3; done
-```
-
-GitHub needs time to update the base branch after each merge. Without the delay, subsequent merges
-fail with a conflict-evaluation error. Do not attempt to parallelize merges or reduce the delay.
-
-If a merge fails, stop and report the failure rather than continuing with remaining PRs.
+If a merge fails, record the error and continue with the remaining approved PRs. Do not retry a failed
+merge without resolving its cause. Finish with merged, failed, and skipped PRs and their reasons.
 
 ## Rules
 

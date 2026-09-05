@@ -66,7 +66,7 @@ Include only what the primary needs to implement without rediscovering the desig
 - A compact contract graph and dependency order
 - Traceability from each product decision to its owning contract, producer, and consumers
 - Ordered workstreams with durable acceptance checkpoints
-- Integration checks, an audit map, and deferred decisions
+- Integration checks, cross-boundary invariants, and deferred decisions
 
 For each workstream, give one observable outcome and one dependency branch. For each checkpoint,
 name one owning component, one lifecycle or transaction boundary, exact touchpoints, contracts
@@ -108,30 +108,13 @@ Use workstreams to group a coherent outcome along one dependency branch. A works
 components, but its checkpoints retain their real implementation and acceptance boundaries. Do not
 split a coherent branch merely to make every checkpoint a top-level section.
 
-Within each workstream, use compact ordered checkpoints:
+Use compact ordered checkpoints that honor the active contract, producer, consumer, and recovery
+slice boundaries. Combine artifacts only when they share an owner, persistence boundary, and stable
+test seam and cannot be accepted separately.
 
-- Give every reusable contract a foundation checkpoint with direct durable acceptance.
-- Give independently consumed contracts separate foundation checkpoints. Combine artifacts only when
-  they share one owner, persistence boundary, and stable test seam and cannot be accepted
-  separately.
-- A foundation checkpoint may include required generated or persistence scaffolding, but it must not
-  behaviorally produce or consume its contract.
-- Put the first producer and each independent consumer in later checkpoints.
-- Split checkpoints when the owning component, lifecycle or transaction entry point, durable
-  recovery path, or stable test seam differs.
-- Split normal production from restart, resume, rebuild, or correction when recovery has another
-  entry point or observable seam.
-- Keep backend publication and frontend presentation in separate checkpoints when each has
-  independent observable acceptance.
-
-Checkpoints are implementation and acceptance units, not agent calls. Do not prescribe an agent,
-session, or commit for every internal step.
-
-Partition independent audits from checkpoint boundaries, not workstream headings. An audit may cover
-multiple checkpoints only when their stated owner, lifecycle or transaction entry point, consumed
-contracts, and stable test seam are identical. Assign every checkpoint whole to exactly one primary
-audit. If an audit would cover only part of a checkpoint, split the checkpoint. Name the checkpoints
-included in each audit. Do not present a whole cross-component workstream as one audit boundary.
+Checkpoints organize implementation, not agent calls, sessions, or commits. Name observable acceptance
+cases and cross-boundary invariants; the active acceptance protocol owns auditor task routing and
+partitioning.
 
 State a finite union or state matrix once at its owning contract. Consumer steps reference it and
 add only behavior specific to their seam. Do not repeat stale-result, idempotence, serialization, or
@@ -154,12 +137,11 @@ corrections required for accuracy or validation.
 Compare the draft with the fidelity inventory. Confirm that every item is present unchanged, every
 foundation precedes separate producer and consumer checkpoints, and every checkpoint names one real
 owner, entry point, and stable acceptance seam. Confirm that recovery is separate when its entry
-point differs and that the audit map assigns every checkpoint whole to one primary audit without
-hiding cross-component boundaries. Confirm every touchpoint is concrete, parallel work remains
-parallel, and no section repeats another. Reject conditional implementation choices, inferred
-backfill semantics, checkpoints with multiple entry points, and final audits containing multiple
-invariants. Confirm every product distinction has a direct contract representation and every new
-field has a complete lifecycle. Confirm presentation does not substitute for required system
+point differs and acceptance covers cross-component boundaries. Confirm touchpoints are concrete,
+parallel work remains parallel, and no section repeats another. Reject conditional implementation
+choices, inferred backfill semantics, and checkpoints with multiple entry points. Confirm every product
+distinction has a direct contract representation and every new field has a complete lifecycle.
+Confirm presentation does not substitute for required system
 consumers. Resolve technical gaps directly; ask only when the answer changes user-visible behavior
 or valued data. Restore omissions and split invalid checkpoints before writing.
 

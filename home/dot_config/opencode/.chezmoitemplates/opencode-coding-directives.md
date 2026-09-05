@@ -26,7 +26,8 @@ Before editing, trace the affected flow and inspect relevant callers.
 
 ## Development
 
-- Use latest stable versions of tools, languages, libraries, frameworks.
+- Use current stable versions for new selections. Preserve repository version constraints unless an
+  upgrade is requested.
 - Prefer current, idiomatic APIs and official usage recommendations over deprecated or ad-hoc
   approaches.
 - Reduce nesting: invert conditions, exit early.

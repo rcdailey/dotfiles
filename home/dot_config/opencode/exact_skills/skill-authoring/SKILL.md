@@ -10,9 +10,7 @@ description: >-
 Skills are on-demand procedures. Put durable invariants in AGENTS.md, reference material in docs,
 and deterministic rules in permissions or checks.
 
-Density is part of correctness. After preserving required behavior, MUST remove every sentence,
-example, heading, or section that does not change triggering, procedure, failure handling, or
-verification. Tighten the rest without obscuring conditions or alternatives.
+Apply the active Authoring policy; this skill governs on-demand procedure discovery and packaging.
 
 ## Decide whether to create a skill
 

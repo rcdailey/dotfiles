@@ -66,14 +66,15 @@ Spawn one `reviewer` task per selected PR. Pass:
 
 Keep each returned task id paired with its PR number for the rest of the session.
 
-Fan-out PRs run in parallel; each gets its own `/tmp/pr-review-{n}` worktree so parallel execution
-is safe.
+Fan-out PRs run in parallel; the reviewer owns repository- and session-isolated worktrees or uses
+its remote-only fallback. Never assign a shared temporary path in the caller.
 
 For one selected PR, spawn one task and relay its report directly.
 
 ## Aggregate Output
 
-Before relaying, spot-check one representative reported finding per PR against its cited path and
+Preserve `partial` and `blocked` statuses; do not present either as approval. Before relaying,
+spot-check one representative reported finding per PR, when present, against its cited path and
 line, plus any external claim that controls the verdict. This is a bounded hallucination check, not
 a second review. If the evidence contradicts the report, resume that PR's reviewer task with the
 discrepancy and require it to correct its pending comments and report.

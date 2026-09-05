@@ -2,17 +2,15 @@
 name: gh-api
 description: >-
   Use when operating on the GitHub REST or GraphQL API via `gh api` for cases not covered by
-  higher-level `gh` subcommands: creating or managing draft pull requests, querying or mutating
-  GitHub Discussions, or any GitHub API call requiring raw endpoints. Do NOT use for standard
+  higher-level `gh` subcommands, including GitHub Discussions and other raw endpoints.
+  Do NOT use for standard
   `gh pr`, `gh issue`, `gh release`, or `gh repo` workflows. Do NOT use for any PR review
   operations (reading comments, posting replies, managing reviews); use `gh-review` instead.
 ---
 
-## PR Review Exclusion
-
-Do NOT use `gh api` for any PR review operations: reading comments, posting replies, managing
-reviews, or viewing review threads. Use `gh-review` for all review workflows. Load the
-`gh-pr-review` skill for details.
+Use `gh pr create --draft` and `gh pr ready [--undo]` for draft status. Review comments belong to
+`gh-pr-review`. Consult `gh api --help` for request flags; the global explicit-method rule applies to
+REST and GraphQL alike.
 
 ## Output Filtering
 
@@ -24,63 +22,17 @@ wastes context tokens. Always pipe through `--jq` to extract only the fields you
 For any mutation, append `--jq` selecting the fields the caller actually needs. Typical minimal set:
 `{id, body, html_url}`. Add `state`, `title`, or `number` when relevant.
 
-## Draft Pull Requests
-
-### Create a draft PR
-
-```sh
-gh api --method POST repos/:owner/:repo/pulls \
-  -f title="My new feature" -f body="Description of changes" \
-  -f head="feature-branch" -f base="main" -F draft=true \
-  --jq '{number, title, html_url, draft}'
-```
-
-For cross-repo PRs, use `head="username:branch"`.
-
-### Get PR details
-
-```sh
-gh api --method GET repos/:owner/:repo/pulls/<number> --jq '{draft, state, title}'
-```
-
-### Convert draft to ready for review
-
-```sh
-gh api --method PATCH repos/:owner/:repo/pulls/<number> -F draft=false \
-  --jq '{number, title, html_url, draft}'
-```
-
-Note: Cannot convert back to draft via API once marked ready.
-
-### List open draft PRs
-
-```sh
-gh api --method GET repos/:owner/:repo/pulls --jq '.[] | select(.draft) | {number, title}'
-```
-
-### List my open PRs in a repo
-
-```sh
-gh api --method GET repos/:owner/:repo/pulls -f state=open \
-  --jq '.[] | select(.user.login=="USERNAME") | {number, title, draft}'
-```
-
 ## Discussions (GraphQL)
 
-List discussions:
+GraphQL queries use POST too; HTTP method alone does not classify GraphQL operation semantics.
+Retrieve only needed fields and paginate when completeness matters:
 
 ```sh
-gh api graphql -f query='query($owner:String!,$repo:String!) { repository(owner:$owner,name:$repo) { discussions(first:10) { nodes { number title url } } } }' -F owner=OWNER -F repo=REPO
-```
-
-View discussion:
-
-```sh
-gh api graphql -f query='query($owner:String!,$repo:String!,$number:Int!) { repository(owner:$owner,name:$repo) { discussion(number:$number) { title body comments(first:10) { nodes { body author { login } } } } } }' -F owner=OWNER -F repo=REPO -F number=NUM
-```
-
-Search discussions:
-
-```sh
-gh api graphql -f query='query($q:String!) { search(query:$q,type:DISCUSSION,first:10) { nodes { ...on Discussion { number title url } } } }' -f q="repo:OWNER/REPO QUERY"
+gh api --method POST graphql -F owner=OWNER -F repo=REPO -f query='query(
+  $owner: String!, $repo: String!
+) {
+  repository(owner: $owner, name: $repo) {
+    discussions(first: 10) { nodes { number title url } }
+  }
+}'
 ```

@@ -92,11 +92,10 @@ before acting.
 Start each task fresh unless the agent's protocol explicitly requires continuity. An initial
 acceptance audit is fresh; every correction check resumes that same task.
 
-You MUST use `gh` directly for read-only GitHub context. When the user supplies a GitHub URL,
-repository and object number, ref, or bounded query, inspect that target and its relevant comments,
-reviews, metadata, or diff yourself before any delegation. Do not ask the researcher to read or
-interpret a known GitHub object. Delegate only open-ended external repository discovery that remains
-after direct GitHub and local repository inspection.
+Use `gh` directly for supplied GitHub objects, refs, and bounded queries. Inspect relevant context
+before delegating remaining open-ended external discovery; never send a known object to the
+researcher. For reviewer or upgrade-analyst tasks, establish repository and PR identity directly,
+then let the specialist own detailed diff, comment, and dependency analysis.
 
 You MUST delegate external web searches and externally hosted PDF retrieval to the researcher.
 GitHub objects and queries are not external web research for routing purposes.
@@ -145,8 +144,8 @@ Production, action orchestration, durable hydration or recovery, state reduction
 presentation are separate slices when independently reviewable. A shared feature or final goal is
 not sufficient reason to combine them.
 
-After acceptance, commit at a major component boundary and start a fresh session when carrying the
-full implementation history would add more context than value.
+After acceptance, commit at a major component boundary only when authorized. Start a fresh session
+when carrying the full implementation history would add more context than value.
 
 ## Independent acceptance audit
 
@@ -182,8 +181,11 @@ failure, fix the findings and resume the same task with only a short fix summary
 results. The auditor discovers the iteration delta and rechecks failed and affected cases while
 preserving unaffected passes.
 
-On `retry`, resume the same task without restoring or editing files. Launch a fresh audit only when
-the prior task or snapshot state is unavailable, or the goal or acceptance matrix changes. Any edit
+On `incomplete`, resume the same task for its named remaining verification; supply missing evidence
+when available. Do not repeat unchanged attempts when evidence is unavailable; report the gap without
+claiming completion. On `retry`, resume the same task without restoring or editing files.
+Launch a fresh audit only when the prior task or snapshot state is unavailable, or the goal or
+acceptance matrix changes. Any edit
 after a pass invalidates it and must return to the same acceptance session. Do not commit, deploy,
 or mark the work complete until the current implementation passes with a stable snapshot.
 

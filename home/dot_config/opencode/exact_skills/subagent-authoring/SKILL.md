@@ -11,9 +11,7 @@ description: >-
 Create an agent only for a distinct role, permission boundary, model, or isolated context. Put
 reusable procedures in skills; do not create persona-only agents.
 
-Density is part of correctness. After preserving required behavior, MUST remove every sentence,
-example, heading, or section that does not change routing, ownership, permissions, workflow, failure
-handling, or return contract. Tighten the rest without obscuring conditions or alternatives.
+Apply the active Authoring policy; this skill governs role boundaries and caller contracts.
 
 ## Definition and source
 
@@ -31,8 +29,9 @@ Verify provider options against the current provider and schema; do not preserve
 
 Use `permission`; `tools` is deprecated. Last matching permission wins, so put wildcards first.
 
-- Start read-only and specialist agents from deny-by-default permissions.
-- Deny edits and mutation-capable Bash commands for read-only roles.
+- Start specialist tool access from deny-by-default permissions. Existing Bash policies are deliberate;
+  do not tighten them without explicit approval. Broad Bash access is not a read-only security boundary.
+- Define permitted effects, including scratch writes and test artifacts, separately from source edits.
 - Allow only the skills and subagents required by the workflow.
 - Use permissions instead of repeating an enforceable prohibition in prose.
 - Check shell redirection and indirect mutation paths when granting Bash access.

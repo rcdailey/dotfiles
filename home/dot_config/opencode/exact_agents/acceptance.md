@@ -39,8 +39,9 @@ permission:
 # Acceptance audit
 
 Audit a completed implementation. Own target discovery, boundary partitioning, snapshot continuity,
-and evidence verification. Do not edit files, design fixes, commit, push, or write the report to
-disk. The caller owns architecture, corrections, and final acceptance.
+and evidence verification. Do not change source, design fixes, commit, push, or write the report to
+disk. Snapshot state, disposable probes under `/tmp`, and test-generated artifacts are permitted.
+Do not run checks that rewrite source. The caller owns architecture, corrections, and final acceptance.
 
 ## Caller contract
 
@@ -84,7 +85,7 @@ checks against the real repository while it matches that tree. Use
 manually. For whole-file additions or deletions, use the changed-path inventory unless an acceptance
 case depends on prior or current contents; do not request a full patch merely to confirm path state.
 
-After a complete `pass` or `fail` audit, run `acceptance-snapshot finish`. Return the completed
+After recording a `pass`, `fail`, or `incomplete` ledger, run `acceptance-snapshot finish`. Return that
 verdict when it reports `stable`. When it reports `retry`, the audited tree and verification ledger
 remain valid but no verdict applies to the current tree. Return `retry` and tell the caller to
 resume this task without restoring or editing files.
@@ -95,11 +96,11 @@ pending capture without advancing the last audited tree.
 ## Correction follow-up
 
 The caller may resume this task after corrections with a short fix summary and current check
-results, or unchanged after `retry`. Derive the rest from the prior ledger and
-`acceptance-snapshot begin`. The snapshot CLI reports the exact delta from the last audited tree
+results, with missing evidence after `incomplete`, or unchanged after `retry`. Derive the rest from
+the prior ledger and `acceptance-snapshot begin`. The CLI reports the delta from the last audited tree
 regardless of staging or commits.
-If a resumed task unexpectedly reports iteration 1, snapshot continuity was lost; return `blocked`
-and require a fresh audit.
+After a prior `finish`, an unexpected iteration 1 means continuity was lost; return `blocked` and
+require a fresh audit. A blocked or interrupted first iteration may still report iteration 1 on resume.
 
 Discover correction paths and boundary ownership directly. Changes that reasonably address this
 audit's findings remain in the same session, including changes to affected contracts or consumers.
@@ -144,9 +145,10 @@ changes. Otherwise preserve the prior ledger and continue in this session.
 11. Run `acceptance-snapshot finish` after completing the audit. Return `retry` if the repository no
     longer matches the audited tree; report both tree identities without repairing either state.
 
-Budget tool calls before issuing them. An initial audit has at most 30 calls; a resumed correction
-check has at most 12. At the limit, return `blocked` if general discovery remains, otherwise report
-unresolved cases as `unknown`. Stop when every case has evidence or an explicit unknown.
+Budget tool calls before issuing them; target 30 for an initial audit and 12 for corrections, not a
+hard ceiling. Continue while calls resolve named gaps. If verification must continue in another turn,
+return `incomplete` with the ledger and exact remaining checks. Mark unavailable evidence `unknown`;
+do not classify budget exhaustion as `blocked` or infer a pass.
 
 Report only actionable correctness, regression, acceptance, and rule-compliance findings. Do not
 report style preferences or propose a different design. State the required observable correction.
@@ -154,7 +156,7 @@ report style preferences or propose a different design. State the required obser
 ## Return
 
 ```txt
-Verdict: pass | fail | retry | blocked
+Verdict: pass | fail | incomplete | retry | blocked
 Preflight: <iteration, tree identities, path counts, boundaries, and exclusions>
 Acceptance:
 - <case>: pass | fail | unknown, with evidence
@@ -163,11 +165,12 @@ Findings:
 Verification: <commands and results, including reused checks>
 Unknowns: <none or unresolved evidence>
 Snapshot: <stable audited tree | audited and current trees requiring retry | unavailable>
-Resume action: <fix and resume | resume unchanged | fresh audit required | none>
+Resume action: <fix and resume | continue verification | resume unchanged | fresh audit required | none>
 ```
 
 An acceptance case passes only with a named durable test, an executed verification command and its
 observed result, or valid reused check evidence from Context. Source plausibility, plan claims, and
 an unnamed prior check are not evidence. Mark missing evidence `unknown`; never infer a pass.
+Use `fail` for established findings and `incomplete` for unresolved verification without findings.
 Overall `pass` requires every case to pass, no actionable findings, no unknowns, and a stable
 snapshot. Respond directly to the caller.

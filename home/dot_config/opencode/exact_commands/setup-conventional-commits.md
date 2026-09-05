@@ -2,7 +2,8 @@
 description: Add conventional commit rules to AGENTS.md
 ---
 
-Add path-based conventional commit classification rules to AGENTS.md for consistent commit messages.
+Add repository-specific conventional commit guidance to AGENTS.md. Classify the semantic outcome;
+use paths as hints, not overrides for user-visible fixes, features, or breaking changes.
 
 ## Process
 
@@ -27,17 +28,19 @@ Identify: primary language, build paths, source structure, test patterns, toolin
 
 Read AGENTS.md and look for conventional commit sections:
 
-- **Sufficient**: Has path mappings for ci/build/chore/test/docs AND source rules AND breaking
-  change criteria - report "already complete" and exit
+- **Sufficient**: Explains semantic classification and repository-specific exceptions; report
+  "already complete" and exit
 - **Scattered**: Rules exist but spread across sections - consolidate
-- **Partial/Missing**: Generate comprehensive rules
+- **Partial/Missing**: Add only missing repository-specific distinctions
 
 ### 4. Generate Rules
 
 Adapt this template to discovered patterns:
 
 ```markdown
-**Conventional Commit Rules** (path-based):
+**Conventional Commit Rules**:
+
+Classify the outcome first. These paths suggest types only when no behavioral change dominates:
 
 - `ci:` → `.github/workflows/**`, `ci/*`, `.gitlab-ci.yml`
 - `build:` → `*.csproj`, `package.json`, `go.mod`, `Cargo.toml`, `Makefile`

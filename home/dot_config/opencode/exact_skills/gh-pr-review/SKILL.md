@@ -85,8 +85,9 @@ Qodana, any `[bot]` author). Batching those into a review the user then has to s
 PR buys nothing, so do NOT `start` a review for bot replies. Every other reply, on someone else's
 PR or to a human on the user's, MUST go through the pending review.
 
-GitHub rejects a published reply while you hold a pending review on that PR. `reply --publish` then
-fails and names the pending review; discard it with `gh-review delete` before retrying.
+GitHub rejects a published reply while you hold a pending review on that PR. If `reply --publish`
+fails, inspect and preserve that review. Ask before discarding it; a failed reply is not deletion
+authorization. Delete only the explicitly authorized review, then retry.
 
 The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` output headers (e.g.
 `@reviewer (2026-05-14) #98765 PRRC_kwDO...:`). Extract the number after `#`, not the node ID.

@@ -48,7 +48,8 @@ Load the `research-cli` skill before using the research CLI. Two toolsets have d
 Fetch PR details:
 
 ```txt
-gh pr view <PR> --json number,title,body,headRefName,statusCheckRollup
+gh pr view <PR> --repo <owner/repo> \
+  --json number,title,body,headRefName,headRefOid,baseRefOid,statusCheckRollup
 ```
 
 Identify:
@@ -59,10 +60,16 @@ Identify:
   inner component and its version change too.
 - The upstream OWNER/REPO or package registry identity.
 
+Record head and base SHAs and read the PR diff with an explicit repository. Bind impact evidence to
+the captured head using `git show <sha>:<path>` or permitted remote retrieval at that ref. Local
+searches locate candidates only; verify matches and absence against the captured tree, not dirty,
+untracked, or differently versioned files. If necessary context is unavailable, return `unknown`;
+do not check out or modify the repository. Use explicit repository arguments on PR calls.
+
 ### 2. Research upstream
 
-MUST fetch upstream changelogs, release notes, or equivalent documentation before producing any
-assessment. The PR body is never sufficient; it may summarize, omit, or mischaracterize.
+Fetch upstream changelogs, release notes, or equivalent documentation before judging compatibility.
+If retrieval fails, return `unknown` with the missing evidence. The PR body alone is insufficient.
 
 Trace the dependency chain to its origin. Changelogs live at the source, not always at the wrapper.
 A Docker image bump from v1.2 to v1.3 might re-wrap an upstream tool that jumped from 4.0 to 5.0;
@@ -74,14 +81,15 @@ schemas, and relevant commit history.
 
 ### 3. Check CI
 
-Run `gh pr checks <PR>`. Any failed or pending required check MUST be flagged as blocking; the merge
-recommendation MUST be "not safe to merge" regardless of changelog findings.
+Run `gh pr checks <PR> --repo <owner/repo> --required`. Failed or pending required checks mean
+`CI blocked`; unavailable check evidence means `unknown`, never success. Distinguish no required
+checks from a failed lookup.
 
 ### 4. Assess repo impact
 
-Search the local repository with `rg` using concrete patterns (package name, image reference, import
-path, config keys from changelogs). Check config files, source imports, lock files, CI pipelines,
-deployment manifests, environment variables, and transitive dependants.
+Search revision-matched source using concrete patterns (package, image reference, imports, changed
+config keys). Check configuration, lock files, CI, deployment manifests, and transitive dependants.
+Local searches may locate candidates but cannot establish absence at a different PR revision.
 
 For each changelog finding, search the repo for the specific affected symbol, key, or pattern. A
 finding is "not actionable" only when a search confirms zero matches. Read every matched file to
@@ -117,15 +125,20 @@ Sort actionable findings into:
 Return to caller:
 
 - PR number, package name, version range
-- CI status (pass/fail/pending); failed checks block merge
-- Safe to merge or requires changes
+- Assessed head/base SHAs and whether repository evidence matched the head
+- CI status (pass/fail/pending/none required/unknown)
+- Assessment: `safe | requires changes | CI blocked | unknown`; list all blockers when states overlap
 - Breaking changes (version introduced, affected repo files)
 - Deprecations (same detail)
 - New features worth adopting (benefit, files that would change)
 - Repo files read and search patterns used
-- Upstream source URLs fetched with research commands (at least one required)
+- Upstream source URLs fetched with research commands, or the retrieval gap for `unknown`
 
 If no actionable findings, state explicitly with the files and patterns that confirmed it.
+
+Before returning, re-read the PR head/base SHAs. Reassess changed evidence or return `unknown` with
+the revision mismatch. `safe` requires complete evidence, no blocking findings, and satisfied required
+CI; missing evidence cannot be inferred safe.
 
 ## Constraints
 
@@ -134,8 +147,6 @@ If no actionable findings, state explicitly with the files and patterns that con
 - Prefer more research over guessing
 - When stuck (private repo, no changelog anywhere), report what you found and what you could not
   find rather than fabricating
-- NEVER produce an assessment without fetching at least one upstream source. The PR body is not a
-  source.
 - NEVER claim "no changes required" without citing specific files read and patterns searched.
   Unsupported conclusions are worse than no conclusion.
 - NEVER accept upstream compatibility claims at face value. "Upgrades will continue working" is a

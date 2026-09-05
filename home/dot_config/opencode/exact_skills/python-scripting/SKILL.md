@@ -1,13 +1,10 @@
 ---
 name: python-scripting
 description: >-
-  Use when creating, editing, refactoring, or reviewing modularized Python CLI scripts managed by
-  uv with pyproject.toml; scaffolding new script projects; adding commands or subcommands to
-  Click-based CLIs; verifying CLI behavior adhoc; configuring hatchling builds or dependency
-  groups; creating wrapper shell scripts for uv-managed projects. Triggers on phrases like "new
-  python script", "add a CLI command", "scaffold a script project", "python CLI", "click command",
-  or any work in a scripts/ directory containing pyproject.toml with hatchling. Do NOT use for
-  single-file scripts, Jupyter notebooks, web applications, or Django/Flask projects.
+  Use when creating, editing, or reviewing this dotfiles repository's uv-managed Python CLI projects
+  under scripts/, or explicitly LLM-facing tooling using the same wrapper convention. Covers Click
+  commands, hatchling packaging, and wrappers. Do not apply to arbitrary human-facing Python CLIs,
+  single-file scripts, notebooks, or web applications.
 ---
 
 # Python Script Projects
@@ -30,11 +27,11 @@ project-name/
   package_name/
     __init__.py        # __version__ = "0.1.0"
     __main__.py        # from package_name.cli import cli; cli()
-    cli.py             # root Click group with auto-discovery
+    cli.py             # Click command or explicit group registration
     _click.py          # HelpfulGroup class
     _errors.py         # die(), domain exceptions
-    command_a.py       # exposes `cli` attribute (auto-discovered)
-    _helpers.py        # underscore prefix = private, skipped by auto-discovery
+    command_a.py       # exposes a command for explicit registration
+    _helpers.py        # underscore prefix = private
     subgroup/          # nested command group (subpackage)
       __init__.py      # defines group, imports subcommand modules
       subcommand.py    # attaches to parent group via decorator
@@ -42,7 +39,8 @@ project-name/
 
 - Directory: kebab-case (`gh-review`). Package: snake_case equivalent (`gh_review`).
 - Command modules: plain names matching the CLI subcommand (`web.py`, `pdf.py`).
-- Every project uses the group pattern with auto-discovery, even single-command projects.
+- Use a plain command for one operation and explicit group registration for multiple operations.
+  Retain auto-discovery only when a current extension boundary needs it; never hide import failures.
 
 ## pyproject.toml
 
@@ -71,7 +69,7 @@ Rules:
 - `[tool.hatch.build.targets.wheel] packages` MUST point to the package directory
 - Dev tools in `[dependency-groups] dev` (not `[project.optional-dependencies]`); omit the group
   entirely when there are none
-- No test framework: no pytest dependency, no `[tool.pytest.ini_options]` (see Adhoc Verification)
+- Put test tools in the dev dependency group when stable behavior needs regression coverage.
 - Omit license, authors, URLs, classifiers
 - No `[project.scripts]`; use wrapper scripts (see Invocation)
 
@@ -109,74 +107,34 @@ re-injects `[env]` values, so `MISE_NO_ENV=1` is what neutralizes it.
 
 ## Click Patterns
 
-### Root Group with Auto-Discovery
-
-Any module in the package exposing a `cli` attribute (`click.Command` or `click.Group`) is
-registered automatically as a subcommand.
+### Explicit Command Registration
 
 ```python
-"""Root CLI group with auto-discovery of subcommand modules."""
+"""Root CLI group."""
 
 from __future__ import annotations
-
-import importlib
-import pkgutil
-from pathlib import Path
 
 import click
 
 from package_name._click import HelpfulGroup
-
-
-class _AutoGroup(HelpfulGroup):
-    """Click group that auto-discovers subcommand modules.
-
-    Any module in the package that exposes a ``cli`` attribute
-    (a click.Group or click.Command) is registered as a subcommand.
-    Modules whose names start with ``_`` are skipped (private helpers).
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._loaded = False
-
-    def _load_plugins(self):
-        if self._loaded:
-            return
-        self._loaded = True
-        pkg_path = str(Path(__file__).parent)
-        for info in pkgutil.iter_modules([pkg_path]):
-            if info.name.startswith("_") or info.name == "cli":
-                continue
-            try:
-                mod = importlib.import_module(f"package_name.{info.name}")
-            except Exception:
-                continue
-            cmd = getattr(mod, "cli", None)
-            if isinstance(cmd, click.Command):
-                self.add_command(cmd, info.name)
-
-    def list_commands(self, ctx):
-        self._load_plugins()
-        return super().list_commands(ctx)
-
-    def get_command(self, ctx, cmd_name):
-        self._load_plugins()
-        return super().get_command(ctx, cmd_name)
+from package_name.command_a import cli as command_a
 
 
 @click.group(
-    cls=_AutoGroup,
+    cls=HelpfulGroup,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.version_option(
     version=__import__("package_name").__version__, prog_name="project-name"
 )
-def cli():
+def cli() -> None:
     """One-line description matching pyproject.toml."""
+
+
+cli.add_command(command_a, "command-a")
 ```
 
-### HelpfulGroup (`_click.py`, verbatim in every project)
+### HelpfulGroup (`_click.py`, when a group needs expanded error help)
 
 ```python
 """Custom Click classes that show full help on usage errors."""
@@ -369,7 +327,7 @@ def run_tool(*args: str) -> str:
     return result.stdout
 ```
 
-Call `check_deps()` from the root CLI group callback (the `cli()` function body in `cli.py`).
+Call `check_deps()` from the entry command or group callback when external executables are required.
 
 ## Code Style
 
@@ -381,14 +339,13 @@ Call `check_deps()` from the root CLI group callback (the `cli()` function body 
 - No `if __name__ == "__main__"` in modules other than `__main__.py`
 - Imports: stdlib, blank line, third-party, blank line, local (isort default)
 
-## Adhoc Verification
+## Verification
 
-MUST NOT introduce pytest, unittest, or any test framework. No `tests/` directory, no test files, no
-fixtures, no conftest. These scripts are disposable LLM tooling; a maintained test suite costs more
-than it protects.
+Apply the active testing policy to stable CLI behavior, especially mutations and recovery. Keep
+durable behavioral tests when regressions would matter; use temporary probes for one-off details.
 
-Behavioral claims MUST be backed by executed code, not reasoning. Exercise the real module inline,
-then discard the snippet: an ephemeral run proves behavior without leaving a test file to maintain.
+Back behavioral claims with executed checks. For temporary probes, exercise the real module inline
+and discard the snippet afterward.
 
 Every snippet MUST print the observed value next to the expectation, so pass/fail is in the output
 rather than in your interpretation of a dump.
@@ -401,8 +358,8 @@ print("repo:", r.repo, "| number:", r.number, "| expect owner/repo, 12")
 EOF
 ```
 
-Exercise the narrowest unit that proves the claim: a pure function over a literal input beats a full
-command run. For command-level behavior, invoke the CLI the way a user does:
+Choose the stable observable boundary that owns the behavior. For CLI contracts, invoke the command
+the way its caller does:
 
 ```sh
 uv run --project . -m package_name command arg
@@ -417,8 +374,8 @@ Scratch files MUST be deleted before reporting; when a file is unavoidable, name
 
 ## Compliance Checklist
 
-Every script project MUST pass all items below at all times. Verify after creating, editing,
-refactoring, or reviewing any project. Fix violations in place.
+Check applicable items in the affected scope. During reviews, report violations without editing;
+during implementation, fix only authorized scope. Do not retrofit unrelated projects or scaffolding.
 
 ### Structure
 
@@ -427,10 +384,10 @@ refactoring, or reviewing any project. Fix violations in place.
 - [ ] `uv.lock` present and committed
 - [ ] Package contains `__init__.py` with `__version__`
 - [ ] Package contains `__main__.py` with exact entry pattern
-- [ ] Package contains `_click.py` with `HelpfulGroup` (verbatim)
-- [ ] Package contains `_errors.py` with `die()` and domain exception
-- [ ] Package contains `cli.py` with `_AutoGroup` root group
-- [ ] No `tests/` directory and no test files anywhere in the project
+- [ ] Groups use `HelpfulGroup` when expanded error help is needed
+- [ ] Shared error helpers exist when multiple commands need them
+- [ ] Command registration matches current complexity and surfaces import failures
+- [ ] Stable, consequential behavior has regression coverage
 - [ ] No `[project.scripts]` in pyproject.toml; wrapper script exists instead
 
 ### Dependencies
@@ -440,7 +397,7 @@ refactoring, or reviewing any project. Fix violations in place.
 - [ ] All pins use `>=X.Y` format
 - [ ] Dev dependencies in `[dependency-groups] dev`, not `[project.optional-dependencies]`
 - [ ] No formatting/UI libraries (rich, tabulate, colorama, tqdm, etc.)
-- [ ] No test framework dependency (pytest, unittest plugins) and no `[tool.pytest.ini_options]`
+- [ ] Test dependencies, when needed, are development-only
 
 ### Code
 

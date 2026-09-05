@@ -15,56 +15,8 @@ Python CLI wrapping the Linear GraphQL API. Authenticates via stored OAuth token
 (`linear auth login`) or `LINEAR_API_KEY` env var. Run `linear <group> <cmd> -h`
 for the full flag set.
 
-```txt
-linear me
-linear auth login [--oauth | --api-key] [--port N]
-linear auth logout
-linear auth status
-linear teams list
-linear teams members <TEAM_KEY>
-linear states list [--team KEY]
-linear labels groups
-linear labels list [--group NAME]...
-linear issues list [--team KEY] [--state TYPE] [--assignee USER] [--label NAME]
-                   [--cycle CYCLE] [--estimate EST] [--project NAME]
-                   [--milestone NAME] [--limit N]
-linear issues search <QUERY> [--team KEY] [--state TYPE] [--assignee USER]
-                     [--label NAME] [--cycle CYCLE] [--estimate EST]
-                     [--project NAME] [--milestone NAME] [--limit N]
-linear issues view <ID> [--comments]
-linear issues create --title TEXT --team KEY [--description TEXT] [--state NAME]
-                     [--priority 0-4] [--assignee USER] [--label NAME]...
-                     [--parent ID] [--estimate N] [--project NAME]
-                     [--milestone NAME]
-linear issues update <ID>... [--title TEXT] [--description TEXT] [--state NAME]
-                     [--priority 0-4] [--assignee USER] [--add-label NAME]...
-                     [--remove-label NAME]... [--estimate N] [--parent ID]
-                     [--project NAME] [--milestone NAME]
-linear comments list <ISSUE_ID>
-linear comments add <ISSUE_ID> --body TEXT [--parent COMMENT_ID]
-linear comments edit <COMMENT_ID> --body TEXT
-linear relations list <ISSUE_ID>
-linear relations add <ISSUE_ID> <TYPE> <RELATED_ID>
-linear relations remove <ISSUE_ID> <TYPE> <RELATED_ID>
-linear links list <ISSUE_ID>
-linear links add <ISSUE_ID> <URL> [--title TEXT]
-linear links remove <LINK_ID>
-linear projects list [--team KEY]
-linear projects view <ID_OR_NAME>  (includes teams and workflow states)
-linear projects update <ID_OR_NAME> [--name TEXT] [--description TEXT]
-linear project-updates list [PROJECT_ID_OR_NAME]
-linear project-updates add <PROJECT_ID_OR_NAME> --body TEXT [--health onTrack|atRisk|offTrack]
-linear milestones list --project <NAME_OR_UUID>
-linear milestones view <MILESTONE_NAME> --project <NAME_OR_UUID>
-linear milestones create --project <NAME_OR_UUID> --name TEXT [--description TEXT]
-                         [--target-date YYYY-MM-DD]
-linear milestones update <ID> [--name TEXT] [--description TEXT]
-                         [--target-date YYYY-MM-DD]
-linear milestones delete <ID>
-linear documents list [--project NAME]
-linear documents view <ID>
-linear api <QUERY> [--var key=value]...
-```
+Use `linear --help` to discover groups. This skill owns workflow and non-obvious semantics, not a
+duplicate command-signature catalog.
 
 ## Auth
 

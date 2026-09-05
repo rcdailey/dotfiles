@@ -6,8 +6,8 @@ import type { Plugin } from "@opencode-ai/plugin";
 
 const CALIBRATION = [
   "Chat readability: lead with the answer. Make cause and effect clear for nontrivial claims in a",
-  "sentence or two, never a section. Short paragraphs; headings or bullets only where they beat",
-  "prose for scanning. Stop when complete: no preambles, restated requests, recaps of work the",
+  "concise explanation. Short paragraphs; headings or bullets where they improve scanning.",
+  "Follow the Chat Style policy. Stop when complete: no preambles, recaps of work the",
   "user just watched, restated conclusions, or trailing offers.",
 ].join(" ");
 
@@ -24,7 +24,8 @@ const BUDGET = [
 ].join(" ");
 
 const CLOSING = [
-  "When ending a turn, close with `Next:` and one action. Never end a turn to announce a step you",
+  "When ending a turn with work remaining, state the current position and one next action.",
+  "Do not invent a next step after completion. Never end a turn to announce a step you",
   "can take now.",
 ].join(" ");
 

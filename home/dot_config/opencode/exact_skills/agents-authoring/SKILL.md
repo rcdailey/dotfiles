@@ -10,9 +10,7 @@ description: >-
 AGENTS.md contains only non-obvious, durable rules for its effective scope. It is not a repository
 manual.
 
-Density is part of correctness. After preserving required behavior, MUST remove every sentence,
-example, heading, or section that does not change a rule, scope, decision, escalation, or
-authoritative pointer. Tighten the rest without obscuring conditions or alternatives.
+Apply the active Authoring policy; this skill governs rule placement and loading.
 
 ## Decide what belongs
 

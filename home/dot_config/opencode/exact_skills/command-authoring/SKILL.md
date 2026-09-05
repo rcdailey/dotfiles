@@ -11,9 +11,7 @@ description: >-
 Commands are thin user-facing entry points. Put reusable procedures in skills and execution
 contracts in agents.
 
-Density is part of correctness. After preserving required behavior, MUST remove every sentence,
-example, heading, or section that does not change routing, input handling, execution, a stop
-condition, or output. Tighten the rest without obscuring conditions or alternatives.
+Apply the active Authoring policy; this skill governs command routing and input handling.
 
 ## Definition
 
