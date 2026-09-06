@@ -58,13 +58,15 @@ and head SHAs. Never collapse CI-blocked or unknown assessments into this summar
 
 ALWAYS use `gh pr merge --rebase`. Never use merge commits or squash.
 
-Before each approved merge, recheck head SHA, required CI, and mergeability. Reassess changed heads;
-skip and report PRs that are no longer safe. Merge sequentially, with at least three seconds between
-attempts; the delay does not establish mergeability. Bind each merge to the assessed head with
-`--match-head-commit <sha>`.
+Merge all approved PRs sequentially in one shell loop, with a three-second delay after each attempt:
 
-If a merge fails, record the error and continue with the remaining approved PRs. Do not retry a failed
-merge without resolving its cause. Finish with merged, failed, and skipped PRs and their reasons.
+```bash
+for pr in 101 102 103; do gh pr merge "$pr" --repo owner/repo --rebase; sleep 3; done
+```
+
+Do not make separate `gh pr view` calls before or after merging. The assessment already checks CI and
+the PR head, while `gh pr merge` reports the result of each attempt. Record failures, continue through
+the loop, and finish with the merged and failed PRs. Do not retry a failure without resolving its cause.
 
 ## Rules
 
