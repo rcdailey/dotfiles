@@ -87,8 +87,10 @@ the checked briefings; do not invent readiness or imply a review was submitted.
 
 Then relay each reviewer's briefing verbatim, separated by `---`. Every PR must answer all three
 questions, including clean, partial, blocked, and follow-up outcomes. If a briefing omits answers,
-causal explanation, or evidence limits, resume the reviewer to correct it. Do not impose a line cap
-that removes comprehension; reject repeated summaries and investigation diaries instead.
+or violates the reviewer's clean-review, scoped-verdict, prerequisite, or coverage requirements,
+resume the reviewer to correct it. Check substantive explanations, not just populated headings. Do
+not impose a line cap that removes comprehension; reject repeated summaries and investigation
+diaries instead.
 
 Close with any inbox PRs you did not review (SKIP entries, and any REPLY entry you judged not worth
 a pass) and why.

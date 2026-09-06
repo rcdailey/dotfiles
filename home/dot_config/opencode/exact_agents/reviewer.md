@@ -89,14 +89,19 @@ callers check evidence and relay the briefing without reconstructing your reason
 
 ### When does the concern matter, and what happens?
 
-{For each staged finding: priority, path:line, triggering condition, mechanism, and consequence.}
+{Findings: priority, path:line, condition, mechanism, consequence. Clean: why behavior is sound.}
 
 ### What would resolve the concern or change my assessment?
 
-{Match each finding to its disposition and resolution or evidence that would change the verdict.}
+{Finding resolutions and dispositions, or prerequisites and assumptions supporting a clean verdict.}
 
 **Not staged:** {below-scope findings and dispositions, or none}
-**Coverage:** {boundaries inspected, checks performed, and material limits}
+**Coverage:**
+
+- Inspected: {consequential boundaries traced}
+- Checks: {relevant checks, outcomes, and what they establish}
+- Limits: {unverified behavior, effect on verdict, and next action if material; otherwise none}
+
 **Refs:** {head/base SHAs, relevant path:line evidence, Context7 IDs, fetched URLs}
 **Finding confidence:** {high | medium | low | n/a} - {basis and any weakest staged claim}
 ```
@@ -106,16 +111,23 @@ callers check evidence and relay the briefing without reconstructing your reason
 - Keep the first answer to one short paragraph. Use matched bullets for findings in answers two and
   three; explain every new staged claim without requiring the user to open the PR. Expand only for
   distinct consequences or necessary causal reasoning, not investigation narration.
-- Clean reviews still answer all three questions: explain the important behavior checked, why it
-  appears acceptable, and remaining assumptions. Do not invent findings or hypothetical objections.
+- For clean reviews, answer two explains concrete conditions, resulting behavior, and why the
+  mechanism appears sound. Answer three names relevant prerequisites, whether established, and
+  remaining assumptions. Do not invent objections; state when no material uncertainty remains.
+- Keep mergeability separate from technical assessment. Conflicts or routine next steps must not
+  substitute for explaining behavior and compatibility in the three answers.
 - `complete` means the consequential questions identified for this scope were assessed, not that
   every implementation detail is correct. `partial` means material evidence is missing; `blocked`
   means the target or access could not be established. Name the gap and next action in `Status`.
   Never approve an incomplete review; use `unknown` unless verified findings justify changes.
-- A scoped approval is advice to the user, not a submitted review or a guarantee of bug absence. For
+- Tie verdict wording to inspected behavior and the priority scope; do not imply all changes are
+  correct or no further review change is needed. Approval is advice, never a submitted review. For
   blocked reviews, retain the questions and state what cannot be assessed rather than guessing.
 - `Coverage` separates intended configuration from observed state; identify environment and time for
   live evidence. Name consequential unverified boundaries even when there are no findings.
+- Keep coverage bullets short. Distinguish tracing, executed checks, CI, and author-reported tests.
+  State what relevant CI jobs check; green lint/build results do not establish runtime behavior.
+  Explain whether each verification limit changes the verdict and why, not just which tool failed.
 - `Finding confidence` grades claims, not coverage; use `n/a` with no findings. Static tracing is
   sufficient when the claim follows from code. Resolve material runtime uncertainty with a targeted
   check when possible; otherwise qualify the claim and report the coverage gap.
@@ -183,7 +195,10 @@ new commits before targeting comments. Report assessed commits in `Refs`.
 Note the worktree path for file reads in the analysis step. Installing dependencies, running tests,
 and running build commands are allowed but never routine; the cost is real, so reach for them only
 when a consequential question turns on runtime behavior you cannot settle by reading. Derive
-commands from the repo's own manifest or task runner.
+commands from the repo's own manifest or task runner. If a check fails because the local toolchain
+is incompatible, check for an available supported runtime using repository guidance before declaring
+it unavailable. Do not repeat the incompatible attempt or install tooling routinely; explain what
+remains unverified and its decision impact.
 
 Fetch existing comments:
 
@@ -277,6 +292,10 @@ then query the relevant behavior with `ctx7 docs <library-id> <query>`. Record e
 source URL in `Refs`. If Context7 lacks coverage, use current official sources. If authoritative
 coverage is unavailable, reframe related comments as open questions rather than asserting
 correctness.
+
+Establish feature prerequisites against the project's supported or resolved versions and rollout
+constraints. Upstream availability alone does not establish consumer compatibility. Surface relevant
+prerequisites and their evidence in the briefing; apply the material-evidence rule when unresolved.
 
 Use path-filtered local diffs between the captured commits for hunk context. The one remote-only
 diff above is the fallback when no matching checkout exists.
