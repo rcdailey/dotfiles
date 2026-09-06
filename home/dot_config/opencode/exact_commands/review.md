@@ -3,8 +3,8 @@ description: Code review orchestrator; selects PRs and delegates each to the rev
 ---
 
 Orchestrate code review by parsing the argument, selecting the work list, and spawning one
-`reviewer` task per PR. Spot-check the returned evidence, then relay the corrected subagent report;
-do not reproduce the full review or re-post findings.
+`reviewer` task per PR. Spot-check evidence, then present a private comprehension briefing per PR;
+the reviewer owns investigation and reasoning. Do not reconstruct reviews or re-post findings.
 
 Focus is critical/high priority issues unless `$ARGUMENTS` includes `"medium"`, `"minor"`, `"low"`,
 or `"all"`. Pass the priority scope through to every spawned task unchanged.
@@ -40,12 +40,12 @@ Each block is labelled with its trigger and the deltas since your last review:
   comment since your last review; author and comment previews are listed.
 - **SKIP** — nothing changed since your last review.
 
-The block content is sufficient to decide without further tool calls. Select NEW and RE-REVIEW
-PRs, plus any REPLY PR whose comments warrant another pass (a direct question or pushback, not
+The block content is sufficient to decide without further tool calls. Select NEW and RE-REVIEW PRs,
+plus any REPLY PR whose comments warrant another pass (a direct question or pushback, not
 acknowledgement). Disregard the rest; do not spawn a reviewer for a delta not worth a review pass.
 
-**Empty inbox:** if `inbox` reports no PRs awaiting review, STOP and relay that. Do not fall back
-to reviewing local changes.
+**Empty inbox:** if `inbox` reports no PRs awaiting review, STOP and relay that. Do not fall back to
+reviewing local changes.
 
 ## Execution
 
@@ -54,7 +54,7 @@ Rename the session before spawning tasks:
 - One PR: `PR #N: TICKET-ID short description`, where TICKET-ID is a Linear or GitHub issue key
   found in the PR title or branch name (omit if none). Description under 10 words, capturing the
   PR's purpose. Derive both from the PR title already fetched; for PR-number mode run `gh pr view
-  {number} --json title,headRefName` first.
+  {number} --repo {owner}/{repo} --json title,headRefName` first.
 - Fan-out: `Review: {repo} ({n} PRs)`
 
 Spawn one `reviewer` task per selected PR. Pass:
@@ -63,32 +63,35 @@ Spawn one `reviewer` task per selected PR. Pass:
   repo
 - The PR number
 - The priority scope from `$ARGUMENTS` (if any)
+- Any user-supplied access authorization or work budget, without broadening it. The reviewer
+  discovers repository-specific context and tools from applicable local instructions.
 
 Keep each returned task id paired with its PR number for the rest of the session.
 
 Fan-out PRs run in parallel; the reviewer owns repository- and session-isolated worktrees or uses
 its remote-only fallback. Never assign a shared temporary path in the caller.
 
-For one selected PR, spawn one task and relay its report directly.
+For one selected PR, use the same evidence check and briefing presentation below.
 
 ## Aggregate Output
 
 Preserve `partial` and `blocked` statuses; do not present either as approval. Before relaying,
-spot-check one representative reported finding per PR, when present, against its cited path and
-line, plus any external claim that controls the verdict. This is a bounded hallucination check, not
-a second review. If the evidence contradicts the report, resume that PR's reviewer task with the
-discrepancy and require it to correct its pending comments and report.
+spot-check one representative finding per PR against its cited evidence, plus any external claim
+that controls the verdict. For clean reviews, check one consequential assessment against its cited
+evidence. This is a bounded hallucination check, not a second review. If evidence contradicts the
+briefing or is unavailable, resume that task to correct its comments, assessment, or status.
 
-Relay each subagent's report verbatim, preserving every field of its return template. MUST NOT
-summarize, expand, reorder, or drop fields; the report is already compressed to an index and the
-pending review carries the detail. Separate multiple PRs with `---`. Add no index, preamble, or
-analysis of your own.
+For multiple PRs, lead with one linked overview bullet per PR: status, proposed verdict, pending
+comment count, and any decision or missing evidence requiring user attention. Derive these only from
+the checked briefings; do not invent readiness or imply a review was submitted.
 
-If a report exceeds its 20-line budget or pads findings with prose, resume the reviewer task and
-require a compliant report rather than editing it in the caller context.
+Then relay each reviewer's briefing verbatim, separated by `---`. Every PR must answer all three
+questions, including clean, partial, blocked, and follow-up outcomes. If a briefing omits answers,
+causal explanation, or evidence limits, resume the reviewer to correct it. Do not impose a line cap
+that removes comprehension; reject repeated summaries and investigation diaries instead.
 
-Close with any inbox PRs you did not review (SKIP entries, and any REPLY entry you judged not
-worth a pass) and why.
+Close with any inbox PRs you did not review (SKIP entries, and any REPLY entry you judged not worth
+a pass) and why.
 
 ## After the Reports
 
