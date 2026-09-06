@@ -5,9 +5,17 @@
   "logLevel": "DEBUG",
   "autoupdate": false,
   "share": "manual",
+  "default_agent": "build",
   "compaction": { "auto": true },
   "agent": {
-    "plan": { "disable": true },
+    "plan": {
+      "model": {{ $models.plan.model | quote }},
+      "variant": {{ $models.plan.variant | quote }},
+    },
+    "build": {
+      "model": {{ $models.build.model | quote }},
+      "variant": {{ $models.build.variant | quote }},
+    },
     "title": {
       "model": {{ $models.title.model | quote }},
     },
@@ -56,7 +64,7 @@
     },
   },
   "plugin": [
-    ["@plannotator/opencode@latest", { "workflow": "all-agents" }],
+    "@plannotator/opencode@latest",
 {{- if eq .env "work" }}
     "opencode-claude-auth@latest",
 {{- end }}

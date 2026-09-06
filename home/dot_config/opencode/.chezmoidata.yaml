@@ -1,5 +1,11 @@
 opencodeModels:
   work:
+    plan:
+      model: anthropic/claude-fable-5-1
+      variant: medium
+    build:
+      model: anthropic/claude-opus-5
+      variant: medium
     title:
       model: anthropic/claude-sonnet-5
     compaction:
@@ -22,6 +28,12 @@ opencodeModels:
       variant: low
 
   personal:
+    plan:
+      model: openai/gpt-6-astra
+      variant: medium
+    build:
+      model: openai/gpt-5.6-sol
+      variant: medium
     title:
       model: openai/gpt-5.6-luna
     compaction:
