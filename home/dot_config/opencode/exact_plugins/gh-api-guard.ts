@@ -83,8 +83,10 @@ function basename(value: string): string {
   return value.includes("/") ? (value.split("/").pop() ?? value) : value;
 }
 
-// Complete literal words only: no expansions, redirections, comments, or shell operators.
-const LITERAL_COMMAND = /^(?:[ \t]|'[^'\n]*'|"[^"\\$`\n]*"|[^\s'"\\$`|&;()<>#*?[\]{}~!])+$/;
+// No substitutions, broad globs, redirections, comments, or shell operators.
+// An unquoted `?` is accepted for REST query strings because it cannot alter the
+// separately validated request method.
+const LITERAL_COMMAND = /^(?:[ \t]|'[^'\n]*'|"[^"\\$`\n]*"|[^\s'"\\$`|&;()<>#*[\]{}~!])+$/;
 
 // Args following each real `gh api` invocation in the command. Scanning every
 // token (not just the leading one) covers wrappers like `xargs -I{} gh api ...`.

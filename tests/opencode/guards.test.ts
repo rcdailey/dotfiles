@@ -10,6 +10,8 @@ for (const command of [
   "gh api user --method GET",
   "gh api --method=GET user",
   "gh api -XGET user",
+  'gh api --method GET "repos/example/repo/contents/file.py?ref=abc123" -H "Accept: raw"',
+  'gh api --method GET repos/example/repo/contents/file.py?ref=abc123 -H "Accept: raw"',
   'rg "gh api.*deployments" .',
 ]) {
   test(`allows an unambiguous read: ${command}`, async () => {
