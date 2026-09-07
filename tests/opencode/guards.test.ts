@@ -7,54 +7,12 @@ const tools = await ToolGuards({} as never);
 
 for (const command of [
   "gh api --method GET user",
-  "gh api user --method GET",
-  "gh api --method=GET user",
-  "gh api -XGET user",
-  'gh api --method GET "repos/example/repo/contents/file.py?ref=abc123" -H "Accept: raw"',
-  'gh api --method GET repos/example/repo/contents/file.py?ref=abc123 -H "Accept: raw"',
-  'rg "gh api.*deployments" .',
+  "gh api --method POST repos/example/repo/issues",
 ]) {
-  test(`allows an unambiguous read: ${command}`, async () => {
-    const output = { status: "ask" as "ask" | "allow" | "deny" };
-    await api["permission.ask"]?.({ pattern: command, metadata: { command } } as never, output);
-    expect(output.status).toBe("allow");
+  test(`accepts an explicit API method: ${command}`, async () => {
+    await api["tool.execute.before"]?.({ tool: "bash" } as never, { args: { command } });
   });
 }
-
-for (const command of [
-  "gh api --method DELETE repos/example/repo",
-  "gh api --method GET --method DELETE repos/example/repo",
-  "gh api --method GET -XDELETE repos/example/repo",
-  "gh api --method GET -iX DELETE repos/example/repo",
-  "gh api repos/example/repo -f --method=GET",
-  'printf "%s" "$(gh api --method DELETE repos/example/repo)"',
-  'printf "%s" "`gh api --method DELETE repos/example/repo`"',
-  'bash -c "gh api --method DELETE repos/example/repo"',
-  "python -c \"import os; os.system('gh api --method DELETE repos/example/repo')\"",
-  'gh api --method GET graphql -f query="mutation { placeholder }"',
-  "gh api --method GET user && git push",
-  "gh api --method GET user > result.json",
-  "gh api --method GET user & gh api --method DELETE repos/example/repo",
-  'gh api --method GET "unterminated',
-  "gh api --method $METHOD user",
-  "gh api --method GET user # gh api --method DELETE repos/example/repo",
-]) {
-  test(`retains approval for ambiguous or mutating input: ${command}`, async () => {
-    const output = { status: "ask" as "ask" | "allow" | "deny" };
-    await api["permission.ask"]?.({ pattern: command, metadata: { command } } as never, output);
-    expect(output.status).toBe("ask");
-  });
-}
-
-test("does not relax an unrelated permission request or a denial", async () => {
-  const command = "gh api --method GET user";
-  const output = { status: "ask" as "ask" | "allow" | "deny" };
-  await api["permission.ask"]?.({ pattern: "git push", metadata: { command } } as never, output);
-  expect(output.status).toBe("ask");
-  output.status = "deny";
-  await api["permission.ask"]?.({ pattern: command, metadata: { command } } as never, output);
-  expect(output.status).toBe("deny");
-});
 
 test("requires a method on an ordinary API invocation", async () => {
   await expect(

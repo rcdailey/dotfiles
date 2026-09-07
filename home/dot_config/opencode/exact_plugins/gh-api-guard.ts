@@ -1,14 +1,7 @@
 import type { Plugin } from "@opencode-ai/plugin";
 
-// Self-contained `gh api` permission semantics. The config only needs a single
-// `"*gh api*": "ask"` bash rule; this plugin decides the outcome by parsing the
-// command. Auto-approval covers only literal direct REST reads and inert rg searches.
-// Shell expansion, composition, and unknown wrappers retain approval. This is not a
-// shell sandbox; broader automatic approval requires a structured execution boundary.
-//
-// Read-only subagents (acceptance, reviewer) keep their own agent-level `gh api`
-// denies on purpose: a hard deny fails fast, while an `ask` stalls an unattended
-// subagent. Those requests never reach `ask`, so this plugin cannot relax them.
+// Require an explicit method for every real `gh api` invocation. Permission rules
+// separately allow conventional GET commands and ask for other methods.
 
 interface Token {
   value: string;
@@ -83,11 +76,6 @@ function basename(value: string): string {
   return value.includes("/") ? (value.split("/").pop() ?? value) : value;
 }
 
-// No substitutions, broad globs, redirections, comments, or shell operators.
-// An unquoted `?` is accepted for REST query strings because it cannot alter the
-// separately validated request method.
-const LITERAL_COMMAND = /^(?:[ \t]|'[^'\n]*'|"[^"\\$`\n]*"|[^\s'"\\$`|&;()<>#*[\]{}~!])+$/;
-
 // Args following each real `gh api` invocation in the command. Scanning every
 // token (not just the leading one) covers wrappers like `xargs -I{} gh api ...`.
 function invocations(command: string): Token[][] {
@@ -112,27 +100,6 @@ function methodOf(args: Token[]): string | undefined {
   return undefined;
 }
 
-function isLiteralRead(command: string): boolean {
-  if (!LITERAL_COMMAND.test(command)) return false;
-  const parts = segments(command);
-  if (parts.length !== 1) return false;
-  const [lead, subcommand, ...args] = parts[0];
-  if (!lead || lead.quoted) return false;
-
-  if (lead.value === "rg") {
-    return !parts[0].some((token) => /^--pre(?:=|$)/.test(token.value));
-  }
-  if (lead.value !== "gh" || subcommand?.quoted || subcommand?.value !== "api") return false;
-  if (args.some((token) => /^\/?graphql(?:[/?]|$)/.test(token.value))) return false;
-
-  // Do not mistake a field value for an option, or miss method overrides in short clusters.
-  const methods = args.filter((token) => /^(?:--method(?:=|$)|-X)/.test(token.value));
-  if (methods.length !== 1 || methodOf(args) !== "GET") return false;
-  const index = args.indexOf(methods[0]);
-  if (index > 1 || (index === 1 && args[0].value.startsWith("-"))) return false;
-  return !args.some((token) => /^-[^-].+/.test(token.value) && !/^-X=?GET$/.test(token.value));
-}
-
 const MISSING_METHOD =
   "TOOL USAGE VIOLATION: 'gh api' requires an explicit --method\n" +
   "Correct: gh api --method GET repos/{owner}/{repo}/pulls";
@@ -148,22 +115,6 @@ export const GhApiGuard: Plugin = async () => {
       for (const args of invocations(command)) {
         if (!methodOf(args)) throw new Error(MISSING_METHOD);
       }
-    },
-
-    "permission.ask": async (input, output) => {
-      if (output.status !== "ask") return;
-
-      const command = input.metadata?.command;
-      if (typeof command !== "string") return;
-
-      // Only relax requests our own bash rule could have raised, so an unrelated
-      // pattern in the same request (e.g. `git push`) still prompts.
-      const patterns = [input.pattern ?? []].flat();
-      if (!patterns.length || !patterns.every((p) => p.includes("gh api"))) return;
-
-      if (!isLiteralRead(command)) return;
-
-      output.status = "allow";
     },
   };
 };
