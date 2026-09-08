@@ -17,12 +17,13 @@ description: >-
 # PR Review
 
 All PR comment operations (reading, writing, replying) MUST go through `gh-review`. Do NOT use raw
-`gh api` or `gh pr` for any review-related task. `gh-review --help` prints every command with its
-full signature in one pass; use `gh-review <command> --help` only for option semantics. This skill
-covers workflow and semantics only.
+`gh api` or `gh pr` for any review-related task.
 
-The repository is a positional `owner/repo` argument, NOT a `--repo` flag, and it is inferred from
-the current directory when omitted. Pass it only when working outside the checkout.
+MUST run `gh-review --help` before the first invocation in a session and read the target command's
+signature from that output. It lists every command with its full signature in one pass. Never infer
+arguments from this skill, from another command, or from a previous session; optional positionals in
+one command are required in another. Use `gh-review <command> --help` only for option semantics.
+This skill covers workflow and semantics only.
 
 ## Critical Rules
 
@@ -89,24 +90,18 @@ GitHub rejects a published reply while you hold a pending review on that PR. If 
 fails, inspect and preserve that review. Ask before discarding it; a failed reply is not deletion
 authorization. Delete only the explicitly authorized review, then retry.
 
-The `COMMENT_ID` argument is the numeric database ID shown as `#ID` in `view` output headers (e.g.
+A reply targets the numeric database ID shown as `#ID` in `view` output headers (e.g.
 `@reviewer (2026-05-14) #98765 PRRC_kwDO...:`). Extract the number after `#`, not the node ID.
 
 Conversation comments (the PR's main timeline) have no thread and cannot be replied to this way.
 
 ## Editing and Removing Comments
 
-`gh-review edit` modifies an existing review comment. Two paths depending on what changed:
-
-- **Body only** (no positioning args): patches the comment in place. One API call.
-- **Repositioning** (any of `--path`, `--line`, `--start-line`, `--side`, `--start-side`): deletes
-  the old comment and creates a new one on the same pending review. Requires both `--review-id` and
-  `--line`, even when only `--path` changes (the underlying comment node does not expose its line,
-  so it cannot be inferred). `--path` and `--body` are merged from the current comment when omitted;
-  `--side` defaults to `RIGHT` rather than being read from the existing comment.
-
-`edit` and `remove` both take the `PRRC_...` node ID for pending comments. For published comments
-and replies, pass `OWNER/REPO` followed by the numeric comment ID; those support body edits only.
+`gh-review edit` changes a body in place, but any positioning change deletes the comment and
+recreates it on the same pending review. Repositioning therefore needs the full target position
+restated, not just the part that changed: the comment node does not expose its own line, and
+omitted values fall back to defaults rather than the old comment. Published comments and replies
+support body edits only.
 
 ## Line Targeting
 
@@ -131,4 +126,4 @@ lines being replaced. Do NOT include surrounding context lines in the range; the
 - `PRRC_...`: Comment node ID (from `view` review-thread headers or `comment` output's
   `comment-node-id` field); used by `edit` and `remove`
 - `#NNN`: Numeric database ID (from `view` output or `comment` output's `comment-id` field); used by
-  `reply`, published `edit` and `remove`, and `resolve`
+  `reply`, `resolve`, and published `edit` and `remove`
