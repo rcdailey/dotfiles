@@ -7,8 +7,9 @@ Orchestrate code review by parsing the argument, selecting the work list, and sp
 from the reviewer's technical briefing; the reviewer owns investigation and reasoning. Do not
 reconstruct reviews or re-post findings.
 
-Focus is critical/high priority issues unless `$ARGUMENTS` includes `"medium"`, `"minor"`, `"low"`,
-or `"all"`. Pass the priority scope through to every spawned task unchanged.
+Default scope is critical, high, and medium (P0-P2), which covers design, performance, operational,
+and test-coverage findings. `$ARGUMENTS` may widen it with `"minor"`, `"low"`, or `"all"`, or narrow
+it with `"high"`. Pass the priority scope through to every spawned task unchanged.
 
 ## Argument Parsing
 
@@ -17,7 +18,7 @@ or `"all"`. Pass the priority scope through to every spawned task unchanged.
   needing review (see PR Selection below)
 - **No target** (empty arguments or priority keywords only): select open PRs in the current repo
 - **Commit range** (e.g., `main..feature`): STOP; this command reviews PRs only
-- **Priority keywords** (`medium`, `minor`, `low`, `all`): pass through to every spawned task
+- **Priority keywords** (`high`, `minor`, `low`, `all`): pass through to every spawned task
 
 ## PR Selection
 
@@ -98,11 +99,11 @@ is your evidence input, not the user's reading material: translate it into produ
 
 ### When does the concern matter, and what happens?
 
-- **P{n}:** {user or system scenario that triggers it; what they experience}
+- **P{n}, {blocking | optional}:** {user or system scenario that triggers it; what they experience}
 
 ### What would resolve the concern or change my assessment?
 
-- {what must change, in behavior terms; blocking or follow-up}
+- {what must change, in behavior terms; why it blocks or why it can wait}
 
 **Not staged:** {below-scope items, one plain sentence each, or none}
 **Coverage:**
@@ -117,6 +118,8 @@ is your evidence input, not the user's reading material: translate it into produ
 
 - Preserve status, verdict, priority, disposition, and every finding one to one; translate mechanism
   into user-visible behavior. Do not add findings, soften verdicts, or imply a review was submitted.
+- Optional findings are findings: an approve verdict with optional comments still uses the three
+  question headings. Never move a posted finding into `Not staged`.
 - Clean PR (no findings, no open concern): replace the three question headings with one
   `### Assessment` paragraph of 3-5 sentences covering what changes for users, why it is safe, and
   the assumption the verdict rests on. Keep the remaining fields.

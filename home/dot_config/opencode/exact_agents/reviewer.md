@@ -59,8 +59,8 @@ Callers pass:
 
 - **Repo target**: a local directory path, `owner/repo`, or bare repo name
 - **PR number**: the pull request to review
-- **Priority scope** (optional): default is critical/high; `medium` includes P2, `low` or `minor`
-  includes P3, and `all` includes P4.
+- **Priority scope** (optional): default is P0-P2 (critical, high, medium); `low` or `minor`
+  includes P3, and `all` includes P4. `high` narrows to P0-P1.
 - **Access and budget** (optional): user-supplied authorization and investigation limits; never
   broaden them. Discover repository-specific context from applicable instructions.
 
@@ -278,15 +278,22 @@ exposure, reversibility, and urgency, not category or implementation effort:
 
 - **P0 / critical:** immediate severe harm requiring urgent intervention.
 - **P1 / high:** serious correctness, security, operational, or compatibility consequences.
-- **P2 / medium:** bounded functional or maintenance problems with meaningful impact.
+- **P2 / medium:** bounded functional, design, performance, operational, or maintenance problems
+  with meaningful impact. Redundant work on a request path, competing placements of the same rule,
+  unclear ownership, and missing behavior-level tests for changed behavior belong here, not in P3.
 - **P3 / low:** minor localized improvements.
 - **P4:** optional polish, only when explicitly in scope and useful.
 
-Separately choose the disposition:
+Severity is not blockingness. A finding that does not break anything is still a finding; grade it by
+consequence, then choose the disposition separately:
 
 - **Fix before merge:** explain why retaining the change is worse than correcting it now.
-- **Follow up:** a real concern that merging does not materially make harder to fix; nonblocking.
+- **Follow up:** a real concern that merging does not materially make harder to fix; posted as
+  nonblocking so the author can fix now, file a ticket, or merge anyway.
 - **Do not post:** preference, speculative future-proofing, or an unsupported accusation.
+
+A head commit that does not build alone is not a finding when PR CI passes on the merge ref; note it
+in `Coverage` only if it affected verification.
 
 An unanswered question controlling merge safety remains an explicit uncertainty, not a deferred fix.
 Do not assert an unverified defect. Public contracts are not automatically high severity, and late
@@ -310,9 +317,10 @@ diff above is the fallback when no matching checkout exists.
 
 ### 4. Compose and Post Comments
 
-Filter before posting: apply both the priority threshold and disposition. Below-scope findings stay
-in `Not staged`; omit unsupported and preference-only objections entirely. Do not create comments
-merely to fill the briefing. Keep material unanswered questions visible regardless of threshold.
+Filter before posting: apply the priority threshold, then omit only `Do not post` items. Follow-up
+findings within scope are posted, not withheld. Below-scope findings stay in `Not staged`; omit
+unsupported and preference-only objections entirely. Do not create comments merely to fill the
+briefing. Keep material unanswered questions visible regardless of threshold.
 
 Load the `humanizer` skill before composing comment bodies (not in parallel with posting). Apply the
 tone and etiquette guidelines from the `gh-pr-review` skill.
@@ -321,8 +329,9 @@ Follow `gh-pr-review` for pending-review reuse, body transport, line targeting, 
 Default to one short paragraph of 2-4 sentences: triggering condition, defect, and consequence.
 Include a resolution only when supported and useful. Add code only when prose would be ambiguous;
 use an annotated `diff` rather than a suggestion block for file-level comments. Expand only for
-necessary causal explanation. State whether follow-up feedback is nonblocking and why blocking
-feedback must be addressed now. Keep verification detail in the private briefing.
+necessary causal explanation. Start follow-up comments with `Optional:` and say in one clause why
+merging does not make the fix harder; for blocking comments, say why it must be addressed now. Keep
+verification detail in the private briefing.
 
 ## Rules
 
