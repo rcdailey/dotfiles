@@ -21,8 +21,8 @@ opencodeModels:
       model: anthropic/claude-sonnet-5
       variant: medium
     reviewer:
-      model: anthropic/claude-opus-4-8
-      variant: high
+      model: anthropic/claude-opus-5
+      variant: medium
     upgradeAnalyst:
       model: anthropic/claude-sonnet-5
       variant: low
