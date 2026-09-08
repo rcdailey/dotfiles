@@ -3,8 +3,9 @@ description: Code review orchestrator; selects PRs and delegates each to the rev
 ---
 
 Orchestrate code review by parsing the argument, selecting the work list, and spawning one
-`reviewer` task per PR. Spot-check evidence, then present a private comprehension briefing per PR;
-the reviewer owns investigation and reasoning. Do not reconstruct reviews or re-post findings.
+`reviewer` task per PR. Spot-check evidence, then present a product-facing briefing per PR derived
+from the reviewer's technical briefing; the reviewer owns investigation and reasoning. Do not
+reconstruct reviews or re-post findings.
 
 Focus is critical/high priority issues unless `$ARGUMENTS` includes `"medium"`, `"minor"`, `"low"`,
 or `"all"`. Pass the priority scope through to every spawned task unchanged.
@@ -75,22 +76,58 @@ For one selected PR, use the same evidence check and briefing presentation below
 
 ## Aggregate Output
 
-Preserve `partial` and `blocked` statuses; do not present either as approval. Before relaying,
+Preserve `partial` and `blocked` statuses; do not present either as approval. Before presenting,
 spot-check one representative finding per PR against its cited evidence, plus any external claim
 that controls the verdict. For clean reviews, check one consequential assessment against its cited
 evidence. This is a bounded hallucination check, not a second review. If evidence contradicts the
 briefing or is unavailable, resume that task to correct its comments, assessment, or status.
 
-For multiple PRs, lead with one linked overview bullet per PR: status, proposed verdict, pending
-comment count, and any decision or missing evidence requiring user attention. Derive these only from
-the checked briefings; do not invent readiness or imply a review was submitted.
+Then write one section per PR from the checked briefing, separated by `---`. The reviewer's briefing
+is your evidence input, not the user's reading material: translate it into product terms.
 
-Then relay each reviewer's briefing verbatim, separated by `---`. Every PR must answer all three
-questions, including clean, partial, blocked, and follow-up outcomes. If a briefing omits answers,
-or violates the reviewer's clean-review, scoped-verdict, prerequisite, or coverage requirements,
-resume the reviewer to correct it. Check substantive explanations, not just populated headings. Do
-not impose a line cap that removes comprehension; reject repeated summaries and investigation
-diaries instead.
+```markdown
+### [#{number} - {title}]({url})
+
+**Status:** {complete | partial | blocked} - {gap in plain words, if any}
+**Verdict:** {approve | request changes | comment-only | unknown} - {one plain sentence}
+**Review:** {n} pending comments (unsubmitted) | none
+
+### What is changing, and what is my assessment?
+
+{2-4 sentences: who is affected, before vs after, ticket goal met or not, why the verdict}
+
+### When does the concern matter, and what happens?
+
+- **P{n}:** {user or system scenario that triggers it; what they experience}
+
+### What would resolve the concern or change my assessment?
+
+- {what must change, in behavior terms; blocking or follow-up}
+
+**Not staged:** {below-scope items, one plain sentence each, or none}
+**Coverage:**
+
+- Inspected: {behaviors traced, one sentence}
+- Checks: {what ran or what CI proves, one sentence}
+- Limits: {what stayed unverified and whether it changes the verdict, one sentence}
+
+**Sources:** {external docs, Context7 IDs, URLs, tickets, live systems; or none}
+**Finding confidence:** {high | medium | low | n/a} - {short active sentences}
+```
+
+- Preserve status, verdict, priority, disposition, and every finding one to one; translate mechanism
+  into user-visible behavior. Do not add findings, soften verdicts, or imply a review was submitted.
+- Clean PR (no findings, no open concern): replace the three question headings with one
+  `### Assessment` paragraph of 3-5 sentences covering what changes for users, why it is safe, and
+  the assumption the verdict rests on. Keep the remaining fields.
+- No file paths, line numbers, SHAs, symbol names, SQL, decorators, or review and thread IDs
+  anywhere in the section. Those stay in the reviewer's briefing for evidence checks and follow-ups.
+- Answer 1 is 2-4 sentences; answers 2 and 3 are one bullet per finding of 2-3 sentences each;
+  coverage bullets are one sentence each. Expand only for a distinct consequence.
+- Write nothing above the first section or between sections; no summary of your own.
+- `Finding confidence` uses short active sentences, one idea each, without jargon.
+- Resume the reviewer when its briefing lacks the material you need to write a section (missing
+  answers, unexplained verdict, missing coverage), not to correct its wording.
 
 Close with any inbox PRs you did not review (SKIP entries, and any REPLY entry you judged not worth
 a pass) and why.

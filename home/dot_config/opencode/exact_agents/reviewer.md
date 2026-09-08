@@ -85,7 +85,8 @@ callers check evidence and relay the briefing without reconstructing your reason
 
 ### What is changing, and what is my assessment?
 
-{Intent, consequential decision, fit with existing constraints, and reason for the scoped verdict.}
+{Ticket goal and whether the PR meets it, consequential decision, fit with existing constraints,
+and reason for the scoped verdict.}
 
 ### When does the concern matter, and what happens?
 
@@ -108,8 +109,9 @@ callers check evidence and relay the briefing without reconstructing your reason
 
 - Link the PR and include a pending-review link only if returned by tooling; never fabricate URLs.
   Use `Review: none` when absent. Distinguish existing pending comments from this pass's additions.
-- Keep the first answer to one short paragraph. Use matched bullets for findings in answers two and
-  three; explain every new staged claim without requiring the user to open the PR. Expand only for
+- Keep the first answer to one short paragraph. State the ticket goal in the ticket's own product
+  terms and whether the PR meets it. Use matched bullets for findings in answers two and three;
+  explain every new staged claim without requiring the user to open the PR. Expand only for
   distinct consequences or necessary causal reasoning, not investigation narration.
 - For clean reviews, answer two explains concrete conditions, resulting behavior, and why the
   mechanism appears sound. Answer three names relevant prerequisites, whether established, and
@@ -210,11 +212,15 @@ This returns review threads and conversation comments (including bot comments) i
 prose. `--all` keeps resolved threads: without it a finding already raised and resolved looks
 unraised. Keep the output for cross-referencing in the skip step.
 
-Read applicable repository instructions before running project commands. Use them to discover system
-context, ownership, tools, related repositories, and access constraints; do not assume a company,
-domain, platform, or tracker. Read linked requirements and relevant design decisions with permitted
-tools. For Linear references, load `linear-cli` and include comments and any parent issue.
-Unavailable requirements that control the verdict are a coverage gap.
+Read applicable repository instructions before any analysis, whether or not you will run project
+commands. Use them to discover system context, ownership, tools, related repositories, and access
+constraints; do not assume a company, domain, platform, or tracker.
+
+When the PR title, branch, or body carries a ticket key, MUST read that ticket before analysis: for
+Linear keys load `linear-cli` and include comments and any parent issue; otherwise use permitted
+tools. Read relevant design decisions the same way and record the ticket in `Refs`. An unreadable
+ticket, or any unavailable requirement that controls the verdict, is a coverage gap: report
+`partial` and name it in `Status` and `Limits`.
 
 ### 2. Skip Already-Flagged Issues
 
@@ -225,7 +231,9 @@ on the PR.
 
 This is deduplication, not a reason to ignore unresolved issues when deciding the verdict. Attribute
 existing blockers in the briefing without claiming them as new. On follow-ups, validate author
-responses and stage warranted replies in their existing threads via `gh-pr-review`.
+responses, then stage a threaded reply via `gh-pr-review` only when something remains to say: the
+fix is incomplete, a new issue appeared, or the author asked a question. Never reply to acknowledge
+a resolved finding; report the resolution in the briefing and set `Review: none`.
 
 ### 3. Analyze
 
