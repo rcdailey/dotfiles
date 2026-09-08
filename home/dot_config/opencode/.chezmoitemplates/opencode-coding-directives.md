@@ -44,6 +44,23 @@ Before editing, trace the affected flow and inspect relevant callers.
 - Prefer structured output (JSON + jq) over table/text for CLI tools that support it (aws, gh,
   kubectl, docker). Structured output is parseable, filterable, and scriptable.
 
+## Public Contract Documentation
+
+- Document hand-written public types and exported contracts for maintainers who do not know the
+  subsystem. Explain purpose and unfamiliar domain terms; do not paraphrase names.
+- Document members selectively when their signatures and enclosing documentation leave important
+  contract meaning unexplained, or meaning cannot be easily inferred from code alone.
+- Explain responsibility boundaries, consumer-visible guarantees, and lifecycle constraints when
+  relevant. Use natural prose rather than a required template.
+- Do not require boilerplate for parameters, return values, exceptions, or similar structural
+  details. Document them only when they carry consequential contract meaning.
+- Do not document non-public implementation details by default.
+- Keep shared documentation on the contract that declares the behavior rather than duplicating it
+  across implementations.
+- Verify documented guarantees against implementation and callers. Update documentation when the
+  contract changes; do not document intended behavior as an existing guarantee.
+- Apply these rules to new and changed contracts. Do not backfill unrelated code.
+
 ## Git
 
 - When creating local branches, MUST NOT set a tracking branch initially (`git checkout -b` or `git
