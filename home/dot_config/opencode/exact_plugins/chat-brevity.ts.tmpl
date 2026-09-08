@@ -5,10 +5,10 @@ import type { Plugin } from "@opencode-ai/plugin";
 // Source fragments join with spaces to avoid reproducing source line wrapping at runtime.
 
 const CALIBRATION = [
-  "Chat readability: lead with the answer. Make cause and effect clear for nontrivial claims in a",
-  "concise explanation. Short paragraphs; headings or bullets where they improve scanning.",
-  "Follow the Chat Style policy. Stop when complete: no preambles, recaps of work the",
-  "user just watched, restated conclusions, or trailing offers.",
+  "Follow Chat Style. Default to the TLDR: answer, key reason, necessary caveats. Use STE principles",
+  "for technical explanations. Assume engineering knowledge; clarify project concepts briefly inline.",
+  "Use gathered context, not extra background research; investigate gaps that affect correctness.",
+  "Do not invent intent. No extra tutorial or recap; stop when complete.",
 ].join(" ");
 
 const BUDGET = [
