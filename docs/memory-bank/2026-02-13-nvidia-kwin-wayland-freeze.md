@@ -1,7 +1,7 @@
 # NVIDIA 580 + kwin_wayland System Freeze
 
 Date: 2026-02-13
-Status: Mitigated (switched to proprietary kernel module; monitoring for recurrence)
+Status: Open module installed for next boot; reboot and runtime verification pending (2026-09-09)
 System: Fedora 43 KDE Plasma, i5-13600KF, RTX 3080, 32GB RAM, NVIDIA 580.119.02
 
 ## Incident
@@ -177,4 +177,92 @@ sudo akmods --rebuild --force
    NVIDIA to promote it to stable before packaging. No ETA.
 3. After any future kernel update, verify the proprietary module is still active
    (`cat /proc/driver/nvidia/version`). The macro file persists across kernel updates, so akmods
-   should continue building the proprietary module automatically.
+    should continue building the proprietary module automatically.
+
+## Review and repository repair (2026-09-09)
+
+The February root-cause statement was stronger than the evidence supports. Logs implicated the
+GPU/Wayland path but did not prove an open-module defect. No upstream fix for this exact incident
+was verified in the follow-up research. Switching back is a stability retest, not a proven repair.
+
+Inspection found Fedora 44, RTX 3080, kernel `7.1.12-200.fc44.x86_64`, and proprietary NVIDIA
+`610.57.04`. The February RPM macro still forced proprietary builds. Secure Boot was disabled.
+No matching KWin hang/pageflip warnings were found since August 1. Earlier GPU faults involved
+Plex on February 20 and Python on June 20; these do not establish recurrence of the original freeze.
+
+### Package-source conflict and completed repair
+
+NVIDIA's CUDA repository offered `nvidia-driver-common` 615.71.09 while RPM Fusion supplied
+610.57.04. Their packages overlapped on driver libraries and executables, blocking DNF upgrades.
+This conflict is separate from the open/proprietary kernel-module choice.
+
+- Removed NVIDIA's `nvidia-driver-common`; RPM Fusion packages retain its required driver files.
+- Replaced `nvidia-libXNVCtrl` with Fedora's `libXNVCtrl`.
+- Reinstalled `nvidia-modprobe`, `nvidia-persistenced`, and `nvidia-settings` from RPM Fusion.
+- Reinstalled the affected RPM Fusion graphics, CUDA-library, and power packages at 610.57.04.
+- Restored the previously enabled `nvidia-powerd` service after a removal script disabled it.
+- Kept NVIDIA's CUDA repository enabled and preserved the CUDA 13.3 toolkit.
+
+DNF config-manager now excludes competing packages from `cuda-fedora44-x86_64`:
+
+```ini
+excludepkgs=nvidia*,libnvidia*,kmod-nvidia*,xorg-x11-nvidia*,cuda-drivers*,dnf-plugin-nvidia
+```
+
+This override is specific to the Fedora 44 repository ID. When changing Fedora releases or adding
+a replacement CUDA repository, verify that the exclusions apply to the new repository too.
+
+`dnf check` and RPM verification of the repaired packages passed. An all-repository upgrade with
+`tsflags=test` passed the RPM transaction check without installing the proposed system updates.
+The repair invalidated the previously prepared offline update; rerun Topgrade to prepare it again.
+
+ComfyUI uses GPU computation. Its existing environment at `~/diffusion/comfyui/.venv` reported
+PyTorch `2.13.0+cu130`, CUDA runtime 13.0, and successfully computed a small tensor on the RTX 3080
+after the repair. The system toolkit is distinct from that runtime and was left unchanged.
+
+### Authorized open-module retest
+
+Recorded before changing the kernel-module selection. The user stopped ComfyUI and authorized
+returning to the open module. Preserve the driver version, CUDA packages, and repository repair.
+
+1. Inspect the current akmods selection and installed kernels; preserve a proprietary fallback.
+2. Back up and remove `/etc/rpm/macros.nvidia-kmod`, then rebuild the target NVIDIA module.
+3. Verify the open module on disk and update the target initramfs if necessary.
+4. Leave reboot to the user; verify the loaded module and ComfyUI GPU computation afterward.
+
+If the retest fails, restore `%_without_kmod_nvidia_detect 1` in the original macro file, rebuild
+the proprietary module and target initramfs, and reboot. Do not undo the repository repair.
+
+### Open module installed (2026-09-09)
+
+Backed up the original macro and the current kernel's proprietary module RPM under
+`/var/lib/nvidia-cutover-2026-09-09/` (root-only directory), then removed the active macro and ran:
+
+```sh
+pkexec akmods --rebuild --force --akmod nvidia --kernels 7.1.12-200.fc44.x86_64
+```
+
+The build and installation succeeded. The module on disk reports version `610.57.04` and license
+`Dual MIT/GPL`, confirming the open variant. The default boot kernel is `7.1.12-200.fc44.x86_64`.
+Its initramfs contains no NVIDIA display-driver modules, so no stale proprietary display module
+needs replacing there. `dnf check` passed after the build.
+
+Kernel `7.1.8-200.fc44.x86_64` retains its proprietary module as a fallback; select it from GRUB if
+the new boot fails. The oldest installed kernel was also left untouched. Future akmods builds use
+automatic selection because the override is absent.
+
+The running kernel still has the proprietary module loaded. No reboot, module unload, or full
+system upgrade was performed. After reboot, check `/proc/driver/nvidia/version` for
+`Open Kernel Module`, run `nvidia-smi`, and test ComfyUI rendering. Stability remains unverified.
+
+To restore the saved proprietary build for the current kernel without recompiling:
+
+```sh
+pkexec cp /var/lib/nvidia-cutover-2026-09-09/macros.nvidia-kmod /etc/rpm/macros.nvidia-kmod
+pkexec dnf reinstall --disablerepo=cuda-fedora44-x86_64 \
+  /var/lib/nvidia-cutover-2026-09-09/kmod-nvidia-7.1.12-200.fc44.x86_64-610.57.04-1.fc44.x86_64.rpm
+```
+
+Verify the restored on-disk module reports license `NVIDIA` before rebooting. These recovery
+instructions are specific to the saved kernel and driver version; do not apply that RPM to a
+different kernel. If a later initramfs embeds the display modules, rebuild it after restoring.
