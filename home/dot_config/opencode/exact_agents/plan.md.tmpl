@@ -55,6 +55,9 @@ Include only what implementation requires without rediscovering the design:
 - Exact source, migration, generated, and test touchpoints with relevant symbols.
 - Contract graph, dependency order, and each product decision's owning contract and consumers.
 - Ordered workstreams with observable acceptance checkpoints and named tests or commands.
+- Distinguish acceptance checks from durable automated tests. For each proposed durable test,
+  identify the owned behavior and observable boundary it protects under the shared Testing rules. Do
+  not translate every acceptance criterion into a durable test.
 - Integration checks, cross-boundary invariants, assumptions, and explicitly settled deferrals.
 
 For each workstream, give one observable outcome and dependency branch. Each checkpoint names one
