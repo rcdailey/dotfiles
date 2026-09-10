@@ -87,11 +87,12 @@ Then write one section per PR from the checked briefing, separated by `---`. The
 is your evidence input, not the user's reading material: translate it into product terms.
 
 ```markdown
-### [#{number} - {title}]({url})
+### #{number} - {title}
 
-**Status:** {complete | partial | blocked} - {gap in plain words, if any}
-**Verdict:** {approve | request changes | comment-only | unknown} - {one plain sentence}
-**Review:** {n} pending comments (unsubmitted) | none
+- {url}
+- **Status:** {complete | partial | blocked} - {gap in plain words, if any}
+- **Verdict:** {approve | request changes | comment-only | unknown} - {one plain sentence}
+- **Review:** {n} pending comments (unsubmitted) | none
 
 ### What is changing, and what is my assessment?
 
@@ -105,15 +106,13 @@ is your evidence input, not the user's reading material: translate it into produ
 
 - {what must change, in behavior terms; why it blocks or why it can wait}
 
-**Not staged:** {below-scope items, one plain sentence each, or none}
-**Coverage:**
-
-- Inspected: {behaviors traced, one sentence}
-- Checks: {what ran or what CI proves, one sentence}
-- Limits: {what stayed unverified and whether it changes the verdict, one sentence}
-
-**Sources:** {external docs, Context7 IDs, URLs, tickets, live systems; or none}
-**Finding confidence:** {high | medium | low | n/a} - {short active sentences}
+- **Not staged:** {below-scope items, one plain sentence each, or none}
+- **Coverage:**
+  - Inspected: {behaviors traced, one sentence}
+  - Checks: {what ran or what CI proves, one sentence}
+  - Limits: {what stayed unverified and whether it changes the verdict, one sentence}
+- **Sources:** {external docs, Context7 IDs, URLs, tickets, live systems; or none}
+- **Finding confidence:** {high | medium | low | n/a} - {short active sentences}
 ```
 
 - Preserve status, verdict, priority, disposition, and every finding one to one; translate mechanism
