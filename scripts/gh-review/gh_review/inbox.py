@@ -34,6 +34,7 @@ _INBOX_QUERY = textwrap.dedent("""\
             }
             reviewThreads(first:100) {
               nodes {
+                isResolved
                 comments(first:50) {
                   nodes { author { login __typename } createdAt body path }
                 }
@@ -76,38 +77,55 @@ def _new_commits(commits: list[dict], since: datetime) -> list[dict]:
     return out
 
 
-def _new_comments(pr: dict, me: str, since: datetime) -> list[dict]:
-    """Human replies in the viewer's threads and PR-level comments since `since`.
+def _is_other_human(comment: dict, me: str) -> bool:
+    """True when a comment comes from a human who is not the viewer."""
+    author = comment["author"]
+    return bool(
+        author
+        and author["login"] != me
+        and not is_bot(author["login"], author.get("__typename", ""))
+    )
 
-    A thread counts only when the viewer commented in it; a later comment from
-    anyone else in that thread is a follow-up. PR-level comments from others
-    always count. Bots and the viewer are excluded as authors.
+
+def _thread_followup(thread: dict, me: str) -> dict | None:
+    """The newest human follow-up awaiting the viewer in one review thread.
+
+    A thread qualifies only when it is unresolved and the viewer commented in
+    it. Anything another human wrote after the viewer's own last comment is
+    unanswered, so thread state, not a timestamp watermark, decides. Replies
+    that arrive while a review is still pending would otherwise predate its
+    submission time and never surface.
     """
-    out: list[dict] = []
-    for thread in pr["reviewThreads"]["nodes"]:
-        nodes = thread["comments"]["nodes"]
-        if not any(c["author"] and c["author"]["login"] == me for c in nodes):
-            continue
-        path = next((c.get("path") for c in nodes if c.get("path")), None)
-        for c in nodes:
-            out.append({**c, "where": f"thread {path}" if path else "thread"})
-    for c in pr["comments"]["nodes"]:
-        out.append({**c, "where": "pr comment"})
+    if thread["isResolved"]:
+        return None
+    nodes = thread["comments"]["nodes"]
+    mine = [i for i, c in enumerate(nodes) if c["author"] and c["author"]["login"] == me]
+    if not mine:
+        return None
+    later = [c for c in nodes[mine[-1] + 1 :] if _is_other_human(c, me)]
+    if not later:
+        return None
+    path = next((c.get("path") for c in nodes if c.get("path")), None)
+    return {**later[-1], "where": f"thread {path}" if path else "thread"}
 
-    seen = []
-    for c in out:
-        author = c["author"]
-        if (
-            not author
-            or author["login"] == me
-            or is_bot(author["login"], author.get("__typename", ""))
-        ):
-            continue
-        if _parse(c["createdAt"]) <= since:
-            continue
-        seen.append(c)
-    seen.sort(key=lambda c: c["createdAt"])
-    return seen
+
+def _new_comments(pr: dict, me: str, since: datetime) -> list[dict]:
+    """Unanswered thread follow-ups plus PR-level comments since `since`.
+
+    Bots and the viewer are excluded as authors.
+    """
+    out = [
+        followup
+        for thread in pr["reviewThreads"]["nodes"]
+        if (followup := _thread_followup(thread, me))
+    ]
+    out += [
+        {**c, "where": "pr comment"}
+        for c in pr["comments"]["nodes"]
+        if _is_other_human(c, me) and _parse(c["createdAt"]) > since
+    ]
+    out.sort(key=lambda c: c["createdAt"])
+    return out
 
 
 def _render(pr: dict, me: str) -> str | None:

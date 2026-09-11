@@ -38,8 +38,8 @@ Each block is labelled with its trigger and the deltas since your last review:
 
 - **NEW** — never reviewed; always a candidate.
 - **RE-REVIEW** — commits landed since your last review; the commit subjects are listed.
-- **REPLY** — no new commits, but a human left a follow-up in one of your threads or a PR-level
-  comment since your last review; author and comment previews are listed.
+- **REPLY** — no new commits, but a human left an unanswered follow-up in one of your unresolved
+  threads, or a PR-level comment since your last review; author and comment previews are listed.
 - **SKIP** — nothing changed since your last review.
 
 The block content is sufficient to decide without further tool calls. Select NEW and RE-REVIEW PRs,
