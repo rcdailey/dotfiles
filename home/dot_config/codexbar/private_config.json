@@ -2,6 +2,13 @@
   "version": 1,
   "providers": [
     {
+      "id": "codex",
+      "hiddenUsageItemIDs": [
+        "metric:codex-spark",
+        "metric:codex-spark-weekly"
+      ]
+    },
+    {
       "id": "opencodego",
       "enabled": true,
       "source": "api"
