@@ -77,59 +77,46 @@ For one selected PR, use the same evidence check and briefing presentation below
 
 ## Aggregate Output
 
-Preserve `partial` and `blocked` statuses; do not present either as approval. Before presenting,
-spot-check one representative finding per PR against its cited evidence, plus any external claim
-that controls the verdict. For clean reviews, check one consequential assessment against its cited
-evidence. This is a bounded hallucination check, not a second review. If evidence contradicts the
-briefing or is unavailable, resume that task to correct its comments, assessment, or status.
+Before presenting, spot-check one representative finding per PR against its cited evidence, plus any
+external claim that controls the verdict. For clean reviews, check one consequential assessment
+against its cited evidence. This is a bounded hallucination check, not a second review. If evidence
+contradicts the briefing or is unavailable, resume that task to correct its comments, assessment, or
+status.
 
 Then write one section per PR from the checked briefing, separated by `---`. The reviewer's briefing
-is your evidence input, not the user's reading material: translate it into product terms.
+is your evidence input, not the user's reading material. The reader has ADHD: verdict first, one
+line per finding, nothing that does not change a decision.
 
 ```markdown
 ### #{number} - {title}
 
-- {url}
-- **Status:** {complete | partial | blocked} - {gap in plain words, if any}
-- **Verdict:** {approve | request changes | comment-only | unknown} - {one plain sentence}
-- **Review:** {n} pending comments (unsubmitted) | none
+[{url}]({url})
 
-### What is changing, and what is my assessment?
+**{Approve | Request changes | Comment only | Unknown}.** {The single sentence that is the review:
+what breaks or why it is safe, in product terms.}
 
-{2-4 sentences: who is affected, before vs after, ticket goal met or not, why the verdict}
+- **P{n}, {blocking | optional}:** {trigger and what the user sees}. Fix: {behavior change}.
 
-### When does the concern matter, and what happens?
-
-- **P{n}, {blocking | optional}:** {user or system scenario that triggers it; what they experience}
-
-### What would resolve the concern or change my assessment?
-
-- {what must change, in behavior terms; why it blocks or why it can wait}
-
-- **Not staged:** {below-scope items, one plain sentence each, or none}
-- **Coverage:**
-  - Inspected: {behaviors traced, one sentence}
-  - Checks: {what ran or what CI proves, one sentence}
-  - Limits: {what stayed unverified and whether it changes the verdict, one sentence}
-- **Sources:** {external docs, Context7 IDs, URLs, tickets, live systems; or none}
-- **Finding confidence:** {high | medium | low | n/a} - {short active sentences}
+Pending: {n} comments | none. Not staged: {one clause each} | none.
+Limit: {what stayed unverified and whether it changes the verdict; omit when nothing material}.
 ```
 
-- Preserve status, verdict, priority, disposition, and every finding one to one; translate mechanism
-  into user-visible behavior. Do not add findings, soften verdicts, or imply a review was submitted.
-- Optional findings are findings: an approve verdict with optional comments still uses the three
-  question headings. Never move a posted finding into `Not staged`.
-- Clean PR (no findings, no open concern): replace the three question headings with one
-  `### Assessment` paragraph of 3-5 sentences covering what changes for users, why it is safe, and
-  the assumption the verdict rests on. Keep the remaining fields.
-- No file paths, line numbers, SHAs, symbol names, SQL, decorators, or review and thread IDs
-  anywhere in the section. Those stay in the reviewer's briefing for evidence checks and follow-ups.
-- Answer 1 is 2-4 sentences; answers 2 and 3 are one bullet per finding of 2-3 sentences each;
-  coverage bullets are one sentence each. Expand only for a distinct consequence.
+- `partial` or `blocked` status replaces the verdict word: `**Partial.**` or `**Blocked.**`, then
+  the gap in plain words. Never present either as approval.
+- One bullet per finding, 1-2 sentences, priority and disposition preserved one to one. Do not add
+  findings, soften verdicts, or imply a review was submitted.
+- Optional findings are findings; an approve with optional comments still lists them. Never move a
+  posted finding into `Not staged`.
+- Clean PR: replace the bullets with one 2-3 sentence paragraph on why it is safe and the assumption
+  the verdict rests on.
+- Follow-up pass: the verdict sentence states what the author changed and whether it settles the
+  earlier concern; list only what remains open.
+- Product vocabulary only. No file paths, line numbers, SHAs, symbol names, review or thread IDs,
+  and no review-process terms (`blocking for confidence`, `posted as a question`, `prior P1`).
+  Coverage, sources, and confidence stay in the reviewer's briefing; the reader asks when needed.
 - Write nothing above the first section or between sections; no summary of your own.
-- `Finding confidence` uses short active sentences, one idea each, without jargon.
-- Resume the reviewer when its briefing lacks the material you need to write a section (missing
-  answers, unexplained verdict, missing coverage), not to correct its wording.
+- Resume the reviewer when its briefing lacks the material you need (unexplained verdict, missing
+  finding resolution), not to correct its wording.
 
 Close with any inbox PRs you did not review (SKIP entries, and any REPLY entry you judged not worth
 a pass) and why.
