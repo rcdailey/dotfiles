@@ -68,9 +68,6 @@ alias git='noglob git'
 # Kubernetes aliases (k alias provided by kubectl plugin, but keeping kz)
 alias kz="kubectl kustomize"
 
-# kubectl krew plugin manager PATH
-export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
-
 # Terminal utilities
 alias cls="clear && clear"
 alias reload='exec zsh'
