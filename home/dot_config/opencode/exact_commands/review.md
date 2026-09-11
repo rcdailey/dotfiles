@@ -90,10 +90,13 @@ line per finding, nothing that does not change a decision.
 ```markdown
 ### #{number} - {title}
 
-[{url}]({url})
+{url}
 
 **{Approve | Request changes | Comment only | Unknown}.** {The single sentence that is the review:
 what breaks or why it is safe, in product terms.}
+
+{2-4 sentences: what the PR is for, who is affected, behavior before and after, and whether it meets
+the ticket's goal. This is the reader's only context; do not assume they know the PR.}
 
 - **P{n}, {blocking | optional}:** {trigger and what the user sees}. Fix: {behavior change}.
 
@@ -107,7 +110,7 @@ Limit: {what stayed unverified and whether it changes the verdict; omit when not
   findings, soften verdicts, or imply a review was submitted.
 - Optional findings are findings; an approve with optional comments still lists them. Never move a
   posted finding into `Not staged`.
-- Clean PR: replace the bullets with one 2-3 sentence paragraph on why it is safe and the assumption
+- Clean PR: no finding bullets; end the context paragraph with why it is safe and the assumption
   the verdict rests on.
 - Follow-up pass: the verdict sentence states what the author changed and whether it settles the
   earlier concern; list only what remains open.
