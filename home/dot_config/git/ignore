@@ -17,6 +17,5 @@ CLAUDE.local.md
 # auto-generated `.opencode/.gitignore`.
 /.opencode/package-lock.json
 
-# Per-repo opt-out sentinels for global git hooks
+# Per-repo opt-out sentinel for global Git hooks
 .no-global-hooks
-.no-commitlint

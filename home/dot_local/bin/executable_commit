@@ -2,7 +2,8 @@
 """commit - deterministic workflow tool for LLM-driven git commits.
 
 Stages changes and creates consistently formatted commits without multi-step
-Git command sequences.
+Git command sequences. Tracked root commitlint configuration is enforced;
+Git hooks are bypassed.
 
 Usage:
     commit save [files] -s "..." [-p "..."] [-b "..."] [-i "..."]
@@ -90,6 +91,27 @@ def print_section(header: str, content: str) -> None:
 
 _BARE_HEADER_RE = re.compile(r"^[\w /'-]{1,30}:\s*$")
 
+_COMMITLINT_CONFIG_NAMES = (
+    "package.json",
+    "package.yaml",
+    ".commitlintrc",
+    ".commitlintrc.json",
+    ".commitlintrc.yaml",
+    ".commitlintrc.yml",
+    ".commitlintrc.js",
+    ".commitlintrc.cjs",
+    ".commitlintrc.mjs",
+    "commitlint.config.js",
+    "commitlint.config.cjs",
+    "commitlint.config.mjs",
+    ".commitlintrc.ts",
+    ".commitlintrc.cts",
+    ".commitlintrc.mts",
+    "commitlint.config.ts",
+    "commitlint.config.cts",
+    "commitlint.config.mts",
+)
+
 
 def wrap_paragraph(text: str) -> str:
     """Wrap a plain-text paragraph to BODY_WIDTH."""
@@ -144,6 +166,68 @@ def validate_literal_line_breaks(options: dict[str, list[str]]) -> list[str]:
 def _stage_files(files: list[str]) -> None:
     """Stage complete paths without disturbing other index entries."""
     git("add", "-A", "--", *files)
+
+
+def _tracked_commitlint_config(repo_root: Path) -> Path | None:
+    """Return the first indexed root config in commitlint's search order."""
+    for name in _COMMITLINT_CONFIG_NAMES:
+        path = repo_root / name
+        tracked = git(
+            "-C",
+            str(repo_root),
+            "ls-files",
+            "--error-unmatch",
+            "--",
+            name,
+            check=False,
+            capture=True,
+        )
+        if tracked.returncode != 0:
+            continue
+        if not path.is_file():
+            die(f"repository commitlint configuration is missing from the working tree: {name}")
+
+        if name not in ("package.json", "package.yaml"):
+            return path
+        if shutil.which("yq") is None:
+            die("yq is required to inspect repository commitlint configuration")
+
+        package_config = subprocess.run(
+            ["yq", "-r", 'has("commitlint")', str(path)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if package_config.returncode != 0:
+            die(package_config.stderr.strip() or f"could not inspect {name}")
+        if package_config.stdout.strip() == "true":
+            return path
+
+    return None
+
+
+def _lint_message(message_path: Path, repo_root: Path) -> None:
+    """Apply an opted-in repository's exact commitlint configuration."""
+    config = _tracked_commitlint_config(repo_root)
+    if config is None:
+        return
+    if shutil.which("commitlint") is None:
+        die("commitlint is required by repository configuration")
+
+    result = subprocess.run(
+        [
+            "commitlint",
+            "--cwd",
+            str(repo_root),
+            "--config",
+            str(config),
+            "--edit",
+            str(message_path),
+        ],
+        check=False,
+    )
+    if result.returncode != 0:
+        sys.exit(result.returncode)
 
 
 def _repo_relative(path: str, repo_root: Path) -> str:
@@ -370,6 +454,8 @@ def cmd_save(args: list[str]) -> None:
         with os.fdopen(fd, "w") as f:
             f.write(message)
 
+        _lint_message(Path(msg_path), repo_root)
+
         index_path = Path(
             git_output(
                 "rev-parse",
@@ -387,7 +473,15 @@ def cmd_save(args: list[str]) -> None:
         shutil.copy2(index_path, index_backup)
 
         repository_state_before = _commit_state(repo_root)
-        result = git("commit", "-F", msg_path, check=False, capture=True)
+        result = git(
+            "-c",
+            "core.hooksPath=/dev/null",
+            "commit",
+            "-F",
+            msg_path,
+            check=False,
+            capture=True,
+        )
 
         repository_state_changed = False
         if result.returncode != 0:

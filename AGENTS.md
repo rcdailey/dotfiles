@@ -90,6 +90,7 @@ lazygit, etc.). Browse the directory to discover what's managed.
 
 - Run affected behavioral suites separately; pre-commit is for static checks, not test execution.
 - OpenCode plugins: run `bun test tests/opencode` from the repo root.
+- Commit workflow: run `python -m unittest discover -s tests/commit` (requires commitlint and yq).
 - Document new root-suite commands here; project-owned commands belong in that project's guidance.
 
 **Chezmoi prefixes:** `dot_` = dotfile, `private_` = 600 perms, `executable_` = +x, `exact_` =
