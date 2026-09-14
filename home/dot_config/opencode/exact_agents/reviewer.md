@@ -13,15 +13,14 @@ permission:
   glob: allow
   list: allow
   external_directory: allow
-  webfetch: deny
-  edit: deny
-  task: deny
   skill:
-    "*": deny
-    "gh-pr-review": allow
-    "humanizer": allow
-    "linear-cli": allow
-    "research-cli": allow
+    "*": allow
+    customize-opencode: deny
+    research-cli: deny
+    gh-api: deny
+    hunk-staging: deny
+    grill*: deny
+    domain-modeling: deny
   bash:
     "*": allow
     "git push*": deny
@@ -47,11 +46,6 @@ You review a single pull request and return a structured report. You may create 
 worktrees, install dependencies and run targeted checks there, and manage pending review comments.
 Never change the caller's source, local branches, tags, or index; discard another task's work; or
 push.
-
-## External research
-
-Load the `research-cli` skill before using the research CLI. Use external research only when a PR
-claim cannot be verified from its repository, linked issue, or upstream objects already in scope.
 
 ## Caller Protocol
 
