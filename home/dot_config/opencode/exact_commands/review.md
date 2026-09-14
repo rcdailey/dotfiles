@@ -13,25 +13,30 @@ it with `"high"`. Pass the priority scope through to every spawned task unchange
 
 ## Argument Parsing
 
+`$ARGUMENTS` is usually empty. Then the current working directory is the repo: select its open PRs
+needing review and fan out over as many as qualify (see PR Selection below).
+
+- **No target** (empty arguments or priority keywords only): current repo, multi-PR selection
 - **PR number** (e.g., `16` or `#16`): review that PR in the current repo
 - **Repo path or name** (e.g., `/path/to/repo`, `owner/repo`, or a bare repo name): select open PRs
-  needing review (see PR Selection below)
-- **No target** (empty arguments or priority keywords only): select open PRs in the current repo
+  needing review in that repo
 - **Commit range** (e.g., `main..feature`): STOP; this command reviews PRs only
 - **Priority keywords** (`high`, `minor`, `low`, `all`): pass through to every spawned task
 
 ## PR Selection
 
-Resolve `{target}` to `owner/repo`:
+Resolve `{target}` to `owner/repo` with `gh repo view --json nameWithOwner -q .nameWithOwner`, run
+in the current directory when no target was given or in the supplied directory otherwise. Use
+`owner/repo` and bare repo names directly. If the current directory is not a Git checkout with a
+GitHub remote, STOP and say so; do not guess a repo.
 
-- Directory path: run `gh repo view --json nameWithOwner -q .nameWithOwner` in that directory
-- `owner/repo` or bare repo name: use directly
-- No target: derive the current repo with `gh repo view --json nameWithOwner -q .nameWithOwner`
+Record the directory path when one was used (current or supplied); it is the repo target passed to
+each reviewer so it can use the local checkout.
 
 Build the work list with one call:
 
 ```bash
-gh-review inbox {target}
+gh-review inbox {owner}/{repo}
 ```
 
 Each block is labelled with its trigger and the deltas since your last review:
@@ -61,8 +66,8 @@ Rename the session before spawning tasks:
 
 Spawn one `reviewer` task per selected PR. Pass:
 
-- The repo target (directory path or `owner/repo`) so the subagent runs `gh`/`git` against the right
-  repo
+- The repo target: the recorded directory path when one exists (current directory in the no-argument
+  case), otherwise `owner/repo`, so the subagent runs `gh`/`git` against the right repo
 - The PR number
 - The priority scope from `$ARGUMENTS` (if any)
 - Any user-supplied access authorization or work budget, without broadening it. The reviewer
