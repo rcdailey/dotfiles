@@ -93,6 +93,19 @@ lazygit, etc.). Browse the directory to discover what's managed.
 - Commit workflow: run `python -m unittest discover -s tests/commit` (requires commitlint and yq).
 - Document new root-suite commands here; project-owned commands belong in that project's guidance.
 
+**Commit messages:** Conventional Commits, enforced by commitlint (`commitlint.config.mjs`;
+`wip` subjects bypass it). Scope is the tool or component, not the path: `opencode`, `research`,
+`gh-review`, `mise`, `git`, `commit`. Classify the semantic outcome first; paths only decide the
+type when no behavior changes:
+
+- `docs:` - `docs/**`, `*.md`, including AGENTS.md and skill or agent prose
+- `chore:` - root linter, formatter, pre-commit, and `mise.toml` config
+- `test:` - `tests/**`, `scripts/*/tests/**`
+- `feat:` / `fix:` / `refactor:` / `perf:` - managed dotfiles, scripts, plugins, and agent or skill
+  behavior, judged by what changes for the user or agent at runtime
+
+Use `!` for changes that break an existing workflow or require manual migration after apply.
+
 **Chezmoi prefixes:** `dot_` = dotfile, `private_` = 600 perms, `executable_` = +x, `exact_` =
 directory matches exactly (removes unmanaged files)
 
