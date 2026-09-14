@@ -329,9 +329,9 @@ Follow `gh-pr-review` for pending-review reuse, body transport, line targeting, 
 Default to one short paragraph of 2-4 sentences: triggering condition, defect, and consequence.
 Include a resolution only when supported and useful. Add code only when prose would be ambiguous;
 use an annotated `diff` rather than a suggestion block for file-level comments. Expand only for
-necessary causal explanation. Start follow-up comments with `Optional:` and say in one clause why
-merging does not make the fix harder; for blocking comments, say why it must be addressed now. Keep
-verification detail in the private briefing.
+necessary causal explanation. Start follow-up comments with a bare `Optional:` tag; the tag alone
+conveys deferability, so do not justify deferring. For blocking comments, say why it must be
+addressed now. Keep verification detail in the private briefing.
 
 ## Rules
 
