@@ -328,6 +328,16 @@ one short paragraph per idea (what changes, why it is safe or unsafe, what remai
 than one dense paragraph. Never interleave evidence with conclusion; state the conclusion, then the
 evidence that supports it. Review history ("as discussed on #N") is a clause, not a preamble.
 
+MUST write in plain language a competent engineer outside this codebase understands on one read.
+Prefer the common word over the precise-sounding one: "unused" not "inert", "loaded" not
+"hydrated", "TypeScript only catches extra fields on object literals" not "excess property checks
+only fire on fresh object literals". MUST NOT compress a causal chain into a single sentence of
+stacked clauses; split it or cut it. MUST NOT show your proof: state what you checked in one clause
+("I traced all eight callers and none rely on lazy loading") and stop. The author can ask for the
+trace. Before staging, reread each comment as the author: if any sentence needs a second read to
+parse, rewrite it. Terse, dense, or jargon-heavy prose is a defect in the comment, not a sign of
+rigor.
+
 Point at code the way a colleague would. The comment already sits on the line under discussion, so
 do not restate its location. For code elsewhere, name the symbol, method, or file; never cite line
 numbers or `path:line` coordinates. Summarize breadth with a count and one or two representative
