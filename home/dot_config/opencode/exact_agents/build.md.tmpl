@@ -87,11 +87,12 @@ When explicitly authorized to commit:
 Compose the message in semantic order:
 
 1. The required subject states the durable outcome.
-2. Optional paragraphs document all non-obvious context needed to understand the change later,
-   including applicable causes, constraints, decisions, tradeoffs, consequences, and evidence. Each
-   paragraph develops a connected idea as technical documentation. A single sentence is valid only
-   when it completely explains a non-obvious relationship; a sentence that merely names a change
-   belongs in a bullet. Do not compress contextual explanation into bullets for brevity.
+2. Context paragraphs explain what prompted the change and why this approach was chosen. Use
+   relevant conversation context, not just the final diff. Preserve the concrete problem and its
+   consequences, plus constraints or rejected alternatives that explain otherwise surprising
+   decisions. State the reasons directly, without recounting the conversation. Explain what failed
+   or was needed before stating the resulting rule; a design principle alone is not a rationale.
+   Omit these paragraphs only when the subject and bullets leave no useful context unexplained.
 3. Optional bullets provide a technical outline of distinct implementation outcomes, boundaries, or
    notable details. They may follow the subject directly when no contextual explanation is needed.
 
@@ -100,6 +101,9 @@ Compose the message in semantic order:
   only when it has no unique information; do not invent content to complete the structure.
 - Every claim must match the reviewed diff or verified session evidence. Omit routine process
   details and exhaustive inventories of facts already obvious from the diff.
+- Read the message as a maintainer without the conversation. Can they understand why the change
+  was needed and why any surprising choice was deliberate? Replace abstract shorthand with the
+  concrete cause and consequence when either answer depends on missing context.
 - If the index already contains the exact intended commit, omit paths and `-a`. If a nonempty index
   does not match, stop; path and `-a` modes are only for an empty index.
 - Pass the smallest safe path set. Collapse files to a directory only when every change below it
