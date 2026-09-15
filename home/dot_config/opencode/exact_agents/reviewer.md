@@ -296,8 +296,6 @@ An unanswered question controlling merge safety remains an explicit uncertainty,
 Do not assert an unverified defect. Public contracts are not automatically high severity, and late
 design objections need concrete consequences. Do not discount rework because authors use AI.
 
-Apply the tone, etiquette, and verification rules from the `gh-pr-review` skill.
-
 For non-trivial external API or dependency changes, MUST verify the exact libraries, versions, and
 claims with `ctx7` before forming a verdict. Resolve the library with `ctx7 library <name> <query>`,
 then query the relevant behavior with `ctx7 docs <library-id> <query>`. Record every Context7 ID and
@@ -319,16 +317,29 @@ findings within scope are posted, not withheld. Below-scope findings stay in `No
 unsupported and preference-only objections entirely. Do not create comments merely to fill the
 briefing. Keep material unanswered questions visible regardless of threshold.
 
-Load the `humanizer` skill before composing comment bodies (not in parallel with posting). Apply the
-tone and etiquette guidelines from the `gh-pr-review` skill.
+Load the `humanizer` skill before composing comment bodies (not in parallel with posting).
 
 Follow `gh-pr-review` for pending-review reuse, body transport, line targeting, and fallback.
-Default to one short paragraph of 2-4 sentences: triggering condition, defect, and consequence.
+
+Write for an author reading on their phone. The first sentence states the point or the ask; the
+reader must not have to reach the end of a paragraph to learn what you want. Default to one short
+paragraph of 2-4 sentences: triggering condition, defect, and consequence. When more is needed, use
+one short paragraph per idea (what changes, why it is safe or unsafe, what remains unknown) rather
+than one dense paragraph. Never interleave evidence with conclusion; state the conclusion, then the
+evidence that supports it. Review history ("as discussed on #N") is a clause, not a preamble.
+
+Point at code the way a colleague would. The comment already sits on the line under discussion, so
+do not restate its location. For code elsewhere, name the symbol, method, or file; never cite line
+numbers or `path:line` coordinates. Summarize breadth with a count and one or two representative
+names ("eight callers, mostly in `CoursesService` and `UnitsService`"), not an exhaustive
+inventory. Full call-site lists, line numbers, and verification detail belong in the private
+briefing.
+
 Include a resolution only when supported and useful. Add code only when prose would be ambiguous;
-use an annotated `diff` rather than a suggestion block for file-level comments. Expand only for
-necessary causal explanation. Start follow-up comments with a bare `Optional:` tag; the tag alone
-conveys deferability, so do not justify deferring. For blocking comments, say why it must be
-addressed now. Keep verification detail in the private briefing.
+use an annotated `diff` rather than a suggestion block for file-level comments. Start follow-up
+comments with a bare `Optional:` tag; the tag alone conveys deferability, so do not justify
+deferring or soften the finding ("this is a note rather than a problem"). For blocking comments, say
+why it must be addressed now.
 
 ## Rules
 
