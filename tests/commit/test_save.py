@@ -64,8 +64,11 @@ class CommitSaveTests(unittest.TestCase):
         return path
 
     def save(self, subject, *files):
+        return self.run_save(*files, "-s", subject)
+
+    def run_save(self, *args):
         return subprocess.run(
-            [sys.executable, str(COMMIT), "save", *files, "-s", subject],
+            [sys.executable, str(COMMIT), "save", *args],
             cwd=self.repo,
             env=self.env,
             text=True,
@@ -206,6 +209,77 @@ class CommitSaveTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse(marker.exists())
         self.assert_committed("An upstream subject")
+
+    def commit_initial(self, subject="project: initial"):
+        self.write_change()
+        self.config()
+        result = self.save(subject, "change.txt", ".commitlintrc.json")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return self.git("rev-parse", "HEAD").stdout.strip()
+
+    def test_amend_rewrites_message_without_new_content(self):
+        before = self.commit_initial()
+        result = self.run_save("--amend", "-s", "project: reworded", "-b", "detail")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.git("rev-list", "--count", "HEAD").stdout.strip(), "1")
+        self.assertNotEqual(self.git("rev-parse", "HEAD").stdout.strip(), before)
+        self.assertEqual(
+            self.git("log", "-1", "--format=%B").stdout,
+            "project: reworded\n\n- detail\n\n",
+        )
+
+    def test_amend_folds_named_files_and_keeps_message(self):
+        self.commit_initial()
+        extra = self.repo / "extra.txt"
+        extra.write_text("more\n")
+        result = self.run_save("--amend", "extra.txt")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.git("rev-list", "--count", "HEAD").stdout.strip(), "1")
+        self.assert_committed("project: initial")
+        self.assertIn(
+            "extra.txt",
+            self.git("show", "--name-only", "--format=", "HEAD").stdout.splitlines(),
+        )
+
+    def test_amend_reword_is_linted(self):
+        before = self.commit_initial()
+        result = self.run_save("--amend", "-s", "feat: wrong type")
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("type-enum", result.stdout + result.stderr)
+        self.assertEqual(self.git("rev-parse", "HEAD").stdout.strip(), before)
+
+    def test_amend_requires_message_or_content(self):
+        before = self.commit_initial()
+        result = self.run_save("--amend")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("nothing to amend", result.stderr)
+        result = self.run_save("--amend", "-b", "orphan bullet")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("require -s", result.stderr)
+        self.assertEqual(self.git("rev-parse", "HEAD").stdout.strip(), before)
+
+    def test_amend_refuses_published_head(self):
+        before = self.commit_initial()
+        remote = self.root / "remote.git"
+        self.git("init", "--bare", "--quiet", str(remote))
+        self.git("remote", "add", "origin", str(remote))
+        self.git("push", "--quiet", "-u", "origin", "HEAD")
+        result = self.run_save("--amend", "-s", "project: rewritten")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("upstream", result.stderr)
+        self.assertEqual(self.git("rev-parse", "HEAD").stdout.strip(), before)
+        self.change.write_text("unpublished\n")
+        result = self.save("project: second", "change.txt")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        result = self.run_save("--amend", "-s", "project: second reworded")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assert_committed("project: second reworded")
+
+    def test_save_without_amend_still_requires_subject(self):
+        self.write_change()
+        result = self.run_save("change.txt")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("-s", result.stderr)
 
 
 if __name__ == "__main__":

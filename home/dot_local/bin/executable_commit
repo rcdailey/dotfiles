@@ -7,6 +7,7 @@ Git hooks are bypassed.
 
 Usage:
     commit save [files] -s "..." [-p "..."] [-b "..."] [-i "..."]
+    commit save --amend [files] [-s "..." [-p "..."] [-b "..."] [-i "..."]]
 
 Environment:
     GIT_COMMIT_FMT_SUBJECT_WIDTH  Subject char limit (default: 72)
@@ -45,6 +46,7 @@ usage: commit <subcommand> [args...]
 
 subcommands:
   save [files] -s "..."      stage files and commit
+  save --amend [files]       fold staged files into HEAD; -s rewrites its message
 
 Use 'commit <subcommand> --help' for subcommand details."""
 
@@ -362,10 +364,34 @@ def _commit_state(repo_root: Path) -> tuple[bytes, bytes, bytes, bytes]:
     )
 
 
+def _validated_subject(raw: str) -> str:
+    if "\n" in raw or "\r" in raw:
+        die("subject must be a single line")
+    subject = raw.strip()
+    if not subject:
+        die("subject must not be empty")
+    if len(subject) > SUBJECT_WIDTH:
+        die(
+            f"subject is {len(subject)} chars, exceeds"
+            f" {SUBJECT_WIDTH}-char limit"
+        )
+    return subject
+
+
+def _refuse_amending_published_head() -> None:
+    """Amending a commit the upstream already holds forces a rewrite of shared history."""
+    upstream = git("rev-parse", "--verify", "--quiet", "@{upstream}", check=False, capture=True)
+    if upstream.returncode != 0:
+        return
+    published = git("merge-base", "--is-ancestor", "HEAD", "@{upstream}", check=False)
+    if published.returncode == 0:
+        die("HEAD is already on the upstream branch; amending it would require a force push")
+
+
 def cmd_save(args: list[str]) -> None:
     parser = argparse.ArgumentParser(prog="commit save")
     parser.add_argument("files", nargs="*", help="whole files to stage")
-    parser.add_argument("-s", required=True, help="subject")
+    parser.add_argument("-s", help="subject (required unless --amend keeps the message)")
     parser.add_argument("-p", action="append", default=[], help="body paragraph")
     parser.add_argument(
         "-b",
@@ -375,39 +401,48 @@ def cmd_save(args: list[str]) -> None:
     )
     parser.add_argument("-i", action="append", default=[], help="issue reference")
     parser.add_argument("-a", action="store_true", help="stage all changes")
+    parser.add_argument(
+        "--amend",
+        action="store_true",
+        help="fold staged changes into HEAD; without -s the message is kept",
+    )
     args_parsed = parser.parse_args(args)
 
     has_files = bool(args_parsed.files)
+    amend = args_parsed.amend
+    has_message = args_parsed.s is not None
 
     if args_parsed.a and has_files:
         die("-a and file arguments are mutually exclusive")
+    if not has_message and not amend:
+        parser.error("the following arguments are required: -s")
+    if not has_message and (args_parsed.p or args_parsed.b or args_parsed.i):
+        die("-p, -b, and -i rewrite the message and require -s")
 
-    if "\n" in args_parsed.s or "\r" in args_parsed.s:
-        die("subject must be a single line")
-    subject = args_parsed.s.strip()
-    if not subject:
-        die("subject must not be empty")
-    if len(subject) > SUBJECT_WIDTH:
-        die(
-            f"subject is {len(subject)} chars, exceeds"
-            f" {SUBJECT_WIDTH}-char limit"
+    message: str | None = None
+    if has_message:
+        subject = _validated_subject(args_parsed.s)
+        errors = validate_literal_line_breaks(
+            {
+                "-s": [subject],
+                "-p": args_parsed.p,
+                "-b": args_parsed.b,
+                "-i": args_parsed.i,
+            }
         )
-
-    errors = validate_literal_line_breaks(
-        {
-            "-s": [subject],
-            "-p": args_parsed.p,
-            "-b": args_parsed.b,
-            "-i": args_parsed.i,
-        }
-    )
-    errors.extend(validate_paragraphs(args_parsed.p))
-    if errors:
-        for err in errors:
-            print(f"error: {err}", file=sys.stderr)
-        sys.exit(1)
+        errors.extend(validate_paragraphs(args_parsed.p))
+        if errors:
+            for err in errors:
+                print(f"error: {err}", file=sys.stderr)
+            sys.exit(1)
+        message = format_message(subject, args_parsed.p, args_parsed.b, args_parsed.i)
 
     repo_root = Path(git_output("rev-parse", "--show-toplevel").strip())
+
+    if amend:
+        if git("rev-parse", "--verify", "--quiet", "HEAD", check=False, capture=True).returncode:
+            die("nothing to amend; the repository has no commits")
+        _refuse_amending_published_head()
 
     staged = git("diff", "--cached", "--quiet", check=False, capture=True)
     if staged.returncode not in (0, 1):
@@ -431,8 +466,6 @@ def cmd_save(args: list[str]) -> None:
                 "  name them too, use staged-only mode, or clear the index"
             )
 
-    message = format_message(subject, args_parsed.p, args_parsed.b, args_parsed.i)
-
     def stage() -> None:
         """Put the caller's requested content into the index."""
         if has_files:
@@ -441,20 +474,31 @@ def cmd_save(args: list[str]) -> None:
             git("add", "-A")
 
         stat = git_output("diff", "--cached", "--stat")
-        if not stat.strip():
-            die("nothing staged; pass files or -a")
-        print_section("STAGED", stat)
-        sys.stdout.flush()
+        if stat.strip():
+            print_section("STAGED", stat)
+            sys.stdout.flush()
+            return
+        if amend and has_message:
+            return
+        if amend:
+            die("nothing to amend; stage files or pass -s to rewrite the message")
+        die("nothing staged; pass files or -a")
 
     stage()
 
     fd, msg_path = tempfile.mkstemp(prefix="commit-msg-", suffix=".txt")
     index_backup: Path | None = None
     try:
-        with os.fdopen(fd, "w") as f:
-            f.write(message)
-
-        _lint_message(Path(msg_path), repo_root)
+        if message is None:
+            os.close(fd)
+            message_args = ["--amend", "--no-edit"]
+        else:
+            with os.fdopen(fd, "w") as f:
+                f.write(message)
+            _lint_message(Path(msg_path), repo_root)
+            message_args = ["-F", msg_path]
+            if amend:
+                message_args.insert(0, "--amend")
 
         index_path = Path(
             git_output(
@@ -477,8 +521,7 @@ def cmd_save(args: list[str]) -> None:
             "-c",
             "core.hooksPath=/dev/null",
             "commit",
-            "-F",
-            msg_path,
+            *message_args,
             check=False,
             capture=True,
         )

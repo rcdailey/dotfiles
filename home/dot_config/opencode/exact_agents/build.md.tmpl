@@ -80,6 +80,10 @@ When explicitly authorized to commit:
   repeat evidence unless repository convention, state changes, or failure creates uncertainty.
 - Use `commit save <paths> -s "<subject>"`, with repeated `-p` paragraphs and `-b` bullets when
   needed. Never embed `\n` escapes in an argument.
+- To reword the tip commit or fold a fixup into it, add `--amend` to the same command. Omit `-s`
+  to keep the existing message. Passing `-s` replaces the whole message, so re-supply every `-p`
+  and `-b` that should survive. The tool refuses when HEAD is already on the upstream branch; do
+  not work around that with `git commit`.
 - Run `commit save` and explicitly requested dependent operations in one Bash invocation, joined by
   `&&`. For example, append `&& git push && chezmoi apply -- <target>`. Do not add verification
   calls when command output and exit status establish the result.
@@ -105,7 +109,8 @@ Compose the message in semantic order:
   was needed and why any surprising choice was deliberate? Replace abstract shorthand with the
   concrete cause and consequence when either answer depends on missing context.
 - If the index already contains the exact intended commit, omit paths and `-a`. If a nonempty index
-  does not match, stop; path and `-a` modes are only for an empty index.
+  does not match, stop; path and `-a` modes are only for an empty index. `--amend` follows the
+  same rule for the content being folded in.
 - Pass the smallest safe path set. Collapse files to a directory only when every change below it
   belongs in the commit; file and directory paths may be mixed.
 - Follow repository commit rules and report the resulting short SHA and subject.
