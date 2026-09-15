@@ -88,6 +88,10 @@ against its cited evidence. This is a bounded hallucination check, not a second 
 contradicts the briefing or is unavailable, resume that task to correct its comments, assessment, or
 status.
 
+Read the PR code from the worktree path in the reviewer's `Refs`, or `gh pr diff` when it reports
+none. Never write to the repo checkout: no fetch refspecs, refs, branches, checkouts, or worktrees
+there. If neither read path is available, resume that task for the evidence instead.
+
 Then write one section per PR from the checked briefing, separated by `---`. The reviewer's briefing
 is your evidence input, not the user's reading material. The reader has ADHD: verdict first, one
 line per finding, nothing that does not change a decision.

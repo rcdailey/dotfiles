@@ -97,12 +97,15 @@ and reason for the scoped verdict.}
 - Checks: {relevant checks, outcomes, and what they establish}
 - Limits: {unverified behavior, effect on verdict, and next action if material; otherwise none}
 
-**Refs:** {head/base SHAs, relevant path:line evidence, Context7 IDs, fetched URLs}
+**Refs:** {head/base SHAs, worktree path or none, relevant path:line evidence, Context7 IDs,
+fetched URLs}
 **Finding confidence:** {high | medium | low | n/a} - {basis and any weakest staged claim}
 ```
 
 - Link the PR and include a pending-review link only if returned by tooling; never fabricate URLs.
   Use `Review: none` when absent. Distinguish existing pending comments from this pass's additions.
+- Report the task worktree path in `Refs` so the caller can read the PR commits without touching the
+  source repository; use `none` in remote-only mode.
 - Keep the first answer to one short paragraph. State the ticket goal in the ticket's own product
   terms and whether the PR meets it. Use matched bullets for findings in answers two and three;
   explain every new staged claim without requiring the user to open the PR. Expand only for
