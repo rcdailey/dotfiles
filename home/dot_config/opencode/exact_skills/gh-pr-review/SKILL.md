@@ -60,6 +60,9 @@ what already happened on the PR: whether a finding was raised before, or whether
 landed. A published review whose threads were all resolved is invisible without it, which reads as
 "never posted." `--author LOGIN` narrows output to one participant.
 
+The default view hides threads whose last comment is yours, so a reviewer's rebuttal is invisible
+there. After publishing replies, re-run with `--unanswered` before calling the cycle done.
+
 Inline comments belonging to an unsubmitted review are tagged `[pending, unsubmitted]`, and the
 `PENDING REVIEWS` section prints the draft body and each inline comment. Nothing there is visible to
 anyone else yet.
