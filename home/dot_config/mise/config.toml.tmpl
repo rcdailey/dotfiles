@@ -35,7 +35,11 @@ bun = "latest"
 "npm:@commitlint/config-conventional" = "latest"
 "npm:ctx7" = "latest"
 topgrade = "latest"
-"npm:@opencode/cli" = { version = "latest", allow_builds = ["@opencode/cli"] }
+
+[tools."npm:@opencode/cli"]
+version = "latest"
+allow_builds = ["@opencode/cli"]
+allow_low_downloads = true
 
 [settings]
 minimum_release_age = "0"
