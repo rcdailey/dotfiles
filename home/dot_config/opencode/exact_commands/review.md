@@ -3,13 +3,13 @@ description: Code review orchestrator; selects PRs and delegates each to the rev
 ---
 
 Orchestrate code review by parsing the argument, selecting the work list, and spawning one
-`reviewer` task per PR. Spot-check evidence, then present a product-facing briefing per PR derived
+`reviewer` subagent per PR. Spot-check evidence, then present a product-facing briefing per PR derived
 from the reviewer's technical briefing; the reviewer owns investigation and reasoning. Do not
 reconstruct reviews or re-post findings.
 
 Default scope is critical, high, and medium (P0-P2), which covers design, performance, operational,
 and test-coverage findings. `$ARGUMENTS` may widen it with `"minor"`, `"low"`, or `"all"`, or narrow
-it with `"high"`. Pass the priority scope through to every spawned task unchanged.
+it with `"high"`. Pass the priority scope through to every spawned subagent unchanged.
 
 ## Argument Parsing
 
@@ -21,7 +21,7 @@ needing review and fan out over as many as qualify (see PR Selection below).
 - **Repo path or name** (e.g., `/path/to/repo`, `owner/repo`, or a bare repo name): select open PRs
   needing review in that repo
 - **Commit range** (e.g., `main..feature`): STOP; this command reviews PRs only
-- **Priority keywords** (`high`, `minor`, `low`, `all`): pass through to every spawned task
+- **Priority keywords** (`high`, `minor`, `low`, `all`): pass through to every spawned subagent
 
 ## PR Selection
 
@@ -56,7 +56,7 @@ reviewing local changes.
 
 ## Execution
 
-Rename the session before spawning tasks:
+Rename the session before spawning subagents:
 
 - One PR: `PR #N: TICKET-ID short description`, where TICKET-ID is a Linear or GitHub issue key
   found in the PR title or branch name (omit if none). Description under 10 words, capturing the
@@ -64,7 +64,7 @@ Rename the session before spawning tasks:
   {number} --repo {owner}/{repo} --json title,headRefName` first.
 - Fan-out: `Review: {repo} ({n} PRs)`
 
-Spawn one `reviewer` task per selected PR. Pass:
+Spawn one `reviewer` subagent per selected PR. Pass:
 
 - The repo target: the recorded directory path when one exists (current directory in the no-argument
   case), otherwise `owner/repo`, so the subagent runs `gh`/`git` against the right repo
@@ -73,7 +73,7 @@ Spawn one `reviewer` task per selected PR. Pass:
 - Any user-supplied access authorization or work budget, without broadening it. The reviewer
   discovers repository-specific context and tools from applicable local instructions.
 
-Keep each returned task id paired with its PR number for the rest of the session.
+Keep each returned `sessionID` paired with its PR number for the rest of the session.
 
 Fan-out PRs run in parallel; the reviewer owns repository- and session-isolated worktrees or uses
 its remote-only fallback. Never assign a shared temporary path in the caller.
@@ -85,12 +85,12 @@ For one selected PR, use the same evidence check and briefing presentation below
 Before presenting, spot-check one representative finding per PR against its cited evidence, plus any
 external claim that controls the verdict. For clean reviews, check one consequential assessment
 against its cited evidence. This is a bounded hallucination check, not a second review. If evidence
-contradicts the briefing or is unavailable, resume that task to correct its comments, assessment, or
-status.
+contradicts the briefing or is unavailable, resume that subagent session to correct its comments,
+assessment, or status.
 
 Read the PR code from the worktree path in the reviewer's `Refs`, or `gh pr diff` when it reports
 none. Never write to the repo checkout: no fetch refspecs, refs, branches, checkouts, or worktrees
-there. If neither read path is available, resume that task for the evidence instead.
+there. If neither read path is available, resume that subagent session for the evidence instead.
 
 Then write one section per PR from the checked briefing, separated by `---`. The reviewer's briefing
 is your evidence input, not the user's reading material. The reader has ADHD: verdict first, one
@@ -137,10 +137,10 @@ a pass) and why.
 
 The session stays conversational once the reports land. Two rules govern what follows.
 
-**Re-review after new commits or replies:** resume the `reviewer` task for that PR by its recorded
-task id rather than spawning a fresh one; it still holds the diff, the ticket, and its own findings.
+**Re-review after new commits or replies:** resume the `reviewer` subagent for that PR by its recorded
+`sessionID` rather than spawning a fresh one; it still holds the diff, the ticket, and its findings.
 Pass only what changed (new commits, resolved threads, unanswered questions) and the priority scope.
-Spawn a new task only when no id was recorded for that PR.
+Spawn a new subagent only when no `sessionID` was recorded for that PR.
 
 **Comment mechanics stay on `gh-review`:** reading threads, replying, editing or removing your own
 comments, and inspecting an unsubmitted review all go through it; load the `gh-pr-review` skill

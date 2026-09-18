@@ -1,13 +1,22 @@
 ---
 description: Designs coding changes and submits implementation-ready plans for Plannotator approval.
 mode: primary
-permission:
-  edit: deny
-  plan_exit: deny
-  task:
-    "*": deny
-    explore: allow
-    researcher: allow
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: plan_exit
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: explore
+    effect: allow
+  - action: subagent
+    resource: researcher
+    effect: allow
 ---
 
 {{ template "opencode-coding-directives.md" . }}

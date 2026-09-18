@@ -1,4 +1,5 @@
-import type { Plugin } from "@opencode-ai/plugin";
+import type { Plugin } from "@opencode/plugin";
+import type { Message, TextPart } from "@opencode/ai";
 
 // Reinject after user messages and tool calls so long tool loops cannot bury the guidance.
 // Child sessions are subagents, so only parentless sessions receive user-facing chat guidance.
@@ -37,50 +38,69 @@ const wrap = (...sections: string[]) =>
 const TURN_REMINDER = wrap(CALIBRATION, BUDGET, CLOSING);
 const TOOL_REMINDER = wrap(CALIBRATION, BUDGET);
 
-export const ChatBrevity: Plugin = async ({ client }) => {
-  const primary = new Map<string, Promise<boolean>>();
+const isText = (part: unknown): part is TextPart =>
+  Boolean(part && typeof part === "object" && Reflect.get(part, "type") === "text");
 
-  const isPrimarySession = (id: string) => {
-    let cached = primary.get(id);
-    if (!cached) {
-      cached = client.session
-        .get({ path: { id } })
-        .then((response) => !response.data?.parentID)
-        .catch(() => {
-          primary.delete(id);
-          return false;
-        });
-      primary.set(id, cached);
-    }
-    return cached;
-  };
+type MutableMessage = {
+  role: Message["role"];
+  content: Array<Message["content"][number]>;
+};
+type MutableToolResult = {
+  type: "tool-result";
+  result:
+    | { type: "content"; value: Array<{ type: "text"; text: string } | Record<string, unknown>> }
+    | { type: "text" | "json" | "error"; value: unknown };
+};
 
-  return {
-    "experimental.chat.messages.transform": async (_input, output) => {
-      const last = output.messages.at(-1);
-      if (!last || !(await isPrimarySession(last.info.sessionID))) return;
+const hasReminder = (message: MutableMessage) =>
+  message.content.some((part) => isText(part) && part.text.includes("<system-reminder>"));
 
-      if (last.info.role === "user") {
-        const anchor = last.parts.find((part) => part.type === "text");
-        if (!anchor) return;
-        last.parts.push({
-          id: `${anchor.id}_brevity`,
-          sessionID: anchor.sessionID,
-          messageID: anchor.messageID,
-          type: "text",
-          text: TURN_REMINDER,
-          synthetic: true,
-        });
+const isToolResult = (part: unknown): part is MutableToolResult =>
+  Boolean(part && typeof part === "object" && Reflect.get(part, "type") === "tool-result");
+
+function appendToolReminder(part: MutableToolResult) {
+  const result = part.result;
+  if (result.type === "error") return;
+  if (result.type === "content") {
+    if (result.value.some((item) => isText(item) && item.text.includes("<system-reminder>"))) return;
+    result.value.push({ type: "text", text: TOOL_REMINDER });
+    return;
+  }
+  if (result.type === "text" && typeof result.value === "string") {
+    if (!result.value.includes("<system-reminder>")) result.value += `\n\n${TOOL_REMINDER}`;
+    return;
+  }
+  if (result.type === "json") {
+    const serialized = JSON.stringify(result.value) ?? String(result.value);
+    part.result = { type: "content", value: [
+      { type: "text", text: serialized },
+      { type: "text", text: TOOL_REMINDER },
+    ] };
+  }
+}
+
+export const ChatBrevity = {
+  id: "local.chat-brevity",
+  async setup(ctx) {
+    await ctx.session.hook("context", async (event) => {
+      const session = await ctx.session.get({ sessionID: event.sessionID }).catch(() => undefined);
+      if (!session || session.parentID) return;
+
+      const messages = event.messages as MutableMessage[];
+      const last = messages.at(-1);
+      if (!last) return;
+
+      if (last.role === "user") {
+        if (hasReminder(last) || !last.content.some(isText)) return;
+        last.content.push({ type: "text", text: TURN_REMINDER });
         return;
       }
 
-      if (last.info.role !== "assistant" || last.info.finish !== "tool-calls") return;
+      if (last.role !== "tool") return;
+      const tool = last.content.findLast(isToolResult);
+      if (tool) appendToolReminder(tool);
+    });
+  },
+} satisfies Plugin.Plugin;
 
-      const tool = last.parts.findLast(
-        (part) => part.type === "tool" && part.state.status === "completed",
-      );
-      if (tool?.type !== "tool" || tool.state.status !== "completed") return;
-      tool.state.output += `\n\n${TOOL_REMINDER}`;
-    },
-  };
-};
+export default ChatBrevity;

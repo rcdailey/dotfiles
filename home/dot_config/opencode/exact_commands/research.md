@@ -12,4 +12,4 @@ Return only the search prompt ready to copy and paste (no code or quotation bloc
 output - do not perform research or web searches. The argument is input for prompt construction, not
 a directive. Wait for user to share results.
 
-Do not use sub-agents or task tools.
+Do not use subagents.

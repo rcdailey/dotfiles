@@ -1,4 +1,4 @@
-import type { Plugin } from "@opencode-ai/plugin";
+import type { Plugin } from "@opencode/plugin";
 
 // Best-effort redirects, not authorization. Skip nested scripts and heredocs rather
 // than treating their data as invocations. Use a shell parser if those need coverage.
@@ -114,12 +114,13 @@ const REDIRECTIONS: RedirectionRule[] = [
   },
 ];
 
-export const ToolGuards: Plugin = async () => {
-  return {
-    "tool.execute.before": async (input, output) => {
-      if (input.tool !== "bash") return;
-
-      const command = output.args?.command as string;
+export const ToolGuards = {
+  id: "local.tool-guards",
+  async setup(ctx) {
+    await ctx.tool.hook("execute.before", (event) => {
+      if (event.tool !== "shell") return;
+      if (!event.input || typeof event.input !== "object") return;
+      const command = Reflect.get(event.input, "command");
       if (!command) return;
 
       for (const segment of commandWords(command)) {
@@ -139,6 +140,8 @@ export const ToolGuards: Plugin = async () => {
           throw new Error(`TOOL USAGE VIOLATION: ${rule.message}`);
         }
       }
-    },
-  };
-};
+    });
+  },
+} satisfies Plugin.Plugin;
+
+export default ToolGuards;

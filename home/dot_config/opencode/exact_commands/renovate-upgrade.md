@@ -13,7 +13,7 @@ subagents (one per PR).
 
 ## Orchestration
 
-Use the Task tool with `subagent_type: "upgrade-analyst"` for each PR.
+Use the subagent tool with `agent: "upgrade-analyst"` for each PR.
 
 **Bulk mode** (no arguments): Launch one subagent per PR in parallel. Each subagent receives the PR
 reference. Collect all results, then present a unified summary.

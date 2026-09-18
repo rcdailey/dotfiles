@@ -56,7 +56,7 @@ under `~/.config/opencode/` do not have these prefixes.
 
 - `opencode.jsonc` - Main config (model, agent overrides, LSP, formatters, providers, MCP servers)
 - `AGENTS.md` - Global directives (the file at `~/.config/opencode/AGENTS.md`)
-- `dcp.jsonc`, `tui.jsonc` - Additional config files
+- `dcp.jsonc`, `cli.json` - Additional config files
 - `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory
   contains a `SKILL.md`. Some are managed via `.chezmoiexternal.toml` in this directory.
 - `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). The primary
@@ -90,6 +90,7 @@ lazygit, etc.). Browse the directory to discover what's managed.
 
 - Run affected behavioral suites separately; pre-commit is for static checks, not test execution.
 - OpenCode plugins: run `bun test tests/opencode` from the repo root.
+- OpenCode test dependencies: run `bun install --cwd tests/opencode --frozen-lockfile` first.
 - Commit workflow: run `python -m unittest discover -s tests/commit` (requires commitlint and yq).
 - Document new root-suite commands here; project-owned commands belong in that project's guidance.
 

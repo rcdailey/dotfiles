@@ -144,29 +144,6 @@ configure_rbw() {
   log_success "rbw configured with email: $bitwarden_email"
 }
 
-install_opencode() {
-  log_info "Installing OpenCode..."
-
-  if command_exists opencode; then
-    log_success "OpenCode already installed: $(opencode --version 2>/dev/null || echo 'version unknown')"
-    return 0
-  fi
-
-  log_info "Installing OpenCode via official installer..."
-  if ! curl -fsSL https://opencode.ai/install | bash; then
-    die "OpenCode installation failed"
-  fi
-
-  # Refresh PATH to pick up newly installed opencode
-  export PATH="$HOME/.local/bin:$PATH"
-
-  if command_exists opencode; then
-    log_success "OpenCode installed: $(opencode --version 2>/dev/null || echo 'installed successfully')"
-  else
-    die "OpenCode installation completed but command not found"
-  fi
-}
-
 install_mise() {
   local platform="$1"
 
@@ -281,7 +258,6 @@ main() {
 
   install_system_packages "$platform"
   configure_rbw
-  install_opencode
   install_mise "$platform"
   install_dev_tools
   setup_zsh_shell "$platform"

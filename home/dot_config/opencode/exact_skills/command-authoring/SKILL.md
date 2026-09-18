@@ -22,14 +22,14 @@ Place Markdown commands in `.opencode/commands/<name>.md` or
 ---
 description: Brief purpose shown in command completion
 agent: build
-subtask: true
+subagent: true
 ---
 ```
 
 - `description` is required.
 - `agent` and `model` are optional overrides.
-- A subagent target runs as a subtask by default; `subtask: false` disables that behavior.
-- `subtask: true` isolates execution even when the selected agent is primary.
+- A subagent target runs in a child by default; `subagent: false` disables that behavior.
+- `subagent: true` isolates execution even when the selected agent is primary.
 
 The body supports `$ARGUMENTS`, positional `$1` values, shell output via `` !`command` ``, and file
 inclusion via `@path`.
@@ -39,7 +39,7 @@ inclusion via `@path`.
 - Start with the requested outcome and define fallback behavior for missing arguments.
 - Reference a skill or agent instead of copying its workflow.
 - State output shape and stop conditions only when they affect execution.
-- Use `subtask: true` for discovery-heavy or large-output work that does not need the primary
+- Use `subagent: true` for discovery-heavy or large-output work that does not need the primary
   conversation.
 - Keep simple commands simple; headings and phases are optional.
 

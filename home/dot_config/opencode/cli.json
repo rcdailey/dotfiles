@@ -1,0 +1,34 @@
+{
+  "$schema": "https://opencode.ai/v2/cli.json",
+  "attention": {
+    "notifications": true,
+    "sound": true,
+    "volume": 0.4
+  },
+  "diffs": { "view": "unified" },
+  "keybinds": {
+    "session.parent": "alt+up",
+    "session.child.next": "alt+right",
+    "session.child.previous": "alt+left",
+    "session.child.first": "alt+down",
+    "session.timeline": "alt+z",
+    "session.fork": "alt+f",
+    "session.tab.next": "ctrl+tab",
+    "session.tab.previous": "ctrl+shift+tab",
+    "input.visual.line.home": "home",
+    "input.visual.line.end": "end",
+    "model.list": "alt+m",
+    "messages.copy": "alt+c",
+    "session.undo": "alt+u",
+    "session.list": "alt+l",
+    "session.new": "alt+n",
+    "session.toggle.thinking": "alt+t",
+    "variant.cycle": "none",
+    "variant.list": "ctrl+t",
+    "prompt.skills": "alt+s",
+    "session.first": "ctrl+g",
+    "session.last": "ctrl+alt+g",
+    "input.buffer.home": "none",
+    "input.buffer.end": "none"
+  }
+}

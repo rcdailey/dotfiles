@@ -6,27 +6,55 @@ description: >
   safety, repo impact, and upstream evidence. Do not use for standalone package research,
   implementation, or general PR review.
 mode: subagent
-permission:
-  "*": deny
-  grep: allow
-  read: allow
-  glob: allow
-  external_directory: allow
-  skill:
-    "*": deny
-    research-cli: allow
-  bash:
-    "*": deny
-    "ctx7 *": allow
-    "research *": allow
-    "rg *": allow
-    "gh run view *": allow
-    "gh pr view *": allow
-    "gh pr checks *": allow
-    "gh pr diff *": allow
-    "git log*": allow
-    "git diff*": allow
-    "git show*": allow
+permissions:
+  - action: "*"
+    resource: "*"
+    effect: deny
+  - action: grep
+    resource: "*"
+    effect: allow
+  - action: read
+    resource: "*"
+    effect: allow
+  - action: glob
+    resource: "*"
+    effect: allow
+  - action: external_directory
+    resource: "*"
+    effect: allow
+  - action: skill
+    resource: research-cli
+    effect: allow
+  - action: shell
+    resource: "ctx7 *"
+    effect: allow
+  - action: shell
+    resource: "research *"
+    effect: allow
+  - action: shell
+    resource: "rg *"
+    effect: allow
+  - action: shell
+    resource: "gh run view *"
+    effect: allow
+  - action: shell
+    resource: "gh pr view *"
+    effect: allow
+  - action: shell
+    resource: "gh pr checks *"
+    effect: allow
+  - action: shell
+    resource: "gh pr diff *"
+    effect: allow
+  - action: shell
+    resource: "git log*"
+    effect: allow
+  - action: shell
+    resource: "git diff*"
+    effect: allow
+  - action: shell
+    resource: "git show*"
+    effect: allow
 ---
 
 You research dependency upgrades and return structured findings. Read-only; investigate and report.

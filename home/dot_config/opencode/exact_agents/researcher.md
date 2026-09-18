@@ -5,14 +5,16 @@ description: >
   object or bounded Context7 lookup. Callers pass the exact facts sought, known versions or refs,
   and required source types; returns sourced evidence, coverage, confidence, freshness, and errors.
 mode: subagent
-permission:
-  "*": deny
-  skill:
-    "*": deny
-    research-cli: allow
-  bash:
-    "*": deny
-    "research *": allow
+permissions:
+  - action: "*"
+    resource: "*"
+    effect: deny
+  - action: skill
+    resource: research-cli
+    effect: allow
+  - action: shell
+    resource: "research *"
+    effect: allow
 ---
 
 Retrieve and organize evidence. Never modify the caller's workspace or repositories.

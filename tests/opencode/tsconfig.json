@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "paths": {
+      "@opencode/plugin": ["node_modules/@opencode/plugin/dist/promise/index.d.ts"]
+    },
+    "skipLibCheck": true,
+    "target": "ES2022"
+  },
+  "include": [
+    "../../home/dot_config/opencode/exact_plugins/gh-api-guard.ts",
+    "../../home/dot_config/opencode/exact_plugins/session-rename.ts",
+    "../../home/dot_config/opencode/exact_plugins/tool-guards.ts"
+  ]
+}

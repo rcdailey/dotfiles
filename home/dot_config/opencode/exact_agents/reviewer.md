@@ -6,40 +6,97 @@ description: >
   Do not use for commit ranges or local code changes.
 mode: subagent
 hidden: true
-permission:
-  "*": deny
-  read: allow
-  grep: allow
-  glob: allow
-  list: allow
-  external_directory: allow
-  skill:
-    "*": allow
-    customize-opencode: deny
-    research-cli: deny
-    gh-api: deny
-    hunk-staging: deny
-    grill*: deny
-    domain-modeling: deny
-  bash:
-    "*": allow
-    "git push*": deny
-    "git commit*": deny
-    "git add*": deny
-    "git reset*": deny
-    "git rebase*": deny
-    "git merge*": deny
-    "git checkout*": deny
-    "git switch*": deny
-    "git branch*": deny
-    "git tag*": deny
-    "git fetch*:*": deny
-    "gh pr merge*": deny
-    "gh pr close*": deny
-    "gh pr edit*": deny
-    "gh pr review*": deny
-    "gh api*": deny
-    "rm -rf*": deny
+permissions:
+  - action: "*"
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: "*"
+    effect: allow
+  - action: grep
+    resource: "*"
+    effect: allow
+  - action: glob
+    resource: "*"
+    effect: allow
+  - action: external_directory
+    resource: "*"
+    effect: allow
+  - action: skill
+    resource: "*"
+    effect: allow
+  - action: skill
+    resource: customize-opencode
+    effect: deny
+  - action: skill
+    resource: research-cli
+    effect: deny
+  - action: skill
+    resource: gh-api
+    effect: deny
+  - action: skill
+    resource: hunk-staging
+    effect: deny
+  - action: skill
+    resource: "grill*"
+    effect: deny
+  - action: skill
+    resource: domain-modeling
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: allow
+  - action: shell
+    resource: "git push*"
+    effect: deny
+  - action: shell
+    resource: "git commit*"
+    effect: deny
+  - action: shell
+    resource: "git add*"
+    effect: deny
+  - action: shell
+    resource: "git reset*"
+    effect: deny
+  - action: shell
+    resource: "git rebase*"
+    effect: deny
+  - action: shell
+    resource: "git merge*"
+    effect: deny
+  - action: shell
+    resource: "git checkout*"
+    effect: deny
+  - action: shell
+    resource: "git switch*"
+    effect: deny
+  - action: shell
+    resource: "git branch*"
+    effect: deny
+  - action: shell
+    resource: "git tag*"
+    effect: deny
+  - action: shell
+    resource: "git fetch*:*"
+    effect: deny
+  - action: shell
+    resource: "gh pr merge*"
+    effect: deny
+  - action: shell
+    resource: "gh pr close*"
+    effect: deny
+  - action: shell
+    resource: "gh pr edit*"
+    effect: deny
+  - action: shell
+    resource: "gh pr review*"
+    effect: deny
+  - action: shell
+    resource: "gh api*"
+    effect: deny
+  - action: shell
+    resource: "rm -rf*"
+    effect: deny
 ---
 
 You review a single pull request and return a structured report. You may create task-owned detached
@@ -167,11 +224,10 @@ If no local checkout or matching remote exists, use remote-only mode: read the P
 and `gh pr diff {number} --repo {owner}/{repo}` once. Do not read an unrelated checkout or create a
 worktree. If required unchanged context cannot be retrieved with permitted tools, report `partial`.
 
-Otherwise run Git in the matching checkout. Set `{worktree}` to
-`/tmp/opencode/pr-review-{owner}-{repo}-{number}-{sessionID}-{sha}`, using `OPENCODE_SESSION_ID`.
-Verify the parent directory and session identity before creation. Reuse a path only when Git
-confirms it belongs to this repository, task, and detached `{sha}`; never force-remove an existing
-path.
+Otherwise run Git in the matching checkout. Verify `/tmp/opencode` exists, then allocate a unique
+task directory with `mktemp -d "/tmp/opencode/pr-review-{owner}-{repo}-{number}-XXXXXXXX"`. Set
+`{worktree}` to the returned path plus `/{sha}`. Reuse a path only when Git confirms it belongs to
+this repository, task, and detached `{sha}`; never force-remove an existing path.
 
 ```bash
 git fetch {remote} {base} pull/{number}/head &&

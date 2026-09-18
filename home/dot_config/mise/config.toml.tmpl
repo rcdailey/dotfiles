@@ -35,7 +35,7 @@ bun = "latest"
 "npm:@commitlint/config-conventional" = "latest"
 "npm:ctx7" = "latest"
 topgrade = "latest"
-"github:anomalyco/opencode" = "latest"
+"npm:@opencode/cli" = { version = "latest", allow_builds = ["@opencode/cli"] }
 
 [settings]
 minimum_release_age = "0"
@@ -58,7 +58,7 @@ credential_command = "gh auth token"
 
 [env]
 _.source = ["~/.config/mise/scripts/node-path.sh"]
-OPENCODE_EXPERIMENTAL_LSP_TOOL = "1"
+OPENCODE_LOG_LEVEL = "DEBUG"
 
 [hooks]
 cd = "mise current 2>/dev/null | head -5 || true"

@@ -4,36 +4,82 @@ description: >
   rules. Owns target discovery, boundary partitioning, and snapshot continuity. Read-only; returns
   verified evidence, findings, and an exact resume action.
 mode: subagent
-permission:
-  edit: deny
-  question: deny
-  webfetch: allow
-  task:
-    "*": deny
-  bash:
-    "*git *": deny
-    "*git diff*": allow
-    "*git ls-files*": allow
-    "*git log*": allow
-    "*git ls-remote*": allow
-    "*git merge-base*": allow
-    "*git rev-parse*": allow
-    "*git show*": allow
-    "*git status*": allow
-    "*gh *": deny
-    "*gh api*": deny
-    "*gh api* --method GET*": allow
-  skill:
-    "*": allow
-    agents-authoring: deny
-    command-authoring: deny
-    gh-api: deny
-    gh-pr-review: deny
-    humanizer: deny
-    linear-cli: deny
-    research-cli: deny
-    skill-authoring: deny
-    subagent-authoring: deny
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: question
+    resource: "*"
+    effect: deny
+  - action: webfetch
+    resource: "*"
+    effect: allow
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*git *"
+    effect: deny
+  - action: shell
+    resource: "*git diff*"
+    effect: allow
+  - action: shell
+    resource: "*git ls-files*"
+    effect: allow
+  - action: shell
+    resource: "*git log*"
+    effect: allow
+  - action: shell
+    resource: "*git ls-remote*"
+    effect: allow
+  - action: shell
+    resource: "*git merge-base*"
+    effect: allow
+  - action: shell
+    resource: "*git rev-parse*"
+    effect: allow
+  - action: shell
+    resource: "*git show*"
+    effect: allow
+  - action: shell
+    resource: "*git status*"
+    effect: allow
+  - action: shell
+    resource: "*gh *"
+    effect: deny
+  - action: shell
+    resource: "*gh api* --method GET*"
+    effect: allow
+  - action: skill
+    resource: "*"
+    effect: allow
+  - action: skill
+    resource: agents-authoring
+    effect: deny
+  - action: skill
+    resource: command-authoring
+    effect: deny
+  - action: skill
+    resource: gh-api
+    effect: deny
+  - action: skill
+    resource: gh-pr-review
+    effect: deny
+  - action: skill
+    resource: humanizer
+    effect: deny
+  - action: skill
+    resource: linear-cli
+    effect: deny
+  - action: skill
+    resource: research-cli
+    effect: deny
+  - action: skill
+    resource: skill-authoring
+    effect: deny
+  - action: skill
+    resource: subagent-authoring
+    effect: deny
 ---
 
 # Acceptance audit
@@ -79,8 +125,9 @@ after clarifying it.
 
 ## Snapshot handoff
 
-The pending tree is the immutable content identity for this audit. Read, search, use LSP, and run
-checks against the real repository while it matches that tree. Use
+The pending tree is the immutable content identity for this audit. Read and search the real
+repository while it matches that tree; use project lint, typecheck, and compiler commands for
+diagnostics. Use
 `acceptance-snapshot diff -- <paths>` for targeted iteration diffs; never reconstruct snapshot state
 manually. For whole-file additions or deletions, use the changed-path inventory unless an acceptance
 case depends on prior or current contents; do not request a full patch merely to confirm path state.

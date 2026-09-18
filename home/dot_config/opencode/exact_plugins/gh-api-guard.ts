@@ -1,4 +1,4 @@
-import type { Plugin } from "@opencode-ai/plugin";
+import type { Plugin } from "@opencode/plugin";
 
 // Require an explicit method for every real `gh api` invocation. Permission rules
 // separately allow conventional GET commands and ask for other methods.
@@ -104,17 +104,20 @@ const MISSING_METHOD =
   "TOOL USAGE VIOLATION: 'gh api' requires an explicit --method\n" +
   "Correct: gh api --method GET repos/{owner}/{repo}/pulls";
 
-export const GhApiGuard: Plugin = async () => {
-  return {
-    "tool.execute.before": async (input, output) => {
-      if (input.tool !== "bash") return;
-
-      const command = output.args?.command as string | undefined;
+export const GhApiGuard = {
+  id: "local.gh-api-guard",
+  async setup(ctx) {
+    await ctx.tool.hook("execute.before", (event) => {
+      if (event.tool !== "shell") return;
+      if (!event.input || typeof event.input !== "object") return;
+      const command = Reflect.get(event.input, "command");
       if (!command) return;
 
       for (const args of invocations(command)) {
         if (!methodOf(args)) throw new Error(MISSING_METHOD);
       }
-    },
-  };
-};
+    });
+  },
+} satisfies Plugin.Plugin;
+
+export default GhApiGuard;

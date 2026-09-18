@@ -15,26 +15,28 @@ Apply the active Authoring policy; this skill governs role boundaries and caller
 
 ## Definition and source
 
-Define agents in `.opencode/agents/<name>.md`, `~/.config/opencode/agents/<name>.md`, or the `agent`
+Define agents in `.opencode/agents/<name>.md`, `~/.config/opencode/agents/<name>.md`, or the `agents`
 section of `opencode.json`. In a generated configuration repository, edit the source template and
 validate the rendered target; do not maintain both independently.
 
-Required routing field: `description`. Common optional fields: `mode`, `model`, `variant`,
-`temperature`, `top_p`, `steps`, `disable`, `color`, `hidden`, and `permission`. `mode` defaults to
-`all`; `hidden` affects only subagent autocomplete.
+Required routing field: `description`. Common optional fields are `mode`, `model`, `disabled`,
+`color`, `hidden`, `permissions`, and `request.body`. Join a model and variant as
+`provider/model#variant`. `mode` defaults to `all`; `hidden` affects only subagent autocomplete.
 
 Verify provider options against the current provider and schema; do not preserve a model catalog.
 
 ## Permissions
 
-Use `permission`; `tools` is deprecated. Last matching permission wins, so put wildcards first.
+Use ordered `permissions`; last matching permission wins, so put wildcards first. Use `shell` and
+`subagent` action names rather than the V1 `bash` and `task` names.
 
-- Start specialist tool access from deny-by-default permissions. Existing Bash policies are deliberate;
-  do not tighten them without explicit approval. Broad Bash access is not a read-only security boundary.
+- Start specialist tool access from deny-by-default permissions. Existing shell policies are
+  deliberate; do not tighten them without explicit approval. Broad shell access is not a read-only
+  security boundary.
 - Define permitted effects, including scratch writes and test artifacts, separately from source edits.
 - Allow only the skills and subagents required by the workflow.
 - Use permissions instead of repeating an enforceable prohibition in prose.
-- Check shell redirection and indirect mutation paths when granting Bash access.
+- Check shell redirection and indirect mutation paths when granting shell access.
 
 ## Routing contract
 
