@@ -40,6 +40,7 @@ topgrade = "latest"
 version = "latest"
 allow_builds = ["@opencode/cli"]
 allow_low_downloads = true
+postinstall = "opencode service restart"
 
 [settings]
 minimum_release_age = "0"
