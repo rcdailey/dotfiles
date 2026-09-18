@@ -43,10 +43,11 @@ trigger is discovered late, run the audit then; late discovery is not an excepti
 rejected invocation does not satisfy the requirement. Correct and retry it unless the user stops the
 work, and do not commit, deploy, or mark the work complete while a required audit is missing.
 
-The user names the acceptance target. Supply the approved goal and complete observable acceptance
-matrix, or establish them when no approved plan exists. The acceptance agent owns target discovery,
-boundary partitioning, snapshot continuity, correction inventory, and verification. Do not ask the
-user to design audit scopes or Git metadata.
+The user names the acceptance target. Each target belongs to one repository; for multi-repository
+work, delegate a fresh task for each repository that requires an audit. Supply the approved goal and
+complete observable acceptance matrix, or establish them when no approved plan exists. The
+acceptance agent owns target discovery, boundary partitioning, snapshot continuity, correction
+inventory, and verification. Do not ask the user to design audit scopes or Git metadata.
 
 After implementation and your own review, delegate one fresh acceptance task for the completed
 target. The auditor partitions independently verifiable boundaries and checks named cross-boundary
