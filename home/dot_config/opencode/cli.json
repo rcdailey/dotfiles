@@ -6,6 +6,7 @@
     "volume": 0.4
   },
   "diffs": { "view": "unified" },
+  "tabs": { "enabled": false },
   "keybinds": {
     "session.parent": "alt+up",
     "session.child.next": "alt+right",
