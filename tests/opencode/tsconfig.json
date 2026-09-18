@@ -13,6 +13,7 @@
   },
   "include": [
     "../../home/dot_config/opencode/exact_plugins/gh-api-guard.ts",
+    "../../home/dot_config/opencode/exact_plugins/ripgrep-recursive-flag.ts",
     "../../home/dot_config/opencode/exact_plugins/session-rename.ts",
     "../../home/dot_config/opencode/exact_plugins/tool-guards.ts"
   ]

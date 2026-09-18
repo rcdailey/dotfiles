@@ -1,15 +1,17 @@
 import { expect, test } from "bun:test";
+import type { Plugin } from "@opencode/plugin";
 import { loadPlugin } from "./load-plugin";
 import { createHost } from "./real-host.ts";
 
-const { GhApiGuard } = await loadPlugin<any>("gh-api-guard.ts");
-const { ToolGuards } = await loadPlugin<any>("tool-guards.ts");
+const { GhApiGuard } = await loadPlugin<{ GhApiGuard: Plugin.Plugin }>("gh-api-guard.ts");
+const { ToolGuards } = await loadPlugin<{ ToolGuards: Plugin.Plugin }>("tool-guards.ts");
+const { RipgrepRecursiveFlag } = await loadPlugin<{
+  RipgrepRecursiveFlag: Plugin.Plugin;
+}>("ripgrep-recursive-flag.ts");
 
 type BeforeHook = (event: { tool: string; input: { command: string } }) => Promise<void> | void;
 
-async function beforeHook(plugin: {
-  setup(context: unknown): Promise<void> | void;
-}): Promise<BeforeHook> {
+async function beforeHook(plugin: Plugin.Plugin): Promise<BeforeHook> {
   let hook: BeforeHook | undefined;
   await plugin.setup({
     tool: {
@@ -17,30 +19,62 @@ async function beforeHook(plugin: {
         if (name === "execute.before") hook = callback;
       },
     },
-  });
+  } as never);
   if (!hook) throw new Error("plugin did not register execute.before");
   return hook;
 }
 
 const api = await beforeHook(GhApiGuard);
 const tools = await beforeHook(ToolGuards);
+const ripgrep = await beforeHook(RipgrepRecursiveFlag);
 
 test("loads guard plugins in the V2 host", async () => {
   const loaded: string[] = [];
-  const observe = (plugin: any) => ({
+  const observe = (plugin: Plugin.Plugin): Plugin.Plugin => ({
     ...plugin,
     setup(context: unknown) {
       loaded.push(plugin.id);
       return plugin.setup(context);
     },
   });
-  for (const plugin of [GhApiGuard, ToolGuards]) {
+  for (const plugin of [GhApiGuard, RipgrepRecursiveFlag, ToolGuards]) {
     await using host = await createHost("{}", [observe(plugin)]);
     const session = await host.sessions.create({ location: { directory: import.meta.dir } });
     await host.permission.list({ sessionID: session.id });
   }
-  expect(loaded).toEqual(["local.gh-api-guard", "local.tool-guards"]);
+  expect(loaded).toEqual([
+    "local.gh-api-guard",
+    "local.ripgrep-recursive-flag",
+    "local.tool-guards",
+  ]);
 });
+
+for (const [command, expected] of [
+  ['rg -r "needle" path', 'rg "needle" path'],
+  ['rg -rl "needle" path', 'rg -l "needle" path'],
+  ['rg -nr "needle" path', 'rg -n "needle" path'],
+  ['true && rg "-rn" "needle" path', 'true && rg -n "needle" path'],
+] as const) {
+  test(`removes ripgrep's mistaken recursive flag: ${command}`, async () => {
+    const event = { tool: "shell", input: { command } };
+    await ripgrep(event);
+    expect(event.input.command).toBe(expected);
+  });
+}
+
+for (const command of [
+  'rg "needle" path',
+  'rg --replace replacement "needle" path',
+  "rg -- -r path",
+  'printf "%s" "rg -r needle path"',
+  "git rg -r needle path",
+]) {
+  test(`preserves intentional replacement and shell data: ${command}`, async () => {
+    const event = { tool: "shell", input: { command } };
+    await ripgrep(event);
+    expect(event.input.command).toBe(command);
+  });
+}
 
 const execute = async (hook: BeforeHook, command: string) =>
   hook({ tool: "shell", input: { command } });
