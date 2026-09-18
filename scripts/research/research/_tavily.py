@@ -27,19 +27,19 @@ class TavilyError(Exception):
 
 
 def get_tavily_api_key() -> str:
-    """Return the Tavily API key from env or rbw."""
+    """Return the Tavily API key from env or rbw.
+
+    Concurrent invocations share one unlock prompt: the serializing pinentry
+    wrapper cancels the queued prompts once the vault is open, so a cancelled
+    first attempt is retried once against the now-unlocked agent.
+    """
     import os
 
     key = os.environ.get("TAVILY_API_KEY")
     if key:
         return key
     try:
-        result = subprocess.run(
-            ["rbw", "get", RBW_ITEM],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
+        result = _rbw_get()
     except FileNotFoundError:
         raise TavilyError("TAVILY_API_KEY not set and `rbw` binary not found") from None
     except subprocess.CalledProcessError as e:
@@ -49,6 +49,16 @@ def get_tavily_api_key() -> str:
     if not key:
         raise TavilyError(f"rbw returned empty value for {RBW_ITEM}")
     return key
+
+
+def _rbw_get() -> subprocess.CompletedProcess[str]:
+    cmd = ["rbw", "get", RBW_ITEM]
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, check=True)
+    except subprocess.CalledProcessError as e:
+        if "pinentry cancelled" not in e.stderr:
+            raise
+    return subprocess.run(cmd, capture_output=True, text=True, check=True)
 
 
 def get_client() -> TavilyClient:
