@@ -6,7 +6,7 @@
     "volume": 0.4
   },
   "diffs": { "view": "unified" },
-  "session": { "grouping": "none" },
+  "session": { "grouping": "none", "sidebar": "hide" },
   "tabs": { "enabled": false },
   "keybinds": {
     "session.parent": "alt+up",
