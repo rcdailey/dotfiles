@@ -95,7 +95,7 @@ install_system_packages() {
   macos)
     eval "$(brew shellenv)"
     local packages=()
-    for pkg in zsh rbw; do
+    for pkg in zsh rbw pinentry-mac; do
       brew list "$pkg" &>/dev/null || packages+=("$pkg")
     done
     [[ ${#packages[@]} -gt 0 ]] && brew install "${packages[@]}"

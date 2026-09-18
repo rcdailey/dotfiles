@@ -36,8 +36,20 @@ done
 trap cleanup EXIT
 echo $$ > "$LOCK_PATH/pid"
 
+# Bounded `rbw unlocked`; macOS has no timeout(1), and the agent may be busy
+# serving the unlock we are waiting on.
+unlocked() {
+    rbw unlocked 2>/dev/null &
+    local probe=$! waited=0
+    while kill -0 "$probe" 2>/dev/null; do
+        (( ++waited > 20 )) && { kill "$probe" 2>/dev/null; wait "$probe" 2>/dev/null; return 1; }
+        sleep 0.1
+    done
+    wait "$probe"
+}
+
 # Vault unlocked while we waited; cancel without prompting
-if timeout 2 rbw unlocked 2>/dev/null; then
+if unlocked; then
     echo "OK Pleased to meet you"
     while IFS= read -r line; do
         case "${line%% *}" in
