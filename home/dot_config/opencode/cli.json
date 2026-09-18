@@ -25,6 +25,7 @@
     "session.list": "alt+l",
     "session.new": "alt+n",
     "session.toggle.thinking": "alt+t",
+    "agent.cycle": "tab,shift+tab",
     "variant.cycle": "none",
     "variant.list": "ctrl+t",
     "prompt.skills": "alt+s",
