@@ -20,8 +20,10 @@ from linear_cli._render import echo_comment, echo_issue_summary, estimate_text
 from linear_cli._resolve import (
     resolve_assignee_id,
     resolve_cycle_number,
+    resolve_issue_id,
     resolve_label_id,
     resolve_milestone_id,
+    resolve_milestone_scope,
     resolve_project_id,
     resolve_state_id,
     resolve_team_id,
@@ -326,11 +328,16 @@ def view(issue_id: str, include_comments: bool) -> None:
 @click.option("--priority", default=0, type=click.IntRange(0, 4), help="Priority (0-4).")
 @click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
 @click.option("--label", "label_names", multiple=True, help="Label name (repeatable).")
-@click.option("--parent", "parent_id", default=None, help="Parent issue UUID.")
+@click.option(
+    "--parent", "parent_id", default=None, help="Parent issue identifier (e.g. ENG-123) or UUID."
+)
 @click.option("--estimate", default=None, type=float, help="Story point estimate.")
 @click.option("--project", "project_name", default=None, help="Project name to assign.")
 @click.option(
-    "--milestone", "milestone_name", default=None, help="Milestone name (requires --project)."
+    "--milestone",
+    "milestone_name",
+    default=None,
+    help="Milestone name; --project needed only if the name is ambiguous.",
 )
 def create(
     title: str,
@@ -346,9 +353,6 @@ def create(
     milestone_name: str | None,
 ) -> None:
     """Create a new issue."""
-    if milestone_name and not project_name:
-        die("--milestone requires --project")
-
     team_id = resolve_team_id(team_key)
     input_data: dict = {"title": title, "teamId": team_id, "priority": priority}
 
@@ -361,7 +365,7 @@ def create(
     if label_names:
         input_data["labelIds"] = [resolve_label_id(ln) for ln in label_names]
     if parent_id:
-        input_data["parentId"] = parent_id
+        input_data["parentId"] = resolve_issue_id(parent_id)
     if estimate is not None:
         input_data["estimate"] = estimate
     if project_name:
@@ -369,6 +373,10 @@ def create(
         input_data["projectId"] = project_id
         if milestone_name:
             input_data["projectMilestoneId"] = resolve_milestone_id(milestone_name, project_id)
+    elif milestone_name:
+        project_id, milestone_id = resolve_milestone_scope(milestone_name)
+        input_data["projectId"] = project_id
+        input_data["projectMilestoneId"] = milestone_id
 
     try:
         data = execute(ISSUE_CREATE_MUTATION, {"input": input_data})
@@ -396,10 +404,15 @@ def create(
     "--remove-label", "remove_labels", multiple=True, help="Label name to remove (repeatable)."
 )
 @click.option("--estimate", default=None, type=float, help="Story point estimate.")
-@click.option("--parent", "parent_id", default=None, help="Parent issue ID or identifier.")
+@click.option(
+    "--parent", "parent_id", default=None, help="Parent issue identifier (e.g. ENG-123) or UUID."
+)
 @click.option("--project", "project_name", default=None, help="Project name to assign.")
 @click.option(
-    "--milestone", "milestone_name", default=None, help="Milestone name within the issue's project."
+    "--milestone",
+    "milestone_name",
+    default=None,
+    help="Milestone name; resolved within the issue's project, --project, or the workspace.",
 )
 def update(
     issue_ids: tuple[str, ...],
@@ -500,18 +513,20 @@ def update(
     if estimate is not None:
         input_data["estimate"] = estimate
     if parent_id:
-        input_data["parentId"] = parent_id
+        input_data["parentId"] = resolve_issue_id(parent_id)
     if project_name:
         project_id = resolve_project_id(project_name)
         input_data["projectId"] = project_id
         if milestone_name:
             input_data["projectMilestoneId"] = resolve_milestone_id(milestone_name, project_id)
     elif milestone_name:
-        project_data = node.get("project") or {}
-        project_id = project_data.get("id")
-        if not project_id:
-            die("--milestone requires the issue to be in a project (or pass --project)")
-        input_data["projectMilestoneId"] = resolve_milestone_id(milestone_name, project_id)
+        project_id = (node.get("project") or {}).get("id")
+        if project_id:
+            input_data["projectMilestoneId"] = resolve_milestone_id(milestone_name, project_id)
+        else:
+            project_id, milestone_id = resolve_milestone_scope(milestone_name)
+            input_data["projectId"] = project_id
+            input_data["projectMilestoneId"] = milestone_id
 
     if not input_data:
         die("no updates specified")

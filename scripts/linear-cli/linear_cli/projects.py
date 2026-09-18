@@ -8,14 +8,19 @@ from linear_cli._click import HelpfulGroup
 from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute, paginate
 from linear_cli._models import Project, ProjectUpdate
-from linear_cli._queries import PROJECT_QUERY, PROJECT_UPDATE_MUTATION, PROJECTS_QUERY
+from linear_cli._queries import (
+    PROJECT_CREATE_MUTATION,
+    PROJECT_QUERY,
+    PROJECT_UPDATE_MUTATION,
+    PROJECTS_QUERY,
+)
 from linear_cli._render import percentage_text
 from linear_cli._resolve import resolve_project_id, resolve_team_id
 
 
 @click.group(cls=HelpfulGroup)
 def cli() -> None:
-    """List and view Linear projects."""
+    """List, view, create, and update Linear projects."""
 
 
 @cli.command("list")
@@ -105,6 +110,45 @@ def view_project(id_or_name: str) -> None:
             click.echo(f"  [{update.health}] {update.created_at} by {update.user_name}")
             if preview:
                 click.echo(f"    {preview}")
+
+
+@cli.command("create")
+@click.option("--name", required=True, help="Project name.")
+@click.option(
+    "--team", "team_keys", required=True, multiple=True, help="Team key (repeatable, e.g. ENG)."
+)
+@click.option("--description", default=None, help="Project description (markdown).")
+@click.option("--start-date", default=None, help="Start date (YYYY-MM-DD).")
+@click.option("--target-date", default=None, help="Target date (YYYY-MM-DD).")
+def create_project(
+    name: str,
+    team_keys: tuple[str, ...],
+    description: str | None,
+    start_date: str | None,
+    target_date: str | None,
+) -> None:
+    """Create a project."""
+    input_data: dict = {
+        "name": name,
+        "teamIds": [resolve_team_id(key) for key in team_keys],
+    }
+    if description:
+        input_data["description"] = description
+    if start_date:
+        input_data["startDate"] = start_date
+    if target_date:
+        input_data["targetDate"] = target_date
+
+    try:
+        data = execute(PROJECT_CREATE_MUTATION, {"input": input_data})
+    except LinearError as exc:
+        die(str(exc))
+    result = data.get("projectCreate") or {}
+    if not result.get("success"):
+        die("project creation failed")
+    project = result.get("project") or {}
+    click.echo(f"created project: {project.get('name', name)}")
+    click.echo(project.get("url"))
 
 
 @cli.command("update")

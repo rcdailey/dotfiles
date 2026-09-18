@@ -431,6 +431,19 @@ query Projects($filter: ProjectFilter, $first: Int, $after: String) {
 }
 """
 
+PROJECT_CREATE_MUTATION = """
+mutation ProjectCreate($input: ProjectCreateInput!) {
+  projectCreate(input: $input) {
+    success
+    project {
+      id
+      name
+      url
+    }
+  }
+}
+"""
+
 PROJECT_UPDATE_MUTATION = """
 mutation ProjectUpdate($id: String!, $input: ProjectUpdateInput!) {
   projectUpdate(id: $id, input: $input) {

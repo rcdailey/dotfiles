@@ -39,7 +39,9 @@ teams, states, or labels; use display names or keys instead.
   clears the assignee
 - `--label` takes a label display name, case-insensitive
 - `--project` takes a project display name
-- `--milestone` takes a milestone display name, resolved within the project
+- `--milestone` takes a milestone display name, resolved within `--project` when given, otherwise
+  across the workspace when the name is unique
+- `--parent` takes an issue identifier (e.g. `ENG-123`); no UUID lookup needed
 - `--cycle` takes `active`, `previous`, or an integer cycle number; requires `--team`
 - `--estimate` takes `none` (unestimated) or a numeric value
 
@@ -57,7 +59,7 @@ Checklist before calling `create`:
 - `--label` (repeat per label) if the template requires them
 - `--priority`, `--assignee`, `--estimate` when known
 - `--project` when applicable
-- `--milestone` when the project has milestones (requires `--project`)
+- `--milestone` when the project has milestones
 - `--description` for the issue body (markdown)
 
 Pass the description inline with a quoted heredoc:
@@ -117,7 +119,7 @@ Three distinct mechanisms; pick by intent:
 
 - `linear relations add` for issue-to-issue semantics (`blocked-by`, `blocks`,
   `related`, `duplicate`). Use for dependency graphs and duplicate merges.
-- `linear issues update <ID> --parent <parentID>` for parent/child hierarchy
+- `linear issues update <ID> --parent <PARENT-ID>` for parent/child hierarchy
   (sub-issues).
 - `linear links add` for issue-to-URL attachments (GitHub PRs, design docs,
   external refs).

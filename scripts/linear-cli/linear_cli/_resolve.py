@@ -7,6 +7,7 @@ import re
 from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute
 from linear_cli._queries import (
+    ISSUE_QUERY,
     LABELS_QUERY,
     MILESTONES_QUERY,
     PROJECTS_QUERY,
@@ -77,6 +78,37 @@ def resolve_project_id(project_name: str) -> str:
         if node.get("name", "").casefold() == project_name.casefold():
             return node["id"]
     die(f"project '{project_name}' not found")
+
+
+def resolve_issue_id(issue_ref: str) -> str:
+    """Resolve an issue identifier (e.g. ENG-123) to its UUID; UUIDs pass through."""
+    if _UUID_RE.match(issue_ref):
+        return issue_ref
+    try:
+        data = execute(ISSUE_QUERY, {"id": issue_ref})
+    except LinearError as exc:
+        die(str(exc))
+    node = data.get("issue")
+    if not node:
+        die(f"issue '{issue_ref}' not found")
+    return node["id"]
+
+
+def resolve_milestone_scope(milestone_name: str) -> tuple[str, str]:
+    """Resolve a milestone name across the workspace to (project_id, milestone_id).
+
+    Fails when the name matches milestones in more than one project; the caller
+    must then pass an explicit project.
+    """
+    filt = {"name": {"eqIgnoreCase": milestone_name}}
+    nodes = _query_nodes(MILESTONES_QUERY, {"filter": filt}, "projectMilestones")
+    if not nodes:
+        die(f"milestone '{milestone_name}' not found")
+    if len(nodes) > 1:
+        names = sorted((n.get("project") or {}).get("name") or "?" for n in nodes)
+        die(f"milestone '{milestone_name}' exists in projects: {', '.join(names)}; pass --project")
+    node = nodes[0]
+    return (node.get("project") or {})["id"], node["id"]
 
 
 def resolve_milestone_id(milestone_name: str, project_id: str) -> str:
