@@ -75,35 +75,21 @@ Rules:
 
 ## Invocation
 
-Projects are invoked via thin shell wrappers that use `uv run --project`:
+Projects are invoked via thin wrappers that delegate to the shared launcher in
+`home/dot_local/lib/uv-tool.sh`, which isolates the tool from the caller directory's mise config.
+That file documents the hazards; do not reimplement them per wrapper.
 
 ```bash
 #!/usr/bin/env bash
-# Project-scoped vars from the caller's repo (mise commonly exports UV_PYTHON)
-# would hijack this tool's interpreter. They arrive two ways: inherited through
-# the environment, and re-injected by mise's uv shim from the caller's cwd.
-exec env -u UV_PYTHON -u UV_PROJECT -u UV_PROJECT_ENVIRONMENT \
-  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME MISE_NO_ENV=1 \
-  uv run --quiet \
-  --project "$(chezmoi source-path)/../scripts/project-name" \
-  -m package_name "$@"
+source "$HOME/.local/lib/uv-tool.sh"
+uv_tool_exec project-name package_name "$@"
 ```
 
-For non-chezmoi repos, resolve relative to the wrapper itself:
+The launcher resolves `scripts/project-name` through `chezmoi source-path`, so the source tree stays
+authoritative and edits take effect without an apply.
 
-```bash
-#!/usr/bin/env bash
-exec env -u UV_PYTHON -u UV_PROJECT -u UV_PROJECT_ENVIRONMENT \
-  -u VIRTUAL_ENV -u PYTHONPATH -u PYTHONHOME MISE_NO_ENV=1 \
-  uv run --quiet \
-  --project "$(dirname "$(realpath "$0")")/../scripts/project-name" \
-  -m package_name "$@"
-```
-
-The env prefix is mandatory. `uv` honors ambient `UV_*` regardless of `--project`, so a caller repo
-pinning a Python older than the project's `requires-python` breaks the tool outright. `env -u` alone
-is not enough when `uv` resolves to a mise shim: the shim reloads the caller's `mise.toml` and
-re-injects `[env]` values, so `MISE_NO_ENV=1` is what neutralizes it.
+Each project also needs a `.python-version`, or the interpreter baked into `.venv` depends on
+whatever Python was on `PATH` at creation time.
 
 ## Click Patterns
 
