@@ -18,38 +18,197 @@ permissions:
     resource: "*"
     effect: deny
   - action: shell
-    resource: "*git *"
+    resource: "*git add*"
     effect: deny
   - action: shell
-    resource: "*git diff*"
-    effect: allow
-  - action: shell
-    resource: "*git ls-files*"
-    effect: allow
-  - action: shell
-    resource: "*git log*"
-    effect: allow
-  - action: shell
-    resource: "*git ls-remote*"
-    effect: allow
-  - action: shell
-    resource: "*git merge-base*"
-    effect: allow
-  - action: shell
-    resource: "*git rev-parse*"
-    effect: allow
-  - action: shell
-    resource: "*git show*"
-    effect: allow
-  - action: shell
-    resource: "*git status*"
-    effect: allow
-  - action: shell
-    resource: "*gh *"
+    resource: "*git am *"
     effect: deny
   - action: shell
-    resource: "*gh api* --method GET*"
-    effect: allow
+    resource: "*git apply*"
+    effect: deny
+  - action: shell
+    resource: "*git bisect*"
+    effect: deny
+  - action: shell
+    resource: "*git branch*"
+    effect: deny
+  - action: shell
+    resource: "*git checkout*"
+    effect: deny
+  - action: shell
+    resource: "*git cherry-pick*"
+    effect: deny
+  - action: shell
+    resource: "*git clean*"
+    effect: deny
+  - action: shell
+    resource: "*git clone*"
+    effect: deny
+  - action: shell
+    resource: "*git commit*"
+    effect: deny
+  - action: shell
+    resource: "*git config*"
+    effect: deny
+  - action: shell
+    resource: "*git fetch*"
+    effect: deny
+  - action: shell
+    resource: "*git filter-branch*"
+    effect: deny
+  - action: shell
+    resource: "*git gc*"
+    effect: deny
+  - action: shell
+    resource: "*git init*"
+    effect: deny
+  - action: shell
+    resource: "*git maintenance*"
+    effect: deny
+  - action: shell
+    resource: "*git merge *"
+    effect: deny
+  - action: shell
+    resource: "*git mv *"
+    effect: deny
+  - action: shell
+    resource: "*git notes*"
+    effect: deny
+  - action: shell
+    resource: "*git prune*"
+    effect: deny
+  - action: shell
+    resource: "*git pull*"
+    effect: deny
+  - action: shell
+    resource: "*git push*"
+    effect: deny
+  - action: shell
+    resource: "*git rebase*"
+    effect: deny
+  - action: shell
+    resource: "*git remote*"
+    effect: deny
+  - action: shell
+    resource: "*git repack*"
+    effect: deny
+  - action: shell
+    resource: "*git replace*"
+    effect: deny
+  - action: shell
+    resource: "*git reset*"
+    effect: deny
+  - action: shell
+    resource: "*git restore*"
+    effect: deny
+  - action: shell
+    resource: "*git revert*"
+    effect: deny
+  - action: shell
+    resource: "*git rm *"
+    effect: deny
+  - action: shell
+    resource: "*git sparse-checkout*"
+    effect: deny
+  - action: shell
+    resource: "*git stash*"
+    effect: deny
+  - action: shell
+    resource: "*git submodule*"
+    effect: deny
+  - action: shell
+    resource: "*git switch*"
+    effect: deny
+  - action: shell
+    resource: "*git tag*"
+    effect: deny
+  - action: shell
+    resource: "*git update-index*"
+    effect: deny
+  - action: shell
+    resource: "*git update-ref*"
+    effect: deny
+  - action: shell
+    resource: "*git worktree*"
+    effect: deny
+  - action: shell
+    resource: "*gh api*--method POST*"
+    effect: deny
+  - action: shell
+    resource: "*gh api*--method PUT*"
+    effect: deny
+  - action: shell
+    resource: "*gh api*--method PATCH*"
+    effect: deny
+  - action: shell
+    resource: "*gh api*--method DELETE*"
+    effect: deny
+  - action: shell
+    resource: "*gh api graphql*"
+    effect: deny
+  - action: shell
+    resource: "*gh auth*"
+    effect: deny
+  - action: shell
+    resource: "*gh extension*"
+    effect: deny
+  - action: shell
+    resource: "*gh secret*"
+    effect: deny
+  - action: shell
+    resource: "*gh variable*"
+    effect: deny
+  - action: shell
+    resource: "*gh * cancel*"
+    effect: deny
+  - action: shell
+    resource: "*gh * clone*"
+    effect: deny
+  - action: shell
+    resource: "*gh * close*"
+    effect: deny
+  - action: shell
+    resource: "*gh * comment*"
+    effect: deny
+  - action: shell
+    resource: "*gh * create*"
+    effect: deny
+  - action: shell
+    resource: "*gh * delete*"
+    effect: deny
+  - action: shell
+    resource: "*gh * edit*"
+    effect: deny
+  - action: shell
+    resource: "*gh * fork*"
+    effect: deny
+  - action: shell
+    resource: "*gh * merge*"
+    effect: deny
+  - action: shell
+    resource: "*gh * remove*"
+    effect: deny
+  - action: shell
+    resource: "*gh * rename*"
+    effect: deny
+  - action: shell
+    resource: "*gh * reopen*"
+    effect: deny
+  - action: shell
+    resource: "*gh * rerun*"
+    effect: deny
+  - action: shell
+    resource: "*gh * review*"
+    effect: deny
+  - action: shell
+    resource: "*gh * run *"
+    effect: deny
+  - action: shell
+    resource: "*gh * sync*"
+    effect: deny
+  - action: shell
+    resource: "*gh * upload*"
+    effect: deny
   - action: skill
     resource: "*"
     effect: allow
@@ -87,7 +246,9 @@ permissions:
 Audit a completed implementation. Own target discovery, boundary partitioning, snapshot continuity,
 and evidence verification. Do not change source, design fixes, commit, push, or write the report to
 disk. Snapshot state, disposable probes under `/tmp`, and test-generated artifacts are permitted. Do
-not run checks that rewrite source. The caller owns architecture, corrections, and final acceptance.
+not run checks that rewrite source. Shell permissions deny known mutating `git` and `gh`
+subcommands rather than allowlisting read-only ones, so compound commands work; an unlisted
+mutating subcommand is not blocked, and this instruction governs it. The caller owns architecture, corrections, and final acceptance.
 
 ## Caller contract
 
