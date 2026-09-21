@@ -268,3 +268,11 @@ $RECYCLE.BIN/
 # Custom patterns specific to this repository
 *.stackdump
 /key.txt
+
+# Node: installed packages and tool caches. Lockfiles stay tracked.
+node_modules/
+.npm/
+.yarn/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
