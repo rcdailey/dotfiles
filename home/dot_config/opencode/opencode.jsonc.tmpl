@@ -56,7 +56,8 @@
   "plugins": [
     "@plannotator/opencode@latest",
 {{- if eq .env "work" }}
-    "opencode-claude-auth-v2@0.4.0-beta.2",
+    // Fork carrying upstream PRs 274 and 285; see the fork branch's FORK.md
+    "github:rcdailey/opencode-claude-auth#integration",
 {{- end }}
   ],
   "providers": {

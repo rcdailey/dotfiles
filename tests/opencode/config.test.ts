@@ -104,14 +104,14 @@ test("renders and loads native V2 configuration for every profile", async () => 
 
 test("keeps profile-specific providers and authentication", () => {
   const work = render("work");
-  expect(work.plugins).toContain("opencode-claude-auth-v2@0.4.0-beta.2");
+  expect(work.plugins).toContain("github:rcdailey/opencode-claude-auth#integration");
   expect(work.providers.anthropic.settings).toEqual({
     timeout: false,
     chunkTimeout: 60_000,
   });
 
   const personal = render("personal");
-  expect(personal.plugins).not.toContain("opencode-claude-auth-v2@0.4.0-beta.2");
+  expect(personal.plugins).not.toContain("github:rcdailey/opencode-claude-auth#integration");
   expect(personal.providers.openai.models["gpt-5.6-sol"].limit).toEqual({
     context: 400_000,
     input: 272_000,

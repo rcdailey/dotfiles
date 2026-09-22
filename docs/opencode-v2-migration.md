@@ -10,22 +10,15 @@ archive remains the recovery path.
 - `@opencode/plugin` and `@opencode/sdk`: `2.0.7` in the locked test fixture.
 - `@plannotator/opencode`: `latest`; verify the resolved version is at least `0.27.15` before
   activation.
-- `opencode-claude-auth-v2`: pinned to `0.4.0-beta.2` for the work profile only.
+- `github:rcdailey/opencode-claude-auth#integration`: the personal fork of
+  `griffinmartin/opencode-claude-auth`, work profile only. The branch head floats, so OpenCode
+  picks up fork updates without a config change.
 
-Keep the fork until PR #274 is merged, the original package publishes a V2 release, and that
-release passes the same authentication checks. A merge by itself is not a switch trigger.
-
-The auth package inspected on 2026-09-17 had this registry integrity:
-
-```txt
-sha512-hiEc7lJFChs8RGbBIDCNWZ7xg2apj6exfKH8Ruzsj1YNKOaqtgVuWdNysn6fusIV+6gZAM6GFVUpj9se7RHa9w==
-```
-
-The published package declares `@ai-sdk/anthropic@4.0.39` and an unpinned
-`@opencode/plugin@latest`. It has no install script or npm provenance attestation. Its release
-commit is `309b4f51738e44e91a162dcb01bbf1b4eb7c5185`; npm removes `prepublishOnly` and
-`packageManager` from the published manifest. Record the resolved dependency tree at activation
-because the floating plugin dependency can change without a top-level version change.
+The fork branch carries upstream pull requests that are not merged yet. Its `FORK.md` is the
+authoritative record of which pull requests are included, why the branch commits `dist/`, and how
+to refresh it. Read that file before changing the fork. Retire the fork only when every listed pull
+request is merged, the upstream package publishes a release carrying them, and that release passes
+the authentication checks below. A merge by itself is not a switch trigger.
 
 The package reads Claude credentials from `~/.claude/.credentials.json`, `CLAUDE_CONFIG_DIR`, or
 the macOS keychain. It writes OAuth connection data to `~/.local/share/opencode/auth.json` and
