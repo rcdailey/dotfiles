@@ -9,6 +9,11 @@
       ]
     },
     {
+      "id": "claude",
+      "enabled": true,
+      "source": "oauth"
+    },
+    {
       "id": "opencodego",
       "enabled": true,
       "source": "api"
