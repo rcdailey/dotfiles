@@ -13,7 +13,7 @@ const CALIBRATION = [
 ].join(" ");
 
 const BUDGET = [
-{{- if eq .env "work" }}
+{{- if eq .opencodeProvider "anthropic" }}
   "Hard length budget: under 120 words, unless the user asked for depth or the answer cannot fit.",
   "Verbosity is your dominant failure mode; length reads as padding, not thoroughness. Write the",
   "reply you would send if the user answered your draft with `TLDR`: same answer, same key reason,",

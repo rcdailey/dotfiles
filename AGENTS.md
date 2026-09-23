@@ -63,8 +63,8 @@ under `~/.config/opencode/` do not have these prefixes.
   `plan` agent designs changes for Plannotator approval; `build` implements in the same session.
   Both include `opencode-coding-directives.md` and `opencode-primary-shared.md`; execution and
   acceptance orchestration live only in Build. Read-only `acceptance` audits completed local work
-  with a fresh Sol-class model. Other specialists (`researcher`, `reviewer`, `upgrade-analyst`) are
-  plain Markdown with self-contained protocols.
+  with a fresh high-capability model. Other specialists (`researcher`, `reviewer`,
+  `upgrade-analyst`) are plain Markdown with self-contained protocols.
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
 - `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`)
 - `.chezmoitemplates/` - Reusable template partials scoped to OpenCode config. Template names share
@@ -94,8 +94,8 @@ lazygit, etc.). Browse the directory to discover what's managed.
 - Commit workflow: run `python -m unittest discover -s tests/commit` (requires commitlint and yq).
 - Document new root-suite commands here; project-owned commands belong in that project's guidance.
 
-**Commit messages:** Conventional Commits, enforced by commitlint (`commitlint.config.mjs`;
-`wip` subjects bypass it). Scope is the tool or component, not the path: `opencode`, `research`,
+**Commit messages:** Conventional Commits, enforced by commitlint (`commitlint.config.mjs`; `wip`
+subjects bypass it). Scope is the tool or component, not the path: `opencode`, `research`,
 `gh-review`, `mise`, `git`, `commit`. Classify the semantic outcome first; paths only decide the
 type when no behavior changes:
 

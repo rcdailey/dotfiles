@@ -7,6 +7,9 @@
     "Additional self-hosted AzDO hostnames for SSH" "" -}}
 {{- end -}}
 
+{{- $opencode_provider := promptChoiceOnce . "opencodeProvider" "OpenCode model provider"
+    (list "anthropic" "openai") "anthropic" -}}
+
 {{- $terminal_font_size := promptIntOnce . "terminal.fontSize"
     "Terminal font size (points)" 10 -}}
 
@@ -33,6 +36,7 @@ color = "on"
 [data]
     env = {{ $env | quote }}
     ssh_azure_hosts = {{ $ssh_azure_hosts | quote }}
+    opencodeProvider = {{ $opencode_provider | quote }}
 
 [data.terminal]
     fontSize = {{ $terminal_font_size }}

@@ -8,56 +8,47 @@ import { createHost } from "./real-host.ts";
 const template = join(import.meta.dir, "../../home/dot_config/opencode/opencode.jsonc.tmpl");
 const agentSource = join(import.meta.dir, "../../home/dot_config/opencode/exact_agents");
 
-function renderContent(env: "work" | "personal" | "other") {
+const providers = ["anthropic", "openai"] as const;
+type ProviderID = (typeof providers)[number];
+
+function renderTemplate(file: string, opencodeProvider: ProviderID) {
   const result = Bun.spawnSync([
     "chezmoi",
     "execute-template",
     "--override-data",
-    JSON.stringify({ env }),
+    JSON.stringify({ opencodeProvider }),
     "--file",
-    template,
+    file,
   ]);
   if (result.exitCode !== 0) throw new Error(result.stderr.toString());
   return result.stdout.toString();
 }
 
-function render(env: "work" | "personal" | "other"): any {
+function render(provider: ProviderID): any {
   const errors: unknown[] = [];
-  const config = parse(renderContent(env), errors, { allowTrailingComma: true });
+  const config = parse(renderTemplate(template, provider), errors, { allowTrailingComma: true });
   expect(errors).toEqual([]);
   return config;
 }
 
-async function renderAgents(env: "work" | "personal" | "other") {
+async function renderAgents(provider: ProviderID) {
   const directory = await mkdtemp(join(tmpdir(), "opencode-config-test-"));
   const agents = join(directory, "agents");
   await mkdir(agents);
   for (const name of await readdir(agentSource)) {
     if (!name.endsWith(".md") && !name.endsWith(".md.tmpl")) continue;
     const source = join(agentSource, name);
-    let content: string;
-    if (name.endsWith(".tmpl")) {
-      const result = Bun.spawnSync([
-        "chezmoi",
-        "execute-template",
-        "--override-data",
-        JSON.stringify({ env }),
-        "--file",
-        source,
-      ]);
-      if (result.exitCode !== 0) throw new Error(result.stderr.toString());
-      content = result.stdout.toString();
-    } else {
-      content = await readFile(source, "utf8");
-    }
+    const content = name.endsWith(".tmpl")
+      ? renderTemplate(source, provider)
+      : await readFile(source, "utf8");
     await writeFile(join(agents, name.replace(/\.tmpl$/, "")), content);
   }
   return directory;
 }
 
-test("renders and loads native V2 configuration for every profile", async () => {
-  for (const env of ["work", "personal", "other"] as const) {
-    const config = render(env);
+test("renders and loads native V2 configuration for every provider", async () => {
+  for (const provider of providers) {
+    const config = render(provider);
     expect(config.agent).toBeUndefined();
     expect(config.permission).toBeUndefined();
     expect(config.plugin).toBeUndefined();
@@ -66,7 +57,7 @@ test("renders and loads native V2 configuration for every profile", async () => 
     expect(config.agents.build.model).toContain("#");
     expect(config.permissions).toBeArray();
 
-    const directory = await renderAgents(env);
+    const directory = await renderAgents(provider);
     const hostConfig = { ...config, plugins: [] };
     await using host = await createHost(JSON.stringify(hostConfig), [], undefined, directory);
     const loaded = await host.config.get();
@@ -83,7 +74,7 @@ test("renders and loads native V2 configuration for every profile", async () => 
     await host.session.wait({ sessionID: session.id });
     const agents = await host.agent.list({ location: { directory: import.meta.dir } });
     expect(agents.data.map((agent) => agent.id)).toContain("build");
-    if (env === "other") {
+    if (provider === "anthropic") {
       const evaluate = (agent: string, action: string, resource: string) =>
         host.permission.create({
           sessionID: session.id,
@@ -102,70 +93,22 @@ test("renders and loads native V2 configuration for every profile", async () => 
   }
 });
 
-test("keeps profile-specific providers and authentication", () => {
-  const work = render("work");
-  expect(work.plugins).toContain("github:rcdailey/opencode-claude-auth#integration");
-  expect(work.providers.anthropic.settings).toEqual({
-    timeout: false,
-    chunkTimeout: 60_000,
-  });
+test("renders provider blocks and authentication only for the selected provider", () => {
+  const anthropic = render("anthropic");
+  expect(anthropic.agents.build.model).toStartWith("anthropic/");
+  expect(anthropic.plugins).toContain("github:rcdailey/opencode-claude-auth#integration");
+  expect(Object.keys(anthropic.providers)).toEqual(["anthropic"]);
 
-  const personal = render("personal");
-  expect(personal.plugins).not.toContain("github:rcdailey/opencode-claude-auth#integration");
-  expect(personal.providers.openai.models["gpt-5.6-sol"].limit).toEqual({
-    context: 400_000,
-    input: 272_000,
-    output: 128_000,
-  });
-
-  const other = render("other");
-  expect(other.providers).toEqual({});
-  expect(other.agents.build.model).toStartWith("openai/");
-});
-
-test("resolves configured provider settings and model limits", async () => {
-  for (const [env, providerID] of [
-    ["work", "anthropic"],
-    ["personal", "openai"],
-  ] as const) {
-    let modelEditor: any;
-    const observer = {
-      id: `test.provider-observer.${env}`,
-      async setup(context: any) {
-        await context.model.transform((models: any) => {
-          modelEditor = models;
-        });
-      },
-    };
-    const config = render(env);
-    config.plugins = [];
-    const directory = await renderAgents(env);
-    await using host = await createHost(JSON.stringify(config), [observer], undefined, directory);
-    const session = await host.session.create({
-      agent: "build",
-      location: { directory: import.meta.dir },
-    });
-    await host.permission.list({ sessionID: session.id });
-    const provider = modelEditor?.provider.get(providerID);
-    expect(provider?.provider.id).toBe(providerID);
-
-    if (env === "work") {
-      expect(provider.provider.settings.timeout).toBe(false);
-      expect(provider.provider.settings.chunkTimeout).toBe(60_000);
-      continue;
-    }
-    expect(modelEditor.get("openai", "gpt-5.6-sol").limit).toEqual({
-      context: 400_000,
-      input: 272_000,
-      output: 128_000,
-    });
-  }
+  const openai = render("openai");
+  expect(openai.agents.build.model).toStartWith("openai/");
+  expect(openai.plugins).not.toContain("github:rcdailey/opencode-claude-auth#integration");
+  expect(openai.providers).toEqual({});
 });
 
 test("the V2 host evaluates representative global permissions", async () => {
-  const config = render("personal");
+  const config = render("anthropic");
   config.plugins = [];
-  const directory = await renderAgents("personal");
+  const directory = await renderAgents("anthropic");
   await using host = await createHost(JSON.stringify(config), [], undefined, directory);
   const session = await host.session.create({
     agent: "build",

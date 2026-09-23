@@ -1,5 +1,4 @@
-{{- $profile := ternary "work" "personal" (eq .env "work") -}}
-{{- $models := index .opencodeModels $profile -}}
+{{- $models := index .opencodeModels .opencodeProvider -}}
 {
   "$schema": "https://opencode.ai/config.json",
   "update": "disable",
@@ -55,24 +54,15 @@
   },
   "plugins": [
     "@plannotator/opencode@latest",
-{{- if eq .env "work" }}
+{{- if eq .opencodeProvider "anthropic" }}
     // Fork carrying upstream PRs 274 and 285; see the fork branch's FORK.md
     "github:rcdailey/opencode-claude-auth#integration",
 {{- end }}
   ],
+  // A provider block forces that provider into the model picker, even without credentials,
+  // so only the selected provider may have one.
   "providers": {
-{{- if eq .env "personal" }}
-    "openai": {
-      "models": {
-        "gpt-5.6-sol": {
-          "limit": { "context": 400000, "input": 272000, "output": 128000 },
-        },
-        "gpt-5.6-terra": {
-          "limit": { "context": 400000, "input": 272000, "output": 128000 },
-        },
-      },
-    },
-{{- else if eq .env "work" }}
+{{- if eq .opencodeProvider "anthropic" }}
     "anthropic": {
       "settings": {
         // Disable hard timeout; extended thinking can exceed the 300s default
