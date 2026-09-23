@@ -1,8 +1,8 @@
 opencodeModels:
   anthropic:
     plan:
-      model: anthropic/claude-fable-5-1
-      variant: medium
+      model: anthropic/claude-opus-5-5
+      variant: high
     build:
       model: anthropic/claude-opus-5-5
       variant: medium
