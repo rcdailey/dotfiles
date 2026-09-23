@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# List open Renovate PRs ranked for review: security, major/unknown, minor, patch, oldest first.
+# Update type is best effort (Renovate config varies per repo); the first signal found wins:
+# label, "(major)" style title suffix, then the version change in the title.
+# Output: one line per PR: <number> <type>/<signal> <created> [security] <title> [<labels>]
+# (security and labels appear only when present).
+# Extra arguments pass through to `gh pr list` (e.g. --repo owner/name).
+set -euo pipefail
+
+gh pr list --author "app/renovate" --state open --limit 100 \
+  --json number,title,labels,createdAt "$@" --jq '
+def semver_type($a; $b): [$a, $b] | map(ltrimstr("v") | split(".")) as [$x, $y]
+  | if $x[0] != $y[0] then "major" elif $x[1] != $y[1] then "minor" else "patch" end;
+map(
+  [.labels[].name] as $labels
+  | ([
+      ($labels | map(capture("\\b(?<t>major|minor|patch)\\b"; "i").t) | first
+        | select(.) | {t: ., s: "label"}),
+      (.title | capture("\\((?<t>major|minor|patch)\\)"; "i") | {t, s: "title"}),
+      (.title | capture("(?<a>v?\\d+(\\.\\d+)*) *(->|[→➜➔]) *(?<b>v?\\d+(\\.\\d+)*)")
+        | {t: semver_type(.a; .b), s: "version"})
+    ] | first // {t: "unknown", s: "none"}) as $type
+  | {number, title, labels: $labels, createdAt,
+     security: any($labels[]; test("security|vulnerab"; "i")),
+     type: ($type.t | ascii_downcase), signal: $type.s})
+| sort_by((if .security then 0 else 1 end),
+    ({major: 0, unknown: 0, minor: 1, patch: 2}[.type]), .createdAt)
+| .[]
+| [.number, "\(.type)/\(.signal)", .createdAt[:10],
+   (if .security then "security" else empty end), .title,
+   (if .labels == [] then empty else "[\(.labels | join(","))]" end)]
+| join(" ")'

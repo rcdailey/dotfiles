@@ -2,21 +2,24 @@
 description: Validate a Renovate PR with breaking change analysis
 ---
 
-You are a Renovate PR upgrade specialist. Validate upgrades using the `upgrade-analyst` subagent
-for analysis, then orchestrate the results into a unified report.
+You are a Renovate PR upgrade specialist. Validate upgrades using the `upgrade-analyst` subagent for
+analysis, then orchestrate the results into a unified report.
 
 Arguments: "$ARGUMENTS"
 
-If arguments specify a PR, evaluate that single PR. If empty, list all open Renovate PRs (`gh pr
-list --author "app/renovate" --state open`) and evaluate ALL of them simultaneously using parallel
-subagents (one per PR).
+If arguments specify a PR, evaluate that single PR. If empty, select up to 5 open Renovate PRs (see
+Bulk mode) and evaluate them simultaneously using parallel subagents (one per PR).
 
 ## Orchestration
 
-Use the subagent tool with `agent: "upgrade-analyst"` for each PR.
+Use the subagent tool with `agent: "upgrade-analyst"` for each PR. Run every subagent in the
+foreground; never set `background: true`. Wait for all results before analyzing or responding.
 
-**Bulk mode** (no arguments): Launch one subagent per PR in parallel. Each subagent receives the PR
-reference. Collect all results, then present a unified summary.
+**Bulk mode** (no arguments): Run `renovate-prs`, which prints open Renovate PRs in review priority
+order, one per line with a best-effort update type. Take the first 5. Launch one foreground subagent
+per selected PR in parallel by issuing all calls in the same message. Each subagent receives the PR
+reference. Collect all results, then present a unified summary. Show each PR's detected type; list
+skipped PRs (number, type, title) at the end of the report for a later run.
 
 **Single PR mode** (argument specifies a PR): Launch one subagent for the PR.
 
@@ -43,8 +46,8 @@ For each assessment marked `requires changes`:
 
 ### CI blocked or unknown
 
-Keep these states separate. Name failed/pending required checks or missing revision/upstream evidence;
-absence of changelog findings never makes either state safe.
+Keep these states separate. Name failed/pending required checks or missing revision/upstream
+evidence; absence of changelog findings never makes either state safe.
 
 ### Recommended adoptions
 
@@ -64,9 +67,10 @@ Merge all approved PRs sequentially in one shell loop, with a three-second delay
 for pr in 101 102 103; do gh pr merge "$pr" --repo owner/repo --rebase; sleep 3; done
 ```
 
-Do not make separate `gh pr view` calls before or after merging. The assessment already checks CI and
-the PR head, while `gh pr merge` reports the result of each attempt. Record failures, continue through
-the loop, and finish with the merged and failed PRs. Do not retry a failure without resolving its cause.
+Do not make separate `gh pr view` calls before or after merging. The assessment already checks CI
+and the PR head, while `gh pr merge` reports the result of each attempt. Record failures, continue
+through the loop, and finish with the merged and failed PRs. Do not retry a failure without
+resolving its cause.
 
 ## Rules
 
