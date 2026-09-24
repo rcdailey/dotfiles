@@ -309,9 +309,58 @@ query Comments($issueId: String!, $first: Int, $after: String) {
         body
         createdAt
         updatedAt
-        user {
-          name
-        }
+        parent { id }
+        user { name }
+        externalUser { name }
+        botActor { name }
+        syncedWith { service }
+      }
+    }
+  }
+}
+"""
+
+ISSUE_HISTORY_QUERY = """
+query IssueHistory($id: String!, $first: Int, $after: String) {
+  issue(id: $id) {
+    history(first: $first, after: $after) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        createdAt
+        actor { name }
+        botActor { name }
+        fromState { name }
+        toState { name }
+        fromAssignee { name }
+        toAssignee { name }
+        fromPriority
+        toPriority
+        fromEstimate
+        toEstimate
+        fromTitle
+        toTitle
+        addedLabels { name }
+        removedLabels { name }
+        fromProject { name }
+        toProject { name }
+        fromProjectMilestone { name }
+        toProjectMilestone { name }
+        fromCycle { number }
+        toCycle { number }
+        fromParent { identifier }
+        toParent { identifier }
+        fromTeam { key }
+        toTeam { key }
+        fromDueDate
+        toDueDate
+        updatedDescription
+        attachment { title url }
+        relationChanges { identifier type }
+        archived
+        trashed
       }
     }
   }

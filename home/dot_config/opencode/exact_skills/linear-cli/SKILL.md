@@ -128,9 +128,14 @@ Three distinct mechanisms; pick by intent:
 
 `linear issues view` shows a comment count. Use `linear comments list` to read them
 when relevant, or use `issues view --comments` to retrieve the issue and comments
-in one process. `linear comments add` creates threads, `--parent` replies, and
-`linear comments edit` changes a comment. Use `linear issues update` only for
-fields that change after creation.
+in one process. Output shows each comment's ID, nests replies under their thread root, and marks
+threads synced with an external service (e.g. `synced: slack`). `linear comments add` creates
+threads, `--parent <root ID>` replies in that thread (and its synced copy), and
+`linear comments edit` changes a comment.
+
+`linear issues history` lists change events (state, assignee, labels, and so on) with the actor.
+
+Use `linear issues update` only for fields that change after creation.
 
 Pass multiple issue IDs to assign one project or milestone in a batch. Multi-issue
 updates accept only `--project` and `--milestone`.
@@ -160,7 +165,8 @@ Pass variables with `--var key=value`. Read query from stdin with `-`.
 `linear issues search` does full-text relevance-ranked search across titles,
 descriptions, and comments via Linear's `issueSearch` API. Use it to find issues
 by keyword. `linear issues list` filters by structured fields (team, state,
-assignee, label) without text matching. Combine search with filters:
+assignee, label) without text matching. Both accept `--created-after`/`--updated-after` with an
+ISO date or ISO 8601 duration relative to now (`-P1D`, `-PT12H`). Combine search with filters:
 
 ```bash
 linear issues search "multiple images" --team ENG --state started

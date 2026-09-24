@@ -11,12 +11,13 @@ from linear_cli._models import Comment, Issue, priority_label
 from linear_cli._queries import (
     COMMENTS_QUERY,
     ISSUE_CREATE_MUTATION,
+    ISSUE_HISTORY_QUERY,
     ISSUE_QUERY,
     ISSUE_SEARCH_QUERY,
     ISSUE_UPDATE_MUTATION,
     ISSUES_QUERY,
 )
-from linear_cli._render import echo_comment, echo_issue_summary, estimate_text
+from linear_cli._render import echo_comments, echo_issue_summary, estimate_text
 from linear_cli._resolve import (
     resolve_assignee_id,
     resolve_cycle_number,
@@ -50,6 +51,8 @@ def _build_issue_filter(
     estimate_filter: str | None,
     project_name: str | None,
     milestone_name: str | None,
+    created_after: str | None,
+    updated_after: str | None,
 ) -> dict:
     """Resolve CLI filter values into one Linear IssueFilter."""
     team_id = resolve_team_id(team_key) if team_key else None
@@ -81,6 +84,11 @@ def _build_issue_filter(
     if milestone_name and project_id:
         milestone_id = resolve_milestone_id(milestone_name, project_id)
         issue_filter["projectMilestone"] = {"id": {"eq": milestone_id}}
+    # Linear's DateTimeOrDuration scalar parses and validates these values server-side.
+    if created_after:
+        issue_filter["createdAt"] = {"gt": created_after}
+    if updated_after:
+        issue_filter["updatedAt"] = {"gt": updated_after}
     return issue_filter
 
 
@@ -120,6 +128,60 @@ def _update_issue(issue_id: str, input_data: dict) -> dict:
     return result.get("issue") or {}
 
 
+def _history_actor(node: dict) -> str:
+    """Name who made a history change; integrations appear as bots, automation as system."""
+    if name := (node.get("actor") or {}).get("name"):
+        return name
+    if name := (node.get("botActor") or {}).get("name"):
+        return f"{name} (bot)"
+    return "system"
+
+
+def _history_changes(node: dict) -> list[str]:
+    """Describe each field a history event changed."""
+    changes: list[str] = []
+
+    def transition(label: str, key: str, attr: str | None = None, fmt=str) -> None:
+        old, new = node.get(f"from{key}"), node.get(f"to{key}")
+        if attr:
+            old, new = (old or {}).get(attr), (new or {}).get(attr)
+        if old is None and new is None:
+            return
+        old_text = "none" if old is None else fmt(old)
+        new_text = "none" if new is None else fmt(new)
+        changes.append(f"{label}: {old_text} -> {new_text}")
+
+    transition("state", "State", "name")
+    transition("assignee", "Assignee", "name")
+    transition("priority", "Priority", fmt=lambda p: priority_label(int(p)))
+    transition("estimate", "Estimate", fmt=estimate_text)
+    transition("title", "Title")
+    labels = [f"+{ln['name']}" for ln in node.get("addedLabels") or []]
+    labels += [f"-{ln['name']}" for ln in node.get("removedLabels") or []]
+    if labels:
+        changes.append(f"labels: {' '.join(labels)}")
+    transition("project", "Project", "name")
+    transition("milestone", "ProjectMilestone", "name")
+    transition("cycle", "Cycle", "number")
+    transition("parent", "Parent", "identifier")
+    transition("team", "Team", "key")
+    transition("due", "DueDate")
+    if node.get("updatedDescription"):
+        changes.append("description edited")
+    if attachment := node.get("attachment"):
+        changes.append(f"linked: {attachment.get('title') or attachment.get('url')}")
+    for relation in node.get("relationChanges") or []:
+        changes.append(f"relation: {relation.get('type')} {relation.get('identifier')}")
+    if (archived := node.get("archived")) is not None:
+        changes.append("archived" if archived else "unarchived")
+    if (trashed := node.get("trashed")) is not None:
+        changes.append("trashed" if trashed else "restored")
+    return changes or ["other change"]
+
+
+_TIME_HELP = "ISO date/datetime or duration (e.g. 2026-09-20, -P1D = 1 day ago)."
+
+
 @click.group(cls=HelpfulGroup)
 def cli() -> None:
     """Create, list, view, and update Linear issues."""
@@ -148,6 +210,8 @@ def cli() -> None:
 @click.option(
     "--milestone", "milestone_name", default=None, help="Milestone name (requires --project)."
 )
+@click.option("--created-after", default=None, help=_TIME_HELP)
+@click.option("--updated-after", default=None, help=_TIME_HELP)
 @click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
 def list_issues(
     team_key: str | None,
@@ -159,6 +223,8 @@ def list_issues(
     estimate_filter: str | None,
     project_name: str | None,
     milestone_name: str | None,
+    created_after: str | None,
+    updated_after: str | None,
     limit: int,
 ) -> None:
     """List issues with optional filters."""
@@ -176,6 +242,8 @@ def list_issues(
         estimate_filter,
         project_name,
         milestone_name,
+        created_after,
+        updated_after,
     )
     variables: dict = {
         "filter": issue_filter or None,
@@ -216,6 +284,8 @@ def list_issues(
 @click.option(
     "--milestone", "milestone_name", default=None, help="Milestone name (requires --project)."
 )
+@click.option("--created-after", default=None, help=_TIME_HELP)
+@click.option("--updated-after", default=None, help=_TIME_HELP)
 @click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
 def search(
     query: str,
@@ -228,6 +298,8 @@ def search(
     estimate_filter: str | None,
     project_name: str | None,
     milestone_name: str | None,
+    created_after: str | None,
+    updated_after: str | None,
     limit: int,
 ) -> None:
     """Full-text search across issue titles, descriptions, and comments."""
@@ -245,6 +317,8 @@ def search(
         estimate_filter,
         project_name,
         milestone_name,
+        created_after,
+        updated_after,
     )
     variables: dict = {
         "term": query,
@@ -316,8 +390,24 @@ def view(issue_id: str, include_comments: bool) -> None:
             click.echo("no comments")
             return
         click.echo(f"comments ({len(comment_nodes)}):")
-        for node in comment_nodes:
-            echo_comment(Comment.from_graphql(node))
+        echo_comments([Comment.from_graphql(node) for node in comment_nodes])
+
+
+@cli.command("history")
+@click.argument("issue_id")
+def history(issue_id: str) -> None:
+    """Show who changed what on an issue, oldest first."""
+    try:
+        nodes = paginate(ISSUE_HISTORY_QUERY, {"id": issue_id, "first": 100}, ["issue", "history"])
+    except LinearError as exc:
+        die(str(exc))
+
+    if not nodes:
+        click.echo("no history")
+        return
+    for node in sorted(nodes, key=lambda n: n.get("createdAt") or ""):
+        changes = "; ".join(_history_changes(node))
+        click.echo(f"{node.get('createdAt')}  {_history_actor(node)}  {changes}")
 
 
 @cli.command("create")

@@ -35,6 +35,29 @@ def echo_issue_summary(issue: Issue, *, indent: str = "") -> None:
     click.echo("  ".join(parts))
 
 
-def echo_comment(comment: Comment) -> None:
-    """Print one issue comment."""
-    click.echo(f"[{comment.created_at}] {comment.user_name}: {comment.body}")
+def _echo_comment(comment: Comment, indent: str) -> None:
+    header = f"{indent}{comment.id}  {comment.created_at}  {comment.author}"
+    if comment.synced_services:
+        header += f"  synced: {', '.join(comment.synced_services)}"
+    click.echo(header)
+    for line in (comment.body or "").splitlines():
+        click.echo(f"{indent}  {line}" if line else "")
+
+
+def echo_comments(comments: list[Comment]) -> None:
+    """Print comments as threads: each root followed by its indented replies, oldest first.
+
+    A reply whose root is outside ``comments`` prints as a root so no comment is dropped.
+    """
+    ordered = sorted(comments, key=lambda c: c.created_at or "")
+    ids = {c.id for c in ordered}
+    replies: dict[str, list[Comment]] = {}
+    for comment in ordered:
+        if comment.parent_id in ids:
+            replies.setdefault(comment.parent_id, []).append(comment)
+    for comment in ordered:
+        if comment.parent_id in ids:
+            continue
+        _echo_comment(comment, "")
+        for reply in replies.get(comment.id, []):
+            _echo_comment(reply, "  ")

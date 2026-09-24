@@ -161,19 +161,35 @@ class Comment:
 
     id: str | None
     body: str | None
-    user_name: str | None
+    author: str
     created_at: str | None
     updated_at: str | None
+    parent_id: str | None = None
+    synced_services: list[str] = field(default_factory=list)
 
     @classmethod
     def from_graphql(cls, data: dict) -> Self:
-        user = data.get("user") or {}
+        # Comments that sync in from integrations such as Slack have no Linear user.
+        author = next(
+            (
+                source["name"]
+                for key in ("user", "externalUser", "botActor")
+                if (source := data.get(key)) and source.get("name")
+            ),
+            "unknown",
+        )
+        # One thread can sync to several entities on the same service; name each service once.
+        services = list(
+            dict.fromkeys(s["service"] for s in data.get("syncedWith") or [] if s.get("service"))
+        )
         return cls(
             id=data.get("id"),
             body=data.get("body"),
-            user_name=user.get("name"),
+            author=author,
             created_at=data.get("createdAt"),
             updated_at=data.get("updatedAt"),
+            parent_id=(data.get("parent") or {}).get("id"),
+            synced_services=services,
         )
 
 
