@@ -17,6 +17,7 @@ from acceptance_snapshot._errors import SnapshotError
 from acceptance_snapshot._git import (
     capture_tree,
     changed_paths,
+    head_tree,
     repository_root,
     resolve_tree,
     tree_diff,
@@ -167,7 +168,7 @@ def _validated_state(
         return SnapshotState(
             version=_SCHEMA_VERSION,
             repository=str(repository),
-            base_tree=resolve_tree(repository, base or "HEAD"),
+            base_tree=resolve_tree(repository, base) if base else head_tree(repository),
         )
     if state.repository != str(repository):
         raise SnapshotError(f"session belongs to {state.repository}, not {repository}")

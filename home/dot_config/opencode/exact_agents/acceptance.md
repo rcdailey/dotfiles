@@ -272,7 +272,8 @@ Before loading domain skills, reading plans or source, inspecting patches, or ru
 
 1. Run `acceptance-snapshot begin`, adding `--base <revision>` only for a nondefault Base from
    Context. It captures the current nonignored filesystem state independently of the real index.
-   Return `blocked` if it reports missing, corrupt, mismatched, or unavailable snapshot state.
+   The default Base is `HEAD`, or the empty tree before the first commit. Return `blocked` if it
+   reports missing, corrupt, mismatched, or unavailable snapshot state.
 2. Use its changed-path inventory as the target. Partition the target by owner, lifecycle or
    transaction entry point, consumed contracts, and stable test seam. Keep a separate verification
    ledger for each boundary and every named cross-boundary invariant.

@@ -65,6 +65,28 @@ def resolve_tree(repository: Path, revision: str) -> str:
     return _run(repository, "rev-parse", "--verify", f"{revision}^{{tree}}").strip()
 
 
+def _unborn_head(repository: Path) -> bool:
+    try:
+        branch = _run(repository, "symbolic-ref", "--quiet", "HEAD").strip()
+    except SnapshotError:
+        return False
+    try:
+        _run(repository, "show-ref", "--verify", "--quiet", branch)
+    except SnapshotError:
+        return True
+    return False
+
+
+def head_tree(repository: Path) -> str:
+    """Resolve HEAD's tree, or Git's empty tree while the current branch has no commits."""
+    try:
+        return resolve_tree(repository, "HEAD")
+    except SnapshotError:
+        if not _unborn_head(repository):
+            raise
+    return _run(repository, "hash-object", "-t", "tree", os.devnull).strip()
+
+
 def _snapshot_environment(repository: Path, state_directory: Path) -> dict[str, str]:
     environment = os.environ.copy()
     alternates = [str(repository_objects(repository))]
@@ -88,7 +110,7 @@ def capture_tree(repository: Path, state_directory: Path, index_name: str) -> st
     environment = _snapshot_environment(repository, state_directory)
     environment["GIT_INDEX_FILE"] = str(index_path)
     try:
-        _run(repository, "read-tree", "HEAD", environment=environment)
+        _run(repository, "read-tree", head_tree(repository), environment=environment)
         _run(repository, "add", "-A", "--", ".", environment=environment)
         return _run(repository, "write-tree", environment=environment).strip()
     finally:
