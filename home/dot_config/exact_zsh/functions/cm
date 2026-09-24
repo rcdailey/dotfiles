@@ -1,0 +1,9 @@
+#!/usr/bin/env zsh
+# Run chezmoi; `cm update` also re-runs the config template to ask new prompt*Once questions.
+
+if [[ "${1-}" == "update" ]]; then
+  chezmoi update --init "${@:2}"
+  return $?
+fi
+
+chezmoi "$@"

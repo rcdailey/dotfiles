@@ -55,7 +55,7 @@ fi
 
 # Essential tool aliases
 alias c="docker compose"
-alias cm="chezmoi"
+compdef cm=chezmoi
 alias lg="lazygit"
 alias tf="terraform"
 alias pc="pre-commit"
