@@ -42,7 +42,7 @@ claude-code = "latest"
 version = "latest"
 allow_builds = ["@opencode/cli"]
 allow_low_downloads = true
-postinstall = "opencode service restart"
+postinstall = "opencode service restart && opencode plugin update"
 
 [settings]
 minimum_release_age = "0"

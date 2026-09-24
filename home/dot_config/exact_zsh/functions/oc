@@ -1,10 +1,9 @@
 #!/usr/bin/env zsh
 # Launch opencode with non-default settings.
-# Route `oc upgrade` through mise, then refresh unpinned plugins.
+# Route `oc upgrade` through mise so its postinstall hook refreshes the service and plugins.
 
 if [[ "${1-}" == "upgrade" ]]; then
-  mise upgrade npm:@opencode/cli "${@:2}" || return $?
-  opencode plugin update
+  mise upgrade npm:@opencode/cli "${@:2}"
   return $?
 fi
 
