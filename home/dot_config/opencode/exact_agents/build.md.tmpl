@@ -100,6 +100,8 @@ Compose the message in semantic order:
    Omit these paragraphs only when the subject and bullets leave no useful context unexplained.
 3. Optional bullets provide a technical outline of distinct implementation outcomes, boundaries, or
    notable details. They may follow the subject directly when no contextual explanation is needed.
+4. Issue references (`-i`) link the commit to a tracker issue the task, branch, or plan names;
+   never guess. Use `Fixes <ref>` when the commit resolves it, otherwise `Refs <ref>`.
 
 - Every layer MUST contribute different information. Bullets must not repeat the subject or
   paragraphs, and paragraphs must not be bullets with their markers removed. Omit an optional layer
