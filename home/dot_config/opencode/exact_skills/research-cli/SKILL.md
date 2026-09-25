@@ -19,6 +19,8 @@ global citation rule; a search result or snippet is not evidence for its linked 
 4. Retrieve a direct primary result matching the target before broad repository exploration.
 5. For GitHub repositories, start with the narrowest applicable Scout command. Use `orient`, then
    `find`, before path-specific `rg` or `cat` calls when paths are unknown.
+6. For changes absent upstream, run `scout forks` with `--grep` or `--path`, then inspect matches
+   with `scout commit`.
 
 Run `research --help` once for all command and option syntax recursively. Each shell command must
 contain one `research` invocation; do not chain, pipe, background, or suppress errors. Run web and

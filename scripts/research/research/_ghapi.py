@@ -74,6 +74,21 @@ def graphql(query: str, **variables: str) -> dict:
         raise APIError(f"invalid JSON response: {e}") from e
 
 
+def graphql_partial(query: str) -> tuple[dict, list[dict]]:
+    """Run a GraphQL query whose fields may fail independently.
+
+    Returns the data and per-field errors; raises only when no data came back.
+    """
+    result = _run_gh(["api", "graphql", "-f", f"query={query}"], check=False)
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        payload = None
+    if not isinstance(payload, dict) or not payload.get("data"):
+        raise APIError(result.stderr.strip() or "gh graphql failed")
+    return payload["data"], payload.get("errors") or []
+
+
 def default_branch(owner: str, repo: str) -> str:
     """Return the repository's default branch name."""
     args = ["repo", "view", f"{owner}/{repo}", "--json", "defaultBranchRef"]
