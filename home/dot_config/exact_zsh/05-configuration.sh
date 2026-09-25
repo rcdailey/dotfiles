@@ -55,7 +55,6 @@ fi
 
 # Essential tool aliases
 alias c="docker compose"
-compdef cm=chezmoi
 alias lg="lazygit"
 alias tf="terraform"
 alias pc="pre-commit"
@@ -103,37 +102,6 @@ if command -v mise >/dev/null 2>&1; then
     eval "$(mise activate zsh)" 2>/dev/null
 fi
 
-# worktrunk shell integration (directory switching + completions)
-if command -v wt >/dev/null 2>&1; then
-    eval "$(wt config shell init zsh)"
-fi
-
-# Dynamic talosctl completion (loaded when mise makes it available on cd)
-_talosctl_completion_loaded=0
-_maybe_load_talosctl_completion() {
-  if (( _talosctl_completion_loaded )); then
-    return
-  fi
-  mise which talosctl &>/dev/null || return
-  eval "$(talosctl completion zsh)"
-  _talosctl_completion_loaded=1
-}
-chpwd_functions+=(_maybe_load_talosctl_completion)
-_maybe_load_talosctl_completion
-
-# Dynamic kubectl completion (loaded when mise makes it available on cd)
-_kubectl_completion_loaded=0
-_maybe_load_kubectl_completion() {
-  if (( _kubectl_completion_loaded )); then
-    return
-  fi
-  mise which kubectl &>/dev/null || return
-  eval "$(kubectl completion zsh)"
-  _kubectl_completion_loaded=1
-}
-chpwd_functions+=(_maybe_load_kubectl_completion)
-_maybe_load_kubectl_completion
-
 # History substring search bindings moved to 04-plugins.sh atload hook
 # to ensure they're set AFTER zsh-autosuggestions loads (prevents overwrite)
 
@@ -147,14 +115,3 @@ bindkey '^[OF' end-of-line        # GNOME Terminal / JetBrains IDE END
 
 # Key binding for DEL key (forward delete)
 bindkey '^[[3~' delete-char       # DEL key deletes character under cursor
-
-# fzf-tab configuration
-zstyle ':completion:*' menu no
-zstyle ':completion:*:npm:*' sort false
-
-# Terraform completion setup (uses terraform's native bash completion via bashcompinit)
-if (( $+commands[terraform] )); then
-  complete -o nospace -C terraform terraform
-  # Enable completion for tf alias
-  complete -o nospace -C terraform tf
-fi

@@ -23,6 +23,7 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
   - `04-plugins.sh` - Zinit plugin loads (fzf-tab, syntax highlighting, etc.)
   - `05-configuration.sh` - Aliases, keybinds, mise activate, tool configs
   - `06-platform.sh.tmpl` - Platform-specific settings (Linux/macOS)
+  - `07-tool-completions.sh` - Per-tool completion registration (needs final PATH)
 - `home/dot_config/exact_zsh/functions/` - Autoloaded zsh functions
 
 **Scripts:**

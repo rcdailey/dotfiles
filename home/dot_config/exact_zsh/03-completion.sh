@@ -26,6 +26,9 @@ zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' group-name ''
 zstyle ':completion:*:descriptions' format '[%d]'
 
+# fzf-tab replaces the completion menu
+zstyle ':completion:*' menu no
+
 # Completion system behavior configuration
 zstyle ':completion:*' completer _complete _files
 
@@ -38,6 +41,7 @@ zstyle ':completion:*:*:git:*' user-commands "$(git config --get-regexp '^alias\
 
 # Disable sorting for git commands to maintain natural order
 zstyle ':completion:*:git:*' sort false
+zstyle ':completion:*:npm:*' sort false
 
 # CRITICAL: Workaround for Powerlevel10k bug - GitHub issue #2887
 # https://github.com/romkatv/powerlevel10k/issues/2887

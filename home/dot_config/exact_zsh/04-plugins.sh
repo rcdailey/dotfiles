@@ -29,24 +29,6 @@ zinit light zsh-users/zsh-syntax-highlighting
 # Enable fzf-tab after loading
 enable-fzf-tab
 
-# Generate mise completions
-zinit ice as"completion" id-as"mise" \
-  atclone"mise completion zsh > _mise && zinit creinstall mise" \
-  atpull"%atclone"
-zinit load zdharma-continuum/null
-
-# Generate just completions
-zinit ice as"completion" id-as"just" \
-  atclone"just --completions zsh > _just && zinit creinstall just" \
-  atpull"%atclone"
-zinit load zdharma-continuum/null
-
-# Task completions - deferred until mise tools are available
-zinit ice wait lucid nocompile atload'eval "$(task --completion zsh 2>/dev/null)"'
-zinit load zdharma-continuum/null
-
-
-
 # Load Oh-My-Zsh functionality via snippets
 # kubectl loaded immediately to ensure 'k' alias is available
 zinit lucid for \
