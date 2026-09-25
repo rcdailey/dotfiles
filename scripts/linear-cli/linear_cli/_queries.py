@@ -233,6 +233,10 @@ query Issue($id: String!) {
       name
       state
     }
+    projectMilestone {
+      id
+      name
+    }
     parent {
       identifier
       title

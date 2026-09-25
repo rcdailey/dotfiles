@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import click
 
 from linear_cli._click import HelpfulGroup
@@ -29,6 +31,7 @@ from linear_cli._resolve import (
     resolve_state_id,
     resolve_team_id,
 )
+from linear_cli.relations import RELATION_TYPES, create_relation
 
 
 def _print_scope(project_name: str | None, milestone_name: str | None) -> None:
@@ -336,10 +339,28 @@ def search(
     )
 
 
+def _fetch_comments(issue_id: str) -> list[dict]:
+    """Fetch every comment node on an issue."""
+    try:
+        return paginate(
+            COMMENTS_QUERY,
+            {"issueId": issue_id, "first": 100},
+            ["issue", "comments"],
+        )
+    except LinearError as exc:
+        die(str(exc))
+
+
 @cli.command("view")
 @click.argument("issue_id")
 @click.option("--comments", "include_comments", is_flag=True, help="Include issue comments.")
-def view(issue_id: str, include_comments: bool) -> None:
+@click.option(
+    "--json",
+    "as_json",
+    is_flag=True,
+    help="Print the Linear GraphQL issue node as JSON; --comments fills comments.nodes.",
+)
+def view(issue_id: str, include_comments: bool, as_json: bool) -> None:
     """View a single issue by ID or identifier (e.g. ENG-123)."""
     try:
         data = execute(ISSUE_QUERY, {"id": issue_id})
@@ -349,6 +370,12 @@ def view(issue_id: str, include_comments: bool) -> None:
     node = data.get("issue")
     if not node:
         die(f"issue '{issue_id}' not found")
+
+    if as_json:
+        if include_comments:
+            node["comments"] = {"nodes": _fetch_comments(issue_id)}
+        click.echo(json.dumps(node, indent=2))
+        return
 
     issue = Issue.from_graphql(node)
     pri = priority_label(issue.priority)
@@ -363,6 +390,8 @@ def view(issue_id: str, include_comments: bool) -> None:
     if issue.project_name:
         project_state = f" ({issue.project_state})" if issue.project_state else ""
         click.echo(f"project:     {issue.project_name}{project_state}")
+    if issue.milestone_name:
+        click.echo(f"milestone:   {issue.milestone_name}")
     if issue.parent_identifier:
         click.echo(f"parent:      {issue.parent_identifier}  {issue.parent_title}")
     click.echo(f"url:         {issue.url}")
@@ -377,14 +406,7 @@ def view(issue_id: str, include_comments: bool) -> None:
         click.echo("")
         click.echo(issue.description)
     if include_comments:
-        try:
-            comment_nodes = paginate(
-                COMMENTS_QUERY,
-                {"issueId": issue_id, "first": 100},
-                ["issue", "comments"],
-            )
-        except LinearError as exc:
-            die(str(exc))
+        comment_nodes = _fetch_comments(issue_id)
         click.echo("")
         if not comment_nodes:
             click.echo("no comments")
@@ -429,6 +451,14 @@ def history(issue_id: str) -> None:
     default=None,
     help="Milestone name; --project needed only if the name is ambiguous.",
 )
+@click.option(
+    "--relation",
+    "relations",
+    multiple=True,
+    type=(click.Choice(RELATION_TYPES, case_sensitive=False), str),
+    metavar="TYPE ISSUE",
+    help="Relation from the new issue, e.g. --relation blocked-by ENG-1 (repeatable).",
+)
 def create(
     title: str,
     team_key: str,
@@ -441,8 +471,12 @@ def create(
     estimate: float | None,
     project_name: str | None,
     milestone_name: str | None,
+    relations: tuple[tuple[str, str], ...],
 ) -> None:
     """Create a new issue."""
+    # Relations are separate mutations after creation; resolve targets first so a typo
+    # fails before the issue exists.
+    relation_targets = [(rel_type, resolve_issue_id(ref), ref) for rel_type, ref in relations]
     team_id = resolve_team_id(team_key)
     input_data: dict = {"title": title, "teamId": team_id, "priority": priority}
 
@@ -480,6 +514,18 @@ def create(
     issue = result.get("issue") or {}
     click.echo(f"created {issue.get('identifier')}  {issue.get('title')}")
     click.echo(issue.get("url"))
+
+    failed = False
+    for rel_type, related_id, related_ref in relation_targets:
+        try:
+            create_relation(issue["id"], rel_type, related_id)
+        except LinearError as exc:
+            click.echo(f"error: relation {rel_type} {related_ref}: {exc}", err=True)
+            failed = True
+            continue
+        click.echo(f"relation created: {rel_type}  {related_ref}")
+    if failed:
+        raise SystemExit(1)
 
 
 @cli.command("update")

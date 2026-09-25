@@ -120,6 +120,7 @@ class Issue:
     comment_count: int = 0
     project_name: str | None = None
     project_state: str | None = None
+    milestone_name: str | None = None
 
     @classmethod
     def from_graphql(cls, data: dict) -> Self:
@@ -152,6 +153,7 @@ class Issue:
             comment_count=comment_count,
             project_name=project.get("name"),
             project_state=project.get("state"),
+            milestone_name=(data.get("projectMilestone") or {}).get("name"),
         )
 
 

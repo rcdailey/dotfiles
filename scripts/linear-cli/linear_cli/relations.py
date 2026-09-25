@@ -14,7 +14,7 @@ from linear_cli._queries import (
     ISSUE_RELATIONS_QUERY,
 )
 
-_RELATION_TYPES = ["blocks", "blocked-by", "related", "duplicate", "similar"]
+RELATION_TYPES = ["blocks", "blocked-by", "related", "duplicate", "similar"]
 
 # Linear's IssueRelationType enum has no "blockedBy": blocking is stored once, directionally, and
 # "blocked by" is the same row read from the other issue. So the CLI keeps the term and resolves it
@@ -30,6 +30,19 @@ def _resolve(issue_id: str, type: str, related_id: str) -> tuple[str, str, str]:
     if type.lower() == "blocked-by":
         return related_id, "blocks", issue_id
     return issue_id, type.lower(), related_id
+
+
+def create_relation(issue_id: str, type: str, related_id: str) -> dict:
+    """Create one relation given in CLI terms and return the created relation node."""
+    source_id, api_type, target_id = _resolve(issue_id, type, related_id)
+    data = execute(
+        ISSUE_RELATION_CREATE_MUTATION,
+        {"input": {"issueId": source_id, "relatedIssueId": target_id, "type": api_type}},
+    )
+    result = data.get("issueRelationCreate") or {}
+    if not result.get("success"):
+        raise LinearError("relation creation failed")
+    return result.get("issueRelation") or {}
 
 
 @click.group(cls=HelpfulGroup)
@@ -71,30 +84,20 @@ def list_relations(issue_id: str) -> None:
 
 @cli.command("add")
 @click.argument("issue_id")
-@click.argument("type", type=click.Choice(_RELATION_TYPES, case_sensitive=False))
+@click.argument("type", type=click.Choice(RELATION_TYPES, case_sensitive=False))
 @click.argument("related_id")
 def add_relation(issue_id: str, type: str, related_id: str) -> None:
     """Add a relation between two issues."""
-    source_id, api_type, target_id = _resolve(issue_id, type, related_id)
     try:
-        data = execute(
-            ISSUE_RELATION_CREATE_MUTATION,
-            {"input": {"issueId": source_id, "relatedIssueId": target_id, "type": api_type}},
-        )
+        rel = create_relation(issue_id, type, related_id)
     except LinearError as exc:
         die(str(exc))
-
-    result = data.get("issueRelationCreate") or {}
-    if not result.get("success"):
-        die("relation creation failed")
-
-    rel = result.get("issueRelation") or {}
     click.echo(f"relation created: {type}  {rel.get('id')}")
 
 
 @cli.command("remove")
 @click.argument("issue_id")
-@click.argument("type", type=click.Choice(_RELATION_TYPES, case_sensitive=False))
+@click.argument("type", type=click.Choice(RELATION_TYPES, case_sensitive=False))
 @click.argument("related_id")
 def remove_relation(issue_id: str, type: str, related_id: str) -> None:
     """Remove a relation between two issues."""
