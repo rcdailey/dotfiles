@@ -2,10 +2,6 @@
 # Launch opencode with non-default settings.
 # Route `oc upgrade` through mise so its postinstall hook refreshes the service and plugins.
 
-# opencode-claude-auth debug log (~/.local/share/opencode/claude-auth-debug.log). The plugin runs
-# in the background service, which only inherits this when started or restarted through `oc`.
-local -x CLAUDE_AUTH_DEBUG=1
-
 if [[ "${1-}" == "upgrade" ]]; then
   mise upgrade npm:@opencode/cli "${@:2}"
   return $?
