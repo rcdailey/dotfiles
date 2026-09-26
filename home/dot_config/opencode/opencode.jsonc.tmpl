@@ -55,8 +55,8 @@
   "plugins": [
     "@plannotator/opencode@latest",
 {{- if eq .opencodeProvider "anthropic" }}
-    // Fork carrying upstream PRs 274 and 285; see the fork branch's FORK.md
-    "github:rcdailey/opencode-claude-auth#integration",
+    // The next tag is the OpenCode V2 release line; latest is V1 and does not load in V2
+    "@ex-machina/opencode-anthropic-auth@next",
 {{- end }}
   ],
   // A provider block forces that provider into the model picker, even without credentials,

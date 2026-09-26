@@ -96,12 +96,12 @@ test("renders and loads native V2 configuration for every provider", async () =>
 test("renders provider blocks and authentication only for the selected provider", () => {
   const anthropic = render("anthropic");
   expect(anthropic.agents.build.model).toStartWith("anthropic/");
-  expect(anthropic.plugins).toContain("github:rcdailey/opencode-claude-auth#integration");
+  expect(anthropic.plugins).toContain("@ex-machina/opencode-anthropic-auth@next");
   expect(Object.keys(anthropic.providers)).toEqual(["anthropic"]);
 
   const openai = render("openai");
   expect(openai.agents.build.model).toStartWith("openai/");
-  expect(openai.plugins).not.toContain("github:rcdailey/opencode-claude-auth#integration");
+  expect(openai.plugins).not.toContain("@ex-machina/opencode-anthropic-auth@next");
   expect(openai.providers).toEqual({});
 });
 
