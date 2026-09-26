@@ -98,6 +98,4 @@ def _do_pdf(
 
     if matched:
         record_source(url)
-    click.echo(truncate_output(output, max_chars), nl=False, err=not matched)
-    if not matched:
-        sys.exit(1)
+    click.echo(truncate_output(output, max_chars), nl=False)

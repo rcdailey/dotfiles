@@ -61,9 +61,7 @@ def _emit_retrieved_output(
     rendered = truncate_output(output, max_chars, hint)
     if matched:
         record_visible_sources(rendered, source_urls)
-    click.echo(rendered, nl=False, err=not matched)
-    if not matched:
-        sys.exit(1)
+    click.echo(rendered, nl=False)
 
 
 @click.group(invoke_without_command=False)
@@ -459,6 +457,4 @@ def fetch_cmd(
 
     if matched:
         record_source(url)
-    click.echo(truncate_output(output, max_chars), nl=False, err=not matched)
-    if not matched:
-        sys.exit(1)
+    click.echo(truncate_output(output, max_chars), nl=False)

@@ -180,7 +180,7 @@ def apply_find(text: str, pattern: str, context: int) -> tuple[str, bool]:
         if len(preview) > 500:
             preview = preview[:500] + "..."
         return (
-            f"error: no paragraphs matched '{pattern}'\n\n"
+            f"no paragraphs matched '{pattern}'\n\n"
             f"--- content preview (first 3 paragraphs) ---\n{preview}"
         ), False
 
