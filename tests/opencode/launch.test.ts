@@ -35,16 +35,15 @@ test("oc forwards ordinary arguments and exit status", async () => {
   expect(await readFile(log, "utf8")).toBe("opencode run two words\n");
 });
 
-test("oc upgrades the mise package before plugins", async () => {
+// Plugin updates run from the mise postinstall hook, so `oc upgrade` only delegates to mise.
+test("oc upgrade delegates to mise without calling opencode", async () => {
   const { env, log } = await fixture();
   const result = run(env, ["upgrade", "--yes"]);
   expect(result.exitCode).toBe(0);
-  expect(await readFile(log, "utf8")).toBe(
-    "mise upgrade npm:@opencode/cli --yes\nopencode plugin update\n",
-  );
+  expect(await readFile(log, "utf8")).toBe("mise upgrade npm:@opencode/cli --yes\n");
 });
 
-test("oc skips plugin updates after a failed CLI upgrade", async () => {
+test("oc upgrade returns the mise exit status", async () => {
   const { env, log } = await fixture(7);
   const result = run(env, ["upgrade"]);
   expect(result.exitCode).toBe(7);
