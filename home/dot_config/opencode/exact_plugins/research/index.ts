@@ -1,4 +1,5 @@
 import type { Plugin } from "@opencode/plugin";
+import { DIRECT_TOOL } from "../lib/direct-tool.ts";
 import { runResearch } from "./run.ts";
 
 // Thin tools over the Python `research` CLI. They exist to pass the calling session's ID, which
@@ -70,6 +71,7 @@ export const Research = {
           required: ["query"],
           additionalProperties: false,
         },
+        options: DIRECT_TOOL,
         async execute(input, context) {
           const value = record(input);
           const args = [
@@ -105,6 +107,7 @@ export const Research = {
           required: ["url"],
           additionalProperties: false,
         },
+        options: DIRECT_TOOL,
         async execute(input, context) {
           const value = record(input);
           const args = [
@@ -141,6 +144,7 @@ export const Research = {
           required: ["command", "args"],
           additionalProperties: false,
         },
+        options: DIRECT_TOOL,
         async execute(input, context) {
           const value = record(input);
           const args = Array.isArray(value.args) ? value.args.map(String) : [];
@@ -155,6 +159,7 @@ export const Research = {
           "List every source URL retrieved and every research tool failure in this session. " +
           "Call before responding; cite only listed sources and report every failure.",
         input: { type: "object", properties: {}, additionalProperties: false },
+        options: DIRECT_TOOL,
         async execute(_input, context) {
           const sources = await runResearch(context.sessionID, ["sources"], context.signal);
           const errors = await runResearch(context.sessionID, ["errors"], context.signal);

@@ -69,7 +69,9 @@ under `~/.config/opencode/` do not have these prefixes.
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
 - `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`). Hooks that rewrite model
   requests MUST keep earlier conversation content byte-identical across requests; edits invalidate
-  prompt caching and signed thinking. Inject reminders via `lib/system-reminder.ts`.
+  prompt caching and signed thinking. Inject reminders via `lib/system-reminder.ts`. Tools for
+  permission-scoped agents MUST pass `options: DIRECT_TOOL` (`lib/direct-tool.ts`); Code Mode tools
+  are unreachable without `execute`, which also grants unpermissioned `fetch`.
 - `.chezmoitemplates/` - Reusable template partials scoped to OpenCode config. Template names share
   a global namespace across all `.chezmoitemplates/` directories in the source state; prefix names
   with `opencode-` to avoid collisions. Current partials: `opencode-coding-directives.md`

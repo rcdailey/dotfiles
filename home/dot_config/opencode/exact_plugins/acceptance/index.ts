@@ -1,4 +1,5 @@
 import type { Plugin } from "@opencode/plugin";
+import { DIRECT_TOOL } from "../lib/direct-tool.ts";
 import { begin, diff, finish, type Scope } from "./state.ts";
 
 // Snapshot state is keyed by the calling session, so a resumed acceptance task continues its own
@@ -44,6 +45,7 @@ export const Acceptance = {
           },
           additionalProperties: false,
         },
+        options: DIRECT_TOOL,
         async execute(input, context) {
           return { content: await begin(scope(context.sessionID), stringField(input, "base")) };
         },
@@ -67,6 +69,7 @@ export const Acceptance = {
           required: ["paths"],
           additionalProperties: false,
         },
+        options: DIRECT_TOOL,
         async execute(input, context) {
           return { content: await diff(scope(context.sessionID), pathsField(input)) };
         },
@@ -78,6 +81,7 @@ export const Acceptance = {
           "Record the pending tree as audited. Reports `stable` when the repository still " +
           "matches it, or `retry` with changes made since acceptance_begin.",
         input: NO_INPUT,
+        options: DIRECT_TOOL,
         async execute(_input, context) {
           return { content: await finish(scope(context.sessionID)) };
         },
