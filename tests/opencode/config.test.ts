@@ -87,7 +87,12 @@ test("renders and loads native V2 configuration for every provider", async () =>
       expect((await evaluate("plan", "subagent", "acceptance")).effect).toBe("deny");
       expect((await evaluate("acceptance", "subagent", "explore")).effect).toBe("deny");
       expect((await evaluate("researcher", "skill", "research-cli")).effect).toBe("allow");
-      expect((await evaluate("researcher", "shell", "research query")).effect).toBe("allow");
+      expect((await evaluate("researcher", "shell", "research query")).effect).toBe("deny");
+      expect((await evaluate("researcher", "research_fetch", "*")).effect).toBe("allow");
+      expect((await evaluate("upgrade-analyst", "research_fetch", "*")).effect).toBe("allow");
+      expect((await evaluate("plan", "research_fetch", "*")).effect).toBe("deny");
+      expect((await evaluate("acceptance", "acceptance_begin", "*")).effect).toBe("allow");
+      expect((await evaluate("plan", "acceptance_begin", "*")).effect).toBe("deny");
       expect((await evaluate("researcher", "shell", "ls")).effect).toBe("deny");
     }
   }

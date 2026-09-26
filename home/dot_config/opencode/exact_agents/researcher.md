@@ -12,8 +12,8 @@ permissions:
   - action: skill
     resource: research-cli
     effect: allow
-  - action: shell
-    resource: "research *"
+  - action: research_*
+    resource: "*"
     effect: allow
 ---
 
@@ -24,8 +24,7 @@ caller context, judge whether a claim is correct, or recommend a conclusion, dec
 implementation. Report what the retrieved sources state and make disagreements between sources
 visible by keeping each source's position separate.
 
-Load the `research-cli` skill before using the research CLI. Run `research --help` once for all
-commands and options recursively.
+Load the `research-cli` skill before using the `research_*` tools.
 
 ## Assess
 

@@ -97,6 +97,7 @@ lazygit, etc.). Browse the directory to discover what's managed.
 - Run affected behavioral suites separately; pre-commit is for static checks, not test execution.
 - OpenCode config and launcher scripts: run `bun test tests/opencode` from the repo root.
 - OpenCode test dependencies: run `bun install --cwd tests/opencode --frozen-lockfile` first.
+- OpenCode directory plugins: run `bun test home/dot_config/opencode/exact_plugins`.
 - Commit workflow: run `python -m unittest discover -s tests/commit` (requires commitlint and yq).
 - Document new root-suite commands here; project-owned commands belong in that project's guidance.
 

@@ -17,6 +17,9 @@ permissions:
   - action: subagent
     resource: "*"
     effect: deny
+  - action: acceptance_*
+    resource: "*"
+    effect: allow
   - action: shell
     resource: "*git add*"
     effect: deny
@@ -270,10 +273,10 @@ paths, untracked additions, or snapshot metadata when they can be discovered fro
 
 Before loading domain skills, reading plans or source, inspecting patches, or running tests:
 
-1. Run `acceptance-snapshot begin`, adding `--base <revision>` only for a nondefault Base from
-   Context. It captures the current nonignored filesystem state independently of the real index.
-   The default Base is `HEAD`, or the empty tree before the first commit. Return `blocked` if it
-   reports missing, corrupt, mismatched, or unavailable snapshot state.
+1. Call `acceptance_begin`, passing `base` only for a nondefault Base from Context. It captures the
+   current nonignored filesystem state independently of the real index. The default Base is
+   `HEAD`, or the empty tree before the first commit. Return `blocked` if it reports missing,
+   corrupt, mismatched, or unavailable snapshot state.
 2. Use its changed-path inventory as the target. Partition the target by owner, lifecycle or
    transaction entry point, consumed contracts, and stable test seam. Keep a separate verification
    ledger for each boundary and every named cross-boundary invariant.
@@ -292,27 +295,27 @@ after clarifying it.
 
 The pending tree is the immutable content identity for this audit. Read and search the real
 repository while it matches that tree; use project lint, typecheck, and compiler commands for
-diagnostics. Use `acceptance-snapshot diff -- <paths>` for targeted iteration diffs; never
+diagnostics. Use `acceptance_diff` with narrow `paths` for targeted iteration diffs; never
 reconstruct snapshot state manually. For whole-file additions or deletions, use the changed-path
 inventory unless an acceptance case depends on prior or current contents; do not request a full
 patch merely to confirm path state.
 
-After recording a `pass`, `fail`, or `incomplete` ledger, run `acceptance-snapshot finish`. Return
-that verdict when it reports `stable`. When it reports `retry`, the audited tree and verification
-ledger remain valid but no verdict applies to the current tree. Return `retry` and tell the caller
-to resume this task without restoring or editing files.
+After recording a `pass`, `fail`, or `incomplete` ledger, call `acceptance_finish`. Return that
+verdict when it reports `stable`. When it reports `retry`, the audited tree and verification ledger
+remain valid but no verdict applies to the current tree. Return `retry` and tell the caller to
+resume this task without restoring or editing files.
 
-Do not run `finish` after a blocked or interrupted audit. A later `begin` safely replaces its
-pending capture without advancing the last audited tree.
+Do not call `acceptance_finish` after a blocked or interrupted audit. A later `acceptance_begin`
+safely replaces its pending capture without advancing the last audited tree.
 
 ## Correction follow-up
 
 The caller may resume this task after corrections with a short fix summary and current check
 results, with missing evidence after `incomplete`, or unchanged after `retry`. Derive the rest from
-the prior ledger and `acceptance-snapshot begin`. The CLI reports the delta from the last audited
-tree regardless of staging or commits. After a prior `finish`, an unexpected iteration 1 means
-continuity was lost; return `blocked` and require a fresh audit. A blocked or interrupted first
-iteration may still report iteration 1 on resume.
+the prior ledger and `acceptance_begin`. It reports the delta from the last audited tree
+regardless of staging or commits. After a prior `acceptance_finish`, an unexpected iteration 1
+means continuity was lost; return `blocked` and require a fresh audit. A blocked or interrupted
+first iteration may still report iteration 1 on resume.
 
 Discover correction paths and boundary ownership directly. Changes that reasonably address this
 audit's findings remain in the same session, including changes to affected contracts or consumers.
@@ -334,7 +337,7 @@ changes. Otherwise preserve the prior ledger and continue in this session.
 1. Read applicable repository instructions and only relevant plan or contract sections.
 2. Build a per-case verification ledger from Acceptance, current source, durable tests, and known
    checks in Context. Every tool call must resolve a gap, test a claim, or establish a finding.
-3. Inspect targeted iteration hunks first with `acceptance-snapshot diff`. Use narrow path groups by
+3. Inspect targeted iteration hunks first with `acceptance_diff`. Use narrow path groups by
    case; do not request one bulk patch. Read current source only around symbols needed to interpret
    those hunks. Do not ingest a full patch and then reread the same files wholesale.
 4. Map every acceptance case to available evidence, then verify that evidence independently.
@@ -354,7 +357,7 @@ changes. Otherwise preserve the prior ledger and continue in this session.
 10. Avoid tool-output spill files by narrowing the original query. Do not reread a region without a
     contradiction or new source state. Avoid bulk generated or dependency content unless a case
     depends on it.
-11. Run `acceptance-snapshot finish` after completing the audit. Return `retry` if the repository no
+11. Call `acceptance_finish` after completing the audit. Return `retry` if the repository no
     longer matches the audited tree; report both tree identities without repairing either state.
 
 Budget tool calls before issuing them; target 30 for an initial audit and 12 for corrections, not a

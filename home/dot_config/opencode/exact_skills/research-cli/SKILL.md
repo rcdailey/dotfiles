@@ -2,7 +2,7 @@
 name: research-cli
 description: >
   Use when a permitted specialist performs external web, PDF, or GitHub research through the
-  research CLI. Covers evidence retrieval, source eligibility, budget handling, and recovery. Do
+  research_* tools. Covers evidence retrieval, source eligibility, budget handling, and recovery. Do
   not use for bounded Context7 lookups or local repository exploration.
 ---
 
@@ -14,20 +14,20 @@ global citation rule; a search result or snippet is not evidence for its linked 
 ## Workflow
 
 1. Identify the evidence tracks and source types required by the caller.
-2. Search with `research web search "query" --results --max-results 5`.
-3. Fetch relevant pages with `research web fetch URL`; use `research pdf URL` for PDFs.
+2. Search with `research_search`, using `results` for a ranked source list.
+3. Retrieve relevant sources with `research_fetch`; it handles web pages, PDFs, and GitHub object
+   URLs.
 4. Retrieve a direct primary result matching the target before broad repository exploration.
-5. For GitHub repositories, start with the narrowest applicable Scout command. Use `orient`, then
-   `find`, before path-specific `rg` or `cat` calls when paths are unknown.
-6. For changes absent upstream, run `scout forks` with `--grep` or `--path`, then inspect matches
-   with `scout commit`.
+5. For GitHub repositories, start with the narrowest applicable `research_github` command. Use
+   `orient`, then `find`, before path-specific `rg` or `cat` calls when paths are unknown.
+6. For changes absent upstream, run `forks` with `--grep` or `--path`, then inspect matches with
+   `commit`.
 
-Run `research --help` once for all command and option syntax recursively. Each shell command must
-contain one `research` invocation; do not chain, pipe, background, or suppress errors. Run web and
-PDF commands sequentially so each budget checkpoint can shape the next call.
+Call `research_search` and `research_fetch` sequentially so each budget checkpoint can shape the
+next call.
 
-Before responding, run `research sources` and `research errors`. Cite only URLs listed by `sources`,
-and include every ledger entry from `errors` in the Errors section.
+Before responding, call `research_ledger`. Cite only URLs listed under Sources, and include every
+Errors entry in the Errors section.
 
 ## Evidence
 
@@ -41,18 +41,18 @@ and include every ledger entry from `errors` in the Errors section.
 
 ## Budget and output bounds
 
-Web and PDF calls are budgeted; Scout calls and cached pagination are free. Each budgeted call
+Search and fetch calls are budgeted; GitHub calls and cached pagination are free. Each budgeted call
 reports current usage. After a warning, synthesize unless one named evidence gap justifies a single
-sequential `--critical` call.
+sequential `critical` call.
 
 When the evidence target names a field, option, symbol, or phrase, start page retrieval with
-`--find`. Use `--offset` to paginate cached content. Do not disable output bounds when a narrower
+`find`. Use `offset` to paginate cached content. Do not disable output bounds when a narrower
 query or page can answer the question.
 
 ## Recovery
 
-- After a missing Scout path, run `scout find`; do not guess another path.
+- After a missing GitHub path, run `find`; do not guess another path.
 - If search results miss the required source type, narrow the next query to a named source or domain.
-- A no-match fetch is failed evidence. Retry without `--find` or with a corrected pattern.
+- A no-match fetch is failed evidence. Retry without `find` or with a corrected pattern.
 - A partial aggregate warning means that command is incomplete evidence.
 - A budget guard is a workflow limit, not evidence that the requested source does not exist.

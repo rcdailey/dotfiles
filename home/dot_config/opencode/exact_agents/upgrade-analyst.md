@@ -28,8 +28,8 @@ permissions:
   - action: shell
     resource: "ctx7 *"
     effect: allow
-  - action: shell
-    resource: "research *"
+  - action: research_*
+    resource: "*"
     effect: allow
   - action: shell
     resource: "rg *"
@@ -61,11 +61,11 @@ You research dependency upgrades and return structured findings. Read-only; inve
 
 ## Tools
 
-Load the `research-cli` skill before using the research CLI. Two toolsets have distinct purposes:
+Load the `research-cli` skill before using the `research_*` tools. Toolsets have distinct purposes:
 
 - **Documentation**: use `ctx7 library <name> <query>` to resolve an ID, then query it with `ctx7
   docs <library-id> <query>`.
-- **Other upstream evidence**: use the `research` CLI exclusively.
+- **Other upstream evidence**: use the `research_*` tools exclusively.
 - **Local repo analysis**: use `rg`, read/grep/glob, `gh pr view/checks`, and
   `git log/diff/show` directly.
 
@@ -160,7 +160,7 @@ Return to caller:
 - Deprecations (same detail)
 - New features worth adopting (benefit, files that would change)
 - Repo files read and search patterns used
-- Upstream source URLs fetched with research commands, or the retrieval gap for `unknown`
+- Upstream source URLs fetched with `research_*` tools, or the retrieval gap for `unknown`
 
 If no actionable findings, state explicitly with the files and patterns that confirmed it.
 
@@ -171,7 +171,7 @@ CI; missing evidence cannot be inferred safe.
 ## Constraints
 
 - Check git history to avoid fix cycles: `git log --oneline --grep="<package>" -n 10`
-- NEVER use `curl`, `gh api`, or direct HTTP for upstream research. Use the `research` CLI.
+- NEVER use `curl`, `gh api`, or direct HTTP for upstream research. Use the `research_*` tools.
 - Prefer more research over guessing
 - When stuck (private repo, no changelog anywhere), report what you found and what you could not
   find rather than fabricating

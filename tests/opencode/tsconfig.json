@@ -18,6 +18,9 @@
     "../../home/dot_config/opencode/exact_plugins/gh-api-guard.ts",
     "../../home/dot_config/opencode/exact_plugins/ripgrep-recursive-flag.ts",
     "../../home/dot_config/opencode/exact_plugins/session-rename.ts",
-    "../../home/dot_config/opencode/exact_plugins/tool-guards.ts"
-  ]
+    "../../home/dot_config/opencode/exact_plugins/tool-guards.ts",
+    "../../home/dot_config/opencode/exact_plugins/acceptance/**/*.ts",
+    "../../home/dot_config/opencode/exact_plugins/research/**/*.ts"
+  ],
+  "exclude": ["../../home/dot_config/opencode/exact_plugins/**/*.test.ts"]
 }

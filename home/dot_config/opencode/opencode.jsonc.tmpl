@@ -77,6 +77,9 @@
     { "action": "*", "resource": "*", "effect": "allow" },
     // Disable built-in search; use the researcher for web research
     { "action": "websearch", "resource": "*", "effect": "deny" },
+    // Plugin tools for specific subagents; their agent files allow them
+    { "action": "acceptance_*", "resource": "*", "effect": "deny" },
+    { "action": "research_*", "resource": "*", "effect": "deny" },
 
     // shell defaults and destructive Git operations
     { "action": "shell", "resource": "*", "effect": "allow" },

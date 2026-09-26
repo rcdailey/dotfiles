@@ -7,6 +7,9 @@
 **/.venv/**
 **/*.pyc
 
+# Colocated OpenCode directory plugin tests
+**/*.test.ts
+
 
 
 # Run the appropriate scripts based on OS
