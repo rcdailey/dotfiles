@@ -1,13 +1,13 @@
 import type { Plugin } from "@opencode/plugin";
-import type { Message, TextPart } from "@opencode/ai";
+import { injectReminders, wrap } from "./lib/system-reminder.ts";
 
-// Reinject after user messages and tool calls so long tool loops cannot bury the guidance.
-// Child sessions are subagents, so only parentless sessions receive user-facing chat guidance.
+// Subagents do not chat with the user, so only primary sessions receive this guidance.
 // Source fragments join with spaces to avoid reproducing source line wrapping at runtime.
 
 const CALIBRATION = [
-  "Follow Chat Style. Default to the TLDR: answer, key reason, necessary caveats. Use STE principles",
-  "for technical explanations. Assume engineering knowledge; clarify project concepts briefly inline.",
+  "Follow Chat Style. Default to the TLDR: answer, key reason, necessary caveats. Use STE",
+  "principles for technical explanations. Assume engineering knowledge; clarify project concepts",
+  "briefly inline.",
   "Use gathered context, not extra background research; investigate gaps that affect correctness.",
   "Do not invent intent. No extra tutorial or recap; stop when complete.",
 ].join(" ");
@@ -30,77 +30,16 @@ const CLOSING = [
   "can take now.",
 ].join(" ");
 
-const wrap = (...sections: string[]) =>
-  ["<system-reminder>", sections.join("\n\n"), "</system-reminder>"].join("\n");
-
 // CLOSING is only actionable at turn end, and each tool call is a continue-or-stop decision point,
 // so reinjecting it there reads as permission to stop. The turn-start copy stays in context.
-const TURN_REMINDER = wrap(CALIBRATION, BUDGET, CLOSING);
-const TOOL_REMINDER = wrap(CALIBRATION, BUDGET);
-
-const isText = (part: unknown): part is TextPart =>
-  Boolean(part && typeof part === "object" && Reflect.get(part, "type") === "text");
-
-type MutableMessage = {
-  role: Message["role"];
-  content: Array<Message["content"][number]>;
-};
-type MutableToolResult = {
-  type: "tool-result";
-  result:
-    | { type: "content"; value: Array<{ type: "text"; text: string } | Record<string, unknown>> }
-    | { type: "text" | "json" | "error"; value: unknown };
-};
-
-const hasReminder = (message: MutableMessage) =>
-  message.content.some((part) => isText(part) && part.text.includes("<system-reminder>"));
-
-const isToolResult = (part: unknown): part is MutableToolResult =>
-  Boolean(part && typeof part === "object" && Reflect.get(part, "type") === "tool-result");
-
-function appendToolReminder(part: MutableToolResult) {
-  const result = part.result;
-  if (result.type === "error") return;
-  if (result.type === "content") {
-    if (result.value.some((item) => isText(item) && item.text.includes("<system-reminder>"))) return;
-    result.value.push({ type: "text", text: TOOL_REMINDER });
-    return;
-  }
-  if (result.type === "text" && typeof result.value === "string") {
-    if (!result.value.includes("<system-reminder>")) result.value += `\n\n${TOOL_REMINDER}`;
-    return;
-  }
-  if (result.type === "json") {
-    const serialized = JSON.stringify(result.value) ?? String(result.value);
-    part.result = { type: "content", value: [
-      { type: "text", text: serialized },
-      { type: "text", text: TOOL_REMINDER },
-    ] };
-  }
-}
-
 export const ChatBrevity = {
   id: "local.chat-brevity",
-  async setup(ctx) {
-    await ctx.session.hook("context", async (event) => {
-      const session = await ctx.session.get({ sessionID: event.sessionID }).catch(() => undefined);
-      if (!session || session.parentID) return;
-
-      const messages = event.messages as MutableMessage[];
-      const last = messages.at(-1);
-      if (!last) return;
-
-      if (last.role === "user") {
-        if (hasReminder(last) || !last.content.some(isText)) return;
-        last.content.push({ type: "text", text: TURN_REMINDER });
-        return;
-      }
-
-      if (last.role !== "tool") return;
-      const tool = last.content.findLast(isToolResult);
-      if (tool) appendToolReminder(tool);
-    });
-  },
+  setup: (ctx) =>
+    injectReminders(ctx, {
+      turn: wrap(CALIBRATION, BUDGET, CLOSING),
+      tool: wrap(CALIBRATION, BUDGET),
+      primaryOnly: true,
+    }),
 } satisfies Plugin.Plugin;
 
 export default ChatBrevity;
