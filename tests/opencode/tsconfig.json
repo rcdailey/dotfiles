@@ -12,6 +12,9 @@
     "target": "ES2022"
   },
   "include": [
+    "reminder*.test.ts",
+    "../../home/dot_config/opencode/exact_plugins/chat-brevity/**/*.ts",
+    "../../home/dot_config/opencode/exact_plugins/file-tools/**/*.ts",
     "../../home/dot_config/opencode/exact_plugins/gh-api-guard.ts",
     "../../home/dot_config/opencode/exact_plugins/ripgrep-recursive-flag.ts",
     "../../home/dot_config/opencode/exact_plugins/session-rename.ts",

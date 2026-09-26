@@ -1,5 +1,5 @@
 import type { Plugin } from "@opencode/plugin";
-import { injectReminders, wrap } from "./lib/system-reminder.ts";
+import { injectReminders, wrap } from "../lib/system-reminder.ts";
 
 // Subagents do not chat with the user, so only primary sessions receive this guidance.
 // Source fragments join with spaces to avoid reproducing source line wrapping at runtime.
@@ -12,16 +12,16 @@ const CALIBRATION = [
   "Do not invent intent. No extra tutorial or recap; stop when complete.",
 ].join(" ");
 
-const BUDGET = [
-{{- if eq .opencodeProvider "anthropic" }}
+const ANTHROPIC_BUDGET = [
   "Hard length budget: under 120 words, unless the user asked for depth or the answer cannot fit.",
   "Verbosity is your dominant failure mode; length reads as padding, not thoroughness. Write the",
   "reply you would send if the user answered your draft with `TLDR`: same answer, same key reason,",
   "no scaffolding.",
-{{- else }}
+].join(" ");
+
+const DEFAULT_BUDGET = [
   "Optimize for first-pass comprehension, not minimum length; keep the one example or caveat that",
   "prevents a wrong inference.",
-{{- end }}
 ].join(" ");
 
 const CLOSING = [
@@ -30,14 +30,17 @@ const CLOSING = [
   "can take now.",
 ].join(" ");
 
-// CLOSING is only actionable at turn end, and each tool call is a continue-or-stop decision point,
-// so reinjecting it there reads as permission to stop. The turn-start copy stays in context.
+// Reinforcing CLOSING at every tool result can encourage premature stops. The underlying rule
+// remains in the agent instructions when a native turn-start reminder expires.
+/** Primary-session chat guidance; wording follows the model used for each request. */
 export const ChatBrevity = {
   id: "local.chat-brevity",
   setup: (ctx) =>
     injectReminders(ctx, {
-      turn: wrap(CALIBRATION, BUDGET, CLOSING),
-      tool: wrap(CALIBRATION, BUDGET),
+      text: (model, phase) => {
+        const budget = model.providerID === "anthropic" ? ANTHROPIC_BUDGET : DEFAULT_BUDGET;
+        return phase === "turn" ? wrap(CALIBRATION, budget, CLOSING) : wrap(CALIBRATION, budget);
+      },
       primaryOnly: true,
     }),
 } satisfies Plugin.Plugin;

@@ -2,8 +2,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@opencode/ai": "2.0.7",
     "@opencode/plugin": "2.0.7",
     "@opencode/sdk": "2.0.7",
+    "@types/bun": "1.4.2",
+    "effect": "4.0.0-rc.112",
     "jsonc-parser": "3.3.1"
   }
 }

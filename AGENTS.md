@@ -67,7 +67,9 @@ under `~/.config/opencode/` do not have these prefixes.
   with a fresh high-capability model. Other specialists (`researcher`, `reviewer`,
   `upgrade-analyst`) are plain Markdown with self-contained protocols.
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
-- `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`)
+- `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`). Hooks that rewrite model
+  requests MUST keep earlier conversation content byte-identical across requests; edits invalidate
+  prompt caching and signed thinking. Inject reminders via `lib/system-reminder.ts`.
 - `.chezmoitemplates/` - Reusable template partials scoped to OpenCode config. Template names share
   a global namespace across all `.chezmoitemplates/` directories in the source state; prefix names
   with `opencode-` to avoid collisions. Current partials: `opencode-coding-directives.md`
