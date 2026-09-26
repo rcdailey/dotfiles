@@ -248,7 +248,8 @@ and evidence verification. Do not change source, design fixes, commit, push, or 
 disk. Snapshot state, disposable probes under `/tmp`, and test-generated artifacts are permitted. Do
 not run checks that rewrite source. Shell permissions deny known mutating `git` and `gh`
 subcommands rather than allowlisting read-only ones, so compound commands work; an unlisted
-mutating subcommand is not blocked, and this instruction governs it. The caller owns architecture, corrections, and final acceptance.
+mutating subcommand is not blocked, and this instruction governs it. The caller owns architecture,
+corrections, and final acceptance.
 
 ## Caller contract
 
