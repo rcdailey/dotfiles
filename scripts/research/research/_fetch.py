@@ -62,6 +62,38 @@ _CHALLENGE_BODY_MAX_CHARS = 50_000
 
 _TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 
+# Elements that markup itself hides from readers. Script-driven hiding (e.g. version switchers)
+# is invisible in static HTML and stays in the output.
+_HIDDEN_XPATH = "//*[@hidden or @aria-hidden='true' or @style] | //template"
+_HIDDEN_STYLES = ("display:none", "visibility:hidden")
+
+
+def _is_hidden(element: lxml_html.HtmlElement) -> bool:
+    if element.tag == "template" or "hidden" in element.attrib:
+        return True
+    if element.get("aria-hidden") == "true":
+        return True
+    style = element.get("style", "").replace(" ", "").lower()
+    return any(hidden in style for hidden in _HIDDEN_STYLES)
+
+
+def _extract(html_text: str) -> str | None:
+    """Convert a page to markdown, excluding content its markup hides."""
+    try:
+        tree = lxml_html.fromstring(html_text)
+    except Exception:  # noqa: BLE001
+        tree = None
+    if tree is not None:
+        for element in tree.xpath(_HIDDEN_XPATH):
+            if _is_hidden(element) and element.getparent() is not None:
+                element.drop_tree()
+    return trafilatura.extract(
+        tree if tree is not None else html_text,
+        output_format="markdown",
+        include_links=True,
+        include_tables=True,
+    )
+
 
 class FetchError(Exception):
     """HTTP fetch or content extraction failed."""
@@ -195,23 +227,12 @@ def fetch_markdown(url: str) -> str:
             raise FetchError(f"browser fallback failed: {e}") from e
         if _is_challenge_page(html):
             raise FetchError("browser fallback failed: still a challenge page")
-        markdown = trafilatura.extract(
-            html,
-            output_format="markdown",
-            include_links=True,
-            include_tables=True,
-        )
+        markdown = _extract(html)
         if not markdown:
             raise FetchError("browser fallback failed: no content extracted")
         return markdown
 
-    markdown = trafilatura.extract(
-        response.text,
-        output_format="markdown",
-        include_links=True,
-        include_tables=True,
-    )
-
+    markdown = _extract(response.text)
     if markdown:
         return markdown
 
@@ -221,12 +242,7 @@ def fetch_markdown(url: str) -> str:
         html = fetch_with_browser(url)
     except Exception as e:
         raise FetchError(f"no content extracted (browser fallback failed: {e})") from e
-    markdown = trafilatura.extract(
-        html,
-        output_format="markdown",
-        include_links=True,
-        include_tables=True,
-    )
+    markdown = _extract(html)
     if not markdown:
         raise FetchError("no content extracted (page may require JavaScript)")
     return markdown
