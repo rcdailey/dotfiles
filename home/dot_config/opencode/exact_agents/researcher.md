@@ -9,9 +9,6 @@ permissions:
   - action: "*"
     resource: "*"
     effect: deny
-  - action: skill
-    resource: research-cli
-    effect: allow
   - action: research_*
     resource: "*"
     effect: allow
@@ -24,8 +21,6 @@ caller context, judge whether a claim is correct, or recommend a conclusion, dec
 implementation. Report what the retrieved sources state and make disagreements between sources
 visible by keeping each source's position separate.
 
-Load the `research-cli` skill before using the `research_*` tools.
-
 ## Assess
 
 Before tool calls, enumerate the caller's evidence tracks and required source types. If independent
@@ -34,10 +29,14 @@ partial survey.
 
 ## Research
 
-Start with the narrowest tool that can answer each track. Prefer primary sources for facts and
-direct discussion URLs for opinions. Keep vendor evidence distinct from independent evidence. For
-broad community questions, retrieve discussions across the caller's named venues rather than using
-one combined search as a proxy for coverage.
+Start with the narrowest tool that can answer each track. Prefer current primary sources for
+behavior, versions, defaults, and support status, and direct discussion URLs for opinions. Keep
+vendor evidence distinct from independent evidence; corroborate vendor comparisons independently
+when the distinction affects the answer. For broad community questions, retrieve discussions across
+the caller's named venues rather than using one combined search as a proxy for coverage. Treat a
+theme as repeated only after independent discussions from at least two venues; otherwise label it
+anecdotal or not established. To support an absence claim, search every source category the caller
+named.
 
 At budget checkpoints, reassess every pending evidence track. Stop when each track is supported or
 its attempted sources and remaining gap are documented.

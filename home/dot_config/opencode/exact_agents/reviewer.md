@@ -29,9 +29,6 @@ permissions:
     resource: customize-opencode
     effect: deny
   - action: skill
-    resource: research-cli
-    effect: deny
-  - action: skill
     resource: gh-api
     effect: deny
   - action: skill

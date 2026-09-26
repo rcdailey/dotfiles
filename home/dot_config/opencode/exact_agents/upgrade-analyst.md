@@ -22,9 +22,6 @@ permissions:
   - action: external_directory
     resource: "*"
     effect: allow
-  - action: skill
-    resource: research-cli
-    effect: allow
   - action: shell
     resource: "ctx7 *"
     effect: allow
@@ -61,7 +58,7 @@ You research dependency upgrades and return structured findings. Read-only; inve
 
 ## Tools
 
-Load the `research-cli` skill before using the `research_*` tools. Toolsets have distinct purposes:
+Toolsets have distinct purposes:
 
 - **Documentation**: use `ctx7 library <name> <query>` to resolve an ID, then query it with `ctx7
   docs <library-id> <query>`.

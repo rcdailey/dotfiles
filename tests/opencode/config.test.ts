@@ -86,7 +86,6 @@ test("renders and loads native V2 configuration for every provider", async () =>
       expect((await evaluate("plan", "subagent", "explore")).effect).toBe("allow");
       expect((await evaluate("plan", "subagent", "acceptance")).effect).toBe("deny");
       expect((await evaluate("acceptance", "subagent", "explore")).effect).toBe("deny");
-      expect((await evaluate("researcher", "skill", "research-cli")).effect).toBe("allow");
       expect((await evaluate("researcher", "shell", "research query")).effect).toBe("deny");
       expect((await evaluate("researcher", "research_fetch", "*")).effect).toBe("allow");
       expect((await evaluate("upgrade-analyst", "research_fetch", "*")).effect).toBe("allow");
@@ -148,7 +147,7 @@ test("the V2 host evaluates representative global permissions", async () => {
       await host.permission.create({
         sessionID: session.id,
         action: "skill",
-        resources: ["research-cli"],
+        resources: ["customize-opencode"],
         agent: "build",
       })
     ).effect,

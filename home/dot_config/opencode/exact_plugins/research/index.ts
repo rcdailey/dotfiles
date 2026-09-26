@@ -45,7 +45,9 @@ function flags(input: Input, names: Record<string, string>) {
 
 const critical = {
   type: "boolean",
-  description: "Use a reserved slot after the budget warning; only for one named blocking gap",
+  description:
+    "Use a reserved slot after the budget warning; only for one named blocking gap. " +
+    "Otherwise synthesize; a budget limit is not evidence that a source does not exist.",
 } as const;
 const integer = (description: string, minimum = 0) =>
   ({ type: "integer", minimum, description }) as const;
@@ -59,7 +61,8 @@ export const Research = {
         description:
           "Search the web. Budgeted. Returns a sourced answer by default, or a ranked result " +
           "list with `results`. Search results are discovery only; fetch a source before " +
-          "citing it.",
+          "citing it. Call sequentially so each budget report can shape the next call. If " +
+          "results miss the required source type, narrow the query to a named source or domain.",
         input: {
           type: "object",
           properties: {
@@ -93,14 +96,20 @@ export const Research = {
         description:
           "Fetch any URL as clean markdown. Budgeted; cached pages and pagination are free. " +
           "PDFs are converted automatically. GitHub issue, pull request, discussion, release, " +
-          "commit, file, and repository URLs are routed to the matching GitHub reader.",
+          "commit, file, and repository URLs are routed to the matching GitHub reader. Call " +
+          "sequentially. When targeting a named field, option, symbol, or phrase, start with " +
+          "`find`; page cached content with `offset`. A `find` no-match is failed evidence: " +
+          "retry without `find` or with a corrected pattern.",
         input: {
           type: "object",
           properties: {
             url: { type: "string", minLength: 1 },
             find: { type: "string", description: "Show only paragraphs matching this pattern" },
             context: integer("Paragraphs of context around `find` matches"),
-            max_chars: integer("Output bound; default 12000, 0 disables truncation"),
+            max_chars: integer(
+              "Output bound; default 12000, 0 disables truncation. Prefer a narrower `find` " +
+                "or `offset` page when one can answer the question.",
+            ),
             offset: integer("Character offset into the content, applied before `find`"),
             critical,
           },
@@ -132,6 +141,11 @@ export const Research = {
           "Explore GitHub repositories. Not budgeted. REPO is OWNER/REPO. Pass `command` and " +
             "its CLI arguments in `args`, for example command `rg`, args " +
             '["owner/repo", "pattern", "--path", "src"].',
+          "Fetch a direct primary URL matching the target before broad exploration. Start with " +
+            "the narrowest command; when paths are unknown, use `orient`, then `find`, before " +
+            "`rg` or `cat`. After a missing path, run `find`; do not guess another path. For " +
+            "changes absent upstream, run `forks` with `--grep` or `--path`, then inspect " +
+            "matches with `commit`. A partial aggregate warning means incomplete evidence.",
           "Commands:",
           ...SCOUT_USAGE,
         ].join("\n"),

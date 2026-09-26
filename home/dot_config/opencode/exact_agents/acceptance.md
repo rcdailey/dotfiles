@@ -234,9 +234,6 @@ permissions:
     resource: linear-cli
     effect: deny
   - action: skill
-    resource: research-cli
-    effect: deny
-  - action: skill
     resource: skill-authoring
     effect: deny
   - action: skill
