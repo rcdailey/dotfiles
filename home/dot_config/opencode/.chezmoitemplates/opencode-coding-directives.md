@@ -44,17 +44,14 @@ Before editing, trace the affected flow and inspect relevant callers.
 - Prefer structured output (JSON + jq) over table/text for CLI tools that support it (aws, gh,
   kubectl, docker). Structured output is parseable, filterable, and scriptable.
 
-## Public Contract Documentation
+## Code Documentation
 
-- Document hand-written public types and exported contracts for maintainers who do not know the
-  subsystem. Explain purpose and unfamiliar domain terms; do not paraphrase names.
-- Document members selectively when their signatures and enclosing documentation leave important
-  contract meaning unexplained, or meaning cannot be easily inferred from code alone.
-- Explain responsibility boundaries, consumer-visible guarantees, and lifecycle constraints when
-  relevant. Use natural prose rather than a required template.
+- Document a type or member, regardless of visibility, when its purpose, responsibility boundaries,
+  guarantees, or lifecycle constraints cannot be easily inferred from its code and name. Write for
+  maintainers who do not know the subsystem; explain unfamiliar domain terms; do not paraphrase
+  names. Use natural prose rather than a required template.
 - Do not require boilerplate for parameters, return values, exceptions, or similar structural
-  details. Document them only when they carry consequential contract meaning.
-- Do not document non-public implementation details by default.
+  details. Document them only when they carry consequential meaning.
 - Keep shared documentation on the contract that declares the behavior rather than duplicating it
   across implementations.
 - Verify documented guarantees against implementation and callers. Update documentation when the
