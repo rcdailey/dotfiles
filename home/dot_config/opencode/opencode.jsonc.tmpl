@@ -1,10 +1,19 @@
 {{- $models := index .opencodeModels .opencodeProvider -}}
+{{- $compaction := $models.compaction -}}
+{{- if eq .env "personal" }}{{ $compaction = .opencodePersonalCompaction }}{{ end -}}
 {
   "$schema": "https://opencode.ai/config.json",
   "update": "disable",
   "share": "manual",
   "default_agent": "build",
   "compaction": { "auto": true },
+  "experimental": {
+    "policies": [
+      // Hide these providers even when their credentials are detected
+      { "action": "provider.use", "resource": "github-copilot", "effect": "deny" },
+      { "action": "provider.use", "resource": "opencode", "effect": "deny" },
+    ],
+  },
   "agents": {
     "plan": {
       "model": {{ printf "%s#%s" $models.plan.model $models.plan.variant | quote }},
@@ -16,7 +25,7 @@
       "model": {{ $models.title.model | quote }},
     },
     "compaction": {
-      "model": {{ printf "%s#%s" $models.compaction.model $models.compaction.variant | quote }},
+      "model": {{ printf "%s#%s" $compaction.model $compaction.variant | quote }},
     },
     "general": { "disabled": true },
     "explore": {

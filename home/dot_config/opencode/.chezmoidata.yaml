@@ -1,3 +1,8 @@
+# Overrides the provider's compaction model when chezmoi env is personal
+opencodePersonalCompaction:
+  model: nano-gpt/deepseek/deepseek-v4-pro-0813
+  variant: high
+
 opencodeModels:
   anthropic:
     plan:
