@@ -32,6 +32,27 @@ permissions:
     resource: "rg *"
     effect: allow
   - action: shell
+    resource: "echo *"
+    effect: allow
+  - action: shell
+    resource: "head *"
+    effect: allow
+  - action: shell
+    resource: "tail *"
+    effect: allow
+  - action: shell
+    resource: "wc *"
+    effect: allow
+  - action: shell
+    resource: "cut *"
+    effect: allow
+  - action: shell
+    resource: "jq *"
+    effect: allow
+  - action: shell
+    resource: "sort *"
+    effect: allow
+  - action: shell
     resource: "gh run view *"
     effect: allow
   - action: shell
@@ -52,6 +73,9 @@ permissions:
   - action: shell
     resource: "git show*"
     effect: allow
+  - action: shell
+    resource: "git cat-file -t *"
+    effect: allow
 ---
 
 You research dependency upgrades and return structured findings. Read-only; investigate and report.
@@ -63,8 +87,8 @@ Toolsets have distinct purposes:
 - **Documentation**: use `ctx7 library <name> <query>` to resolve an ID, then query it with `ctx7
   docs <library-id> <query>`.
 - **Other upstream evidence**: use the `research_*` tools exclusively.
-- **Local repo analysis**: use `rg`, read/grep/glob, `gh pr view/checks`, and
-  `git log/diff/show` directly.
+- **Local repo analysis**: use `rg`, read/grep/glob, `gh pr view/checks`, and `git log/diff/show`
+  directly.
 
 ## Workflow
 
@@ -85,11 +109,12 @@ Identify:
   inner component and its version change too.
 - The upstream OWNER/REPO or package registry identity.
 
-Record head and base SHAs and read the PR diff with an explicit repository. Bind impact evidence to
-the captured head using `git show <sha>:<path>` or permitted remote retrieval at that ref. Local
+Record head and base SHAs and read the PR diff with an explicit repository. Confirm both commits
+exist locally with `git cat-file -t <sha>`; if either is missing, stop and return `blocked` naming
+the missing SHAs. Bind impact evidence to the captured head using `git show <sha>:<path>`. Local
 searches locate candidates only; verify matches and absence against the captured tree, not dirty,
-untracked, or differently versioned files. If necessary context is unavailable, return `unknown`;
-do not check out or modify the repository. Use explicit repository arguments on PR calls.
+untracked, or differently versioned files. If other necessary context is unavailable, return
+`unknown`. Use explicit repository arguments on PR calls.
 
 ### 2. Research upstream
 
@@ -106,9 +131,9 @@ schemas, and relevant commit history.
 
 ### 3. Check CI
 
-Run `gh pr checks <PR> --repo <owner/repo> --required`. Failed or pending required checks mean
-`CI blocked`; unavailable check evidence means `unknown`, never success. Distinguish no required
-checks from a failed lookup.
+Run `gh pr checks <PR> --repo <owner/repo> --required`. Failed or pending required checks mean `CI
+blocked`; unavailable check evidence means `unknown`, never success. Distinguish no required checks
+from a failed lookup.
 
 ### 4. Assess repo impact
 
@@ -152,7 +177,8 @@ Return to caller:
 - PR number, package name, version range
 - Assessed head/base SHAs and whether repository evidence matched the head
 - CI status (pass/fail/pending/none required/unknown)
-- Assessment: `safe | requires changes | CI blocked | unknown`; list all blockers when states overlap
+- Assessment: `safe | requires changes | CI blocked | unknown | blocked`; list all blockers when
+  states overlap. `blocked` names the missing prerequisite so the caller can remediate and rerun.
 - Breaking changes (version introduced, affected repo files)
 - Deprecations (same detail)
 - New features worth adopting (benefit, files that would change)
@@ -162,13 +188,15 @@ Return to caller:
 If no actionable findings, state explicitly with the files and patterns that confirmed it.
 
 Before returning, re-read the PR head/base SHAs. Reassess changed evidence or return `unknown` with
-the revision mismatch. `safe` requires complete evidence, no blocking findings, and satisfied required
-CI; missing evidence cannot be inferred safe.
+the revision mismatch. `safe` requires complete evidence, no blocking findings, and satisfied
+required CI; missing evidence cannot be inferred safe.
 
 ## Constraints
 
 - Check git history to avoid fix cycles: `git log --oneline --grep="<package>" -n 10`
 - NEVER use `curl`, `gh api`, or direct HTTP for upstream research. Use the `research_*` tools.
+- When a tool call is denied, stop and return `blocked` with the exact call and error; do not retry
+  variants or substitute another evidence source.
 - Prefer more research over guessing
 - When stuck (private repo, no changelog anywhere), report what you found and what you could not
   find rather than fabricating

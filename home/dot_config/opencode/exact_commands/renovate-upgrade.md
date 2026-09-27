@@ -26,6 +26,10 @@ skipped PRs (number, type, title) at the end of the report for a later run.
 Pass the canonical PR reference and any already-observed revision or check evidence. The agent owns
 its analysis procedure; do not restate it. Run from the affected repository.
 
+When an assessment is `blocked`, remediate the named prerequisite (for example, fetch missing
+commits) and rerun a fresh subagent for that PR. If remediation is not possible, report the PR as
+blocked with its cause.
+
 ## Report Format
 
 Present the unified summary using this structure:

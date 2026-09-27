@@ -89,6 +89,20 @@ test("renders and loads native V2 configuration for every provider", async () =>
       expect((await evaluate("researcher", "shell", "research query")).effect).toBe("deny");
       expect((await evaluate("researcher", "research_fetch", "*")).effect).toBe("allow");
       expect((await evaluate("upgrade-analyst", "research_fetch", "*")).effect).toBe("allow");
+      for (const command of [
+        "gh pr checks 1 --repo o/r --required",
+        "gh pr diff 1 --repo o/r",
+        "gh run view 1 --repo o/r --log-failed 2>&1",
+        "echo ---",
+        "head -80",
+        "sort",
+        "git cat-file -t abc",
+      ]) {
+        expect((await evaluate("upgrade-analyst", "shell", command)).effect).toBe("allow");
+      }
+      expect((await evaluate("upgrade-analyst", "shell", "git fetch origin abc")).effect).toBe(
+        "deny",
+      );
       expect((await evaluate("plan", "research_fetch", "*")).effect).toBe("deny");
       expect((await evaluate("acceptance", "acceptance_begin", "*")).effect).toBe("allow");
       expect((await evaluate("plan", "acceptance_begin", "*")).effect).toBe("deny");
