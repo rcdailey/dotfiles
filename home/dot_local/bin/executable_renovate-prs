@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # List open Renovate PRs ranked for review: security, major/unknown, minor, patch, oldest first.
+# Lists only PRs whose status checks all passed; pending, failing, or absent checks exclude a PR.
 # Update type is best effort (Renovate config varies per repo); the first signal found wins:
 # label, "(major)" style title suffix, then the version change in the title.
 # Output: one line per PR: <number> <type>/<signal> <created> [security] <title> [<labels>]
@@ -8,10 +9,13 @@
 set -euo pipefail
 
 gh pr list --author "app/renovate" --state open --limit 100 \
-  --json number,title,labels,createdAt "$@" --jq '
+  --json number,title,labels,createdAt,statusCheckRollup "$@" --jq '
 def semver_type($a; $b): [$a, $b] | map(ltrimstr("v") | split(".")) as [$x, $y]
   | if $x[0] != $y[0] then "major" elif $x[1] != $y[1] then "minor" else "patch" end;
-map(
+def green: .statusCheckRollup != [] and all(.statusCheckRollup[];
+  (.conclusion // .state) as $s | $s == "SUCCESS" or $s == "NEUTRAL" or $s == "SKIPPED");
+map(select(green))
+| map(
   [.labels[].name] as $labels
   | ([
       ($labels | map(capture("\\b(?<t>major|minor|patch)\\b"; "i").t) | first

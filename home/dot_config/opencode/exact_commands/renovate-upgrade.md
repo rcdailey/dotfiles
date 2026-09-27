@@ -15,13 +15,17 @@ Bulk mode) and evaluate them simultaneously using parallel subagents (one per PR
 Use the subagent tool with `agent: "upgrade-analyst"` for each PR. Run every subagent in the
 foreground; never set `background: true`. Wait for all results before analyzing or responding.
 
-**Bulk mode** (no arguments): Run `renovate-prs`, which prints open Renovate PRs in review priority
-order, one per line with a best-effort update type. Take the first 5. Launch one foreground subagent
-per selected PR in parallel by issuing all calls in the same message. Each subagent receives the PR
-reference. Collect all results, then present a unified summary. Show each PR's detected type; list
-skipped PRs (number, type, title) at the end of the report for a later run.
+Only PRs whose status checks all passed are eligible; pending, failing, or absent checks exclude a
+PR.
 
-**Single PR mode** (argument specifies a PR): Launch one subagent for the PR.
+**Bulk mode** (no arguments): Run `renovate-prs`, which prints eligible open Renovate PRs in review
+priority order, one per line with a best-effort update type. Take the first 5. Launch one foreground
+subagent per selected PR in parallel by issuing all calls in the same message. Each subagent
+receives the PR reference. Collect all results, then present a unified summary. Show each PR's
+detected type; list skipped PRs (number, type, title) at the end of the report for a later run.
+
+**Single PR mode** (argument specifies a PR): Run `gh pr checks <PR> --repo <owner/repo>`. If the PR
+is ineligible, report its non-passing checks and stop; otherwise launch one subagent for the PR.
 
 Pass the canonical PR reference and any already-observed revision or check evidence. The agent owns
 its analysis procedure; do not restate it. Run from the affected repository.
