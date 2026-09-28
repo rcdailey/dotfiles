@@ -125,6 +125,8 @@ query Issues(
       estimate
       url
       createdAt
+      startedAt
+      completedAt
       updatedAt
       state {
         name
@@ -171,6 +173,8 @@ query SearchIssues(
       estimate
       url
       createdAt
+      startedAt
+      completedAt
       updatedAt
       state {
         name
@@ -210,6 +214,8 @@ query Issue($id: String!) {
     estimate
     url
     createdAt
+    startedAt
+    completedAt
     updatedAt
     state {
       name
@@ -250,6 +256,10 @@ query Issue($id: String!) {
         assignee { name }
         labels { nodes { name } }
         estimate
+        createdAt
+        startedAt
+        completedAt
+        updatedAt
       }
     }
     comments {
@@ -515,10 +525,18 @@ query Project($id: String!) {
   project(id: $id) {
     id
     name
+    url
     description
+    content
     state
     startDate
     targetDate
+    externalLinks {
+      nodes {
+        label
+        url
+      }
+    }
     members {
       nodes {
         name
@@ -541,6 +559,10 @@ query Project($id: String!) {
       nodes {
         identifier
         title
+        createdAt
+        startedAt
+        completedAt
+        updatedAt
         state {
           name
         }

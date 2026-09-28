@@ -7,14 +7,14 @@ import click
 from linear_cli._click import HelpfulGroup
 from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute, paginate
-from linear_cli._models import Project, ProjectUpdate
+from linear_cli._models import Issue, Project, ProjectUpdate
 from linear_cli._queries import (
     PROJECT_CREATE_MUTATION,
     PROJECT_QUERY,
     PROJECT_UPDATE_MUTATION,
     PROJECTS_QUERY,
 )
-from linear_cli._render import percentage_text
+from linear_cli._render import echo_project_update, issue_times_text, percentage_text
 from linear_cli._resolve import resolve_project_id, resolve_team_id
 
 
@@ -54,7 +54,8 @@ def list_projects(team_key: str | None) -> None:
 
 @cli.command("view")
 @click.argument("id_or_name")
-def view_project(id_or_name: str) -> None:
+@click.option("--full", is_flag=True, help="Show full project update bodies instead of previews.")
+def view_project(id_or_name: str, full: bool) -> None:
     """View project detail by ID or name."""
     try:
         project_id = resolve_project_id(id_or_name)
@@ -68,13 +69,21 @@ def view_project(id_or_name: str) -> None:
 
     proj = Project.from_graphql(node)
     click.echo(f"name:        {proj.name}")
+    click.echo(f"id:          {proj.id}")
+    click.echo(f"url:         {proj.url}")
     click.echo(f"state:       {proj.state}")
     click.echo(f"start:       {proj.start_date or 'not set'}")
     click.echo(f"target:      {proj.target_date or 'not set'}")
     click.echo(f"members:     {', '.join(proj.members) if proj.members else 'none'}")
-    if proj.description:
+    click.echo(f"description: {proj.description or 'none'}")
+    if proj.external_links:
         click.echo("")
-        click.echo(proj.description)
+        click.echo("links:")
+        for link in proj.external_links:
+            click.echo(f"  {link.get('label')}  {link.get('url')}")
+    if proj.content:
+        click.echo("")
+        click.echo(proj.content)
     if proj.teams:
         click.echo("")
         click.echo("teams:")
@@ -86,9 +95,12 @@ def view_project(id_or_name: str) -> None:
     if proj.issues:
         click.echo("")
         click.echo("issues:")
-        for issue in proj.issues:
-            state_name = (issue.get("state") or {}).get("name", "")
-            click.echo(f"  {issue.get('identifier')}  [{state_name}]  {issue.get('title')}")
+        for issue_node in proj.issues:
+            issue = Issue.from_graphql(issue_node)
+            click.echo(
+                f"  {issue.identifier}  [{issue.state_name}]  {issue.title}  "
+                f"{issue_times_text(issue)}"
+            )
     if proj.milestones:
         click.echo("")
         click.echo("milestones:")
@@ -101,15 +113,8 @@ def view_project(id_or_name: str) -> None:
     if proj.project_updates:
         click.echo("")
         click.echo(f"recent updates ({len(proj.project_updates)}):")
-        _preview_len = 200
-        for node in proj.project_updates:
-            update = ProjectUpdate.from_graphql(node)
-            preview = (update.body or "")[:_preview_len]
-            if len(update.body or "") > _preview_len:
-                preview += "..."
-            click.echo(f"  [{update.health}] {update.created_at} by {update.user_name}")
-            if preview:
-                click.echo(f"    {preview}")
+        for update_node in proj.project_updates:
+            echo_project_update(ProjectUpdate.from_graphql(update_node), full=full, indent="  ")
 
 
 @cli.command("create")

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import click
 
-from linear_cli._models import Comment, Issue, priority_label
+from linear_cli._models import Comment, Issue, ProjectUpdate, priority_label
+
+_UPDATE_PREVIEW_LEN = 200
 
 
 def estimate_text(estimate: float | None) -> str:
@@ -32,7 +34,30 @@ def echo_issue_summary(issue: Issue, *, indent: str = "") -> None:
     if issue.labels:
         parts.append(f"labels: {', '.join(issue.labels)}")
     parts.append(f"estimate: {estimate_text(issue.estimate)}")
+    parts.append(issue_times_text(issue))
     click.echo("  ".join(parts))
+
+
+def issue_times_text(issue: Issue) -> str:
+    """Format issue lifecycle timestamps, omitting stages the issue has not reached."""
+    times = [
+        ("created", issue.created_at),
+        ("started", issue.started_at),
+        ("completed", issue.completed_at),
+        ("updated", issue.updated_at),
+    ]
+    return "  ".join(f"{label}: {value}" for label, value in times if value)
+
+
+def echo_project_update(update: ProjectUpdate, *, full: bool, indent: str = "") -> None:
+    """Print one project update header and its body, previewed unless ``full``."""
+    suffix = f" ({update.project_name})" if update.project_name else ""
+    click.echo(f"{indent}[{update.health}] {update.created_at} by {update.user_name}{suffix}")
+    body = update.body or ""
+    if not full and len(body) > _UPDATE_PREVIEW_LEN:
+        body = body[:_UPDATE_PREVIEW_LEN] + "... [truncated; pass --full]"
+    for line in body.splitlines():
+        click.echo(f"{indent}  {line}" if line else "")
 
 
 def _echo_comment(comment: Comment, indent: str) -> None:

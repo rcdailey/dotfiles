@@ -144,12 +144,14 @@ independent verification reads separately so one timeout does not skip the remai
 
 ## Project updates
 
-`linear project-updates list` shows health, author, date, and a body preview for each update. Omit
-the project argument to list all recent updates across the workspace (output includes the project
-name per entry). `linear project-updates add` creates a new update with `--body` and optional
-`--health` (defaults to `onTrack`; also `atRisk`, `offTrack`). Both accept a project name or UUID.
+`linear project-updates list` shows health, author, date, and a body preview for each update; pass
+`--full` for complete bodies. Omit the project argument to list all recent updates across the
+workspace (output includes the project name per entry). `linear project-updates add` creates a new
+update with `--body` and optional `--health` (defaults to `onTrack`; also `atRisk`, `offTrack`).
+Both accept a project name or UUID.
 
-`projects view` includes the 3 most recent project updates inline after the milestones section.
+`projects view` shows the project UUID, URL, description, external links (PRDs, designs), content,
+and the 3 most recent project updates after the milestones section; `--full` applies there too.
 
 ## Raw API access
 
@@ -161,8 +163,9 @@ name per entry). `linear project-updates add` creates a new update with `--body`
 `linear issues search` does full-text relevance-ranked search across titles, descriptions, and
 comments via Linear's `issueSearch` API. Use it to find issues by keyword. `linear issues list`
 filters by structured fields (team, state, assignee, label) without text matching. Both accept
-`--created-after`/`--updated-after` with an ISO date or ISO 8601 duration relative to now (`-P1D`,
-`-PT12H`). Combine search with filters:
+`--created-after`, `--updated-after`, `--started-after`, and `--completed-after` with an ISO date or
+ISO 8601 duration relative to now (`-P1D`, `-PT12H`). Issue lines show created, started, completed,
+and updated timestamps, omitting stages not reached. Combine search with filters:
 
 ```bash
 linear issues search "multiple images" --team ENG --state started

@@ -111,6 +111,8 @@ class Issue:
     assignee_name: str | None
     labels: list[str] = field(default_factory=list)
     created_at: str | None = None
+    started_at: str | None = None
+    completed_at: str | None = None
     updated_at: str | None = None
     url: str | None = None
     estimate: float | None = None
@@ -144,6 +146,8 @@ class Issue:
             assignee_name=assignee.get("name"),
             labels=[ln.get("name", "") for ln in label_nodes if ln.get("name")],
             created_at=data.get("createdAt"),
+            started_at=data.get("startedAt"),
+            completed_at=data.get("completedAt"),
             updated_at=data.get("updatedAt"),
             url=data.get("url"),
             estimate=float(raw_estimate) if raw_estimate is not None else None,
@@ -243,7 +247,10 @@ class Project:
     state: str | None
     start_date: str | None
     target_date: str | None
+    url: str | None = None
     description: str | None = None
+    content: str | None = None
+    external_links: list[dict] = field(default_factory=list)
     members: list[str] = field(default_factory=list)
     teams: list[dict] = field(default_factory=list)
     issues: list[dict] = field(default_factory=list)
@@ -263,7 +270,10 @@ class Project:
             state=data.get("state"),
             start_date=data.get("startDate"),
             target_date=data.get("targetDate"),
+            url=data.get("url"),
             description=data.get("description"),
+            content=data.get("content"),
+            external_links=(data.get("externalLinks") or {}).get("nodes", []),
             members=[m.get("name", "") for m in member_nodes if m.get("name")],
             teams=team_nodes,
             issues=issue_nodes,

@@ -56,6 +56,8 @@ def _build_issue_filter(
     milestone_name: str | None,
     created_after: str | None,
     updated_after: str | None,
+    started_after: str | None,
+    completed_after: str | None,
 ) -> dict:
     """Resolve CLI filter values into one Linear IssueFilter."""
     team_id = resolve_team_id(team_key) if team_key else None
@@ -92,6 +94,10 @@ def _build_issue_filter(
         issue_filter["createdAt"] = {"gt": created_after}
     if updated_after:
         issue_filter["updatedAt"] = {"gt": updated_after}
+    if started_after:
+        issue_filter["startedAt"] = {"gt": started_after}
+    if completed_after:
+        issue_filter["completedAt"] = {"gt": completed_after}
     return issue_filter
 
 
@@ -215,6 +221,8 @@ def cli() -> None:
 )
 @click.option("--created-after", default=None, help=_TIME_HELP)
 @click.option("--updated-after", default=None, help=_TIME_HELP)
+@click.option("--started-after", default=None, help=_TIME_HELP)
+@click.option("--completed-after", default=None, help=_TIME_HELP)
 @click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
 def list_issues(
     team_key: str | None,
@@ -228,6 +236,8 @@ def list_issues(
     milestone_name: str | None,
     created_after: str | None,
     updated_after: str | None,
+    started_after: str | None,
+    completed_after: str | None,
     limit: int,
 ) -> None:
     """List issues with optional filters."""
@@ -247,6 +257,8 @@ def list_issues(
         milestone_name,
         created_after,
         updated_after,
+        started_after,
+        completed_after,
     )
     variables: dict = {
         "filter": issue_filter or None,
@@ -289,6 +301,8 @@ def list_issues(
 )
 @click.option("--created-after", default=None, help=_TIME_HELP)
 @click.option("--updated-after", default=None, help=_TIME_HELP)
+@click.option("--started-after", default=None, help=_TIME_HELP)
+@click.option("--completed-after", default=None, help=_TIME_HELP)
 @click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
 def search(
     query: str,
@@ -303,6 +317,8 @@ def search(
     milestone_name: str | None,
     created_after: str | None,
     updated_after: str | None,
+    started_after: str | None,
+    completed_after: str | None,
     limit: int,
 ) -> None:
     """Full-text search across issue titles, descriptions, and comments."""
@@ -322,6 +338,8 @@ def search(
         milestone_name,
         created_after,
         updated_after,
+        started_after,
+        completed_after,
     )
     variables: dict = {
         "term": query,
@@ -396,6 +414,8 @@ def view(issue_id: str, include_comments: bool, as_json: bool) -> None:
         click.echo(f"parent:      {issue.parent_identifier}  {issue.parent_title}")
     click.echo(f"url:         {issue.url}")
     click.echo(f"created:     {issue.created_at}")
+    click.echo(f"started:     {issue.started_at or 'not started'}")
+    click.echo(f"completed:   {issue.completed_at or 'not completed'}")
     click.echo(f"updated:     {issue.updated_at}")
     if issue.children:
         click.echo("")

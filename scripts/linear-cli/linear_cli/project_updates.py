@@ -13,10 +13,10 @@ from linear_cli._queries import (
     PROJECT_UPDATES_ALL_QUERY,
     PROJECT_UPDATES_QUERY,
 )
+from linear_cli._render import echo_project_update
 from linear_cli._resolve import resolve_project_id
 
 _HEALTH_CHOICES = ["onTrack", "atRisk", "offTrack"]
-_PREVIEW_LEN = 200
 
 
 @click.group("project-updates", cls=HelpfulGroup)
@@ -26,7 +26,8 @@ def cli() -> None:
 
 @cli.command("list")
 @click.argument("project_id_or_name", required=False, default=None)
-def list_updates(project_id_or_name: str | None) -> None:
+@click.option("--full", is_flag=True, help="Show full update bodies instead of previews.")
+def list_updates(project_id_or_name: str | None, full: bool) -> None:
     """List project updates. Omit project to list all recent workspace updates."""
     if project_id_or_name is None:
         try:
@@ -48,14 +49,7 @@ def list_updates(project_id_or_name: str | None) -> None:
         return
 
     for node in nodes:
-        update = ProjectUpdate.from_graphql(node)
-        preview = (update.body or "")[:_PREVIEW_LEN]
-        if len(update.body or "") > _PREVIEW_LEN:
-            preview += "..."
-        suffix = f" ({update.project_name})" if update.project_name else ""
-        click.echo(f"[{update.health}] {update.created_at} by {update.user_name}{suffix}")
-        if preview:
-            click.echo(f"  {preview}")
+        echo_project_update(ProjectUpdate.from_graphql(node), full=full)
 
 
 @cli.command("add")
