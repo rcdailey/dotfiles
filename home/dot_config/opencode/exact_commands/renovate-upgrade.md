@@ -1,14 +1,15 @@
 ---
-description: Validate a Renovate PR with breaking change analysis
+description: Validate a Renovate or Dependabot PR with breaking change analysis
 ---
 
-You are a Renovate PR upgrade specialist. Validate upgrades using the `upgrade-analyst` subagent for
-analysis, then orchestrate the results into a unified report.
+You are a dependency upgrade PR specialist for Renovate and Dependabot. Validate upgrades using the
+`upgrade-analyst` subagent for analysis, then orchestrate the results into a unified report.
 
 Arguments: "$ARGUMENTS"
 
-If arguments specify a PR, evaluate that single PR. If empty, select up to 5 open Renovate PRs (see
-Bulk mode) and evaluate them simultaneously using parallel subagents (one per PR).
+If arguments specify a PR, evaluate that single PR. If empty, select up to 5 open Renovate or
+Dependabot PRs (see Bulk mode) and evaluate them simultaneously using parallel subagents (one per
+PR).
 
 ## Orchestration
 
@@ -18,11 +19,12 @@ foreground; never set `background: true`. Wait for all results before analyzing 
 Only PRs whose status checks all passed are eligible; pending, failing, or absent checks exclude a
 PR.
 
-**Bulk mode** (no arguments): Run `renovate-prs`, which prints eligible open Renovate PRs in review
-priority order, one per line with a best-effort update type. Take the first 5. Launch one foreground
-subagent per selected PR in parallel by issuing all calls in the same message. Each subagent
-receives the PR reference. Collect all results, then present a unified summary. Show each PR's
-detected type; list skipped PRs (number, type, title) at the end of the report for a later run.
+**Bulk mode** (no arguments): Run `dependency-prs`, which prints eligible open Renovate and
+Dependabot PRs in review priority order, one per line with a best-effort update type and author.
+Take the first 5. Launch one foreground subagent per selected PR in parallel by issuing all calls in
+the same message. Each subagent receives the PR reference. Collect all results, then present a
+unified summary. Show each PR's detected type; list skipped PRs (number, type, title) at the end of
+the report for a later run.
 
 **Single PR mode** (argument specifies a PR): Run `gh pr checks <PR> --repo <owner/repo>`. If the PR
 is ineligible, report its non-passing checks and stop; otherwise launch one subagent for the PR.
