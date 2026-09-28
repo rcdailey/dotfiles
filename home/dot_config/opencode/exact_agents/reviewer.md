@@ -199,8 +199,11 @@ Fetch PR metadata:
 
 ```bash
 gh pr view {number} --repo {owner}/{repo} \
-  --json title,body,labels,baseRefName,baseRefOid,headRefName,headRefOid,url
+  --json title,body,labels,author,baseRefName,baseRefOid,headRefName,headRefOid,url
 ```
+
+If `author.is_bot` is true (Renovate, Dependabot, or any other bot), return `blocked` naming the bot
+author; bot-authored PRs are not reviewed.
 
 `headRefOid` is `{sha}`, `baseRefOid` is `{baseSha}`, and `baseRefName` is `{base}`. Use the
 immutable commits for analysis. `FETCH_HEAD` is not a review ref: the next fetch overwrites it and

@@ -3,9 +3,9 @@ description: Code review orchestrator; selects PRs and delegates each to the rev
 ---
 
 Orchestrate code review by parsing the argument, selecting the work list, and spawning one
-`reviewer` subagent per PR. Spot-check evidence, then present a product-facing briefing per PR derived
-from the reviewer's technical briefing; the reviewer owns investigation and reasoning. Do not
-reconstruct reviews or re-post findings.
+`reviewer` subagent per PR. Spot-check evidence, then present a product-facing briefing per PR
+derived from the reviewer's technical briefing; the reviewer owns investigation and reasoning. Do
+not reconstruct reviews or re-post findings.
 
 Default scope is critical, high, and medium (P0-P2), which covers design, performance, operational,
 and test-coverage findings. `$ARGUMENTS` may widen it with `"minor"`, `"low"`, or `"all"`, or narrow
@@ -39,6 +39,7 @@ Build the work list with one call:
 gh-review inbox {owner}/{repo}
 ```
 
+The inbox omits drafts, your own PRs, and bot-authored PRs (Renovate, Dependabot, any GitHub App).
 Each block is labelled with its trigger and the deltas since your last review:
 
 - **NEW** — never reviewed; always a candidate.
@@ -61,7 +62,8 @@ Rename the session before spawning subagents:
 - One PR: `PR #N: TICKET-ID short description`, where TICKET-ID is a Linear or GitHub issue key
   found in the PR title or branch name (omit if none). Description under 10 words, capturing the
   PR's purpose. Derive both from the PR title already fetched; for PR-number mode run `gh pr view
-  {number} --repo {owner}/{repo} --json title,headRefName` first.
+  {number} --repo {owner}/{repo} --json title,headRefName,author` first. If `author.is_bot` is true,
+  STOP: bot-authored PRs are not reviewed.
 - Fan-out: `Review: {repo} ({n} PRs)`
 
 Spawn one `reviewer` subagent per selected PR. Pass:
@@ -119,8 +121,8 @@ Limit: {what stayed unverified and whether it changes the verdict; omit when not
   findings, soften verdicts, or imply a review was submitted.
 - Optional findings are findings; an approve with optional comments still lists them. Never move a
   posted finding into `Not staged`.
-- Clean PR: no finding bullets; end the context paragraph with why it is safe and the assumption
-  the verdict rests on.
+- Clean PR: no finding bullets; end the context paragraph with why it is safe and the assumption the
+  verdict rests on.
 - Follow-up pass: the verdict sentence states what the author changed and whether it settles the
   earlier concern; list only what remains open.
 - Product vocabulary only. No file paths, line numbers, SHAs, symbol names, review or thread IDs,
@@ -137,10 +139,10 @@ a pass) and why.
 
 The session stays conversational once the reports land. Two rules govern what follows.
 
-**Re-review after new commits or replies:** resume the `reviewer` subagent for that PR by its recorded
-`sessionID` rather than spawning a fresh one; it still holds the diff, the ticket, and its findings.
-Pass only what changed (new commits, resolved threads, unanswered questions) and the priority scope.
-Spawn a new subagent only when no `sessionID` was recorded for that PR.
+**Re-review after new commits or replies:** resume the `reviewer` subagent for that PR by its
+recorded `sessionID` rather than spawning a fresh one; it still holds the diff, the ticket, and its
+findings. Pass only what changed (new commits, resolved threads, unanswered questions) and the
+priority scope. Spawn a new subagent only when no `sessionID` was recorded for that PR.
 
 **Comment mechanics stay on `gh-review`:** reading threads, replying, editing or removing your own
 comments, and inspecting an unsubmitted review all go through it; load the `gh-pr-review` skill

@@ -25,7 +25,7 @@ _INBOX_QUERY = textwrap.dedent("""\
                      orderBy:{field:UPDATED_AT, direction:DESC}) {
           nodes {
             number title isDraft updatedAt
-            author { login }
+            author { login __typename }
             commits(last:30) {
               nodes { commit { abbreviatedOid committedDate messageHeadline } }
             }
@@ -133,7 +133,7 @@ def _render(pr: dict, me: str) -> str | None:
     if pr["isDraft"]:
         return None
     author = pr["author"]["login"] if pr["author"] else "unknown"
-    if author == me:
+    if author == me or (pr["author"] and is_bot(author, pr["author"]["__typename"])):
         return None
 
     num = pr["number"]
