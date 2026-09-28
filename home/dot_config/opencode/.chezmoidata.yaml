@@ -12,24 +12,24 @@ opencodeModels:
       model: anthropic/claude-opus-5-5
       variant: medium
     title:
-      model: anthropic/claude-sonnet-5
+      model: anthropic/claude-sonnet-5-5
     compaction:
-      model: anthropic/claude-sonnet-5
+      model: anthropic/claude-sonnet-5-5
       variant: low
     explore:
-      model: anthropic/claude-sonnet-5
+      model: anthropic/claude-sonnet-5-5
       variant: low
     acceptance:
       model: anthropic/claude-opus-5-5
       variant: high
     researcher:
-      model: anthropic/claude-sonnet-5
+      model: anthropic/claude-sonnet-5-5
       variant: medium
     reviewer:
       model: anthropic/claude-opus-5-5
       variant: medium
     upgradeAnalyst:
-      model: anthropic/claude-sonnet-5
+      model: anthropic/claude-sonnet-5-5
       variant: low
 
   openai:
