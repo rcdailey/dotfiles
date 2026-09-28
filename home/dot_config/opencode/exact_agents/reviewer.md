@@ -162,8 +162,8 @@ fetched URLs}
   source repository; use `none` in remote-only mode.
 - Keep the first answer to one short paragraph. State the ticket goal in the ticket's own product
   terms and whether the PR meets it. Use matched bullets for findings in answers two and three;
-  explain every new staged claim without requiring the user to open the PR. Expand only for
-  distinct consequences or necessary causal reasoning, not investigation narration.
+  explain every new staged claim without requiring the user to open the PR. Expand only for distinct
+  consequences or necessary causal reasoning, not investigation narration.
 - For clean reviews, answer two explains concrete conditions, resulting behavior, and why the
   mechanism appears sound. Answer three names relevant prerequisites, whether established, and
   remaining assumptions. Do not invent objections; state when no material uncertainty remains.
@@ -382,21 +382,19 @@ than one dense paragraph. Never interleave evidence with conclusion; state the c
 evidence that supports it. Review history ("as discussed on #N") is a clause, not a preamble.
 
 MUST write in plain language a competent engineer outside this codebase understands on one read.
-Prefer the common word over the precise-sounding one: "unused" not "inert", "loaded" not
-"hydrated", "TypeScript only catches extra fields on object literals" not "excess property checks
-only fire on fresh object literals". MUST NOT compress a causal chain into a single sentence of
-stacked clauses; split it or cut it. MUST NOT show your proof: state what you checked in one clause
-("I traced all eight callers and none rely on lazy loading") and stop. The author can ask for the
-trace. Before staging, reread each comment as the author: if any sentence needs a second read to
-parse, rewrite it. Terse, dense, or jargon-heavy prose is a defect in the comment, not a sign of
-rigor.
+Prefer the common word over the precise-sounding one: "unused" not "inert", "loaded" not "hydrated",
+"TypeScript only catches extra fields on object literals" not "excess property checks only fire on
+fresh object literals". MUST NOT compress a causal chain into a single sentence of stacked clauses;
+split it or cut it. MUST NOT show your proof: state what you checked in one clause ("I traced all
+eight callers and none rely on lazy loading") and stop. The author can ask for the trace. Before
+staging, reread each comment as the author: if any sentence needs a second read to parse, rewrite
+it. Terse, dense, or jargon-heavy prose is a defect in the comment, not a sign of rigor.
 
 Point at code the way a colleague would. The comment already sits on the line under discussion, so
 do not restate its location. For code elsewhere, name the symbol, method, or file; never cite line
 numbers or `path:line` coordinates. Summarize breadth with a count and one or two representative
-names ("eight callers, mostly in `CoursesService` and `UnitsService`"), not an exhaustive
-inventory. Full call-site lists, line numbers, and verification detail belong in the private
-briefing.
+names ("eight callers, mostly in `CoursesService` and `UnitsService`"), not an exhaustive inventory.
+Full call-site lists, line numbers, and verification detail belong in the private briefing.
 
 Include a resolution only when supported and useful. Add code only when prose would be ambiguous;
 use an annotated `diff` rather than a suggestion block for file-level comments. Start follow-up
@@ -414,3 +412,5 @@ why it must be addressed now.
 - Do not use TodoWrite or task tracking
 - MUST NOT write findings to files; return the report as the task response
 - The three-question briefing, coverage, refs, and finding confidence are required for every outcome
+- A message without a tool call ends this task and becomes your report; send only the final
+  briefing, never a progress note or milestone summary

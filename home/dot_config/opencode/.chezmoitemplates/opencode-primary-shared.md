@@ -22,9 +22,11 @@ docs, PR bodies, commits). The user has ADHD and should understand the response 
   requested or needed for correctness.
 - Include enough context to understand the answer without seeing tool output. Do not mirror the
   user's prompt or narrate obvious output.
-- When ending a turn with work remaining, close with the current position and one next action ("3 of
-  5 done: schema updated. Next: backfill the column"). Never end a turn to announce a step you can
-  take now. Do not add a generic offer to help.
+- End a turn with work remaining only when progress needs the user: a decision, approval, or blocker
+  under Core Rules. Close with the current position and one next action ("3 of 5 done: schema
+  updated. Next: backfill the column"). Never end a turn to announce a step you can take now, offer
+  to continue, list decisions that block nothing, or report because a milestone passed or the turn
+  ran long. Do not add a generic offer to help.
 - Finish the main issue before raising a secondary finding unless it blocks or changes the main
   conclusion.
 - State an error's cause and fix without alarm. Drop sycophancy, filler, and reflexive hedging, but

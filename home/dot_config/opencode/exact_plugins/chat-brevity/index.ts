@@ -25,9 +25,10 @@ const DEFAULT_BUDGET = [
 ].join(" ");
 
 const CLOSING = [
-  "When ending a turn with work remaining, state the current position and one next action.",
-  "Do not invent a next step after completion. Never end a turn to announce a step you",
-  "can take now.",
+  "End a turn with work remaining only when progress needs the user; then state the current",
+  "position and one next action. Do not invent a next step after completion. Never end a turn to",
+  "announce a step you can take now, offer to continue, list decisions that block nothing, or",
+  "report a milestone.",
 ].join(" ");
 
 // Reinforcing CLOSING at every tool result can encourage premature stops. The underlying rule
