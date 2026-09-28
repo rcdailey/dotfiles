@@ -27,8 +27,11 @@ detected type; list skipped PRs (number, type, title) at the end of the report f
 **Single PR mode** (argument specifies a PR): Run `gh pr checks <PR> --repo <owner/repo>`. If the PR
 is ineligible, report its non-passing checks and stop; otherwise launch one subagent for the PR.
 
-Pass the canonical PR reference and any already-observed revision or check evidence. The agent owns
-its analysis procedure; do not restate it. Run from the affected repository.
+The analyst cannot fetch. Before launching, fetch every selected PR head in one call (`git fetch
+origin pull/<N>/head pull/<M>/head`) and read each PR's `headRefOid` and `baseRefOid`.
+
+Pass the canonical PR reference, head and base SHAs, and any already-observed check evidence. The
+agent owns its analysis procedure; do not restate it. Run from the affected repository.
 
 When an assessment is `blocked`, remediate the named prerequisite (for example, fetch missing
 commits) and rerun a fresh subagent for that PR. If remediation is not possible, report the PR as
@@ -37,6 +40,11 @@ blocked with its cause.
 ## Report Format
 
 Present the unified summary using this structure:
+
+### Upgrade highlights
+
+One line per assessed PR: `#N package vOLD -> vNEW: <highlights>`, using the analyst's highlights as
+terse comma-separated phrases.
 
 ### PRs safe to merge
 

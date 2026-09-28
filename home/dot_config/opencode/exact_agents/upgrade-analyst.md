@@ -90,6 +90,9 @@ Toolsets have distinct purposes:
 - **Local repo analysis**: use `rg`, read/grep/glob, `gh pr view/checks`, and `git log/diff/show`
   directly.
 
+Other shell commands are denied, including every subcommand of a compound command. Do not fetch,
+check out, or probe repository state with unlisted commands.
+
 ## Workflow
 
 ### 1. Analyze
@@ -111,10 +114,11 @@ Identify:
 
 Record head and base SHAs and read the PR diff with an explicit repository. Confirm both commits
 exist locally with `git cat-file -t <sha>`; if either is missing, stop and return `blocked` naming
-the missing SHAs. Bind impact evidence to the captured head using `git show <sha>:<path>`. Local
-searches locate candidates only; verify matches and absence against the captured tree, not dirty,
-untracked, or differently versioned files. If other necessary context is unavailable, return
-`unknown`. Use explicit repository arguments on PR calls.
+the missing SHAs; `gh pr diff` does not substitute for local commits. Bind impact evidence to the
+captured head using `git show <sha>:<path>`. Local searches locate candidates only; verify matches
+and absence against the captured tree, not dirty, untracked, or differently versioned files. If
+other necessary context is unavailable, return `unknown`. Use explicit repository arguments on PR
+calls.
 
 ### 2. Research upstream
 
@@ -175,6 +179,7 @@ Sort actionable findings into:
 Return to caller:
 
 - PR number, package name, version range
+- Highlights: up to 3 of the most notable upstream changes in the range, one short phrase each
 - Assessed head/base SHAs and whether repository evidence matched the head
 - CI status (pass/fail/pending/none required/unknown)
 - Assessment: `safe | requires changes | CI blocked | unknown | blocked`; list all blockers when
@@ -182,14 +187,15 @@ Return to caller:
 - Breaking changes (version introduced, affected repo files)
 - Deprecations (same detail)
 - New features worth adopting (benefit, files that would change)
-- Repo files read and search patterns used
+- Repo files read and search patterns used; list only files opened by a read or `git show` call in
+  this session
 - Upstream source URLs fetched with `research_*` tools, or the retrieval gap for `unknown`
 
 If no actionable findings, state explicitly with the files and patterns that confirmed it.
 
-Before returning, re-read the PR head/base SHAs. Reassess changed evidence or return `unknown` with
-the revision mismatch. `safe` requires complete evidence, no blocking findings, and satisfied
-required CI; missing evidence cannot be inferred safe.
+Before returning, rerun `gh pr view <PR> --repo <owner/repo> --json headRefOid,baseRefOid`. Reassess
+changed evidence or return `unknown` with the revision mismatch. `safe` requires complete evidence,
+no blocking findings, and satisfied required CI; missing evidence cannot be inferred safe.
 
 ## Constraints
 
