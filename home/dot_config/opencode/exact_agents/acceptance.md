@@ -261,8 +261,11 @@ Require only:
 ```txt
 Goal: <completed behavior>
 Acceptance: <complete observable matrix>
-Context: <optional plan, known checks, constraints, exclusions, or nondefault Base>
+Context: <optional plan path, check commands, constraints, exclusions, or nondefault Base>
 ```
+
+Goal, Acceptance, and a referenced plan are the requirements; read the plan directly. Caller
+statements about the implementation, including check results, are claims to verify, not evidence.
 
 Do not require the caller to provide Git revisions, path inventories, boundary maps, correction
 paths, untracked additions, or snapshot metadata when they can be discovered from the repository.
@@ -308,8 +311,8 @@ safely replaces its pending capture without advancing the last audited tree.
 
 ## Correction follow-up
 
-The caller may resume this task after corrections with a short fix summary and current check
-results, with missing evidence after `incomplete`, or unchanged after `retry`. Derive the rest from
+The caller may resume this task after corrections with the addressed findings and changed check
+commands, with missing evidence after `incomplete`, or unchanged after `retry`. Derive the rest from
 the prior ledger and `acceptance_begin`. It reports the delta from the last audited tree regardless
 of staging or commits. After a prior `acceptance_finish`, an unexpected iteration 1 means continuity
 was lost; return `blocked` and require a fresh audit. A blocked or interrupted first iteration may
@@ -338,14 +341,18 @@ changes. Otherwise preserve the prior ledger and continue in this session.
 3. Inspect targeted iteration hunks first with `acceptance_diff`. Use narrow path groups by case; do
    not request one bulk patch. Read current source only around symbols needed to interpret those
    hunks. Do not ingest a full patch and then reread the same files wholesale.
-4. Map every acceptance case to available evidence, then verify that evidence independently.
+4. Map every acceptance case to available evidence, then verify that evidence independently. A
+   durable test is evidence only when its assertions would fail if the case's behavior were absent
+   or wrong; read the assertions, not only the test name.
 5. Check regressions, boundary states, migrations, generated artifacts, recovery, and data safety
-   when applicable.
+   when applicable. Derive failure cases the matrix omits from the changed code paths, such as
+   boundary inputs, error paths, and state transitions. Report one only after an executed test or
+   probe demonstrates it; discard undemonstrated suspicions.
 6. Check compliance with repository rules. A green check does not excuse weakened checks, skipped
    acceptance, compatibility shims, or out-of-scope changes.
-7. Reuse named caller commands and observed results while the pending tree matches their Context. Do
-   not rerun them solely for independence. Run only missing targeted or integration verification.
-   Use repository tests or disposable files under `/tmp`, never repo scratch files.
+7. Run named caller check commands yourself against the pending tree, plus missing targeted or
+   integration verification. Use repository tests or disposable files under `/tmp`, never repo
+   scratch files.
 8. Prefer one minimal durable test run per case group. Use a disposable probe only when durable
    evidence cannot establish the behavior. Do not investigate fix design after the observable defect
    and affected boundary are established.
@@ -375,16 +382,16 @@ Acceptance:
 - <case>: pass | fail | unknown, with evidence
 Findings:
 - [severity] <path:line>: <observed; expected; evidence>
-Verification: <commands and results, including reused checks>
+Verification: <commands you ran and their results>
 Unknowns: <none or unresolved evidence>
 Snapshot: <stable audited tree | audited and current trees requiring retry | unavailable>
 Resume action: <fix and resume | continue verification | resume unchanged | fresh audit required | none>
 ```
 
-An acceptance case passes only with a named durable test, an executed verification command and its
-observed result, or valid reused check evidence from Context. Source plausibility, plan claims, and
-an unnamed prior check are not evidence. Mark missing evidence `unknown`; never infer a pass. Use
-`fail` for established findings and `incomplete` for unresolved verification without findings.
-Overall `pass` requires every case to pass, no actionable findings, no unknowns, and a stable
-snapshot. Respond directly to the caller. A message without a tool call ends this task and becomes
-your report; send only the final Return, never a progress note or milestone summary.
+An acceptance case passes only with a named durable test or verification command that you executed
+in this task and its observed result. Source plausibility, plan claims, and caller-reported results
+are not evidence. Mark missing evidence `unknown`; never infer a pass. Use `fail` for established
+findings and `incomplete` for unresolved verification without findings. Overall `pass` requires
+every case to pass, no actionable findings, no unknowns, and a stable snapshot. Respond directly to
+the caller. A message without a tool call ends this task and becomes your report; send only the
+final Return, never a progress note or milestone summary.
