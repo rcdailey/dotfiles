@@ -136,6 +136,8 @@ Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
 - P10k instant prompt must be early in .zshrc
 - fzf-tab must load after compinit, before widget-wrapping plugins
 - mise split: `mise env` before instant prompt, `mise activate` after
+- Tool-presence checks (`$+commands[x]`, `command -v`) for mise-managed tools must run after
+  `mise activate`; shims alone are not reliable at startup
 - 03-completion contains P10k bug workaround (DO NOT REMOVE)
 
 ## Workflow

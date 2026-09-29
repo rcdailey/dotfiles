@@ -43,16 +43,6 @@ if [ -d "$HOME/.local/kitty.app/bin" ]; then
   export PATH="$HOME/.local/kitty.app/bin:$PATH"
 fi
 
-# Cross-platform ls replacement with lsd
-unalias ls ll 2>/dev/null
-if (( $+commands[lsd] )); then
-    alias ls='lsd --color=auto --icon=auto --group-directories-first'
-    alias ll='lsd -la --color=auto --icon=auto --group-directories-first --header'
-else
-    alias ls='ls -hF'
-    alias ll='ls -lahF'
-fi
-
 # Essential tool aliases
 alias c="docker compose"
 alias lg="lazygit"
@@ -100,6 +90,16 @@ alias cmst='chezmoi git -- st'
 # mise unconditionally tries to unset functions/arrays that don't exist yet
 if command -v mise >/dev/null 2>&1; then
     eval "$(mise activate zsh)" 2>/dev/null
+fi
+
+# Cross-platform ls replacement with lsd (after mise activate: lsd is mise-managed)
+unalias ls ll 2>/dev/null
+if (( $+commands[lsd] )); then
+    alias ls='lsd --color=auto --icon=auto --group-directories-first'
+    alias ll='lsd -la --color=auto --icon=auto --group-directories-first --header'
+else
+    alias ls='ls -hF'
+    alias ll='ls -lahF'
 fi
 
 # History substring search bindings moved to 04-plugins.sh atload hook
