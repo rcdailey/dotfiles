@@ -5,7 +5,6 @@ description: >
   gathers context, stages comments, and returns a decision briefing with evidence for caller checks.
   Do not use for commit ranges or local code changes.
 mode: subagent
-hidden: true
 permissions:
   - action: "*"
     resource: "*"
