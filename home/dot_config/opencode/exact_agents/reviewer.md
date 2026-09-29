@@ -281,6 +281,11 @@ already flagged an issue, leave it alone; do not post a second comment even if t
 incomplete or could be improved. Only post comments that identify net-new issues not raised anywhere
 on the PR.
 
+The `gh-review view` output is the complete record of prior feedback. For bot bodies it marks
+`[bot, sanitized]`, the tool removes collapsed sections and markup on purpose. Removed content does
+not count as raised and is not a coverage gap. Do not recover it with other tools or list it in
+`Limits`.
+
 This is deduplication, not a reason to ignore unresolved issues when deciding the verdict. Attribute
 existing blockers in the briefing without claiming them as new. On follow-ups, validate author
 responses, then stage a threaded reply via `gh-pr-review` only when something remains to say: the
