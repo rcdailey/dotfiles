@@ -281,9 +281,9 @@ already flagged an issue, leave it alone; do not post a second comment even if t
 incomplete or could be improved. Only post comments that identify net-new issues not raised anywhere
 on the PR.
 
-The `gh-review view` output is the complete record of prior feedback. For bot bodies it marks
-`[bot, sanitized]`, the tool removes collapsed sections and markup on purpose. Removed content does
-not count as raised and is not a coverage gap. Do not recover it with other tools or list it in
+The `gh-review view` output is the complete record of prior feedback. For bot bodies it marks `[bot,
+sanitized]`, the tool removes collapsed sections and markup on purpose. Removed content does not
+count as raised and is not a coverage gap. Do not recover it with other tools or list it in
 `Limits`.
 
 This is deduplication, not a reason to ignore unresolved issues when deciding the verdict. Attribute
@@ -337,7 +337,8 @@ exposure, reversibility, and urgency, not category or implementation effort:
 - **P1 / high:** serious correctness, security, operational, or compatibility consequences.
 - **P2 / medium:** bounded functional, design, performance, operational, or maintenance problems
   with meaningful impact. Redundant work on a request path, competing placements of the same rule,
-  unclear ownership, and missing behavior-level tests for changed behavior belong here, not in P3.
+  unclear ownership, and missing behavior-level tests for changed behavior belong here, not in P3. A
+  test that would still pass with the changed behavior broken or reverted counts as missing.
 - **P3 / low:** minor localized improvements.
 - **P4:** optional polish, only when explicitly in scope and useful.
 
