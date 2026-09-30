@@ -71,6 +71,9 @@ def _report_missing_paths(valid: list[str], missing: list[str]) -> None:
 @click.option("--glob", "-g", "globs", multiple=True, help="file glob filter (repeatable)")
 @click.option("--type", "filetypes", multiple=True, help="ripgrep type filter (repeatable)")
 @click.option("--context", "-C", type=int, default=0, help="lines of context around matches")
+@click.option("--after-context", "-A", type=int, default=0, help="lines of context after matches")
+@click.option("--before-context", "-B", type=int, default=0, help="lines of context before matches")
+@click.option("--max-count", "-m", type=click.IntRange(min=1), help="max matches per file")
 @click.option("--ignore-case", "-i", is_flag=True, help="case-insensitive search")
 @click.option("--fixed-strings", "-F", is_flag=True, help="treat pattern as literal string")
 @click.option("--ref", help="branch, tag, or SHA (uses git grep)")
@@ -86,6 +89,9 @@ def rg_cmd(
     globs: tuple[str, ...],
     filetypes: tuple[str, ...],
     context: int,
+    after_context: int,
+    before_context: int,
+    max_count: int | None,
     ignore_case: bool,
     fixed_strings: bool,
     ref: str | None,
@@ -94,6 +100,13 @@ def rg_cmd(
     """Search cloned repo with ripgrep (auto-clones on first use)."""
     owner, name = parse_repo(repo)
     repo_dir = ensure_repo(owner, name)
+    # rg and git grep share these flag spellings.
+    shared_flags = [
+        *(["-C", str(context)] if context > 0 else []),
+        *(["-A", str(after_context)] if after_context > 0 else []),
+        *(["-B", str(before_context)] if before_context > 0 else []),
+        *(["--max-count", str(max_count)] if max_count else []),
+    ]
 
     if ref:
         sha = ensure_ref(owner, name, ref)
@@ -108,8 +121,7 @@ def rg_cmd(
             args.append("--fixed-strings")
         else:
             args.append("--extended-regexp")
-        if context > 0:
-            args.append(f"-C{context}")
+        args.extend(shared_flags)
         args.extend(["-e", pattern, sha])
         # Pathspecs go after -- separator; use raw extension globs for git-grep
         pathspecs = valid_paths
@@ -142,8 +154,7 @@ def rg_cmd(
             args.append(f"--type={mapped}")
         for g in globs:
             args.extend(["--glob", g])
-        if context > 0:
-            args.extend(["-C", str(context)])
+        args.extend(shared_flags)
         args.append(pattern)
         args.extend(valid_paths or (".",))
         result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir, check=False)

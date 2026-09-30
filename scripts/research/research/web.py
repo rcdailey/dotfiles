@@ -428,6 +428,10 @@ def fetch_cmd(
 
                 _do_pdf(url, find, context, max_chars, offset, critical)
                 return
+            if e.page_missing:
+                budget_refund(cache, base_url)
+                click.echo(f"error: fetch failed: {msg}; the URL does not exist", err=True)
+                sys.exit(1)
             click.echo(f"[local fetch failed: {msg}; trying Tavily]", err=True)
             try:
                 from research._tavily import fetch_markdown as fetch_with_tavily

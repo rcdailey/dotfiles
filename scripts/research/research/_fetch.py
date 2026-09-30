@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import time
 from urllib.parse import urlparse, urlunparse
@@ -95,8 +96,24 @@ def _extract(html_text: str) -> str | None:
     )
 
 
+# Client errors that block this fetcher rather than mark the page missing; another crawler may
+# still get through.
+_ACCESS_BLOCK_STATUSES = (401, 403, 429)
+
+
 class FetchError(Exception):
-    """HTTP fetch or content extraction failed."""
+    """HTTP fetch or content extraction failed; `status` is set for HTTP error responses."""
+
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
+
+    @property
+    def page_missing(self) -> bool:
+        """The server says the page does not exist; another fetcher cannot recover it."""
+        if self.status is None or self.status in _ACCESS_BLOCK_STATUSES:
+            return False
+        return 400 <= self.status < 500
 
 
 def _is_reddit(url: str) -> bool:
@@ -179,7 +196,7 @@ def _fetch_response(url: str) -> object:
                 if response.status_code >= 500 and attempt == 0:
                     time.sleep(_RETRY_DELAY)
                     continue
-                raise FetchError(f"HTTP {response.status_code}")
+                raise FetchError(f"HTTP {response.status_code}", response.status_code)
             return response
         except Timeout as e:
             if attempt == 0:
@@ -191,6 +208,14 @@ def _fetch_response(url: str) -> object:
         except RequestException as e:
             raise FetchError(f"URL unreachable: {e}") from e
     raise FetchError("timeout")  # unreachable; satisfies type checker
+
+
+def _pretty_json(text: str) -> str:
+    """Indent JSON so `find` matches individual keys by line instead of one huge line."""
+    try:
+        return json.dumps(json.loads(text), indent=2, ensure_ascii=False)
+    except json.JSONDecodeError:
+        return text
 
 
 def fetch_markdown(url: str) -> str:
@@ -210,8 +235,11 @@ def fetch_markdown(url: str) -> str:
     if any(content_type.startswith(t) for t in _FILE_CONTENT_TYPES):
         raise FetchError("URL serves a file, not an HTML page; try `research pdf URL` instead")
 
-    if content_type.lower().startswith("text/plain"):
+    media_type = content_type.split(";")[0].strip().lower()
+    if media_type == "text/plain":
         return response.text
+    if media_type == "application/json" or media_type.endswith("+json"):
+        return _pretty_json(response.text)
 
     if is_reddit:
         markdown = _extract_reddit(response.text)

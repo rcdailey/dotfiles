@@ -23,8 +23,8 @@ const SCOUT_USAGE = [
   "pr REPO [NUMBER] [-S/--search X] [-s/--state open|closed|merged|all] [-L/--limit N=30] " +
     "[--comments] [--reviews] [--max-chars N]  List or view",
   "release REPO [TAG] [-L/--limit N=30] [--since DATE] [--until DATE] [--max-chars N]",
-  "rg REPO PATTERN [--path PATH] [-g/--glob X] [--type X] [-C/--context N] [-i] [-F] " +
-    "[--ref REF] [--max-chars N]  Search file contents",
+  "rg REPO PATTERN [--path PATH] [-g/--glob X] [--type X] [-C/--context N] [-A N] [-B N] " +
+    "[-m/--max-count N] [-i] [-F] [--ref REF] [--max-chars N]  Search file contents",
   "search QUERY [-L/--limit N=30] [--sort stars|forks|updated] [--language X] [--stars N] " +
     "[--forks N] [--max-chars N]  Search GitHub repositories",
 ];
