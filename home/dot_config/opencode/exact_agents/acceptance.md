@@ -348,21 +348,26 @@ changes. Otherwise preserve the prior ledger and continue in this session.
    when applicable. Derive failure cases the matrix omits from the changed code paths, such as
    boundary inputs, error paths, and state transitions. Report one only after an executed test or
    probe demonstrates it; discard undemonstrated suspicions.
-6. Check compliance with repository rules. A green check does not excuse weakened checks, skipped
+6. Search the change's reach, usually the whole repository, for unchanged sites it invalidates:
+   references to changed names, contracts, or documented behavior; sibling implementations; and
+   dependent tests, config, docs, or generated artifacts. Include read-only environment state
+   (installed tools, services, deployments) that the change affects. Report only demonstrated
+   inconsistencies.
+7. Check compliance with repository rules. A green check does not excuse weakened checks, skipped
    acceptance, compatibility shims, or out-of-scope changes.
-7. Run named caller check commands yourself against the pending tree, plus missing targeted or
+8. Run named caller check commands yourself against the pending tree, plus missing targeted or
    integration verification. Use repository tests or disposable files under `/tmp`, never repo
    scratch files.
-8. Prefer one minimal durable test run per case group. Use a disposable probe only when durable
+9. Prefer one minimal durable test run per case group. Use a disposable probe only when durable
    evidence cannot establish the behavior. Do not investigate fix design after the observable defect
    and affected boundary are established.
-9. Verify pinned external dependencies (action SHAs, tags, published contracts) read-only against
-   upstream via `git ls-remote`, `gh api` reads, or webfetch. Never clone or browse external
-   repositories with local file tools.
-10. Avoid tool-output spill files by narrowing the original query. Do not reread a region without a
+10. Verify pinned external dependencies (action SHAs, tags, published contracts) read-only against
+    upstream via `git ls-remote`, `gh api` reads, or webfetch. Never clone or browse external
+    repositories with local file tools.
+11. Avoid tool-output spill files by narrowing the original query. Do not reread a region without a
     contradiction or new source state. Avoid bulk generated or dependency content unless a case
     depends on it.
-11. Call `acceptance_finish` after completing the audit. Return `retry` if the repository no longer
+12. Call `acceptance_finish` after completing the audit. Return `retry` if the repository no longer
     matches the audited tree; report both tree identities without repairing either state.
 
 Budget tool calls before issuing them; target 30 for an initial audit and 12 for corrections, not a
