@@ -18,6 +18,7 @@ gui:
   mouseEvents: false
   mainPanelSplitMode: vertical
   showBottomLine: false
+  commitHashLength: 7
 
 keybinding:
   universal:
