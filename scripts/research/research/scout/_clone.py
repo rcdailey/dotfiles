@@ -233,7 +233,7 @@ def ensure_ref(owner: str, repo: str, ref: str) -> str:
         except APIError:
             pass
 
-    # Fetch the ref, then resolve. Only use FETCH_HEAD if fetch succeeds.
+    # FETCH_HEAD is shared by concurrent callers, so resolve it before releasing the lock.
     with _repo_lock(owner, repo):
         result = subprocess.run(
             ["git", "fetch", "--depth=1", "origin", fetch_ref],
@@ -242,15 +242,14 @@ def ensure_ref(owner: str, repo: str, ref: str) -> str:
             text=True,
             check=False,
         )
-    if result.returncode != 0:
-        click.echo(f"error: ref not found: {ref}", err=True)
-        sys.exit(1)
-
-    # After successful fetch, try the ref again and FETCH_HEAD.
-    sha = _try_resolve(repo_dir, fetch_ref) or _try_resolve(repo_dir, ref)
-    if sha:
-        return sha
-    sha = _resolve_one(repo_dir, "FETCH_HEAD")
+        if result.returncode != 0:
+            click.echo(f"error: ref not found: {ref}", err=True)
+            sys.exit(1)
+        sha = (
+            _try_resolve(repo_dir, fetch_ref)
+            or _try_resolve(repo_dir, ref)
+            or _resolve_one(repo_dir, "FETCH_HEAD")
+        )
     if sha:
         return sha
     click.echo(f"error: could not resolve ref: {ref}", err=True)

@@ -30,7 +30,7 @@ opencodeModels:
       variant: high
     upgradeAnalyst:
       model: anthropic/claude-sonnet-5-5
-      variant: low
+      variant: high
 
   openai:
     plan:
@@ -58,4 +58,4 @@ opencodeModels:
       variant: medium
     upgradeAnalyst:
       model: openai/gpt-6-sol
-      variant: low
+      variant: high

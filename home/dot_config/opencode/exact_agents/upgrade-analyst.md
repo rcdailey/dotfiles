@@ -77,6 +77,33 @@ permissions:
     resource: "git cat-file -t *"
     effect: allow
   - action: shell
+    resource: "git cat-file -e *"
+    effect: allow
+  - action: shell
+    resource: "git status*"
+    effect: allow
+  - action: shell
+    resource: "git rev-parse *"
+    effect: allow
+  - action: shell
+    resource: "ls"
+    effect: allow
+  - action: shell
+    resource: "ls *"
+    effect: allow
+  - action: shell
+    resource: "git ls-tree *"
+    effect: allow
+  - action: shell
+    resource: "git grep *"
+    effect: allow
+  - action: shell
+    resource: "git grep *-O*"
+    effect: deny
+  - action: shell
+    resource: "git grep *--open-files-in-pager*"
+    effect: deny
+  - action: shell
     resource: "git branch --show-current"
     effect: allow
 ---
@@ -97,14 +124,17 @@ package with a target version, return `blocked`.
 
 Toolsets have distinct purposes:
 
-- **Documentation**: use `ctx7 library <name> <query>` to resolve an ID, then query it with `ctx7
-  docs <library-id> <query>`.
+- **Documentation**: use `ctx7 library <name> <query>` to resolve an ID, then query it with
+  `ctx7 docs <library-id> <query>`.
 - **Other upstream evidence**: use the `research_*` tools exclusively.
-- **Local repo analysis**: use `rg`, read/grep/glob, `gh pr view/checks`, and `git log/diff/show`
-  directly.
+- **Local repo analysis**: use `rg`, read/grep/glob, `gh pr view/checks`, and
+  `git log/diff/show/ls-tree/grep` directly. `rg` and read/grep/glob see only the working tree; use
+  them to locate candidates. Evidence comes from `git show <sha>:<path>`,
+  `git grep <pattern> <sha>`, and `git ls-tree <sha>`.
 
-Other shell commands are denied, including every subcommand of a compound command. Do not fetch,
-check out, or probe repository state with unlisted commands.
+Other shell commands are denied, including every subcommand of a compound command. Run from the
+current directory and pass literal SHAs; `cd`, `git -C`, shell variables, and `xargs` are denied. Do
+not fetch, check out, or probe repository state with unlisted commands.
 
 ## Workflow
 
@@ -140,7 +170,18 @@ from `HEAD`, use `HEAD` and report the mismatch. If the package or its current v
 at `HEAD`, return `blocked` naming it. Apply the PR-mode wrapper and upstream identity checks, and
 bind impact evidence to the recorded `HEAD`.
 
-### 2. Research upstream
+### 2. Profile repo usage
+
+Before reading upstream notes, read every file at the assessed revision that configures or consumes
+the dependency: manifests, values, env vars, config files, patches, and dependent apps. Record:
+
+- Settings and features in use
+- Workarounds, pins, TODOs, and comments explaining local choices
+- Past fixes from `git log --oneline --grep="<package>" -n 10`
+
+This profile is the baseline for every relevance judgment below.
+
+### 3. Research upstream
 
 Fetch upstream changelogs, release notes, or equivalent documentation before judging compatibility.
 If retrieval fails, return `unknown` with the missing evidence. The PR body alone is insufficient.
@@ -153,17 +194,21 @@ Research the full dependency chain and version range. Cross-reference changelogs
 release, migration guides, wrapper and underlying components, changed defaults, configuration
 schemas, and relevant commit history.
 
-### 3. Check CI (PR mode)
+### 4. Check CI (PR mode)
 
-Run `gh pr checks <PR> --repo <owner/repo> --required`. Failed or pending required checks mean `CI
-blocked`; unavailable check evidence means `unknown`, never success. Distinguish no required checks
-from a failed lookup.
+Run `gh pr checks <PR> --repo <owner/repo> --required`. Failed or pending required checks mean
+`CI blocked`; unavailable check evidence means `unknown`, never success. Distinguish no required
+checks from a failed lookup. Passing checks prove only what they validate (e.g., manifests render),
+not compatibility.
 
-### 4. Assess repo impact
+### 5. Assess repo impact
 
-Search revision-matched source using concrete patterns (package, image reference, imports, changed
-config keys). Check configuration, lock files, CI, deployment manifests, and transitive dependants.
-Local searches may locate candidates but cannot establish absence at a different PR revision.
+Apply every step regardless of semver level; minor and patch releases can break this repo.
+
+Check each profile entry against the changelog range, then search revision-matched source using
+concrete patterns (package, image reference, imports, changed config keys). Check configuration,
+lock files, CI, deployment manifests, and transitive dependants. Local searches may locate
+candidates but cannot establish absence at a different PR revision.
 
 For each changelog finding, search the repo for the specific affected symbol, key, or pattern. A
 finding is "not actionable" only when a search confirms zero matches. Read every matched file to
@@ -185,14 +230,15 @@ actually consumes the dependency:
 If upstream says a change is backward-compatible, verify the claim against the repo's specific
 usage. Do not parrot the reassurance; confirm or refute it with evidence.
 
-### 5. Categorize
+### 6. Categorize
 
 Sort actionable findings into:
 
 - **Breaking changes**: incompatibilities requiring repo changes before or with the merge
 - **Deprecations**: treat as breaking; update usage now rather than relying on deprecated behavior
-- **New features**: worth adopting (simplifies config, eliminates workarounds, improves
-  functionality or performance)
+- **New features**: worth adopting only when tied to a profile entry (replaces a workaround,
+  simplifies a configured setting, resolves a TODO or past fix). Name the entry; omit features
+  unrelated to the profile.
 
 ## Output
 
@@ -206,7 +252,11 @@ Return to caller:
   states overlap. `blocked` names the missing prerequisite so the caller can remediate and rerun.
 - Breaking changes (version introduced, affected repo files)
 - Deprecations (same detail)
-- New features worth adopting (benefit, files that would change)
+- New features worth adopting (profile entry, benefit, files that would change)
+- Merge risks: effects that need action or attention even when compatible, such as irreversible
+  migrations, data rewrites, workload restarts, or missing backups; include the recommended action
+  or `none`
+- Usage profile: settings, workarounds, and past fixes found, with files
 - Repo files read and search patterns used; list only files opened by a read or `git show` call in
   this session
 - Upstream source URLs fetched with `research_*` tools, or the retrieval gap for `unknown`
@@ -214,13 +264,16 @@ Return to caller:
 If no actionable findings, state explicitly with the files and patterns that confirmed it.
 
 Before returning, rerun `gh pr view <PR> --repo <owner/repo> --json headRefOid,baseRefOid`. Reassess
-changed evidence or return `unknown` with the revision mismatch; in ad hoc mode, rerun `git log -1
---format=%H` instead. `safe` requires complete evidence, no blocking findings, and, in PR mode,
-satisfied required CI; missing evidence cannot be inferred safe.
+changed evidence or return `unknown` with the revision mismatch; in ad hoc mode, rerun
+`git log -1 --format=%H` instead. `safe` requires complete evidence, no blocking findings, and, in
+PR mode, satisfied required CI; missing evidence cannot be inferred safe. Complete evidence means
+every workflow step ran as written, including revision-bound reads and the chart values comparison
+where it applies. Name any skipped step and return `unknown`. Resolve every item you would report as
+unchecked, unverified, or working-tree-only: verify it, or cite evidence that it cannot affect this
+repo. Any item left open makes the assessment `unknown`.
 
 ## Constraints
 
-- Check git history to avoid fix cycles: `git log --oneline --grep="<package>" -n 10`
 - NEVER use `curl`, `gh api`, or direct HTTP for upstream research. Use the `research_*` tools.
 - When a tool call is denied, stop and return `blocked` with the exact call and error; do not retry
   variants or substitute another evidence source.

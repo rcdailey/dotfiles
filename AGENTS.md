@@ -93,11 +93,13 @@ lazygit, etc.). Browse the directory to discover what's managed.
 - OpenCode plugins (`exact_plugins/`): MUST NOT add durable tests for single-file plugins; verify
   them with side-effect-free checks (e.g., rendering templates). Directory plugins may keep
   `*.test.ts` tests beside their modules. MUST NOT run OpenCode to verify any plugin.
+- OpenCode config (`opencode.jsonc.tmpl`, `.chezmoidata.yaml`, agents, commands, skills): MUST NOT
+  add durable tests; verify by rendering templates and running pre-commit.
 
 **Test execution:**
 
 - Run affected behavioral suites separately; pre-commit is for static checks, not test execution.
-- OpenCode config and launcher scripts: run `bun test tests/opencode` from the repo root.
+- OpenCode launcher and plugin integration: run `bun test tests/opencode` from the repo root.
 - OpenCode test dependencies: run `bun install --cwd tests/opencode --frozen-lockfile` first.
 - OpenCode directory plugins: run `bun test home/dot_config/opencode/exact_plugins`.
 - Commit workflow: run `python -m unittest discover -s tests/commit` (requires commitlint and yq).

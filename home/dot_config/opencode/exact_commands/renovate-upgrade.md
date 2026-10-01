@@ -29,11 +29,12 @@ the report for a later run.
 **Single PR mode** (argument specifies a PR): Run `gh pr checks <PR> --repo <owner/repo>`. If the PR
 is ineligible, report its non-passing checks and stop; otherwise launch one subagent for the PR.
 
-The analyst cannot fetch. Before launching, fetch every selected PR head in one call (`git fetch
-origin pull/<N>/head pull/<M>/head`) and read each PR's `headRefOid` and `baseRefOid`.
+The analyst cannot fetch. Before launching, fetch every selected PR head in one call
+(`git fetch origin pull/<N>/head pull/<M>/head`) and read each PR's `headRefOid` and `baseRefOid`.
 
-Pass the canonical PR reference, head and base SHAs, and any already-observed check evidence. The
-agent owns its analysis procedure; do not restate it. Run from the affected repository.
+Pass only the canonical PR reference and head and base SHAs. Omit check results, eligibility, and
+other conclusions; the analyst verifies them independently. The agent owns its analysis procedure;
+do not restate it. Run from the affected repository.
 
 When an assessment is `blocked`, remediate the named prerequisite (for example, fetch missing
 commits) and rerun a fresh subagent for that PR. If remediation is not possible, report the PR as
@@ -51,7 +52,8 @@ terse comma-separated phrases.
 ### PRs safe to merge
 
 List only assessments explicitly marked `safe`: no blocking findings, required CI satisfied, and
-evidence covers the assessed head. Include PR, package, version range, and head SHA.
+evidence covers the assessed head. Include PR, package, version range, head SHA, and every merge
+risk with its recommended action.
 
 ### PRs requiring changes before merge
 
