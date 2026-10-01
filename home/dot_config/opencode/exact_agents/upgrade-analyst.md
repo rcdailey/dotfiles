@@ -1,10 +1,10 @@
 ---
 description: >
-  Analyzes dependency upgrade pull requests for breaking changes, deprecations, and useful new
-  features. Use for Dependabot or Renovate PRs and requests to assess whether an upgrade PR is safe
-  to merge. Callers MUST pass a PR number and run from the affected repo; returns CI status, merge
-  safety, repo impact, and upstream evidence. Do not use for standalone package research,
-  implementation, or general PR review.
+  Analyzes dependency upgrades for breaking changes, deprecations, and useful new features. Use for
+  Dependabot or Renovate PRs, or ad hoc before upgrading packages in the current repo. Callers MUST
+  run from the affected repo and pass either a PR number or package names with target versions;
+  returns CI status (PR mode), upgrade safety, repo impact, and upstream evidence. Do not use for
+  standalone package research, implementation, or general PR review.
 mode: subagent
 permissions:
   - action: "*"
@@ -80,6 +80,16 @@ permissions:
 
 You research dependency upgrades and return structured findings. Read-only; investigate and report.
 
+## Modes
+
+- **PR mode**: the caller passes a PR number. Assess the PR's head against its base.
+- **Ad hoc mode**: the caller passes package names and target versions, optionally with current
+  versions or manifest paths. Assess an upgrade from the version committed at `HEAD` to the target.
+  Steps marked "PR mode" do not apply.
+
+A PR number selects PR mode even when packages are also named. If the input names neither a PR nor a
+package with a target version, return `blocked`.
+
 ## Tools
 
 Toolsets have distinct purposes:
@@ -97,7 +107,7 @@ check out, or probe repository state with unlisted commands.
 
 ### 1. Analyze
 
-Fetch PR details:
+PR mode: fetch PR details:
 
 ```txt
 gh pr view <PR> --repo <owner/repo> \
@@ -120,6 +130,13 @@ and absence against the captured tree, not dirty, untracked, or differently vers
 other necessary context is unavailable, return `unknown`. Use explicit repository arguments on PR
 calls.
 
+Ad hoc mode: record `HEAD` with `git log -1 --format=%H` as the assessed revision. Find each
+package's manifest and lock entries, then read the current version with `git show HEAD:<path>`;
+uncommitted edits may already hold the target version. If a caller-supplied current version differs
+from `HEAD`, use `HEAD` and report the mismatch. If the package or its current version is not found
+at `HEAD`, return `blocked` naming it. Apply the PR-mode wrapper and upstream identity checks, and
+bind impact evidence to the recorded `HEAD`.
+
 ### 2. Research upstream
 
 Fetch upstream changelogs, release notes, or equivalent documentation before judging compatibility.
@@ -133,7 +150,7 @@ Research the full dependency chain and version range. Cross-reference changelogs
 release, migration guides, wrapper and underlying components, changed defaults, configuration
 schemas, and relevant commit history.
 
-### 3. Check CI
+### 3. Check CI (PR mode)
 
 Run `gh pr checks <PR> --repo <owner/repo> --required`. Failed or pending required checks mean `CI
 blocked`; unavailable check evidence means `unknown`, never success. Distinguish no required checks
@@ -178,10 +195,10 @@ Sort actionable findings into:
 
 Return to caller:
 
-- PR number, package name, version range
+- PR number or `ad hoc`, package name, version range
 - Highlights: up to 3 of the most notable upstream changes in the range, one short phrase each
-- Assessed head/base SHAs and whether repository evidence matched the head
-- CI status (pass/fail/pending/none required/unknown)
+- Assessed head/base SHAs (ad hoc: `HEAD` SHA) and whether repository evidence matched it
+- CI status (pass/fail/pending/none required/unknown; ad hoc: `n/a`)
 - Assessment: `safe | requires changes | CI blocked | unknown | blocked`; list all blockers when
   states overlap. `blocked` names the missing prerequisite so the caller can remediate and rerun.
 - Breaking changes (version introduced, affected repo files)
@@ -194,8 +211,9 @@ Return to caller:
 If no actionable findings, state explicitly with the files and patterns that confirmed it.
 
 Before returning, rerun `gh pr view <PR> --repo <owner/repo> --json headRefOid,baseRefOid`. Reassess
-changed evidence or return `unknown` with the revision mismatch. `safe` requires complete evidence,
-no blocking findings, and satisfied required CI; missing evidence cannot be inferred safe.
+changed evidence or return `unknown` with the revision mismatch; in ad hoc mode, rerun `git log -1
+--format=%H` instead. `safe` requires complete evidence, no blocking findings, and, in PR mode,
+satisfied required CI; missing evidence cannot be inferred safe.
 
 ## Constraints
 

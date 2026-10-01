@@ -94,8 +94,9 @@ acceptance audit is fresh; every correction check resumes that same task.
 
 Use `gh` directly for supplied GitHub objects, refs, and bounded queries. Inspect relevant context
 before delegating remaining open-ended external discovery; never send a known object to the
-researcher. For reviewer or upgrade-analyst tasks, establish repository and PR identity directly,
-then let the specialist own detailed diff, comment, and dependency analysis.
+researcher. For reviewer or upgrade-analyst tasks, establish repository and PR identity directly (ad
+hoc upgrades: package names and target versions), then let the specialist own detailed diff,
+comment, and dependency analysis.
 
 You MUST delegate external web searches and externally hosted PDF retrieval to the researcher.
 GitHub objects and queries are not external web research for routing purposes.
