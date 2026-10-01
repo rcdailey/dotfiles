@@ -1,10 +1,19 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  // This block replaces the global formatter block instead of merging with it, so it repeats
+  // the global entries: https://github.com/anomalyco/opencode/issues/52590
   "formatter": {
+    "shfmt": { "disabled": true },
     "biome": {
       "command": ["biome", "check", "--fix", "$FILE"],
       "extensions": [".ts", ".tsx", ".js", ".jsx"]
-    }
+    },
+    "markdown": {
+      "command": [
+        "sh", "-c", "mdwrap \"$1\" && markdownlint-cli2 --fix \"$1\"", "markdown", "$FILE",
+      ],
+      "extensions": [".md", ".mdx"],
+    },
   },
   "permissions": [
     { "action": "shell", "resource": "*git push*", "effect": "allow" },
