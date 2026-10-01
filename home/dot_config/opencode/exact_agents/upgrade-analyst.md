@@ -76,6 +76,9 @@ permissions:
   - action: shell
     resource: "git cat-file -t *"
     effect: allow
+  - action: shell
+    resource: "git branch --show-current"
+    effect: allow
 ---
 
 You research dependency upgrades and return structured findings. Read-only; investigate and report.
