@@ -1,0 +1,62 @@
+# Unbreakable inline spans
+
+mdwrap deviation from Rewrap: Rewrap breaks lines inside code spans, link text, and link
+reference definitions. mdwrap keeps each of these spans on one line, in both dialects, because a
+break makes the source hard to read and copy. A span longer than the width overflows on its own
+line, like a long URL.
+
+> language: markdown
+
+Code spans (a backtick run up to the next run of the same length):
+
+    Run the `recyclarr sync radarr` command now.      Run the                       ¦
+                                  ¦               ->  `recyclarr sync radarr`       ¦
+                                  ¦                   command now.                  ¦
+
+A backtick without a match, or an escaped backtick, is plain text:
+
+    A lone ` backtick does not protect any of these words.  ->  A lone ` backtick does not    ¦
+                                  ¦                             protect any of these words.   ¦
+
+    Escaped \`not code here and also` this is prose.  ->  Escaped \`not code here and   ¦
+                                  ¦                       also` this is prose.          ¦
+
+Inline links, images, and reference links:
+
+    See the [Discord discussion](../ref/discord.md#decision-1) for details.      See the                       ¦
+                                  ¦                                          ->  [Discord discussion](../ref/discord.md#decision-1)
+                                  ¦                                              for details.                  ¦
+
+    Some text ![app logo](logo.png) here.  ->  Some text                     ¦
+                                  ¦            ![app logo](logo.png) here.   ¦
+
+    Some more [reference link][ref] words.  ->  Some more                     ¦
+                                  ¦             [reference link][ref] words.  ¦
+
+An attribute list (MkDocs, kramdown) directly after a link belongs to the link:
+
+    Read [the guide](/guide){:target="_blank"} now.      Read                          ¦
+                                  ¦                  ->  [the guide](/guide){:target="_blank"}
+                                  ¦                      now.                          ¦
+
+A link reference definition keeps its label and destination on one line:
+
+    [net8]: https://learn.microsoft.com/en-us/dotnet/core/compatibility/8.0/getfolderpath-unix      [net8]: https://learn.microsoft.com/en-us/dotnet/core/compatibility/8.0/getfolderpath-unix
+                                  ¦                                                             ->                                ¦
+    Short                         ¦                                                                 Short paragraph after.        ¦
+    paragraph after.              ¦                                                                                               ¦
+
+An angle-bracket destination may hold spaces:
+
+    [a]: <my long destination with spaces> "t"  ->  [a]: <my long destination with spaces>
+                                  ¦                     "t"                       ¦
+
+> language: mdx
+
+    Run the `recyclarr sync radarr` command now.      Run the                       ¦
+                                  ¦               ->  `recyclarr sync radarr`       ¦
+                                  ¦                   command now.                  ¦
+
+    See the [Discord discussion](../ref/discord.md#decision-1) for details.      See the                       ¦
+                                  ¦                                          ->  [Discord discussion](../ref/discord.md#decision-1)
+                                  ¦                                              for details.                  ¦

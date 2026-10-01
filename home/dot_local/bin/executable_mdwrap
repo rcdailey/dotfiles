@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+source "$HOME/.local/lib/uv-tool.sh"
+uv_tool_exec mdwrap mdwrap "$@"

@@ -1,0 +1,57 @@
+# MDX
+
+In `.mdx` files, ESM statements, JSX tag lines, and expression lines stay unchanged. Inline
+JSX tags and `{...}` expressions are never split across lines.
+
+> language: mdx
+
+ESM (`import`/`export`) blocks:
+
+    import Tabs from '@theme/Tabs';            import Tabs from '@theme/Tabs';
+    import TabItem from '@theme/TabItem';      import TabItem from '@theme/TabItem';
+    export const x = 1;           ¦        ->  export const x = 1;           ¦
+                                  ¦                                          ¦
+    Short                         ¦            Short lines join.             ¦
+    lines join.                   ¦                                          ¦
+
+A JSX tag line interrupts a paragraph:
+
+    Some intro text that wraps around.      Some intro text that wraps    ¦
+    <DocCardList />               ¦     ->  around.                       ¦
+                                  ¦         <DocCardList />               ¦
+
+An opening tag may span lines:
+
+    <Tabs                         ¦             <Tabs                         ¦
+      groupId="os"                ¦               groupId="os"                ¦
+      values={[{label: 'A', value: 'a'}]}>        values={[{label: 'A', value: 'a'}]}>
+    <TabItem value="a">           ¦             <TabItem value="a">           ¦
+                                  ¦         ->                                ¦
+    Text inside a tab item that wraps.          Text inside a tab item that   ¦
+                                  ¦             wraps.                        ¦
+    </TabItem>                    ¦                                           ¦
+    </Tabs>                       ¦             </TabItem>                    ¦
+                                  ¦             </Tabs>                       ¦
+
+Inline tags and expressions are unbreakable, even when they hold spaces:
+
+    See the <Link to="/docs/guide intro">guide page</Link> and {props.value + 1} too.      See the                       ¦
+                                  ¦                                                    ->  <Link to="/docs/guide intro">guide
+                                  ¦                                                        page</Link> and               ¦
+                                  ¦                                                        {props.value + 1} too.        ¦
+
+Heading IDs stay unchanged, and an expression line interrupts a paragraph:
+
+    ## Environment Variables {/*#env-vars*/}      ## Environment Variables {/*#env-vars*/}
+                                  ¦                                             ¦
+    Intro words here              ¦           ->  Intro words here              ¦
+    {/* comment */}               ¦               {/* comment */}               ¦
+    Text after the comment that wraps.            Text after the comment that   ¦
+                                  ¦               wraps.                        ¦
+
+> language: markdown
+
+Plain Markdown has no ESM:
+
+    import is a word              ¦  ->  import is a word in Markdown. ¦
+    in Markdown.                  ¦                                    ¦

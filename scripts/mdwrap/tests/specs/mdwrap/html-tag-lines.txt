@@ -1,0 +1,54 @@
+# HTML tag lines
+
+A line that holds only complete HTML tags never joins with prose, and it interrupts a
+paragraph. As in CommonMark, it starts an HTML block that stays unchanged up to the next
+blank line. Content set apart from the tags by blank lines wraps as normal Markdown.
+
+> language: markdown
+
+Without blank lines, the whole element stays unchanged:
+
+    <details>                     ¦                          <details>                     ¦
+    <summary>Edge schemas for unstable builds</summary>      <summary>Edge schemas for unstable builds</summary>
+    The schemas in the repository reflect changes.           The schemas in the repository reflect changes.
+    </details>                    ¦                      ->  </details>                    ¦
+                                  ¦                                                        ¦
+    A paragraph that should wrap here.                       A paragraph that should wrap  ¦
+                                  ¦                          here.                         ¦
+
+With blank lines, the content wraps:
+
+    <details>                     ¦                  <details>                     ¦
+    <summary>Click to expand</summary>               <summary>Click to expand</summary>
+                                  ¦                                                ¦
+    Text inside the details element that wraps.  ->  Text inside the details       ¦
+                                  ¦                  element that wraps.           ¦
+    </details>                    ¦                                                ¦
+                                  ¦                  </details>                    ¦
+
+A closing tag directly after a paragraph stays on its own line, for any tag name:
+
+    <foo>                         ¦             <foo>                         ¦
+                                  ¦                                           ¦
+    Some text that is long enough to wrap.  ->  Some text that is long enough ¦
+    </foo>                        ¦             to wrap.                      ¦
+                                  ¦             </foo>                        ¦
+
+    Para text one two three four five six      Para text one two three four  ¦
+    <foo bar="a b"></foo>         ¦        ->  five six                      ¦
+                                  ¦            <foo bar="a b"></foo>         ¦
+
+Text directly after an opening tag line is part of the HTML block:
+
+    <foo>                         ¦                          <foo>                         ¦
+    some really long line that is longer than the width      some really long line that is longer than the width
+    </foo>                        ¦                      ->  </foo>                        ¦
+                                  ¦                                                        ¦
+    Short                         ¦                          Short lines join.             ¦
+    lines join.                   ¦                                                        ¦
+
+A line that starts with a tag but also holds text is prose:
+
+    Leading text                  ¦      Leading text <b>bold</b> words¦
+    <b>bold</b> words continue    ¦  ->  continue here.                ¦
+    here.                         ¦                                    ¦

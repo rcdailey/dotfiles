@@ -1,0 +1,49 @@
+# Directives (admonitions)
+
+Docusaurus and remark-directive container fences (`:::name`, `:::name[label]`, and the
+closing `:::`) stay on their own lines in both dialects. Content between the fences is
+normal Markdown, so blank lines around it are optional.
+
+> language: markdown
+
+    :::warning                    ¦                                 :::warning                    ¦
+    Recyclarr fails to load configuration if a key is missing.      Recyclarr fails to load       ¦
+    :::                           ¦                             ->  configuration if a key is     ¦
+                                  ¦                                 missing.                      ¦
+                                  ¦                                 :::                           ¦
+
+A label in brackets, with blank lines around the content:
+
+    :::note[Version Requirement]  ¦                        :::note[Version Requirement]  ¦
+                                  ¦                                                      ¦
+    Environment                   ¦                        Environment variable          ¦
+    variable substitution was introduced in `v4.3.0`.  ->  substitution was introduced in¦
+                                  ¦                        `v4.3.0`.                     ¦
+    :::                           ¦                                                      ¦
+                                  ¦                        :::                           ¦
+
+Nested directives use longer fences:
+
+    ::::tip                       ¦              ::::tip                       ¦
+    Outer text that is long enough to wrap.      Outer text that is long enough¦
+    :::note                       ¦              to wrap.                      ¦
+    Inner                         ¦          ->  :::note                       ¦
+    text.                         ¦              Inner text.                   ¦
+    :::                           ¦              :::                           ¦
+    ::::                          ¦              ::::                          ¦
+
+Inside a list item:
+
+    - Item text                   ¦      - Item text                   ¦
+      :::note                     ¦        :::note                     ¦
+      Some note text              ¦  ->    Some note text here.        ¦
+      here.                       ¦        :::                         ¦
+      :::                         ¦                                    ¦
+
+> language: mdx
+
+    :::warning                    ¦                                 :::warning                    ¦
+    Recyclarr fails to load configuration if a key is missing.      Recyclarr fails to load       ¦
+    :::                           ¦                             ->  configuration if a key is     ¦
+                                  ¦                                 missing.                      ¦
+                                  ¦                                 :::                           ¦
