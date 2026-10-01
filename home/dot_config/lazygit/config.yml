@@ -61,9 +61,12 @@ customCommands:
   context: files
   prompts:
   - type: input
-    title: "Commit instructions (optional - leave empty for staged changes only):"
+    title: "Commit instructions (empty: commit staged changes only):"
     key: CommitArgs
-  command: 'opencode run --agent commit {{if .Form.CommitArgs}}{{.Form.CommitArgs | quote}}{{else}}"Files: staged only\nContext: commit staged changes"{{end}}'
+  command: >-
+    opencode run --title "lazygit commit"
+    {{printf "Commit authorized. %s"
+    (or .Form.CommitArgs "Commit only the staged changes.") | quote}}
   loadingText: OpenCode is committing...
   output: terminal
 - key: f
