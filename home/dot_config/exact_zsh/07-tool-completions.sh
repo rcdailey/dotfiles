@@ -8,11 +8,6 @@ zinit ice as"completion" id-as"mise" \
   atpull"%atclone"
 zinit load zdharma-continuum/null
 
-zinit ice as"completion" id-as"just" \
-  atclone"just --completions zsh > _just && zinit creinstall just" \
-  atpull"%atclone"
-zinit load zdharma-continuum/null
-
 # Task completions, deferred until after the first prompt
 zinit ice wait lucid nocompile atload'eval "$(task --completion zsh 2>/dev/null)"'
 zinit load zdharma-continuum/null
