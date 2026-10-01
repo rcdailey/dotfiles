@@ -56,9 +56,12 @@
   },
   "formatter": {
     "shfmt": { "disabled": true },
-    "markdownlint-cli2": {
-      "command": ["markdownlint-cli2", "--fix", "$FILE"],
-      "extensions": [".md"],
+    "markdown": {
+      // OpenCode runs only the first successful formatter per file, so chain both
+      "command": [
+        "sh", "-c", "mdwrap \"$1\" && markdownlint-cli2 --fix \"$1\"", "markdown", "$FILE",
+      ],
+      "extensions": [".md", ".mdx"],
     },
   },
   "plugins": [
