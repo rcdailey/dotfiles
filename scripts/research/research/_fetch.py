@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import re
 import time
-from urllib.parse import urlparse, urlunparse
 
 import click
 import trafilatura
@@ -31,7 +30,10 @@ _FILE_CONTENT_TYPES = (
     "video/",
 )
 
-_REDDIT_HOSTS = ("www.reddit.com", "reddit.com", "old.reddit.com")
+# Server responses ask clients to wait before retrying; honor short waits only so a fetch stays
+# within the caller's 120s command timeout. Some servers (e.g. Reddit's thread feeds) report the
+# remaining seconds in x-ratelimit-reset rather than Retry-After.
+_MAX_RATE_LIMIT_WAIT = 60.0
 
 # Title markers that indicate a bot-challenge interstitial; checked on any page.
 _CHALLENGE_TITLE_MARKERS = (
@@ -116,18 +118,6 @@ class FetchError(Exception):
         return 400 <= self.status < 500
 
 
-def _is_reddit(url: str) -> bool:
-    return urlparse(url).hostname in _REDDIT_HOSTS
-
-
-def _to_old_reddit(url: str) -> str:
-    """Rewrite reddit.com URLs to old.reddit.com for server-rendered HTML."""
-    parsed = urlparse(url)
-    if parsed.hostname in ("www.reddit.com", "reddit.com"):
-        return urlunparse(parsed._replace(netloc="old.reddit.com"))
-    return url
-
-
 def _is_challenge_page(text: str) -> bool:
     """Return True if the response body looks like a bot-challenge page."""
     match = _TITLE_RE.search(text)
@@ -141,48 +131,25 @@ def _is_challenge_page(text: str) -> bool:
     return any(marker in lower for marker in _CHALLENGE_BODY_MARKERS)
 
 
-def _extract_reddit(html_text: str) -> str:
-    """Extract post and comments from old.reddit.com HTML as markdown."""
-    try:
-        tree = lxml_html.fromstring(html_text)
-    except Exception:  # noqa: BLE001
-        return ""
-    parts: list[str] = []
-
-    # Post title
-    titles = tree.xpath('//a[contains(@class, "title")]/text()')
-    if titles:
-        parts.append(f"# {titles[0].strip()}")
-
-    # Post body (selftext)
-    bodies = tree.xpath('//div[contains(@class, "expando")]//div[contains(@class, "md")]')
-    if bodies:
-        text = bodies[0].text_content().strip()
-        if text:
-            parts.append(text)
-
-    # Comments
-    entries = tree.xpath('//div[contains(@class, "comment")]//div[contains(@class, "entry")]')
-    if entries:
-        parts.append("---\n\n## Comments")
-        for entry in entries:
-            authors = entry.xpath('.//a[contains(@class, "author")]/text()')
-            comment_bodies = entry.xpath(
-                './/div[contains(@class, "usertext-body")]//div[contains(@class, "md")]'
-            )
-            if authors and comment_bodies:
-                author = authors[0].strip()
-                body = comment_bodies[0].text_content().strip()
-                parts.append(f"**{author}:**\n\n{body}")
-
-    return "\n\n".join(parts)
+def _rate_limit_wait(response: object) -> float | None:
+    """Seconds a 429 response asks the client to wait, when short enough to honor."""
+    if response.status_code != 429:
+        return None
+    for header in ("retry-after", "x-ratelimit-reset"):
+        try:
+            wait = float(response.headers.get(header, ""))
+        except ValueError:
+            continue
+        return wait + 1 if wait <= _MAX_RATE_LIMIT_WAIT else None
+    return None
 
 
-def _fetch_response(url: str) -> object:
+def fetch_response(url: str) -> object:
     """Fetch URL and return response; raises FetchError on failure.
 
-    Retries once after a short delay on timeout or HTTP 5xx. Non-retryable
-    errors (4xx, connection refused) fail immediately.
+    Retries once after a short delay on timeout or HTTP 5xx, and after the
+    server's requested wait on HTTP 429 when that wait is short. Other errors
+    (4xx, connection refused) fail immediately.
     """
     for attempt in range(2):
         try:
@@ -195,6 +162,11 @@ def _fetch_response(url: str) -> object:
             if response.status_code >= 400:
                 if response.status_code >= 500 and attempt == 0:
                     time.sleep(_RETRY_DELAY)
+                    continue
+                wait = _rate_limit_wait(response)
+                if wait is not None and attempt == 0:
+                    click.echo(f"[rate limited; retrying in {wait:.0f}s]", err=True)
+                    time.sleep(wait)
                     continue
                 raise FetchError(f"HTTP {response.status_code}", response.status_code)
             return response
@@ -225,11 +197,13 @@ def fetch_markdown(url: str) -> str:
     content extraction fails. Automatically retries with a headless browser
     when the initial response looks like a bot-challenge page.
     """
-    is_reddit = _is_reddit(url)
-    if is_reddit:
-        url = _to_old_reddit(url)
+    # Imported here because the site handlers build on this module's fetch primitives.
+    from research._reddit import fetch_thread, reddit_thread
 
-    response = _fetch_response(url)
+    if thread := reddit_thread(url):
+        return fetch_thread(*thread)
+
+    response = fetch_response(url)
 
     content_type = response.headers.get("content-type", "")
     if any(content_type.startswith(t) for t in _FILE_CONTENT_TYPES):
@@ -240,12 +214,6 @@ def fetch_markdown(url: str) -> str:
         return response.text
     if media_type == "application/json" or media_type.endswith("+json"):
         return _pretty_json(response.text)
-
-    if is_reddit:
-        markdown = _extract_reddit(response.text)
-        if not markdown:
-            raise FetchError("no content extracted")
-        return markdown
 
     if _is_challenge_page(response.text):
         click.echo("[browser fallback: challenge page detected]", err=True)
