@@ -41,8 +41,10 @@ Before editing, trace the affected flow and inspect relevant callers.
   resolve a library ID, then `ctx7 docs <library-id> <query>` for the relevant API. Use official
   sources when Context7 lacks coverage.
 - Keep PR descriptions high-level, focused on the change. Skip test plans and template boilerplate.
-- Prefer structured output (JSON + jq) over table/text for CLI tools that support it (aws, gh,
-  kubectl, docker). Structured output is parseable, filterable, and scriptable.
+- Prefer structured output (JSON + jq/yq) for CLIs that support it (aws, gh, kubectl, docker), but
+  print only projected fields: filter at the source, project with jq/yq (`@tsv` for rows), cap
+  output near 50 lines and 200 columns, and search unstructured text with `rg`. Widen only when
+  the narrowed result is insufficient.
 
 ## Code Documentation
 
