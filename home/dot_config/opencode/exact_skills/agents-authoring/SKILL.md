@@ -1,8 +1,10 @@
 ---
 name: agents-authoring
 description: >-
-  Use when creating, editing, refactoring, or reviewing AGENTS.md or global directives, including
-  chezmoi source forms. Do not use for skills, agent definitions, or commands.
+  Use when proposing, drafting, creating, editing, refactoring, or reviewing AGENTS.md or global
+  directives: shared `.chezmoitemplates/opencode-*.md` partials and the instruction prose of primary
+  agents (`build`, `plan`), including chezmoi source forms. Do not use for skills, subagent
+  definitions, or commands.
 ---
 
 # AGENTS.md Authoring

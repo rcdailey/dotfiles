@@ -1,8 +1,8 @@
 ---
 name: command-authoring
 description: >-
-  Use when creating, editing, refactoring, or reviewing OpenCode slash commands or files in a
-  commands directory, including chezmoi source forms. Do not use for AGENTS.md, skills, or agent
+  Use when proposing, drafting, creating, editing, refactoring, or reviewing OpenCode slash commands
+  or files in a commands directory, including chezmoi source forms. Do not use for AGENTS.md, skills, or agent
   definitions.
 ---
 

@@ -1,9 +1,10 @@
 ---
 name: subagent-authoring
 description: >-
-  Use when creating, editing, refactoring, or reviewing an OpenCode agent definition or
-  `opencode.json` agent entry, including chezmoi source forms. Do not use for AGENTS.md, skills, or
-  commands.
+  Use when proposing, drafting, creating, editing, refactoring, or reviewing an OpenCode agent
+  definition or `opencode.json` agent entry, including chezmoi source forms and edits made while
+  fixing agent permissions or behavior. Do not use for AGENTS.md, skills, commands, or primary-agent
+  instruction prose (use agents-authoring).
 ---
 
 # Subagent Authoring
@@ -15,9 +16,9 @@ Apply the active Authoring policy; this skill governs role boundaries and caller
 
 ## Definition and source
 
-Define agents in `.opencode/agents/<name>.md`, `~/.config/opencode/agents/<name>.md`, or the `agents`
-section of `opencode.json`. In a generated configuration repository, edit the source template and
-validate the rendered target; do not maintain both independently.
+Define agents in `.opencode/agents/<name>.md`, `~/.config/opencode/agents/<name>.md`, or the
+`agents` section of `opencode.json`. In a generated configuration repository, edit the source
+template and validate the rendered target; do not maintain both independently.
 
 Required routing field: `description`. Common optional fields are `mode`, `model`, `disabled`,
 `color`, `hidden`, `permissions`, and `request.body`. Join a model and variant as
@@ -33,7 +34,8 @@ Use ordered `permissions`; last matching permission wins, so put wildcards first
 - Start specialist tool access from deny-by-default permissions. Existing shell policies are
   deliberate; do not tighten them without explicit approval. Broad shell access is not a read-only
   security boundary.
-- Define permitted effects, including scratch writes and test artifacts, separately from source edits.
+- Define permitted effects, including scratch writes and test artifacts, separately from source
+  edits.
 - Allow only the skills and subagents required by the workflow.
 - Use permissions instead of repeating an enforceable prohibition in prose.
 - Check shell redirection and indirect mutation paths when granting shell access.

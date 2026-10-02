@@ -1,8 +1,8 @@
 ---
 name: skill-authoring
 description: >-
-  Use when creating, editing, refactoring, or reviewing SKILL.md or a skill directory, including
-  chezmoi source forms. Do not use for AGENTS.md, agent definitions, or commands.
+  Use when proposing, drafting, creating, editing, refactoring, or reviewing SKILL.md or a skill
+  directory, including chezmoi source forms. Do not use for AGENTS.md, agent definitions, or commands.
 ---
 
 # Skill Authoring

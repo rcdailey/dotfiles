@@ -68,7 +68,8 @@ EOF
 
 ## Authoring
 
-Applies when producing AGENTS.md, SKILL.md, agent definitions, or command files.
+Applies when producing AGENTS.md, SKILL.md, agent definitions, or command files. Before proposing or
+editing them, load the matching authoring skill, including when the edit arises mid-task.
 
 - MUST use minimum tokens. Every word earns its place; bullet lists over paragraphs.
 - MUST NOT introduce redundancies with existing content at any scope.
