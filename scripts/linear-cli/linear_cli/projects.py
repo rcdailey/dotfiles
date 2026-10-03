@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import shlex
+
 import click
 
 from linear_cli._click import HelpfulGroup
@@ -10,12 +12,74 @@ from linear_cli._graphql import execute, paginate
 from linear_cli._models import Issue, Project, ProjectUpdate
 from linear_cli._queries import (
     PROJECT_CREATE_MUTATION,
-    PROJECT_QUERY,
+    PROJECT_FIELDS,
+    PROJECT_ISSUES_QUERY,
     PROJECT_UPDATE_MUTATION,
     PROJECTS_QUERY,
 )
-from linear_cli._render import echo_project_update, issue_times_text, percentage_text
-from linear_cli._resolve import resolve_project_id, resolve_team_id
+from linear_cli._render import (
+    echo_project_update,
+    is_open,
+    issue_times_text,
+    percentage_text,
+    sort_issues,
+)
+from linear_cli._resolve import Batch, resolve_project_id, team_filter
+
+_PROJECT_PAGE = "pageInfo { hasNextPage endCursor } nodes { id name state startDate targetDate }"
+_ISSUE_PAGE = 250
+# Open issues shown per milestone; the rest sit behind a printed drill-down command so the
+# overview stays small without hiding that anything was cut.
+_GROUP_LIMIT = 20
+
+
+def _echo_issue_group(header: str, issues: list[Issue], drill_down: str, *, gap: bool) -> None:
+    """Print one milestone heading with its open/total count and top open issues."""
+    open_issues = sort_issues([issue for issue in issues if is_open(issue)])
+    if gap:
+        click.echo("")
+    click.echo(f"  {header}  open: {len(open_issues)}/{len(issues)}")
+    for issue in open_issues[:_GROUP_LIMIT]:
+        click.echo(
+            f"    {issue.identifier}  [{issue.state_name}]  {issue.title}  "
+            f"{issue_times_text(issue)}"
+        )
+    hidden = len(open_issues) - _GROUP_LIMIT
+    if hidden > 0:
+        click.echo(f"    +{hidden} more: {drill_down}")
+
+
+def _echo_milestone_groups(proj: Project, issue_nodes: list[dict]) -> None:
+    """Print each milestone with its issues, then issues outside any milestone."""
+    by_milestone: dict[str | None, list[Issue]] = {}
+    for node in issue_nodes:
+        milestone_id = (node.get("projectMilestone") or {}).get("id")
+        by_milestone.setdefault(milestone_id, []).append(Issue.from_graphql(node))
+    if not proj.milestones and not by_milestone:
+        return
+
+    project_arg = shlex.quote(proj.name or proj.id or "")
+    click.echo("")
+    click.echo("milestones:")
+    for index, ms in enumerate(proj.milestones):
+        status = ms.get("status") or "unknown"
+        date = ms.get("targetDate") or "no date"
+        pct = percentage_text(ms.get("progress"))
+        name = ms.get("name") or ""
+        _echo_issue_group(
+            f"{name}  [{status}]  target: {date}  progress: {pct}",
+            by_milestone.pop(ms.get("id"), []),
+            f"linear milestones view {shlex.quote(name)} --project {project_arg} --all",
+            gap=index > 0,
+        )
+    unassigned = [issue for issues in by_milestone.values() for issue in issues]
+    if unassigned:
+        _echo_issue_group(
+            "no milestone",
+            unassigned,
+            f"linear issues list --project {project_arg} --milestone none --limit {len(unassigned)}",
+            gap=bool(proj.milestones),
+        )
 
 
 @click.group(cls=HelpfulGroup)
@@ -27,17 +91,22 @@ def cli() -> None:
 @click.option("--team", "team_key", default=None, help="Filter by team key (e.g. ENG).")
 def list_projects(team_key: str | None) -> None:
     """List projects."""
-    filt: dict | None = None
+    variables: dict = {"filter": None, "first": 50}
+    first_page = None
     if team_key:
-        team_id = resolve_team_id(team_key)
-        filt = {"accessibleTeams": {"id": {"eq": team_id}}}
+        variables["filter"] = {"accessibleTeams": {"some": team_filter(team_key)}}
+        batch = Batch()
+        get_team = batch.team_id(team_key)
+        alias = batch.add(
+            f"projects(filter: $filter, first: $first) {{ {_PROJECT_PAGE} }}",
+            {"filter": ("ProjectFilter", variables["filter"]), "first": ("Int", 50)},
+        )
+        batch.run()
+        get_team()
+        first_page = batch.data.get(alias) or {}
 
     try:
-        nodes = paginate(
-            PROJECTS_QUERY,
-            {"filter": filt, "first": 50, "after": None},
-            ["projects"],
-        )
+        nodes = paginate(PROJECTS_QUERY, variables, ["projects"], first_page=first_page)
     except LinearError as exc:
         die(str(exc))
 
@@ -57,17 +126,10 @@ def list_projects(team_key: str | None) -> None:
 @click.option("--full", is_flag=True, help="Show full project update bodies instead of previews.")
 def view_project(id_or_name: str, full: bool) -> None:
     """View project detail by ID or name."""
-    try:
-        project_id = resolve_project_id(id_or_name)
-        data = execute(PROJECT_QUERY, {"id": project_id})
-    except LinearError as exc:
-        die(str(exc))
-    node = data.get("project")
-
-    if not node:
-        die(f"project '{id_or_name}' not found")
-
-    proj = Project.from_graphql(node)
+    batch = Batch()
+    get_project = batch.project_node(id_or_name, PROJECT_FIELDS)
+    batch.run()
+    proj = Project.from_graphql(get_project())
     click.echo(f"name:        {proj.name}")
     click.echo(f"id:          {proj.id}")
     click.echo(f"url:         {proj.url}")
@@ -92,24 +154,16 @@ def view_project(id_or_name: str, full: bool) -> None:
             states = (team.get("states") or {}).get("nodes", [])
             for s in sorted(states, key=lambda s: (s.get("type", ""), s.get("position", 0))):
                 click.echo(f"    {s.get('type', ''):12}  {s.get('name', '')}")
-    if proj.issues:
-        click.echo("")
-        click.echo("issues:")
-        for issue_node in proj.issues:
-            issue = Issue.from_graphql(issue_node)
-            click.echo(
-                f"  {issue.identifier}  [{issue.state_name}]  {issue.title}  "
-                f"{issue_times_text(issue)}"
-            )
-    if proj.milestones:
-        click.echo("")
-        click.echo("milestones:")
-        for ms in proj.milestones:
-            status = ms.get("status") or "unknown"
-            date = ms.get("targetDate") or "no date"
-            raw_progress = ms.get("progress")
-            pct = percentage_text(raw_progress)
-            click.echo(f"  {ms.get('name')}  [{status}]  target: {date}  progress: {pct}")
+    try:
+        issue_nodes = paginate(
+            PROJECT_ISSUES_QUERY,
+            {"id": proj.id, "first": _ISSUE_PAGE},
+            ["project", "issues"],
+            first_page=proj.issues_page,
+        )
+    except LinearError as exc:
+        die(str(exc))
+    _echo_milestone_groups(proj, issue_nodes)
     if proj.project_updates:
         click.echo("")
         click.echo(f"recent updates ({len(proj.project_updates)}):")
@@ -133,10 +187,10 @@ def create_project(
     target_date: str | None,
 ) -> None:
     """Create a project."""
-    input_data: dict = {
-        "name": name,
-        "teamIds": [resolve_team_id(key) for key in team_keys],
-    }
+    batch = Batch()
+    team_getters = [batch.team_id(key) for key in team_keys]
+    batch.run()
+    input_data: dict = {"name": name, "teamIds": [get() for get in team_getters]}
     if description:
         input_data["description"] = description
     if start_date:

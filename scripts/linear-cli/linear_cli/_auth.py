@@ -2,23 +2,17 @@
 
 from __future__ import annotations
 
-import base64
-import hashlib
-import http.server
 import json
 import os
-import secrets
-import threading
 import time
 import urllib.parse
-import webbrowser
 from pathlib import Path
 from typing import Any
 
 import click
-import httpx
 
-from linear_cli._errors import die
+from linear_cli import _http
+from linear_cli._errors import LinearError, die
 
 _LINEAR_TOKEN_URL = "https://api.linear.app/oauth/token"
 _LINEAR_AUTH_URL = "https://linear.app/oauth/authorize"
@@ -33,15 +27,25 @@ def _get_tokens_path() -> Path:
     return Path(state_home) / "linear-cli" / "tokens.json"
 
 
-def _generate_verifier() -> str:
-    """Generate a PKCE code verifier (RFC 7636): 43-128 URL-safe random chars."""
-    return secrets.token_urlsafe(64)
-
-
-def _generate_challenge(verifier: str) -> str:
-    """Return S256 PKCE code challenge from verifier."""
-    digest = hashlib.sha256(verifier.encode()).digest()
-    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
+def _post_token(form: dict[str, str]) -> dict:
+    """Exchange a grant at the OAuth token endpoint; raises LinearError on failure."""
+    try:
+        response = _http.post(
+            _LINEAR_TOKEN_URL,
+            urllib.parse.urlencode(form).encode(),
+            {"Content-Type": "application/x-www-form-urlencoded"},
+        )
+    except _http.TRANSPORT_ERRORS as exc:
+        raise LinearError(f"OAuth token request failed: {exc}") from exc
+    if response.status >= 400:
+        raise LinearError(f"OAuth token endpoint returned HTTP {response.status}")
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise LinearError("OAuth token endpoint returned invalid JSON") from exc
+    if not isinstance(data, dict) or "access_token" not in data:
+        raise LinearError("OAuth token endpoint returned no access token")
+    return data
 
 
 def load_tokens() -> dict | None:
@@ -76,16 +80,13 @@ def clear_tokens() -> None:
 def refresh_access_token(tokens: dict) -> dict:
     """Exchange refresh token for new tokens. Saves and returns updated tokens."""
     client_id = tokens.get("client_id", "")
-    response = httpx.post(
-        _LINEAR_TOKEN_URL,
-        data={
+    new_data = _post_token(
+        {
             "grant_type": "refresh_token",
             "refresh_token": tokens["refresh_token"],
             "client_id": client_id,
-        },
+        }
     )
-    response.raise_for_status()
-    new_data = response.json()
     updated: dict = {
         "access_token": new_data["access_token"],
         "refresh_token": new_data.get("refresh_token", tokens["refresh_token"]),
@@ -97,12 +98,12 @@ def refresh_access_token(tokens: dict) -> dict:
     return updated
 
 
-def get_access_token() -> str | None:
-    """Return a valid OAuth access token, refreshing if within 5-min expiry buffer.
+def get_access_token(tokens: dict | None) -> str | None:
+    """Return a valid OAuth access token from loaded tokens, refreshing near expiry.
 
-    Returns None if no tokens are stored, tokens are API key type, or refresh fails.
+    Refreshes within a 5-minute buffer before expiry. Returns None if no tokens are stored,
+    tokens are API key type, or refresh fails.
     """
-    tokens = load_tokens()
     if not tokens:
         return None
     if tokens.get("auth_type") == "api_key":
@@ -111,7 +112,7 @@ def get_access_token() -> str | None:
     if time.time() >= expires_at - 300:
         try:
             tokens = refresh_access_token(tokens)
-        except (httpx.HTTPError, KeyError, OSError, ValueError):
+        except (LinearError, KeyError, OSError):
             return None
     return tokens.get("access_token")
 
@@ -134,8 +135,18 @@ def run_oauth_flow(client_id: str, port: int) -> dict:
 
     Returns stored tokens dict.
     """
-    verifier = _generate_verifier()
-    challenge = _generate_challenge(verifier)
+    # Login-only modules stay out of the import path every other command pays for.
+    import base64
+    import hashlib
+    import http.server
+    import secrets
+    import threading
+    import webbrowser
+
+    # PKCE (RFC 7636): random verifier, S256 challenge.
+    verifier = secrets.token_urlsafe(64)
+    digest = hashlib.sha256(verifier.encode()).digest()
+    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
     state = secrets.token_urlsafe(16)
     redirect_uri = f"http://localhost:{port}/callback"
 
@@ -201,18 +212,18 @@ def run_oauth_flow(client_id: str, port: int) -> dict:
     if not code:
         die("no authorization code received")
 
-    response = httpx.post(
-        _LINEAR_TOKEN_URL,
-        data={
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": redirect_uri,
-            "client_id": client_id,
-            "code_verifier": verifier,
-        },
-    )
-    response.raise_for_status()
-    token_data = response.json()
+    try:
+        token_data = _post_token(
+            {
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": redirect_uri,
+                "client_id": client_id,
+                "code_verifier": verifier,
+            }
+        )
+    except LinearError as exc:
+        die(str(exc))
 
     tokens: dict = {
         "access_token": token_data["access_token"],

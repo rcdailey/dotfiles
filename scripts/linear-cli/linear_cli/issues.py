@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import json
+import uuid
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 import click
 
@@ -12,7 +16,7 @@ from linear_cli._graphql import execute, paginate
 from linear_cli._models import Comment, Issue, priority_label
 from linear_cli._queries import (
     COMMENTS_QUERY,
-    ISSUE_CREATE_MUTATION,
+    ISSUE_CONNECTION,
     ISSUE_HISTORY_QUERY,
     ISSUE_QUERY,
     ISSUE_SEARCH_QUERY,
@@ -20,18 +24,12 @@ from linear_cli._queries import (
     ISSUES_QUERY,
 )
 from linear_cli._render import echo_comments, echo_issue_summary, estimate_text
-from linear_cli._resolve import (
-    resolve_assignee_id,
-    resolve_cycle_number,
-    resolve_issue_id,
-    resolve_label_id,
-    resolve_milestone_id,
-    resolve_milestone_scope,
-    resolve_project_id,
-    resolve_state_id,
-    resolve_team_id,
-)
-from linear_cli.relations import RELATION_TYPES, create_relation
+from linear_cli._resolve import Batch, project_filter, team_filter, user_filter
+from linear_cli.relations import RELATION_TYPES, relation_input
+
+_STATE_TYPES = ["triage", "backlog", "unstarted", "started", "completed", "canceled"]
+_TIME_HELP = "ISO date/datetime or duration (e.g. 2026-09-20, -P1D = 1 day ago)."
+_MAX_PAGE = 250
 
 
 def _print_scope(project_name: str | None, milestone_name: str | None) -> None:
@@ -44,83 +42,122 @@ def _print_scope(project_name: str | None, milestone_name: str | None) -> None:
     click.echo(scope)
 
 
-def _build_issue_filter(
-    team_key: str | None,
-    state_type: str | None,
-    assignee: str | None,
-    creator: str | None,
-    label: str | None,
-    cycle: str | None,
-    estimate_filter: str | None,
-    project_name: str | None,
-    milestone_name: str | None,
-    created_after: str | None,
-    updated_after: str | None,
-    started_after: str | None,
-    completed_after: str | None,
-) -> dict:
-    """Resolve CLI filter values into one Linear IssueFilter."""
-    team_id = resolve_team_id(team_key) if team_key else None
-    assignee_id = resolve_assignee_id(assignee) if assignee else None
-    creator_id = resolve_assignee_id(creator) if creator else None
+@dataclass(frozen=True)
+class _IssueQuery:
+    """CLI filter options shared by `issues list` and `issues search`."""
+
+    team_key: str | None
+    state_type: str | None
+    assignee: str | None
+    creator: str | None
+    label: str | None
+    cycle: str | None
+    estimate_filter: str | None
+    project_name: str | None
+    milestone_name: str | None
+    created_after: str | None
+    updated_after: str | None
+    started_after: str | None
+    completed_after: str | None
+    limit: int
+
+
+def _issue_filter(opts: _IssueQuery, batch: Batch) -> tuple[dict, list[Callable[[], Any]]]:
+    """Translate CLI filters into one server-side IssueFilter.
+
+    Names stay in the filter for Linear to match, so no lookup request precedes the issue query.
+    Existence checks ride in ``batch`` alongside it; the returned getters die with the same
+    not-found errors a separate lookup would raise.
+    """
+    if opts.cycle and not (opts.cycle.isdigit() or opts.cycle in ("active", "previous")):
+        die(f"unknown cycle value '{opts.cycle}'; expected 'active', 'previous', or an integer")
+    checks: list[Callable[[], Any]] = []
     issue_filter: dict = {}
-    if team_id:
-        issue_filter["team"] = {"id": {"eq": team_id}}
-    if state_type:
-        issue_filter["state"] = {"type": {"eq": state_type}}
-    if assignee_id:
-        issue_filter["assignee"] = {"id": {"eq": assignee_id}}
-    if creator_id:
-        issue_filter["creator"] = {"id": {"eq": creator_id}}
-    if label:
-        issue_filter["labels"] = {"name": {"eq": label}}
-    if cycle:
-        cycle_number = resolve_cycle_number(cycle, team_id)
-        issue_filter["cycle"] = {"number": {"eq": cycle_number}}
-    if estimate_filter is not None:
-        if estimate_filter.lower() == "none":
+    if opts.team_key:
+        issue_filter["team"] = team_filter(opts.team_key)
+        needs_active = opts.cycle in ("active", "previous")
+        team = batch.team_node(opts.team_key, "id activeCycle { number }" if needs_active else "id")
+        checks.append(team)
+        if needs_active:
+            checks.append(
+                lambda: team().get("activeCycle") or die("no active cycle found for team")
+            )
+    if opts.state_type:
+        issue_filter["state"] = {"type": {"eq": opts.state_type}}
+    if opts.assignee:
+        issue_filter["assignee"] = user_filter(opts.assignee)
+    if opts.creator:
+        issue_filter["creator"] = user_filter(opts.creator)
+    if opts.label:
+        issue_filter["labels"] = {"name": {"eq": opts.label}}
+    if opts.cycle == "active":
+        issue_filter["cycle"] = {"isActive": {"eq": True}}
+    elif opts.cycle == "previous":
+        issue_filter["cycle"] = {"isPrevious": {"eq": True}}
+    elif opts.cycle:
+        issue_filter["cycle"] = {"number": {"eq": int(opts.cycle)}}
+    if opts.estimate_filter is not None:
+        if opts.estimate_filter.lower() == "none":
             issue_filter["estimate"] = {"null": True}
         else:
-            issue_filter["estimate"] = {"eq": float(estimate_filter)}
-
-    project_id = resolve_project_id(project_name) if project_name else None
-    if project_id:
-        issue_filter["project"] = {"id": {"eq": project_id}}
-    if milestone_name and project_id:
-        milestone_id = resolve_milestone_id(milestone_name, project_id)
-        issue_filter["projectMilestone"] = {"id": {"eq": milestone_id}}
+            issue_filter["estimate"] = {"eq": float(opts.estimate_filter)}
+    if opts.project_name:
+        project = project_filter(opts.project_name)
+        issue_filter["project"] = project
+        checks.append(batch.project_id(opts.project_name))
+        if opts.milestone_name and opts.milestone_name.lower() == "none":
+            issue_filter["projectMilestone"] = {"null": True}
+        elif opts.milestone_name:
+            milestone = {"name": {"eqIgnoreCase": opts.milestone_name}}
+            issue_filter["projectMilestone"] = milestone
+            checks.append(batch.milestone(opts.milestone_name, project))
     # Linear's DateTimeOrDuration scalar parses and validates these values server-side.
-    if created_after:
-        issue_filter["createdAt"] = {"gt": created_after}
-    if updated_after:
-        issue_filter["updatedAt"] = {"gt": updated_after}
-    if started_after:
-        issue_filter["startedAt"] = {"gt": started_after}
-    if completed_after:
-        issue_filter["completedAt"] = {"gt": completed_after}
-    return issue_filter
+    for key, value in (
+        ("createdAt", opts.created_after),
+        ("updatedAt", opts.updated_after),
+        ("startedAt", opts.started_after),
+        ("completedAt", opts.completed_after),
+    ):
+        if value:
+            issue_filter[key] = {"gt": value}
+    return issue_filter, checks
 
 
-def _show_issues(
-    query: str,
-    variables: dict,
-    connection_path: list[str],
-    limit: int,
-    project_name: str | None,
-    milestone_name: str | None,
-) -> None:
-    """Fetch and render one bounded issue result set."""
+def _show_issues(opts: _IssueQuery, term: str | None) -> None:
+    """Fetch the first page with filter checks in one request, page on, and render."""
+    if opts.cycle and not opts.team_key:
+        raise SystemExit("error: --cycle requires --team")
+    if opts.milestone_name and not opts.project_name:
+        raise SystemExit("error: --milestone requires --project")
+    batch = Batch()
+    issue_filter, checks = _issue_filter(opts, batch)
+    variables: dict = {"filter": issue_filter or None, "first": min(opts.limit, _MAX_PAGE)}
+    field_vars: dict[str, tuple[str, Any]] = {
+        "filter": ("IssueFilter", variables["filter"]),
+        "first": ("Int", variables["first"]),
+    }
+    if term is None:
+        query, path = ISSUES_QUERY, "issues"
+        field = f"issues(filter: $filter, first: $first) {{ {ISSUE_CONNECTION} }}"
+    else:
+        query, path = ISSUE_SEARCH_QUERY, "searchIssues"
+        variables["term"] = term
+        field_vars["term"] = ("String!", term)
+        field = (
+            f"searchIssues(term: $term, filter: $filter, first: $first) {{ {ISSUE_CONNECTION} }}"
+        )
+    alias = batch.add(field, field_vars)
+    batch.run()
+    for check in checks:
+        check()
     try:
         nodes = paginate(
-            query,
-            variables,
-            connection_path,
-            limit=limit,
+            query, variables, [path], limit=opts.limit, first_page=batch.data.get(alias) or {}
         )
     except LinearError as exc:
         die(str(exc))
 
-    _print_scope(project_name, milestone_name)
+    _print_scope(opts.project_name, opts.milestone_name)
     if not nodes:
         click.echo("no issues found")
         return
@@ -128,13 +165,46 @@ def _show_issues(
         echo_issue_summary(Issue.from_graphql(node))
 
 
-def _update_issue(issue_id: str, input_data: dict) -> dict:
-    """Apply one issue update and return the updated issue node."""
-    data = execute(ISSUE_UPDATE_MUTATION, {"id": issue_id, "input": input_data})
-    result = data.get("issueUpdate") or {}
-    if not result.get("success"):
-        raise LinearError("issue update failed")
-    return result.get("issue") or {}
+def _filter_options(func: Callable) -> Callable:
+    """Attach the filter options shared by `issues list` and `issues search`."""
+    options = [
+        click.option("--team", "team_key", default=None, help="Team key (e.g. ENG)."),
+        click.option(
+            "--state",
+            "state_type",
+            default=None,
+            type=click.Choice(_STATE_TYPES, case_sensitive=False),
+            help="Filter by state type.",
+        ),
+        click.option("--assignee", default=None, help="Assignee user UUID or 'me'."),
+        click.option("--creator", default=None, help="Creator user UUID or 'me'."),
+        click.option("--label", default=None, help="Label name to filter by."),
+        click.option(
+            "--cycle", default=None, type=str, help="Cycle: 'active', 'previous', or number."
+        ),
+        click.option(
+            "--estimate",
+            "estimate_filter",
+            default=None,
+            type=str,
+            help="Estimate: 'none' or a number.",
+        ),
+        click.option("--project", "project_name", default=None, help="Project name or UUID."),
+        click.option(
+            "--milestone",
+            "milestone_name",
+            default=None,
+            help="Milestone name, or 'none' for issues outside milestones (requires --project).",
+        ),
+        click.option("--created-after", default=None, help=_TIME_HELP),
+        click.option("--updated-after", default=None, help=_TIME_HELP),
+        click.option("--started-after", default=None, help=_TIME_HELP),
+        click.option("--completed-after", default=None, help=_TIME_HELP),
+        click.option("--limit", default=50, show_default=True, help="Maximum number of issues."),
+    ]
+    for option in reversed(options):
+        func = option(func)
+    return func
 
 
 def _history_actor(node: dict) -> str:
@@ -188,185 +258,24 @@ def _history_changes(node: dict) -> list[str]:
     return changes or ["other change"]
 
 
-_TIME_HELP = "ISO date/datetime or duration (e.g. 2026-09-20, -P1D = 1 day ago)."
-
-
 @click.group(cls=HelpfulGroup)
 def cli() -> None:
     """Create, list, view, and update Linear issues."""
 
 
 @cli.command("list")
-@click.option("--team", "team_key", default=None, help="Team key (e.g. ENG).")
-@click.option(
-    "--state",
-    "state_type",
-    default=None,
-    type=click.Choice(
-        ["triage", "backlog", "unstarted", "started", "completed", "canceled"],
-        case_sensitive=False,
-    ),
-    help="Filter by state type.",
-)
-@click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
-@click.option("--creator", default=None, help="Creator user UUID or 'me'.")
-@click.option("--label", default=None, help="Label name to filter by.")
-@click.option("--cycle", default=None, type=str, help="Cycle: 'active', 'previous', or number.")
-@click.option(
-    "--estimate", "estimate_filter", default=None, type=str, help="Estimate: 'none' or a number."
-)
-@click.option("--project", "project_name", default=None, help="Project name or UUID.")
-@click.option(
-    "--milestone", "milestone_name", default=None, help="Milestone name (requires --project)."
-)
-@click.option("--created-after", default=None, help=_TIME_HELP)
-@click.option("--updated-after", default=None, help=_TIME_HELP)
-@click.option("--started-after", default=None, help=_TIME_HELP)
-@click.option("--completed-after", default=None, help=_TIME_HELP)
-@click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
-def list_issues(
-    team_key: str | None,
-    state_type: str | None,
-    assignee: str | None,
-    creator: str | None,
-    label: str | None,
-    cycle: str | None,
-    estimate_filter: str | None,
-    project_name: str | None,
-    milestone_name: str | None,
-    created_after: str | None,
-    updated_after: str | None,
-    started_after: str | None,
-    completed_after: str | None,
-    limit: int,
-) -> None:
+@_filter_options
+def list_issues(**options: Any) -> None:
     """List issues with optional filters."""
-    if cycle and not team_key:
-        raise SystemExit("error: --cycle requires --team")
-    if milestone_name and not project_name:
-        raise SystemExit("error: --milestone requires --project")
-    issue_filter = _build_issue_filter(
-        team_key,
-        state_type,
-        assignee,
-        creator,
-        label,
-        cycle,
-        estimate_filter,
-        project_name,
-        milestone_name,
-        created_after,
-        updated_after,
-        started_after,
-        completed_after,
-    )
-    variables: dict = {
-        "filter": issue_filter or None,
-        "first": min(limit, 250),
-        "after": None,
-    }
-    _show_issues(
-        ISSUES_QUERY,
-        variables,
-        ["issues"],
-        limit,
-        project_name,
-        milestone_name,
-    )
+    _show_issues(_IssueQuery(**options), None)
 
 
 @cli.command("search")
 @click.argument("query")
-@click.option("--team", "team_key", default=None, help="Team key (e.g. ENG).")
-@click.option(
-    "--state",
-    "state_type",
-    default=None,
-    type=click.Choice(
-        ["triage", "backlog", "unstarted", "started", "completed", "canceled"],
-        case_sensitive=False,
-    ),
-    help="Filter by state type.",
-)
-@click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
-@click.option("--creator", default=None, help="Creator user UUID or 'me'.")
-@click.option("--label", default=None, help="Label name to filter by.")
-@click.option("--cycle", default=None, type=str, help="Cycle: 'active', 'previous', or number.")
-@click.option(
-    "--estimate", "estimate_filter", default=None, type=str, help="Estimate: 'none' or a number."
-)
-@click.option("--project", "project_name", default=None, help="Project name or UUID.")
-@click.option(
-    "--milestone", "milestone_name", default=None, help="Milestone name (requires --project)."
-)
-@click.option("--created-after", default=None, help=_TIME_HELP)
-@click.option("--updated-after", default=None, help=_TIME_HELP)
-@click.option("--started-after", default=None, help=_TIME_HELP)
-@click.option("--completed-after", default=None, help=_TIME_HELP)
-@click.option("--limit", default=50, show_default=True, help="Maximum number of issues.")
-def search(
-    query: str,
-    team_key: str | None,
-    state_type: str | None,
-    assignee: str | None,
-    creator: str | None,
-    label: str | None,
-    cycle: str | None,
-    estimate_filter: str | None,
-    project_name: str | None,
-    milestone_name: str | None,
-    created_after: str | None,
-    updated_after: str | None,
-    started_after: str | None,
-    completed_after: str | None,
-    limit: int,
-) -> None:
+@_filter_options
+def search(query: str, **options: Any) -> None:
     """Full-text search across issue titles, descriptions, and comments."""
-    if cycle and not team_key:
-        raise SystemExit("error: --cycle requires --team")
-    if milestone_name and not project_name:
-        raise SystemExit("error: --milestone requires --project")
-    issue_filter = _build_issue_filter(
-        team_key,
-        state_type,
-        assignee,
-        creator,
-        label,
-        cycle,
-        estimate_filter,
-        project_name,
-        milestone_name,
-        created_after,
-        updated_after,
-        started_after,
-        completed_after,
-    )
-    variables: dict = {
-        "term": query,
-        "filter": issue_filter or None,
-        "first": min(limit, 250),
-        "after": None,
-    }
-    _show_issues(
-        ISSUE_SEARCH_QUERY,
-        variables,
-        ["searchIssues"],
-        limit,
-        project_name,
-        milestone_name,
-    )
-
-
-def _fetch_comments(issue_id: str) -> list[dict]:
-    """Fetch every comment node on an issue."""
-    try:
-        return paginate(
-            COMMENTS_QUERY,
-            {"issueId": issue_id, "first": 100},
-            ["issue", "comments"],
-        )
-    except LinearError as exc:
-        die(str(exc))
+    _show_issues(_IssueQuery(**options), query)
 
 
 @cli.command("view")
@@ -381,17 +290,29 @@ def _fetch_comments(issue_id: str) -> list[dict]:
 def view(issue_id: str, include_comments: bool, as_json: bool) -> None:
     """View a single issue by ID or identifier (e.g. ENG-123)."""
     try:
-        data = execute(ISSUE_QUERY, {"id": issue_id})
+        data = execute(ISSUE_QUERY, {"id": issue_id, "withComments": include_comments})
+        node = data.get("issue")
+        if not node:
+            die(f"issue '{issue_id}' not found")
+        comment_nodes: list[dict] = []
+        if include_comments:
+            comment_nodes = paginate(
+                COMMENTS_QUERY,
+                {"issueId": issue_id, "first": 100},
+                ["issue", "comments"],
+                first_page=node.get("commentThread") or {},
+            )
+            # Rename in place so --json keeps the key order of the comment-less shape.
+            node = {
+                ("comments" if key == "commentThread" else key): (
+                    {"nodes": comment_nodes} if key == "commentThread" else value
+                )
+                for key, value in node.items()
+            }
     except LinearError as exc:
         die(str(exc))
 
-    node = data.get("issue")
-    if not node:
-        die(f"issue '{issue_id}' not found")
-
     if as_json:
-        if include_comments:
-            node["comments"] = {"nodes": _fetch_comments(issue_id)}
         click.echo(json.dumps(node, indent=2))
         return
 
@@ -426,7 +347,6 @@ def view(issue_id: str, include_comments: bool, as_json: bool) -> None:
         click.echo("")
         click.echo(issue.description)
     if include_comments:
-        comment_nodes = _fetch_comments(issue_id)
         click.echo("")
         if not comment_nodes:
             click.echo("no comments")
@@ -494,58 +414,72 @@ def create(
     relations: tuple[tuple[str, str], ...],
 ) -> None:
     """Create a new issue."""
-    # Relations are separate mutations after creation; resolve targets first so a typo
-    # fails before the issue exists.
-    relation_targets = [(rel_type, resolve_issue_id(ref), ref) for rel_type, ref in relations]
-    team_id = resolve_team_id(team_key)
-    input_data: dict = {"title": title, "teamId": team_id, "priority": priority}
+    # One lookup request resolves every name and validates relation targets, so a typo fails
+    # before the issue exists.
+    batch = Batch()
+    get_team = batch.team_id(team_key)
+    get_state = batch.state_id(state_name, team_filter(team_key)) if state_name else None
+    get_assignee = batch.user_id(assignee) if assignee else None
+    label_getters = [batch.label_id(name) for name in label_names]
+    get_parent = batch.issue(parent_id) if parent_id else None
+    relation_getters = [(rel_type, batch.issue(ref), ref) for rel_type, ref in relations]
+    get_project = batch.project_id(project_name) if project_name else None
+    get_milestone = (
+        batch.milestone(milestone_name, project_filter(project_name))
+        if project_name and milestone_name
+        else None
+    )
+    get_scope = (
+        batch.milestone_scope(milestone_name) if milestone_name and not project_name else None
+    )
+    batch.run()
 
+    # The issue ID is chosen here so relations can join the creation mutation document.
+    issue_id = str(uuid.uuid4())
+    input_data: dict = {"id": issue_id, "title": title, "teamId": get_team(), "priority": priority}
     if description:
         input_data["description"] = description
-    if state_name:
-        input_data["stateId"] = resolve_state_id(state_name, team_id)
-    if assignee:
-        input_data["assigneeId"] = resolve_assignee_id(assignee)
-    if label_names:
-        input_data["labelIds"] = [resolve_label_id(ln) for ln in label_names]
-    if parent_id:
-        input_data["parentId"] = resolve_issue_id(parent_id)
+    if get_state:
+        input_data["stateId"] = get_state()
+    if get_assignee:
+        input_data["assigneeId"] = get_assignee()
+    if label_getters:
+        input_data["labelIds"] = [get() for get in label_getters]
+    if get_parent:
+        input_data["parentId"] = get_parent()["id"]
     if estimate is not None:
         input_data["estimate"] = estimate
-    if project_name:
-        project_id = resolve_project_id(project_name)
-        input_data["projectId"] = project_id
-        if milestone_name:
-            input_data["projectMilestoneId"] = resolve_milestone_id(milestone_name, project_id)
-    elif milestone_name:
-        project_id, milestone_id = resolve_milestone_scope(milestone_name)
-        input_data["projectId"] = project_id
-        input_data["projectMilestoneId"] = milestone_id
+    if get_project:
+        input_data["projectId"] = get_project()
+    if get_milestone:
+        input_data["projectMilestoneId"] = get_milestone()["id"]
+    if get_scope:
+        input_data["projectId"], input_data["projectMilestoneId"] = get_scope()
 
+    targets = [(rel_type, get()["id"], ref) for rel_type, get, ref in relation_getters]
+    decls = ["$input: IssueCreateInput!"]
+    fields = ["issueCreate(input: $input) { success issue { id identifier title url } }"]
+    variables: dict = {"input": input_data}
+    for index, (rel_type, related_id, _) in enumerate(targets):
+        decls.append(f"$r{index}: IssueRelationCreateInput!")
+        fields.append(f"r{index}: issueRelationCreate(input: $r{index}) {{ success }}")
+        variables[f"r{index}"] = relation_input(issue_id, rel_type, related_id)
+    # Fields run in order, so relations see the created issue. Linear applies a mutation document
+    # atomically: if any relation fails, the issue is not created either.
+    mutation = f"mutation({', '.join(decls)}) {{\n  " + "\n  ".join(fields) + "\n}"
     try:
-        data = execute(ISSUE_CREATE_MUTATION, {"input": input_data})
+        data = execute(mutation, variables)
     except LinearError as exc:
         die(str(exc))
-
-    result = data.get("issueCreate") or {}
-    if not result.get("success"):
+    results = [data.get("issueCreate")] + [data.get(f"r{i}") for i in range(len(targets))]
+    if not all((result or {}).get("success") for result in results):
         die("issue creation failed")
 
-    issue = result.get("issue") or {}
+    issue = (data.get("issueCreate") or {}).get("issue") or {}
     click.echo(f"created {issue.get('identifier')}  {issue.get('title')}")
     click.echo(issue.get("url"))
-
-    failed = False
-    for rel_type, related_id, related_ref in relation_targets:
-        try:
-            create_relation(issue["id"], rel_type, related_id)
-        except LinearError as exc:
-            click.echo(f"error: relation {rel_type} {related_ref}: {exc}", err=True)
-            failed = True
-            continue
+    for rel_type, _, related_ref in targets:
         click.echo(f"relation created: {rel_type}  {related_ref}")
-    if failed:
-        raise SystemExit(1)
 
 
 @cli.command("update")
@@ -603,92 +537,157 @@ def update(
             raise click.UsageError(
                 "multiple issues require --project and support only --project/--milestone"
             )
-        project_id = resolve_project_id(project_name)
-        batch_input: dict = {"projectId": project_id}
-        if milestone_name:
-            batch_input["projectMilestoneId"] = resolve_milestone_id(
-                milestone_name,
-                project_id,
-            )
-        failed = False
-        for batch_issue_id in issue_ids:
-            try:
-                issue = _update_issue(batch_issue_id, batch_input)
-            except LinearError as exc:
-                click.echo(f"error: {batch_issue_id}: {exc}", err=True)
-                failed = True
-                continue
-            click.echo(f"updated {issue.get('identifier')}  {issue.get('title')}")
-        if failed:
-            raise SystemExit(1)
+        _update_many(issue_ids, project_name, milestone_name)
         return
 
-    issue_id = issue_ids[0]
-    # Fetch current issue to get team context for label/state resolution.
-    try:
-        current_data = execute(ISSUE_QUERY, {"id": issue_id})
-    except LinearError as exc:
-        die(str(exc))
-
-    node = current_data.get("issue")
-    if not node:
-        die(f"issue '{issue_id}' not found")
-
-    team_data = node.get("team") or {}
-    team_id: str | None = team_data.get("id")
+    issue_ref = issue_ids[0]
+    batch = Batch()
+    # State and milestone names resolve through the issue's own team and project, nested in the
+    # same lookup request, so the issue is never fetched on its own.
+    issue_fields = ["id"]
+    issue_vars: dict[str, tuple[str, Any]] = {"id": ("String!", issue_ref)}
+    if state_name:
+        issue_fields.append("team { states(filter: $states) { nodes { id } } }")
+        issue_vars["states"] = ("WorkflowStateFilter", {"name": {"eqIgnoreCase": state_name}})
+    if milestone_name and not project_name:
+        issue_fields.append(
+            "project { id projectMilestones(filter: $milestones) { nodes { id } } }"
+        )
+        issue_vars["milestones"] = (
+            "ProjectMilestoneFilter",
+            {"name": {"eqIgnoreCase": milestone_name}},
+        )
+    issue_alias = (
+        batch.add(f"issue(id: $id) {{ {' '.join(issue_fields)} }}", issue_vars)
+        if len(issue_fields) > 1
+        else None
+    )
+    assign_me = assignee is not None and assignee.lower() == "me"
+    get_viewer = batch.user_id(assignee) if assign_me else None
+    add_getters = [batch.label_id(name) for name in add_labels]
+    remove_getters = [batch.label_id(name) for name in remove_labels]
+    get_parent = batch.issue(parent_id) if parent_id else None
+    get_project = batch.project_id(project_name) if project_name else None
+    get_milestone = (
+        batch.milestone(milestone_name, project_filter(project_name))
+        if project_name and milestone_name
+        else None
+    )
+    get_scope = (
+        batch.milestone_scope(milestone_name) if milestone_name and not project_name else None
+    )
 
     input_data: dict = {}
     if title:
         input_data["title"] = title
     if description is not None:
         input_data["description"] = description
-    if state_name:
-        input_data["stateId"] = resolve_state_id(state_name, team_id)
     if priority is not None:
         input_data["priority"] = priority
-    if assignee is not None:
-        input_data["assigneeId"] = (
-            None if assignee.lower() == "none" else resolve_assignee_id(assignee)
-        )
-
-    if add_labels or remove_labels:
-        current_label_nodes: list[dict] = (node.get("labels") or {}).get("nodes", [])
-        current_ids: set[str] = {ln["id"] for ln in current_label_nodes if ln.get("id")}
-
-        if add_labels:
-            for ln in add_labels:
-                lid = resolve_label_id(ln)
-                current_ids.add(lid)
-        if remove_labels:
-            for ln in remove_labels:
-                lid = resolve_label_id(ln)
-                current_ids.discard(lid)
-
-        input_data["labelIds"] = list(current_ids)
-
+    if assignee is not None and not assign_me:
+        input_data["assigneeId"] = None if assignee.lower() == "none" else assignee
     if estimate is not None:
         input_data["estimate"] = estimate
-    if parent_id:
-        input_data["parentId"] = resolve_issue_id(parent_id)
-    if project_name:
-        project_id = resolve_project_id(project_name)
-        input_data["projectId"] = project_id
-        if milestone_name:
-            input_data["projectMilestoneId"] = resolve_milestone_id(milestone_name, project_id)
-    elif milestone_name:
-        project_id = (node.get("project") or {}).get("id")
-        if project_id:
-            input_data["projectMilestoneId"] = resolve_milestone_id(milestone_name, project_id)
-        else:
-            project_id, milestone_id = resolve_milestone_scope(milestone_name)
-            input_data["projectId"] = project_id
-            input_data["projectMilestoneId"] = milestone_id
-
-    if not input_data:
+    if not input_data and not batch:
         die("no updates specified")
 
+    batch.run()
+    issue_node = batch.data.get(issue_alias) or {} if issue_alias else {}
+    if state_name:
+        states = ((issue_node.get("team") or {}).get("states") or {}).get("nodes", [])
+        if not states:
+            die(f"state '{state_name}' not found")
+        input_data["stateId"] = states[0]["id"]
+    if get_viewer:
+        input_data["assigneeId"] = get_viewer()
+    # Delta fields leave labels this command does not name untouched.
+    removed = [get() for get in remove_getters]
+    added = [label_id for label_id in (get() for get in add_getters) if label_id not in removed]
+    if added:
+        input_data["addedLabelIds"] = added
+    if removed:
+        input_data["removedLabelIds"] = removed
+    if get_parent:
+        input_data["parentId"] = get_parent()["id"]
+    if get_project:
+        input_data["projectId"] = get_project()
+    if get_milestone:
+        input_data["projectMilestoneId"] = get_milestone()["id"]
+    if get_scope:
+        project = issue_node.get("project")
+        if project:
+            milestones = (project.get("projectMilestones") or {}).get("nodes", [])
+            if not milestones:
+                die(f"milestone '{milestone_name}' not found in project")
+            input_data["projectMilestoneId"] = milestones[0]["id"]
+        else:
+            input_data["projectId"], input_data["projectMilestoneId"] = get_scope()
+
     try:
-        issue = _update_issue(issue_id, input_data)
+        issue = _update_issue(issue_ref, input_data)
     except LinearError as exc:
         die(str(exc))
     click.echo(f"updated {issue.get('identifier')}  {issue.get('title')}")
+
+
+def _update_issue(issue_ref: str, input_data: dict) -> dict:
+    """Apply one issue update and return the updated issue node."""
+    data = execute(ISSUE_UPDATE_MUTATION, {"id": issue_ref, "input": input_data})
+    result = data.get("issueUpdate") or {}
+    if not result.get("success"):
+        raise LinearError("issue update failed")
+    return result.get("issue") or {}
+
+
+def _update_many(
+    issue_refs: tuple[str, ...], project_name: str, milestone_name: str | None
+) -> None:
+    """Move several issues to a project and milestone with one lookup and one mutation request.
+
+    Linear applies a mutation document atomically, so one bad reference rejects every aliased
+    update. Only then does each issue get its own request, so valid issues still move and each
+    failure is reported separately.
+    """
+    batch = Batch()
+    get_project = batch.project_id(project_name)
+    get_milestone = (
+        batch.milestone(milestone_name, project_filter(project_name)) if milestone_name else None
+    )
+    batch.run()
+    update_input: dict = {"projectId": get_project()}
+    if get_milestone:
+        update_input["projectMilestoneId"] = get_milestone()["id"]
+
+    decls = ["$input: IssueUpdateInput!"]
+    fields = []
+    variables: dict = {"input": update_input}
+    for index, ref in enumerate(issue_refs):
+        decls.append(f"$i{index}: String!")
+        fields.append(
+            f"u{index}: issueUpdate(id: $i{index}, input: $input) "
+            "{ success issue { identifier title } }"
+        )
+        variables[f"i{index}"] = ref
+    mutation = f"mutation({', '.join(decls)}) {{\n  " + "\n  ".join(fields) + "\n}"
+    try:
+        data = execute(mutation, variables)
+    except LinearError:
+        data = {}
+    results = [data.get(f"u{index}") or {} for index in range(len(issue_refs))]
+    if results and all(result.get("success") for result in results):
+        for result in results:
+            issue = result.get("issue") or {}
+            click.echo(f"updated {issue.get('identifier')}  {issue.get('title')}")
+        return
+
+    failed = False
+    for ref in issue_refs:
+        try:
+            issue = _update_issue(ref, update_input)
+        except LinearError as exc:
+            click.echo(f"error: {ref}: {exc}", err=True)
+            failed = True
+            continue
+        click.echo(f"updated {issue.get('identifier')}  {issue.get('title')}")
+    if failed:
+        raise SystemExit(1)

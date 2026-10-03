@@ -8,7 +8,8 @@ from linear_cli._click import HelpfulGroup
 from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute, paginate
 from linear_cli._models import Label
-from linear_cli._queries import LABEL_CHILDREN_QUERY, LABEL_GROUPS_QUERY, LABELS_QUERY
+from linear_cli._queries import LABEL_GROUPS_QUERY, LABELS_QUERY
+from linear_cli._resolve import Batch
 
 
 @click.group(cls=HelpfulGroup)
@@ -78,17 +79,19 @@ def _list_all() -> None:
 
 
 def _list_with_groups(group_names: tuple[str, ...]) -> None:
-    """For each named group, fetch children server-side and display indented."""
-    for group_name in group_names:
-        filt: dict = {"parent": {"name": {"eq": group_name}}}
-        try:
-            data = execute(LABEL_CHILDREN_QUERY, {"filter": filt})
-        except LinearError as exc:
-            die(str(exc))
-
+    """Fetch every named group's children in one request and display them indented."""
+    batch = Batch()
+    aliases = [
+        batch.add(
+            "issueLabels(filter: $filter) { nodes { name } }",
+            {"filter": ("IssueLabelFilter", {"parent": {"name": {"eq": name}}})},
+        )
+        for name in group_names
+    ]
+    batch.run()
+    for group_name, alias in zip(group_names, aliases, strict=True):
         click.echo(f"{group_name} (group)")
-        nodes = (data.get("issueLabels") or {}).get("nodes", [])
-        for node in nodes:
+        for node in batch.nodes(alias):
             name = node.get("name", "")
             if name:
                 click.echo(f"  {name}")

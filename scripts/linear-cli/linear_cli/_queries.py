@@ -26,35 +26,11 @@ query {
 }
 """
 
-TEAM_MEMBERS_QUERY = """
-query TeamMembers($teamId: String!) {
-  team(id: $teamId) {
-    members {
-      nodes {
-        id
-        name
-        displayName
-        email
-        active
-      }
-    }
-  }
-}
-"""
+USER_FIELDS = "id name displayName email active"
 
-STATES_QUERY = """
-query States($filter: WorkflowStateFilter) {
-  workflowStates(filter: $filter) {
-    nodes {
-      id
-      name
-      type
-      color
-      position
-    }
-  }
-}
-"""
+STATE_FIELDS = "id name type color position"
+
+STATES_QUERY = f"query States {{ workflowStates {{ nodes {{ {STATE_FIELDS} }} }} }}"
 
 LABELS_QUERY = """
 query Labels($filter: IssueLabelFilter, $first: Int, $after: String) {
@@ -89,38 +65,11 @@ query LabelGroups($filter: IssueLabelFilter) {
 }
 """
 
-LABEL_CHILDREN_QUERY = """
-query LabelChildren($filter: IssueLabelFilter) {
-  issueLabels(filter: $filter) {
-    nodes {
-      id
-      name
-      color
-    }
-  }
-}
-"""
-
-ISSUES_QUERY = """
-query Issues(
-  $filter: IssueFilter
-  $first: Int
-  $after: String
-) {
-  issues(
-    first: $first
-    after: $after
-    filter: $filter
-  ) {
-    pageInfo {
-      hasNextPage
-      endCursor
-    }
-    nodes {
+# Fields echo_issue_summary renders; keep list queries to exactly this set.
+ISSUE_SUMMARY_FIELDS = """
       id
       identifier
       title
-      description
       priority
       estimate
       url
@@ -128,83 +77,43 @@ query Issues(
       startedAt
       completedAt
       updatedAt
-      state {
-        name
-        type
-      }
-      assignee {
-        name
-      }
-      labels {
-        nodes {
-          name
-        }
-      }
-    }
-  }
-}
+      state { name type }
+      assignee { name }
+      labels { nodes { name } }
 """
 
-ISSUE_SEARCH_QUERY = """
-query SearchIssues(
-  $term: String!
-  $filter: IssueFilter
-  $first: Int
-  $after: String
-  $includeComments: Boolean
-) {
-  searchIssues(
-    term: $term
-    first: $first
-    after: $after
-    filter: $filter
-    includeComments: $includeComments
-  ) {
-    pageInfo {
-      hasNextPage
-      endCursor
-    }
-    nodes {
-      id
-      identifier
-      title
-      description
-      priority
-      estimate
-      url
-      createdAt
-      startedAt
-      completedAt
-      updatedAt
-      state {
-        name
-        type
-      }
-      assignee {
-        name
-      }
-      labels {
-        nodes {
-          name
-        }
-      }
-    }
-  }
-}
+ISSUE_CONNECTION = f"pageInfo {{ hasNextPage endCursor }} nodes {{ {ISSUE_SUMMARY_FIELDS} }}"
+
+ISSUES_QUERY = f"""
+query Issues($filter: IssueFilter, $first: Int, $after: String) {{
+  issues(first: $first, after: $after, filter: $filter) {{ {ISSUE_CONNECTION} }}
+}}
 """
 
-TEAM_ACTIVE_CYCLE_QUERY = """
-query Team($id: String!) {
-  team(id: $id) {
-    activeCycle {
-      number
-    }
-  }
-}
+ISSUE_SEARCH_QUERY = f"""
+query SearchIssues($term: String!, $filter: IssueFilter, $first: Int, $after: String) {{
+  searchIssues(term: $term, first: $first, after: $after, filter: $filter) {{
+    {ISSUE_CONNECTION}
+  }}
+}}
 """
 
+COMMENT_FIELDS = """
+        id
+        body
+        createdAt
+        updatedAt
+        parent { id }
+        user { name }
+        externalUser { name }
+        botActor { name }
+        syncedWith { service }
+"""
+
+# $withComments embeds the first page of full comments under the "commentThread" alias; the plain
+# "comments" field then carries only IDs for the count, matching the --json shape without it.
 ISSUE_QUERY = """
-query Issue($id: String!) {
+query Issue($id: String!, $withComments: Boolean!) {
   issue(id: $id) {
     id
     identifier
@@ -262,26 +171,16 @@ query Issue($id: String!) {
         updatedAt
       }
     }
-    comments {
+    comments @skip(if: $withComments) {
       nodes { id }
     }
-  }
-}
-"""
-
-ISSUE_CREATE_MUTATION = """
-mutation IssueCreate($input: IssueCreateInput!) {
-  issueCreate(input: $input) {
-    success
-    issue {
-      id
-      identifier
-      title
-      url
+    commentThread: comments(first: 100) @include(if: $withComments) {
+      pageInfo { hasNextPage endCursor }
+      nodes { COMMENT_FIELDS }
     }
   }
 }
-"""
+""".replace("COMMENT_FIELDS", COMMENT_FIELDS)
 
 ISSUE_UPDATE_MUTATION = """
 mutation IssueUpdate($id: String!, $input: IssueUpdateInput!) {
@@ -310,28 +209,15 @@ mutation CommentCreate($issueId: String!, $body: String!, $parentId: String) {
 }
 """
 
-COMMENTS_QUERY = """
-query Comments($issueId: String!, $first: Int, $after: String) {
-  issue(id: $issueId) {
-    comments(first: $first, after: $after) {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-      nodes {
-        id
-        body
-        createdAt
-        updatedAt
-        parent { id }
-        user { name }
-        externalUser { name }
-        botActor { name }
-        syncedWith { service }
-      }
-    }
-  }
-}
+COMMENTS_QUERY = f"""
+query Comments($issueId: String!, $first: Int, $after: String) {{
+  issue(id: $issueId) {{
+    comments(first: $first, after: $after) {{
+      pageInfo {{ hasNextPage endCursor }}
+      nodes {{ {COMMENT_FIELDS} }}
+    }}
+  }}
+}}
 """
 
 ISSUE_HISTORY_QUERY = """
@@ -520,9 +406,20 @@ mutation ProjectUpdate($id: String!, $input: ProjectUpdateInput!) {
 }
 """
 
-PROJECT_QUERY = """
-query Project($id: String!) {
-  project(id: $id) {
+PROJECT_UPDATE_FIELDS = "id body health createdAt user { name }"
+
+# Every issue is fetched so milestone counts are exact; the view prints only a sorted slice.
+PROJECT_ISSUE_CONNECTION = """
+    pageInfo { hasNextPage endCursor }
+    nodes {
+      identifier title createdAt startedAt completedAt updatedAt
+      state { name type }
+      projectMilestone { id }
+    }
+"""
+
+# Selection for `projects view`, embedded in a by-name or by-UUID projects lookup.
+PROJECT_FIELDS = """
     id
     name
     url
@@ -555,19 +452,7 @@ query Project($id: String!) {
         }
       }
     }
-    issues {
-      nodes {
-        identifier
-        title
-        createdAt
-        startedAt
-        completedAt
-        updatedAt
-        state {
-          name
-        }
-      }
-    }
+    issues(first: 250) { PROJECT_ISSUE_CONNECTION }
     projectMilestones {
       nodes {
         id
@@ -578,36 +463,20 @@ query Project($id: String!) {
       }
     }
     projectUpdates(first: 3, orderBy: createdAt) {
-      nodes {
-        id
-        body
-        health
-        createdAt
-        user { name }
-      }
+      nodes { PROJECT_UPDATE_FIELDS }
     }
-  }
-}
+""".replace("PROJECT_UPDATE_FIELDS", PROJECT_UPDATE_FIELDS).replace(
+    "PROJECT_ISSUE_CONNECTION", PROJECT_ISSUE_CONNECTION
+)
+
+# Continues the project's issue pages after the first page embedded in PROJECT_FIELDS.
+PROJECT_ISSUES_QUERY = f"""
+query ProjectIssues($id: String!, $first: Int, $after: String) {{
+  project(id: $id) {{ issues(first: $first, after: $after) {{ {PROJECT_ISSUE_CONNECTION} }} }}
+}}
 """
 
-MILESTONES_QUERY = """
-query ProjectMilestones($filter: ProjectMilestoneFilter) {
-  projectMilestones(filter: $filter) {
-    nodes {
-      id
-      name
-      description
-      targetDate
-      status
-      progress
-      project {
-        id
-        name
-      }
-    }
-  }
-}
-"""
+MILESTONE_FIELDS = "id name description targetDate status progress"
 
 MILESTONE_CREATE_MUTATION = """
 mutation ProjectMilestoneCreate($input: ProjectMilestoneCreateInput!) {
@@ -658,31 +527,14 @@ query ProjectUpdatesAll($first: Int, $after: String) {
 """
 
 DOCUMENTS_QUERY = """
-query Documents {
-  documents(first: 50) {
+query Documents($filter: DocumentFilter) {
+  documents(first: 50, filter: $filter) {
     nodes {
       id
       title
       updatedAt
       project {
         name
-      }
-    }
-  }
-}
-"""
-
-PROJECT_UPDATES_QUERY = """
-query ProjectUpdates($id: String!, $first: Int, $after: String) {
-  project(id: $id) {
-    projectUpdates(first: $first, after: $after, orderBy: createdAt) {
-      pageInfo { hasNextPage endCursor }
-      nodes {
-        id
-        body
-        health
-        createdAt
-        user { name }
       }
     }
   }

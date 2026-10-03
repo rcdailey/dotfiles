@@ -1,32 +1,20 @@
-"""httpx-based GraphQL client for the Linear API."""
+"""GraphQL client for the Linear API."""
 
 from __future__ import annotations
 
-import atexit
+import json
 import os
 import re
 import time
 
 import click
-import httpx
 
-from linear_cli import _auth
+from linear_cli import _auth, _http
 from linear_cli._config import LINEAR_BASE_URL
 from linear_cli._errors import LinearError, die
 
 _RATE_LIMIT_WARN_THRESHOLD = 100
-_TIMEOUT = httpx.Timeout(10.0, connect=15.0)
 _MAX_QUERY_ATTEMPTS = 2
-_client: httpx.Client | None = None
-
-
-def _get_client() -> httpx.Client:
-    """Return the process-wide HTTP client."""
-    global _client
-    if _client is None:
-        _client = httpx.Client(timeout=_TIMEOUT)
-        atexit.register(_client.close)
-    return _client
 
 
 def _is_mutation(query: str) -> bool:
@@ -34,7 +22,7 @@ def _is_mutation(query: str) -> bool:
     return re.search(r"\bmutation\b", query, re.IGNORECASE) is not None
 
 
-def _retry_delay(response: httpx.Response | None, attempt: int) -> float:
+def _retry_delay(response: _http.Response | None, attempt: int) -> float:
     """Return a bounded retry delay, honoring integer Retry-After values."""
     if response is not None:
         retry_after = response.headers.get("Retry-After")
@@ -43,23 +31,19 @@ def _retry_delay(response: httpx.Response | None, attempt: int) -> float:
     return 0.5 * (attempt + 1)
 
 
-def _send(payload: dict, headers: dict, *, retry: bool) -> httpx.Response:
+def _send(body: bytes, headers: dict, *, retry: bool) -> _http.Response:
     """Send one GraphQL request with bounded retries for safe operations."""
     attempts = _MAX_QUERY_ATTEMPTS if retry else 1
     for attempt in range(attempts):
         try:
-            response = _get_client().post(
-                LINEAR_BASE_URL,
-                json=payload,
-                headers=headers,
-            )
-        except httpx.RequestError as exc:
+            response = _http.post(LINEAR_BASE_URL, body, headers)
+        except _http.TRANSPORT_ERRORS as exc:
             if attempt + 1 < attempts:
                 time.sleep(_retry_delay(None, attempt))
                 continue
             raise LinearError(f"Linear API request failed: {exc}") from exc
 
-        transient = response.status_code == 429 or response.status_code >= 500
+        transient = response.status == 429 or response.status >= 500
         if transient and attempt + 1 < attempts:
             time.sleep(_retry_delay(response, attempt))
             continue
@@ -68,7 +52,7 @@ def _send(payload: dict, headers: dict, *, retry: bool) -> httpx.Response:
     raise LinearError("Linear API request failed")
 
 
-def _response_body(response: httpx.Response) -> dict:
+def _response_body(response: _http.Response) -> dict:
     """Decode and validate a GraphQL response body."""
     try:
         body = response.json()
@@ -79,20 +63,20 @@ def _response_body(response: httpx.Response) -> dict:
     return body
 
 
-def _raise_graphql_errors(body: dict) -> None:
-    """Raise one LinearError for a present GraphQL errors field."""
-    if "errors" not in body:
-        return
-    errors = body["errors"]
+def _graphql_errors(body: dict) -> list:
+    """Return the response's GraphQL errors list."""
+    errors = body.get("errors") or []
     if not isinstance(errors, list):
         raise LinearError("Linear API returned an invalid response")
-    if not errors:
-        return
-    messages = "; ".join(
+    return errors
+
+
+def _error_message(errors: list) -> str:
+    """Join GraphQL error messages into one line."""
+    return "; ".join(
         error.get("message", str(error)) if isinstance(error, dict) else str(error)
         for error in errors
     )
-    raise LinearError(messages)
 
 
 def _get_auth_header() -> dict:
@@ -104,73 +88,81 @@ def _get_auth_header() -> dict:
     api_key = os.environ.get("LINEAR_API_KEY")
     if api_key:
         return {"Authorization": api_key}
-    token = _auth.get_access_token()
+    tokens = _auth.load_tokens()
+    if tokens and tokens.get("auth_type") == "api_key" and tokens.get("api_key"):
+        return {"Authorization": tokens["api_key"]}
+    token = _auth.get_access_token(tokens)
     if token:
         return {"Authorization": f"Bearer {token}"}
-    stored_key = _auth.get_stored_api_key()
-    if stored_key:
-        return {"Authorization": stored_key}
     die("not authenticated; run 'linear auth login' or set LINEAR_API_KEY")
 
 
-def execute(query: str, variables: dict | None = None) -> dict:
-    """Execute a GraphQL query against the Linear API.
+def _warn_rate_limit(response: _http.Response) -> None:
+    remaining = response.headers.get("X-RateLimit-Remaining")
+    if remaining is None:
+        return
+    try:
+        if int(remaining) >= _RATE_LIMIT_WARN_THRESHOLD:
+            return
+    except ValueError:
+        return
+    reset = response.headers.get("X-RateLimit-Reset", "unknown")
+    click.echo(f"warning: rate limit low ({remaining} remaining, resets {reset})", err=True)
 
-    Returns the ``data`` dict from the response. Raises LinearError if the
-    response contains GraphQL errors. Retries once on 401 by refreshing
-    the OAuth token.
+
+def _request(query: str, variables: dict | None) -> dict:
+    """Send a GraphQL document and return the decoded body; HTTP failures raise LinearError.
+
+    Retries once on 401 by refreshing the OAuth token.
     """
-    headers = {
-        **_get_auth_header(),
-        "Content-Type": "application/json",
-    }
+    headers = {**_get_auth_header(), "Content-Type": "application/json"}
     payload: dict = {"query": query}
     if variables:
         payload["variables"] = variables
+    body = json.dumps(payload).encode()
 
     retry = not _is_mutation(query)
-    response = _send(payload, headers, retry=retry)
+    response = _send(body, headers, retry=retry)
 
-    if response.status_code == 401:
+    # Refresh only when the request used the stored OAuth token; retrying an API-key request with
+    # it would silently switch workspaces.
+    if response.status == 401 and headers["Authorization"].startswith("Bearer "):
         tokens = _auth.load_tokens()
-        if tokens:
+        if tokens and tokens.get("auth_type") != "api_key":
             try:
                 new_tokens = _auth.refresh_access_token(tokens)
-                headers["Authorization"] = f"Bearer {new_tokens['access_token']}"
-                response = _send(payload, headers, retry=retry)
             except Exception as exc:
                 raise LinearError("OAuth refresh failed; run 'linear auth login'") from exc
+            headers["Authorization"] = f"Bearer {new_tokens['access_token']}"
+            response = _send(body, headers, retry=retry)
 
-    if response.status_code >= 400:
+    if response.status >= 400:
         try:
-            body = _response_body(response)
+            errors = _graphql_errors(_response_body(response))
         except LinearError:
-            body = None
-        if body is not None:
-            _raise_graphql_errors(body)
-        try:
-            response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            raise LinearError(f"Linear API returned HTTP {response.status_code}") from exc
+            errors = []
+        if errors:
+            raise LinearError(_error_message(errors))
+        raise LinearError(f"Linear API returned HTTP {response.status}")
 
-    remaining = response.headers.get("X-RateLimit-Remaining")
-    if remaining is not None:
-        try:
-            if int(remaining) < _RATE_LIMIT_WARN_THRESHOLD:
-                reset = response.headers.get("X-RateLimit-Reset", "unknown")
-                click.echo(
-                    f"warning: rate limit low ({remaining} remaining, resets {reset})",
-                    err=True,
-                )
-        except ValueError:
-            pass
+    _warn_rate_limit(response)
+    return _response_body(response)
 
-    body = _response_body(response)
-    _raise_graphql_errors(body)
-    data = body.get("data", {})
+
+def _data(body: dict) -> dict:
+    data = body.get("data") or {}
     if not isinstance(data, dict):
         raise LinearError("Linear API returned an invalid response")
     return data
+
+
+def execute(query: str, variables: dict | None = None) -> dict:
+    """Execute a GraphQL document and return its ``data``; any GraphQL error raises LinearError."""
+    body = _request(query, variables)
+    errors = _graphql_errors(body)
+    if errors:
+        raise LinearError(_error_message(errors))
+    return _data(body)
 
 
 def paginate(
@@ -179,35 +171,36 @@ def paginate(
     connection_path: list[str],
     *,
     limit: int | None = None,
+    first_page: dict | None = None,
 ) -> list:
     """Follow Relay cursor pagination and accumulate all nodes.
 
     ``connection_path`` is the list of keys to reach the connection object
     (which has ``pageInfo`` and ``nodes``) from the ``data`` dict root.
-    Example: ["issues"] or ["team", "issues"].
+    Example: ["issues"] or ["team", "issues"]. ``first_page`` is an already fetched
+    connection, typically embedded in a combined request; fetching resumes after it.
     """
     variables = dict(variables or {})
     nodes: list = []
+    connection = first_page
 
     while True:
-        if limit is not None:
-            remaining = limit - len(nodes)
-            if remaining <= 0:
-                break
-            variables["first"] = min(variables.get("first") or remaining, remaining)
-        data = execute(query, variables)
-        connection = data
-        for key in connection_path:
-            connection = connection[key]
+        if connection is None:
+            if limit is not None:
+                remaining = limit - len(nodes)
+                variables["first"] = min(variables.get("first") or remaining, remaining)
+            data = execute(query, variables)
+            connection = data
+            for key in connection_path:
+                connection = connection[key]
 
         nodes.extend(connection.get("nodes", []))
-
         if limit is not None and len(nodes) >= limit:
             break
-
         page_info = connection.get("pageInfo", {})
         if not page_info.get("hasNextPage"):
             break
         variables["after"] = page_info["endCursor"]
+        connection = None
 
     return nodes[:limit] if limit is not None else nodes

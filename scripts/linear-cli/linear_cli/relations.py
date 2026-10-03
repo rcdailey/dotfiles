@@ -32,12 +32,17 @@ def _resolve(issue_id: str, type: str, related_id: str) -> tuple[str, str, str]:
     return issue_id, type.lower(), related_id
 
 
+def relation_input(issue_id: str, type: str, related_id: str) -> dict:
+    """Return the IssueRelationCreateInput for a relation given in CLI terms."""
+    source_id, api_type, target_id = _resolve(issue_id, type, related_id)
+    return {"issueId": source_id, "relatedIssueId": target_id, "type": api_type}
+
+
 def create_relation(issue_id: str, type: str, related_id: str) -> dict:
     """Create one relation given in CLI terms and return the created relation node."""
-    source_id, api_type, target_id = _resolve(issue_id, type, related_id)
     data = execute(
         ISSUE_RELATION_CREATE_MUTATION,
-        {"input": {"issueId": source_id, "relatedIssueId": target_id, "type": api_type}},
+        {"input": relation_input(issue_id, type, related_id)},
     )
     result = data.get("issueRelationCreate") or {}
     if not result.get("success"):

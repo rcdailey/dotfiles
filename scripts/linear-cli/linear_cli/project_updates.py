@@ -10,11 +10,11 @@ from linear_cli._graphql import execute
 from linear_cli._models import ProjectUpdate
 from linear_cli._queries import (
     PROJECT_UPDATE_CREATE_MUTATION,
+    PROJECT_UPDATE_FIELDS,
     PROJECT_UPDATES_ALL_QUERY,
-    PROJECT_UPDATES_QUERY,
 )
 from linear_cli._render import echo_project_update
-from linear_cli._resolve import resolve_project_id
+from linear_cli._resolve import Batch, resolve_project_id
 
 _HEALTH_CHOICES = ["onTrack", "atRisk", "offTrack"]
 
@@ -36,13 +36,13 @@ def list_updates(project_id_or_name: str | None, full: bool) -> None:
             die(str(exc))
         nodes = (data.get("projectUpdates") or {}).get("nodes", [])
     else:
-        project_id = _resolve_id(project_id_or_name)
-        try:
-            data = execute(PROJECT_UPDATES_QUERY, {"id": project_id, "first": 50})
-        except LinearError as exc:
-            die(str(exc))
-        project = data.get("project") or {}
-        nodes = (project.get("projectUpdates") or {}).get("nodes", [])
+        batch = Batch()
+        get_project = batch.project_node(
+            project_id_or_name,
+            f"projectUpdates(first: 50, orderBy: createdAt) {{ nodes {{ {PROJECT_UPDATE_FIELDS} }} }}",
+        )
+        batch.run()
+        nodes = (get_project().get("projectUpdates") or {}).get("nodes", [])
 
     if not nodes:
         click.echo("no project updates found")
@@ -64,7 +64,7 @@ def list_updates(project_id_or_name: str | None, full: bool) -> None:
 )
 def add_update(project_id_or_name: str, body: str, health: str) -> None:
     """Create a project update."""
-    project_id = _resolve_id(project_id_or_name)
+    project_id = resolve_project_id(project_id_or_name)
 
     try:
         data = execute(
@@ -82,11 +82,3 @@ def add_update(project_id_or_name: str, body: str, health: str) -> None:
     click.echo(f"created: {update.get('id')}")
     click.echo(f"health:  {update.get('health')}")
     click.echo(f"url:     {update.get('url')}")
-
-
-def _resolve_id(id_or_name: str) -> str:
-    """Return UUID as-is (UUID pattern) or resolve by name."""
-    # UUIDs contain hyphens and are 36 chars; names typically don't match that pattern.
-    if len(id_or_name) == 36 and id_or_name.count("-") == 4:
-        return id_or_name
-    return resolve_project_id(id_or_name)

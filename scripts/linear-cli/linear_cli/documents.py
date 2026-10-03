@@ -20,18 +20,13 @@ def cli() -> None:
 @click.option("--project", "project_name", default=None, help="Filter by project name.")
 def list_documents(project_name: str | None) -> None:
     """List documents."""
+    filt = {"project": {"name": {"eqIgnoreCase": project_name}}} if project_name else None
     try:
-        data = execute(DOCUMENTS_QUERY)
+        data = execute(DOCUMENTS_QUERY, {"filter": filt})
     except LinearError as exc:
         die(str(exc))
 
     nodes = (data.get("documents") or {}).get("nodes", [])
-    if project_name:
-        nodes = [
-            n
-            for n in nodes
-            if (n.get("project") or {}).get("name", "").lower() == project_name.lower()
-        ]
 
     if not nodes:
         click.echo("no documents found")

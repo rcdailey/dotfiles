@@ -1,54 +1,48 @@
-"""Root CLI group with auto-discovery of subcommand modules."""
+"""Root CLI group."""
 
 from __future__ import annotations
 
-import importlib
-import pkgutil
-from pathlib import Path
-
 import click
 
+from linear_cli import (
+    api,
+    auth,
+    comments,
+    documents,
+    issues,
+    labels,
+    links,
+    me,
+    milestones,
+    project_updates,
+    projects,
+    relations,
+    states,
+    teams,
+)
 from linear_cli._click import HelpfulGroup
 
 
-class _AutoGroup(HelpfulGroup):
-    """Click group that auto-discovers subcommand modules.
-
-    Any module in the package that exposes a ``cli`` attribute
-    (a click.Group or click.Command) is registered as a subcommand.
-    Modules whose names start with ``_`` are skipped (private helpers).
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._loaded = False
-
-    def _load_plugins(self):
-        if self._loaded:
-            return
-        self._loaded = True
-        pkg_path = str(Path(__file__).parent)
-        for info in pkgutil.iter_modules([pkg_path]):
-            if info.name.startswith("_") or info.name == "cli":
-                continue
-            mod = importlib.import_module(f"linear_cli.{info.name}")
-            cmd = getattr(mod, "cli", None)
-            if isinstance(cmd, click.Command):
-                self.add_command(cmd, info.name.replace("_", "-"))
-
-    def list_commands(self, ctx):
-        self._load_plugins()
-        return super().list_commands(ctx)
-
-    def get_command(self, ctx, cmd_name):
-        self._load_plugins()
-        return super().get_command(ctx, cmd_name)
-
-
 @click.group(
-    cls=_AutoGroup,
+    cls=HelpfulGroup,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.version_option(version=__import__("linear_cli").__version__, prog_name="linear-cli")
-def cli():
+def cli() -> None:
     """LLM-optimized Linear project management CLI."""
+
+
+cli.add_command(api.cli, "api")
+cli.add_command(auth.cli, "auth")
+cli.add_command(comments.cli, "comments")
+cli.add_command(documents.cli, "documents")
+cli.add_command(issues.cli, "issues")
+cli.add_command(labels.cli, "labels")
+cli.add_command(links.cli, "links")
+cli.add_command(me.cli, "me")
+cli.add_command(milestones.cli, "milestones")
+cli.add_command(project_updates.cli, "project-updates")
+cli.add_command(projects.cli, "projects")
+cli.add_command(relations.cli, "relations")
+cli.add_command(states.cli, "states")
+cli.add_command(teams.cli, "teams")

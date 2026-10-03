@@ -11,8 +11,9 @@ description: >-
 
 # Linear CLI
 
-Python CLI wrapping the Linear GraphQL API. Authenticates via stored OAuth token (`linear auth
-login`) or `LINEAR_API_KEY` env var. Run `linear <group> <cmd> -h` for the full flag set.
+Python CLI wrapping the Linear GraphQL API. Authenticates via stored OAuth token
+(`linear auth login`) or `LINEAR_API_KEY` env var. Run `linear <group> <cmd> -h` for the full flag
+set.
 
 Use `linear --help` to discover groups. This skill owns workflow and non-obvious semantics, not a
 duplicate command-signature catalog.
@@ -38,7 +39,8 @@ labels; use display names or keys instead.
 - `--label` takes a label display name, case-insensitive
 - `--project` takes a project display name
 - `--milestone` takes a milestone display name, resolved within `--project` when given, otherwise
-  across the workspace when the name is unique
+  across the workspace when the name is unique; `issues list/search` also accept `none` for issues
+  outside any milestone
 - `--parent` takes an issue identifier (e.g. `ENG-123`); no UUID lookup needed
 - `--cycle` takes `active`, `previous`, or an integer cycle number; requires `--team`
 - `--estimate` takes `none` (unestimated) or a numeric value
@@ -88,9 +90,8 @@ EOF
 Relation types for `linear relations add/remove` and `issues create --relation`: `blocks`,
 `blocked-by`, `related`, `duplicate`, `similar`.
 
-`issues create` validates relation targets before creating the issue. If a relation mutation still
-fails, the issue exists; the error names the failed relation, so retry only that one with `relations
-add`.
+`issues create` creates the issue and its relations atomically: if any relation fails, nothing is
+created, so fix the reference and rerun the whole command.
 
 Linear stores a relation once, on the source issue. `blocked-by` is that same row read from the
 other side, so the CLI resolves it by swapping the two issues. `relations list` shows both
@@ -105,9 +106,13 @@ or `update` to set the hierarchy.
 ## Milestones
 
 Milestones are scoped to a project. `--project` accepts a display name or UUID. `milestones view`
-shows milestone details and its issues in one call. `projects view` includes milestones inline.
-Milestone IDs (UUIDs) are required for `update` and `delete`; get them from `milestones list` output
-or `linear api`.
+shows milestone details and its issues in one call, open work first, capped by `--limit` (`--all`
+lifts it).
+
+Drill down top-down: `projects view` groups issues under each milestone (plus a "no milestone"
+group) with an `open: N/M` count and the top open issues. When a group is cut, its `+N more:` line
+prints the exact command for the rest; run that instead of guessing. Milestone IDs (UUIDs) are
+required for `update` and `delete`; get them from `milestones list` output or `linear api`.
 
 `issues list` and `issues search` accept `--milestone` (with `--project`) to filter by milestone:
 
@@ -137,7 +142,7 @@ in that thread (and its synced copy), and `linear comments edit` changes a comme
 Use `linear issues update` only for fields that change after creation.
 
 Pass multiple issue IDs to assign one project or milestone in a batch. Multi-issue updates accept
-only `--project` and `--milestone`.
+only `--project` and `--milestone`; a bad ID is reported while the valid issues still update.
 
 Never chain mutations with `&&`; an earlier mutation remains applied if a later one fails. Run
 independent verification reads separately so one timeout does not skip the remaining checks.

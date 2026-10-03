@@ -7,6 +7,28 @@ import click
 from linear_cli._models import Comment, Issue, ProjectUpdate, priority_label
 
 _UPDATE_PREVIEW_LEN = 200
+CLOSED_STATE_TYPES = frozenset({"completed", "canceled", "duplicate"})
+# Active work first; priority is deliberately ignored because many teams leave it unset.
+_STATE_ORDER = {"started": 0, "unstarted": 1, "backlog": 2, "triage": 3}
+_OTHER_OPEN_RANK = len(_STATE_ORDER)
+_CLOSED_RANK = _OTHER_OPEN_RANK + 1
+
+
+def is_open(issue: Issue) -> bool:
+    """Return whether an issue still needs work (not completed, canceled, or duplicate)."""
+    return issue.state_type not in CLOSED_STATE_TYPES
+
+
+def sort_issues(issues: list[Issue]) -> list[Issue]:
+    """Order issues by state (started, unstarted, backlog, triage, closed), newest update first."""
+
+    def rank(issue: Issue) -> int:
+        if not is_open(issue):
+            return _CLOSED_RANK
+        return _STATE_ORDER.get(issue.state_type or "", _OTHER_OPEN_RANK)
+
+    by_updated = sorted(issues, key=lambda issue: issue.updated_at or "", reverse=True)
+    return sorted(by_updated, key=rank)
 
 
 def estimate_text(estimate: float | None) -> str:

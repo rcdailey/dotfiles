@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import shlex
+
 import click
 
 from linear_cli._click import HelpfulGroup
@@ -9,14 +11,17 @@ from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute, paginate
 from linear_cli._models import Issue, Milestone
 from linear_cli._queries import (
+    ISSUE_CONNECTION,
     ISSUES_QUERY,
     MILESTONE_CREATE_MUTATION,
     MILESTONE_DELETE_MUTATION,
+    MILESTONE_FIELDS,
     MILESTONE_UPDATE_MUTATION,
-    MILESTONES_QUERY,
 )
-from linear_cli._render import echo_issue_summary, percentage_text
-from linear_cli._resolve import resolve_milestone, resolve_project_id
+from linear_cli._render import echo_issue_summary, is_open, percentage_text, sort_issues
+from linear_cli._resolve import Batch, project_filter, resolve_project_id
+
+_ISSUE_PAGE = 250
 
 
 @click.group(cls=HelpfulGroup)
@@ -28,14 +33,12 @@ def cli() -> None:
 @click.option("--project", required=True, help="Project name or UUID.")
 def list_milestones(project: str) -> None:
     """List milestones for a project."""
-    project_id = resolve_project_id(project)
-    filt = {"project": {"id": {"eq": project_id}}}
-    try:
-        data = execute(MILESTONES_QUERY, {"filter": filt})
-    except LinearError as exc:
-        die(str(exc))
-
-    nodes = (data.get("projectMilestones") or {}).get("nodes", [])
+    batch = Batch()
+    get_project = batch.project_node(
+        project, f"projectMilestones {{ nodes {{ {MILESTONE_FIELDS} }} }}"
+    )
+    batch.run()
+    nodes = (get_project().get("projectMilestones") or {}).get("nodes", [])
     if not nodes:
         click.echo("no milestones found")
         return
@@ -50,11 +53,20 @@ def list_milestones(project: str) -> None:
 @cli.command("view")
 @click.argument("milestone_name")
 @click.option("--project", required=True, help="Project name or UUID.")
-def view_milestone(milestone_name: str, project: str) -> None:
-    """View a milestone and its issues."""
-    project_id = resolve_project_id(project)
-    ms_node = resolve_milestone(milestone_name, project_id)
-    milestone_id = ms_node["id"]
+@click.option("--limit", default=20, show_default=True, help="Maximum issues to show.")
+@click.option("--all", "show_all", is_flag=True, help="Show every issue, ignoring --limit.")
+def view_milestone(milestone_name: str, project: str, limit: int, show_all: bool) -> None:
+    """View a milestone and its issues: open work first, newest update first."""
+    batch = Batch()
+    get_project = batch.project_id(project)
+    get_milestone = batch.milestone(
+        milestone_name,
+        project_filter(project),
+        f"{MILESTONE_FIELDS} issues(first: {_ISSUE_PAGE}) {{ {ISSUE_CONNECTION} }}",
+    )
+    batch.run()
+    get_project()
+    ms_node = get_milestone()
     m = Milestone.from_graphql(ms_node)
     pct = percentage_text(m.progress)
     click.echo(f"name:     {m.name}")
@@ -65,21 +77,29 @@ def view_milestone(milestone_name: str, project: str) -> None:
         click.echo("")
         click.echo(m.description)
 
-    issue_filt = {"projectMilestone": {"id": {"eq": milestone_id}}}
-    variables: dict = {"filter": issue_filt, "first": 250, "after": None}
+    issue_filt = {"projectMilestone": {"id": {"eq": ms_node["id"]}}}
+    variables: dict = {"filter": issue_filt, "first": _ISSUE_PAGE}
     try:
-        issue_nodes = paginate(ISSUES_QUERY, variables, ["issues"])
+        issue_nodes = paginate(
+            ISSUES_QUERY, variables, ["issues"], first_page=ms_node.get("issues") or {}
+        )
     except LinearError as exc:
         die(str(exc))
 
-    if issue_nodes:
-        click.echo("")
-        click.echo(f"issues ({len(issue_nodes)}):")
-        for node in issue_nodes:
-            echo_issue_summary(Issue.from_graphql(node), indent="  ")
-    else:
-        click.echo("")
+    click.echo("")
+    if not issue_nodes:
         click.echo("no issues in this milestone")
+        return
+    issues = sort_issues([Issue.from_graphql(node) for node in issue_nodes])
+    open_count = sum(1 for issue in issues if is_open(issue))
+    click.echo(f"issues (open: {open_count}/{len(issues)}):")
+    shown = issues if show_all else issues[:limit]
+    for issue in shown:
+        echo_issue_summary(issue, indent="  ")
+    hidden = len(issues) - len(shown)
+    if hidden > 0:
+        args = f"{shlex.quote(milestone_name)} --project {shlex.quote(project)}"
+        click.echo(f"  +{hidden} more: linear milestones view {args} --all")
 
 
 @cli.command("create")

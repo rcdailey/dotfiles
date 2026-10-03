@@ -253,7 +253,7 @@ class Project:
     external_links: list[dict] = field(default_factory=list)
     members: list[str] = field(default_factory=list)
     teams: list[dict] = field(default_factory=list)
-    issues: list[dict] = field(default_factory=list)
+    issues_page: dict = field(default_factory=dict)
     milestones: list[dict] = field(default_factory=list)
     project_updates: list[dict] = field(default_factory=list)
 
@@ -261,7 +261,6 @@ class Project:
     def from_graphql(cls, data: dict) -> Self:
         member_nodes = (data.get("members") or {}).get("nodes", [])
         team_nodes = (data.get("teams") or {}).get("nodes", [])
-        issue_nodes = (data.get("issues") or {}).get("nodes", [])
         milestone_nodes = (data.get("projectMilestones") or {}).get("nodes", [])
         update_nodes = (data.get("projectUpdates") or {}).get("nodes", [])
         return cls(
@@ -276,7 +275,7 @@ class Project:
             external_links=(data.get("externalLinks") or {}).get("nodes", []),
             members=[m.get("name", "") for m in member_nodes if m.get("name")],
             teams=team_nodes,
-            issues=issue_nodes,
+            issues_page=data.get("issues") or {},
             milestones=milestone_nodes,
             project_updates=update_nodes,
         )

@@ -8,8 +8,8 @@ from linear_cli._click import HelpfulGroup
 from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute
 from linear_cli._models import State
-from linear_cli._queries import STATES_QUERY
-from linear_cli._resolve import resolve_team_id
+from linear_cli._queries import STATE_FIELDS, STATES_QUERY
+from linear_cli._resolve import Batch
 
 
 @click.group(cls=HelpfulGroup)
@@ -21,16 +21,17 @@ def cli() -> None:
 @click.option("--team", "team_key", default=None, help="Team key (e.g. ENG).")
 def list_states(team_key: str | None) -> None:
     """List workflow states, optionally filtered by team."""
-    team_id = resolve_team_id(team_key) if team_key else None
-    filt: dict | None = None
-    if team_id:
-        filt = {"team": {"id": {"eq": team_id}}}
-    try:
-        data = execute(STATES_QUERY, {"filter": filt})
-    except LinearError as exc:
-        die(str(exc))
-
-    nodes = (data.get("workflowStates") or {}).get("nodes", [])
+    if team_key:
+        batch = Batch()
+        get_team = batch.team_node(team_key, f"states {{ nodes {{ {STATE_FIELDS} }} }}")
+        batch.run()
+        nodes = (get_team().get("states") or {}).get("nodes", [])
+    else:
+        try:
+            data = execute(STATES_QUERY)
+        except LinearError as exc:
+            die(str(exc))
+        nodes = (data.get("workflowStates") or {}).get("nodes", [])
     if not nodes:
         click.echo("no states found")
         return

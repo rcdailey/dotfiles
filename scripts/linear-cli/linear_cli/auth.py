@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import os
 import time
 
 import click
-import httpx
 
+from linear_cli import _http
 from linear_cli._auth import (
     clear_tokens,
     load_tokens,
@@ -24,18 +25,19 @@ from linear_cli._queries import VIEWER_QUERY
 def _validate_api_key(key: str) -> str | None:
     """Call viewer query with key. Returns email on success, None on failure."""
     try:
-        response = httpx.post(
+        response = _http.post(
             LINEAR_BASE_URL,
-            json={"query": VIEWER_QUERY},
-            headers={"Authorization": key, "Content-Type": "application/json"},
+            json.dumps({"query": VIEWER_QUERY}).encode(),
+            {"Authorization": key, "Content-Type": "application/json"},
         )
-        response.raise_for_status()
-        body = response.json()
-        if not isinstance(body, dict):
+        if response.status >= 400:
             return None
-        return body.get("data", {}).get("viewer", {}).get("email")
-    except (httpx.HTTPError, ValueError):
+        body = response.json()
+    except (*_http.TRANSPORT_ERRORS, ValueError):
         return None
+    if not isinstance(body, dict):
+        return None
+    return ((body.get("data") or {}).get("viewer") or {}).get("email")
 
 
 @click.group(cls=HelpfulGroup)
