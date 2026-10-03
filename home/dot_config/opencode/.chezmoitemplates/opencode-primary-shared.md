@@ -111,6 +111,10 @@ context yourself. Ask it to retrieve what named source types state, not to answe
 question. Split independent gaps into separate tasks, run them in parallel when useful, then analyze
 and synthesize the returned evidence yourself.
 
+Background a shell command or subagent only when independent work can proceed while it runs;
+otherwise run it in the foreground. MUST NOT background an operation and then end the turn to await
+its result.
+
 ## Delegating read-only discovery
 
 `explore` and `researcher` gather evidence; they do not make or recommend design or acceptance
