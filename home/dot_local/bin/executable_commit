@@ -8,6 +8,8 @@ Git hooks are bypassed.
 Usage:
     commit save [files] -s "..." [-p "..."] [-b "..."] [-i "..."]
     commit save --amend [files] [-s "..." [-p "..."] [-b "..."] [-i "..."]]
+    commit save --fixup <commit> [files]
+    commit save --squash <commit> [files] [-p "..."] [-b "..."] [-i "..."]
 
 Environment:
     GIT_COMMIT_FMT_SUBJECT_WIDTH  Subject char limit (default: 72)
@@ -47,6 +49,8 @@ usage: commit <subcommand> [args...]
 subcommands:
   save [files] -s "..."      stage files and commit
   save --amend [files]       fold staged files into HEAD; -s rewrites its message
+  save --fixup <commit>      commit staged files as a fixup! of <commit>
+  save --squash <commit>     commit staged files as a squash! of <commit>
 
 Use 'commit <subcommand> --help' for subcommand details."""
 
@@ -378,20 +382,29 @@ def _validated_subject(raw: str) -> str:
     return subject
 
 
-def _refuse_amending_published_head() -> None:
-    """Amending a commit the upstream already holds forces a rewrite of shared history."""
-    upstream = git("rev-parse", "--verify", "--quiet", "@{upstream}", check=False, capture=True)
-    if upstream.returncode != 0:
-        return
-    published = git("merge-base", "--is-ancestor", "HEAD", "@{upstream}", check=False)
-    if published.returncode == 0:
-        die("HEAD is already on the upstream branch; amending it would require a force push")
+def _target_subject(rev: str) -> str:
+    """Return the subject of a fixup or squash target on the current branch.
+
+    `git rebase --autosquash` matches `fixup!` and `squash!` commits to their
+    target by this subject, so it is built here exactly as `git commit
+    --fixup` would, letting commitlint check the final message.
+    """
+    resolved = git(
+        "rev-parse", "--verify", "--quiet", f"{rev}^{{commit}}", check=False, capture=True
+    )
+    if resolved.returncode != 0:
+        die(f"unknown commit: {rev}")
+    sha = resolved.stdout.strip()
+    ancestor = git("merge-base", "--is-ancestor", sha, "HEAD", check=False, capture=True)
+    if ancestor.returncode != 0:
+        die(f"{rev} is not an ancestor of HEAD")
+    return git_output("log", "-1", "--format=%s", sha).strip()
 
 
 def cmd_save(args: list[str]) -> None:
     parser = argparse.ArgumentParser(prog="commit save")
     parser.add_argument("files", nargs="*", help="whole files to stage")
-    parser.add_argument("-s", help="subject (required unless --amend keeps the message)")
+    parser.add_argument("-s", help="subject (not used with --fixup or --squash; optional with --amend)")
     parser.add_argument("-p", action="append", default=[], help="body paragraph")
     parser.add_argument(
         "-b",
@@ -401,35 +414,56 @@ def cmd_save(args: list[str]) -> None:
     )
     parser.add_argument("-i", action="append", default=[], help="issue reference")
     parser.add_argument("-a", action="store_true", help="stage all changes")
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--amend",
         action="store_true",
         help="fold staged changes into HEAD; without -s the message is kept",
+    )
+    mode.add_argument(
+        "--fixup",
+        metavar="COMMIT",
+        help="commit staged changes as a fixup! of COMMIT for rebase --autosquash",
+    )
+    mode.add_argument(
+        "--squash",
+        metavar="COMMIT",
+        help="like --fixup, but -p, -b, and -i add a body kept when squashing",
     )
     args_parsed = parser.parse_args(args)
 
     has_files = bool(args_parsed.files)
     amend = args_parsed.amend
+    target = args_parsed.fixup or args_parsed.squash
     has_message = args_parsed.s is not None
+    has_body = bool(args_parsed.p or args_parsed.b or args_parsed.i)
 
     if args_parsed.a and has_files:
         die("-a and file arguments are mutually exclusive")
-    if not has_message and not amend:
-        parser.error("the following arguments are required: -s")
-    if not has_message and (args_parsed.p or args_parsed.b or args_parsed.i):
-        die("-p, -b, and -i rewrite the message and require -s")
+    if target is not None:
+        if has_message:
+            die("--fixup and --squash take the subject from the target commit; drop -s")
+        if args_parsed.fixup and has_body:
+            die("--fixup takes no message; use --squash to add a body")
+    elif not has_message:
+        if not amend:
+            parser.error("the following arguments are required: -s")
+        if has_body:
+            die("-p, -b, and -i rewrite the message and require -s")
+
+    repo_root = Path(git_output("rev-parse", "--show-toplevel").strip())
 
     message: str | None = None
+    subject: str | None = None
+    message_options = {"-p": args_parsed.p, "-b": args_parsed.b, "-i": args_parsed.i}
     if has_message:
         subject = _validated_subject(args_parsed.s)
-        errors = validate_literal_line_breaks(
-            {
-                "-s": [subject],
-                "-p": args_parsed.p,
-                "-b": args_parsed.b,
-                "-i": args_parsed.i,
-            }
-        )
+        message_options["-s"] = [subject]
+    elif target is not None:
+        prefix = "fixup!" if args_parsed.fixup else "squash!"
+        subject = f"{prefix} {_target_subject(target)}"
+    if subject is not None:
+        errors = validate_literal_line_breaks(message_options)
         errors.extend(validate_paragraphs(args_parsed.p))
         if errors:
             for err in errors:
@@ -437,12 +471,9 @@ def cmd_save(args: list[str]) -> None:
             sys.exit(1)
         message = format_message(subject, args_parsed.p, args_parsed.b, args_parsed.i)
 
-    repo_root = Path(git_output("rev-parse", "--show-toplevel").strip())
-
     if amend:
         if git("rev-parse", "--verify", "--quiet", "HEAD", check=False, capture=True).returncode:
             die("nothing to amend; the repository has no commits")
-        _refuse_amending_published_head()
 
     staged = git("diff", "--cached", "--quiet", check=False, capture=True)
     if staged.returncode not in (0, 1):

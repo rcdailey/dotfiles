@@ -258,22 +258,65 @@ class CommitSaveTests(unittest.TestCase):
         self.assertIn("require -s", result.stderr)
         self.assertEqual(self.git("rev-parse", "HEAD").stdout.strip(), before)
 
-    def test_amend_refuses_published_head(self):
-        before = self.commit_initial()
+    def test_amend_rewrites_published_head(self):
+        self.commit_initial()
         remote = self.root / "remote.git"
         self.git("init", "--bare", "--quiet", str(remote))
         self.git("remote", "add", "origin", str(remote))
         self.git("push", "--quiet", "-u", "origin", "HEAD")
         result = self.run_save("--amend", "-s", "project: rewritten")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("upstream", result.stderr)
-        self.assertEqual(self.git("rev-parse", "HEAD").stdout.strip(), before)
-        self.change.write_text("unpublished\n")
-        result = self.save("project: second", "change.txt")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        result = self.run_save("--amend", "-s", "project: second reworded")
+        self.assert_committed("project: rewritten")
+
+    def commit_target_and_tip(self):
+        target = self.commit_initial()
+        (self.repo / "tip.txt").write_text("tip\n")
+        result = self.save("project: tip", "tip.txt")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assert_committed("project: second reworded")
+        self.change.write_text("corrected\n")
+        return target
+
+    def test_fixup_targets_named_commit(self):
+        target = self.commit_target_and_tip()
+        result = self.run_save("--fixup", target[:7], "change.txt")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(
+            self.git("log", "-1", "--format=%B").stdout,
+            "fixup! project: initial\n\n",
+        )
+        self.assertEqual(
+            self.git("show", "--name-only", "--format=", "HEAD").stdout.splitlines(),
+            ["change.txt"],
+        )
+
+    def test_squash_targets_named_commit_with_body(self):
+        target = self.commit_target_and_tip()
+        result = self.run_save("--squash", target, "change.txt", "-p", "Why.", "-b", "detail")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(
+            self.git("log", "-1", "--format=%B").stdout,
+            "squash! project: initial\n\nWhy.\n\n- detail\n\n",
+        )
+
+    def test_fixup_and_squash_reject_invalid_requests(self):
+        target = self.commit_target_and_tip()
+        head = self.git("rev-parse", "HEAD").stdout.strip()
+        unrelated = self.git("commit-tree", "HEAD^{tree}", "-m", "unrelated").stdout.strip()
+        cases = (
+            (("--fixup", target, "-s", "project: subject"), "-s"),
+            (("--squash", target, "-s", "project: subject"), "-s"),
+            (("--fixup", target, "-b", "detail"), "--squash"),
+            (("--fixup", target, "--amend"), "not allowed"),
+            (("--fixup", "missing"), "unknown commit"),
+            (("--fixup", unrelated), "not an ancestor"),
+            (("--fixup", target), "nothing staged"),
+        )
+        for args, message in cases:
+            with self.subTest(args=args):
+                result = self.run_save(*args)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(message, result.stderr)
+                self.assertEqual(self.git("rev-parse", "HEAD").stdout.strip(), head)
 
     def test_save_without_amend_still_requires_subject(self):
         self.write_change()
