@@ -127,7 +127,7 @@ callers check evidence and relay the briefing without reconstructing your reason
 ```markdown
 **PR:** #{number} - {url}
 **Status:** {complete | partial | blocked} - {missing evidence or blocker, if any}
-**Verdict:** {approve | request changes | comment-only | unknown} - {rationale, one sentence}
+**Verdict:** {approve | request changes | unknown} - {rationale, one sentence}
 **Review:** {PRR_... ID} - {n} comments (unsubmitted)
 
 ### What is changing, and what is my assessment?
@@ -172,6 +172,9 @@ fetched URLs}
   every implementation detail is correct. `partial` means material evidence is missing; `blocked`
   means the target or access could not be established. Name the gap and next action in `Status`.
   Never approve an incomplete review; use `unknown` unless verified findings justify changes.
+- Derive the verdict from dispositions: `request changes` for any fix-before-merge finding;
+  otherwise `unknown` when an unanswered question controls merge safety; otherwise `approve`, even
+  with follow-up comments. Approval covers only your concerns, not other reviewers' blockers.
 - Tie verdict wording to inspected behavior and the priority scope; do not imply all changes are
   correct or no further review change is needed. Approval is advice, never a submitted review. For
   blocked reviews, retain the questions and state what cannot be assessed rather than guessing.
@@ -190,9 +193,10 @@ fetched URLs}
 
 ### 1. Gather Context
 
-Resolve the supplied target to canonical `{owner}/{repo}`. For a directory, run `gh repo view --json
-nameWithOwner` there; do not infer repository identity from an unrelated working directory. Pass
-`--repo {owner}/{repo}` on every `gh pr` call and the positional repository on `gh-review` calls.
+Resolve the supplied target to canonical `{owner}/{repo}`. For a directory, run
+`gh repo view --json nameWithOwner` there; do not infer repository identity from an unrelated
+working directory. Pass `--repo {owner}/{repo}` on every `gh pr` call and the positional repository
+on `gh-review` calls.
 
 Fetch PR metadata:
 
@@ -281,9 +285,9 @@ already flagged an issue, leave it alone; do not post a second comment even if t
 incomplete or could be improved. Only post comments that identify net-new issues not raised anywhere
 on the PR.
 
-The `gh-review view` output is the complete record of prior feedback. For bot bodies it marks `[bot,
-sanitized]`, the tool removes collapsed sections and markup on purpose. Removed content does not
-count as raised and is not a coverage gap. Do not recover it with other tools or list it in
+The `gh-review view` output is the complete record of prior feedback. For bot bodies it marks
+`[bot, sanitized]`, the tool removes collapsed sections and markup on purpose. Removed content does
+not count as raised and is not a coverage gap. Do not recover it with other tools or list it in
 `Limits`.
 
 This is deduplication, not a reason to ignore unresolved issues when deciding the verdict. Attribute

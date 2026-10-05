@@ -61,9 +61,9 @@ Rename the session before spawning subagents:
 
 - One PR: `PR #N: TICKET-ID short description`, where TICKET-ID is a Linear or GitHub issue key
   found in the PR title or branch name (omit if none). Description under 10 words, capturing the
-  PR's purpose. Derive both from the PR title already fetched; for PR-number mode run `gh pr view
-  {number} --repo {owner}/{repo} --json title,headRefName,author` first. If `author.is_bot` is true,
-  STOP: bot-authored PRs are not reviewed.
+  PR's purpose. Derive both from the PR title already fetched; for PR-number mode run
+  `gh pr view {number} --repo {owner}/{repo} --json title,headRefName,author` first. If
+  `author.is_bot` is true, STOP: bot-authored PRs are not reviewed.
 - Fan-out: `Review: {repo} ({n} PRs)`
 
 Spawn one `reviewer` subagent per selected PR. Pass:
@@ -103,13 +103,14 @@ line per finding, nothing that does not change a decision.
 
 {url}
 
-**{Approve | Request changes | Comment only | Unknown}.** {The single sentence that is the review:
+**{Approve | Request changes | Unknown}.** {The single sentence that is the review:
 what breaks or why it is safe, in product terms.}
 
 {2-4 sentences: what the PR is for, who is affected, behavior before and after, and whether it meets
 the ticket's goal. This is the reader's only context; do not assume they know the PR.}
 
-- **P{n}, {blocking | optional}:** {trigger and what the user sees}. Fix: {behavior change}.
+- **P{n}, {blocking | optional | question}:** {trigger and what the user sees}.
+  Fix: {behavior change}.
 
 Pending: {n} comments | none. Not staged: {one clause each} | none.
 Limit: {what stayed unverified and whether it changes the verdict; omit when nothing material}.
@@ -117,8 +118,9 @@ Limit: {what stayed unverified and whether it changes the verdict; omit when not
 
 - `partial` or `blocked` status replaces the verdict word: `**Partial.**` or `**Blocked.**`, then
   the gap in plain words. Never present either as approval.
-- One bullet per finding, 1-2 sentences, priority and disposition preserved one to one. Do not add
-  findings, soften verdicts, or imply a review was submitted.
+- One bullet per finding, 1-2 sentences, priority and disposition preserved one to one: fix before
+  merge is `blocking`, follow up is `optional`, an unanswered prerequisite is `question`. Do not add
+  findings, harden or soften verdicts or dispositions, or imply a review was submitted.
 - Optional findings are findings; an approve with optional comments still lists them. Never move a
   posted finding into `Not staged`.
 - Clean PR: no finding bullets; end the context paragraph with why it is safe and the assumption the
