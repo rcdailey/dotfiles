@@ -77,8 +77,10 @@ Spawn one `reviewer` subagent per selected PR. Pass:
 
 Keep each returned `sessionID` paired with its PR number for the rest of the session.
 
-Fan-out PRs run in parallel; the reviewer owns repository- and session-isolated worktrees or uses
-its remote-only fallback. Never assign a shared temporary path in the caller.
+MUST NOT run reviewers in the background; every reviewer runs in the foreground so all reviews
+finish before you respond. Fan-out PRs run in parallel as foreground calls in one batch; the
+reviewer owns repository- and session-isolated worktrees or uses its remote-only fallback. Never
+assign a shared temporary path in the caller.
 
 For one selected PR, use the same evidence check and briefing presentation below.
 
