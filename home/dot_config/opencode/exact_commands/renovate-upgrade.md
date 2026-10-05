@@ -16,18 +16,19 @@ PR).
 Use the subagent tool with `agent: "upgrade-analyst"` for each PR. Run every subagent in the
 foreground; never set `background: true`. Wait for all results before analyzing or responding.
 
-Only PRs whose status checks all passed are eligible; pending, failing, or absent checks exclude a
-PR.
+Pending or absent checks make a PR ineligible: its CI result is not yet known.
 
-**Bulk mode** (no arguments): Run `dependency-prs`, which prints eligible open Renovate and
-Dependabot PRs in review priority order, one per line with a best-effort update type and author.
-Take the first 5. Launch one foreground subagent per selected PR in parallel by issuing all calls in
-the same message. Each subagent receives the PR reference. Collect all results, then present a
-unified summary. Show each PR's detected type; list skipped PRs (number, type, title) at the end of
-the report for a later run.
+**Bulk mode** (no arguments): Run `dependency-prs`, which prints open Renovate and Dependabot PRs in
+review priority order, one per line with a check state, a best-effort update type, and an author.
+Take the first 5 with `pass` checks. Launch one foreground subagent per selected PR in parallel by
+issuing all calls in the same message. Each subagent receives the PR reference. Collect all results,
+then present a unified summary. Show each PR's detected type; list skipped PRs (number, check state,
+type, title) at the end of the report. Failing PRs may need code fixes for the upgrade; they are
+assessed only when requested as a single PR.
 
-**Single PR mode** (argument specifies a PR): Run `gh pr checks <PR> --repo <owner/repo>`. If the PR
-is ineligible, report its non-passing checks and stop; otherwise launch one subagent for the PR.
+**Single PR mode** (argument specifies a PR): Run `gh pr checks <PR> --repo <owner/repo>`. If checks
+are pending or absent, report them and stop; otherwise launch one subagent for the PR, including
+when checks fail.
 
 The analyst cannot fetch. Before launching, fetch every selected PR head in one call
 (`git fetch origin pull/<N>/head pull/<M>/head`) and read each PR's `headRefOid` and `baseRefOid`.
@@ -63,11 +64,12 @@ For each assessment marked `requires changes`:
   - What changed and which version introduced it
   - Which files in this repo are affected
   - What the fix or adoption looks like (briefly)
+  - Failing checks the upgrade caused, if any
 
 ### CI blocked or unknown
 
-Keep these states separate. Name failed/pending required checks or missing revision/upstream
-evidence; absence of changelog findings never makes either state safe.
+Keep these states separate. Name failed/pending required checks and the analyst's failure cause, or
+missing revision/upstream evidence; absence of changelog findings never makes either state safe.
 
 ### Recommended adoptions
 

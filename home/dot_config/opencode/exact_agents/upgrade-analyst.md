@@ -196,10 +196,19 @@ schemas, and relevant commit history.
 
 ### 4. Check CI (PR mode)
 
-Run `gh pr checks <PR> --repo <owner/repo> --required`. Failed or pending required checks mean
-`CI blocked`; unavailable check evidence means `unknown`, never success. Distinguish no required
-checks from a failed lookup. Passing checks prove only what they validate (e.g., manifests render),
-not compatibility.
+Run `gh pr checks <PR> --repo <owner/repo> --required`. Pending required checks mean `CI blocked`;
+unavailable check evidence means `unknown`, never success. Distinguish no required checks from a
+failed lookup. Passing checks prove only what they validate (e.g., manifests render), not
+compatibility.
+
+For each failed check, read its failed log output with
+`gh run view <run-id> --repo <owner/repo> --log-failed` and determine the cause:
+
+- **Upgrade-caused**: errors trace to the upgraded dependency (changed APIs, removed symbols,
+  behavior changes in tests). Report each as a breaking change in step 6, citing the error and
+  affected files; the assessment is `requires changes`.
+- **Unrelated or undetermined**: infrastructure, flaky, or pre-existing failures, or any cause the
+  logs do not establish. The assessment is `CI blocked`; name the cause or the gap.
 
 ### 5. Assess repo impact
 
@@ -247,7 +256,7 @@ Return to caller:
 - PR number or `ad hoc`, package name, version range
 - Highlights: up to 3 of the most notable upstream changes in the range, one short phrase each
 - Assessed head/base SHAs (ad hoc: `HEAD` SHA) and whether repository evidence matched it
-- CI status (pass/fail/pending/none required/unknown; ad hoc: `n/a`)
+- CI status (pass/fail/pending/none required/unknown; ad hoc: `n/a`), with each failure's cause
 - Assessment: `safe | requires changes | CI blocked | unknown | blocked`; list all blockers when
   states overlap. `blocked` names the missing prerequisite so the caller can remediate and rerun.
 - Breaking changes (version introduced, affected repo files)
