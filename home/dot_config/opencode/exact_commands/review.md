@@ -90,7 +90,7 @@ Before presenting, spot-check one representative finding per PR against its cite
 external claim that controls the verdict. For clean reviews, check one consequential assessment
 against its cited evidence. This is a bounded hallucination check, not a second review. If evidence
 contradicts the briefing or is unavailable, resume that subagent session to correct its comments,
-assessment, or status.
+assessment, or verdict.
 
 Read the PR code from the worktree path in the reviewer's `Refs`, or `gh pr diff` when it reports
 none. Never write to the repo checkout: no fetch refspecs, refs, branches, checkouts, or worktrees
@@ -105,24 +105,26 @@ line per finding, nothing that does not change a decision.
 
 {url}
 
-**{Approve | Request changes | Unknown}.** {The single sentence that is the review:
+**{Approve | Comment}.** {The single sentence that is the review:
 what breaks or why it is safe, in product terms.}
 
 {2-4 sentences: what the PR is for, who is affected, behavior before and after, and whether it meets
 the ticket's goal. This is the reader's only context; do not assume they know the PR.}
 
-- **P{n}, {blocking | optional | question}:** {trigger and what the user sees}.
-  Fix: {behavior change}.
+- **P{n}, {blocking | optional | question}, {new | pending | by @login}:** {trigger and what the
+  user sees}. Fix: {behavior change}.
 
 Pending: {n} comments | none. Not staged: {one clause each} | none.
 Limit: {what stayed unverified and whether it changes the verdict; omit when nothing material}.
 ```
 
-- `partial` or `blocked` status replaces the verdict word: `**Partial.**` or `**Blocked.**`, then
-  the gap in plain words. Never present either as approval.
+- A reviewer `Blocked` return replaces the verdict word with `**Blocked.**` and the reason in plain
+  words. Never relay or suggest "request changes"; that call is the user's.
 - One bullet per finding, 1-2 sentences, priority and disposition preserved one to one: fix before
-  merge is `blocking`, follow up is `optional`, an unanswered prerequisite is `question`. Do not add
-  findings, harden or soften verdicts or dispositions, or imply a review was submitted.
+  merge is `blocking`, follow up is `optional`, an unanswered prerequisite is `question`. Preserve
+  the source: `new` and `pending` are yours; `by @login` names who already raised it, appending
+  `(resolved)` when the thread is resolved. Do not add findings, harden or soften verdicts or
+  dispositions, or imply a review was submitted.
 - Optional findings are findings; an approve with optional comments still lists them. Never move a
   posted finding into `Not staged`.
 - Clean PR: no finding bullets; end the context paragraph with why it is safe and the assumption the

@@ -119,6 +119,9 @@ cross-system evidence and incorporate author explanations.
 A PR number is required. If the caller omits it, return `blocked` rather than reviewing a commit
 range or local changes.
 
+When a review cannot start (no PR number, bot author, unresolvable target or access), return only
+`**PR:** {number or none}` and `**Blocked:** {reason and next action}` instead of the briefing.
+
 ## Return Contract
 
 Return this private briefing to the caller, not a file. Preserve the fields and question headings;
@@ -126,8 +129,7 @@ callers check evidence and relay the briefing without reconstructing your reason
 
 ```markdown
 **PR:** #{number} - {url}
-**Status:** {complete | partial | blocked} - {missing evidence or blocker, if any}
-**Verdict:** {approve | request changes | unknown} - {rationale, one sentence}
+**Verdict:** {approve | comment} - {rationale, one sentence}
 **Review:** {PRR_... ID} - {n} comments (unsubmitted)
 
 ### What is changing, and what is my assessment?
@@ -137,7 +139,8 @@ and reason for the scoped verdict.}
 
 ### When does the concern matter, and what happens?
 
-{Findings: priority, path:line, condition, mechanism, consequence. Clean: why behavior is sound.}
+{Findings: priority, source, path:line, condition, mechanism, consequence. Clean: why behavior is
+sound.}
 
 ### What would resolve the concern or change my assessment?
 
@@ -168,16 +171,17 @@ fetched URLs}
   remaining assumptions. Do not invent objections; state when no material uncertainty remains.
 - Keep mergeability separate from technical assessment. Conflicts or routine next steps must not
   substitute for explaining behavior and compatibility in the three answers.
-- `complete` means the consequential questions identified for this scope were assessed, not that
-  every implementation detail is correct. `partial` means material evidence is missing; `blocked`
-  means the target or access could not be established. Name the gap and next action in `Status`.
-  Never approve an incomplete review; use `unknown` unless verified findings justify changes.
-- Derive the verdict from dispositions: `request changes` for any fix-before-merge finding;
-  otherwise `unknown` when an unanswered question controls merge safety; otherwise `approve`, even
-  with follow-up comments. Approval covers only your concerns, not other reviewers' blockers.
+- Tag every finding's source: `new` (staged this pass), `pending` (already in your unsubmitted
+  review), or `raised by @{login}` with `resolved` or `unresolved` (existing thread or comment).
+  List an already-raised issue only when you independently confirm it within scope.
+- The verdict is binary; requesting changes is the user's decision, never yours. `approve` only
+  when, within scope, no fix-before-merge finding from any source remains unresolved, no unanswered
+  question controls merge safety, and no material evidence is missing. Otherwise `comment`, naming
+  the controlling finding, question, or gap. Follow-up findings alone do not prevent `approve`. Mark
+  fix-before-merge findings `blocking` in the findings so the user can decide.
 - Tie verdict wording to inspected behavior and the priority scope; do not imply all changes are
-  correct or no further review change is needed. Approval is advice, never a submitted review. For
-  blocked reviews, retain the questions and state what cannot be assessed rather than guessing.
+  correct or no further review change is needed. Approval is advice, never a submitted review. When
+  evidence is missing, retain the questions and state what cannot be assessed rather than guessing.
 - `Coverage` separates intended configuration from observed state; identify environment and time for
   live evidence. Name consequential unverified boundaries even when there are no findings.
 - Keep coverage bullets short. Distinguish tracing, executed checks, CI, and author-reported tests.
@@ -225,7 +229,8 @@ literal remote name in later commands.
 
 If no local checkout or matching remote exists, use remote-only mode: read the PR's files metadata
 and `gh pr diff {number} --repo {owner}/{repo}` once. Do not read an unrelated checkout or create a
-worktree. If required unchanged context cannot be retrieved with permitted tools, report `partial`.
+worktree. If required unchanged context cannot be retrieved with permitted tools, report the gap in
+`Limits`.
 
 Otherwise run Git in the matching checkout. Verify `/tmp/opencode` exists, then allocate a unique
 task directory with `mktemp -d "/tmp/opencode/pr-review-{owner}-{repo}-{number}-XXXXXXXX"`. Set
@@ -238,7 +243,7 @@ git fetch {remote} {base} pull/{number}/head &&
 ```
 
 Verify both captured commits are available after fetching. If the PR advanced, refresh metadata and
-re-verify its delta. If commits remain unavailable, use remote-only mode or report `partial`; never
+re-verify its delta. If commits remain unavailable, use remote-only mode or report the gap; never
 substitute a mutable ref or repeat an unchanged failed fetch.
 
 Get the changed file list:
@@ -276,7 +281,7 @@ When the PR title, branch, or body carries a ticket key, MUST read that ticket b
 Linear keys load `linear-cli` and include comments and any parent issue; otherwise use permitted
 tools. Read relevant design decisions the same way and record the ticket in `Refs`. An unreadable
 ticket, or any unavailable requirement that controls the verdict, is a coverage gap: report
-`partial` and name it in `Status` and `Limits`.
+`comment` and name it in the verdict and `Limits`.
 
 ### 2. Skip Already-Flagged Issues
 
@@ -290,11 +295,12 @@ The `gh-review view` output is the complete record of prior feedback. For bot bo
 not count as raised and is not a coverage gap. Do not recover it with other tools or list it in
 `Limits`.
 
-This is deduplication, not a reason to ignore unresolved issues when deciding the verdict. Attribute
-existing blockers in the briefing without claiming them as new. On follow-ups, validate author
-responses, then stage a threaded reply via `gh-pr-review` only when something remains to say: the
-fix is incomplete, a new issue appeared, or the author asked a question. Never reply to acknowledge
-a resolved finding; report the resolution in the briefing and set `Review: none`.
+This is deduplication, not a reason to ignore unresolved issues when deciding the verdict. Report
+confirmed existing issues with their source tag (see Return Contract), never as new. On follow-ups,
+validate author responses, then stage a threaded reply via `gh-pr-review` only when something
+remains to say: the fix is incomplete, a new issue appeared, or the author asked a question. Never
+reply to acknowledge a resolved finding; report the resolution in the briefing and set
+`Review: none`.
 
 ### 3. Analyze
 
@@ -330,7 +336,7 @@ justifies revisiting them. Derive conventions from the repository rather than pe
   secrets or raw sensitive data in reports. No live writes, deployments, applies, or migrations.
 - Stop when evidence settles the question, remaining uncertainty cannot change the decision, or
   access or a caller/repository work budget prevents progress. For a material unresolved question,
-  report `partial`, the missing evidence, and the next action; never silently infer deployed state.
+  report the missing evidence and the next action in `Limits`; never silently infer deployed state.
 
 #### Finding judgment
 
