@@ -8,8 +8,8 @@ description: >-
 
 # Discord chat retrieval
 
-Export the week preceding the referenced point to a local plain-text file. Search and read that
-file instead of repeatedly calling Discord or loading the entire conversation into context.
+Export the week preceding the referenced point to a local plain-text file. Search and read that file
+instead of repeatedly calling Discord or loading the entire conversation into context.
 
 ## Input
 
@@ -18,8 +18,8 @@ Accept these URL shapes:
 - Channel: `https://discord.com/channels/<server-id>/<channel-id>`
 - Message: `https://discord.com/channels/<server-id>/<channel-id>/<message-id>`
 
-`DISCORD_TOKEN` must already be present in the environment. Never print, read, or pass it on the
-command line.
+mise supplies `DISCORD_TOKEN` to the exporter from `~/.config/mise/config.local.toml`. Never print,
+read, or pass it on the command line.
 
 ## Export
 
@@ -36,14 +36,13 @@ When the rolling window is insufficient, bound a channel export with ISO-8601 ti
   --after '2026-08-17T16:06:00Z' --before '2026-08-24T16:06:00Z'
 ```
 
-The command invokes `DiscordChatExporter.Cli` through mise and writes plain text without media
-under `/tmp/opencode`:
+The command invokes `DiscordChatExporter.Cli` through mise and writes plain text without media under
+`/tmp/opencode`:
 
 - Channel link: seven days ending when the command starts
 - Message link: seven days preceding the linked message, including that message
 - Explicit channel range: `--after` through `--before`
-- Filename: `discord-<channel-id>-latest.txt` or
-  `discord-<channel-id>-<message-id>.txt`
+- Filename: `discord-<channel-id>-latest.txt` or `discord-<channel-id>-<message-id>.txt`
 
 ## Use the export
 
@@ -56,7 +55,8 @@ the end of the file when the linked message is the focus.
 
 ## Failure behavior
 
-- Missing `DISCORD_TOKEN`: stop and ask the user to expose it to the current environment.
+- Missing token: stop and ask the user to set `DISCORD_TOKEN` under `[env]` in
+  `~/.config/mise/config.local.toml`.
 - Invalid URL: report the accepted URL shapes.
 - Discord permission or authentication error: report it without exposing the token.
 - Empty export: verify channel access; do not broaden the range unless the task requires it.

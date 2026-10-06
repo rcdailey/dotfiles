@@ -64,6 +64,9 @@ node.verify = false
 [settings.github]
 credential_command = "gh auth token"
 
+# Secrets and machine-local env vars belong in ~/.config/mise/config.local.toml,
+# which mise loads automatically and chezmoi does not manage. Never add secret
+# loading (files, templates, env_file) here.
 [env]
 _.source = ["~/.config/mise/scripts/node-path.sh"]
 OPENCODE_LOG_LEVEL = "DEBUG"
