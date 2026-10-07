@@ -37,7 +37,8 @@ description: Use when creating or reviewing the artifact this skill governs.
 
 - `name`: required, 1-64 lowercase alphanumeric characters separated by single hyphens; matches its
   directory.
-- `description`: required, 1-1024 characters.
+- `description`: required, 1-1024 characters. Wrap multi-line values as a folded block (`>-`); a
+  plain scalar containing `: ` is invalid YAML, and OpenCode silently drops the skill.
 - `license`, `compatibility`, and string-to-string `metadata`: optional.
 - Unknown fields are ignored; do not invent behavioral fields.
 
