@@ -1,9 +1,10 @@
 ---
 name: discord-chat
 description: >-
-  Use when the user provides a discord.com/channels/<server>/<channel> link or a Discord message
-  link and asks to inspect, fetch, search, summarize, or use the linked conversation. Do NOT use
-  for Discord application, bot, webhook, or server administration.
+  Use when the user provides a discord.com/channels/<server>/<channel> link, a direct message
+  (DM) link (discord.com/channels/@me/<channel>), or a Discord message link and asks to inspect,
+  fetch, search, summarize, or use the linked conversation. Do NOT use for Discord application,
+  bot, webhook, or server administration.
 ---
 
 # Discord chat retrieval
@@ -17,6 +18,7 @@ Accept these URL shapes:
 
 - Channel: `https://discord.com/channels/<server-id>/<channel-id>`
 - Message: `https://discord.com/channels/<server-id>/<channel-id>/<message-id>`
+- DM or group DM: replace `<server-id>` with `@me` in either shape
 
 mise supplies `DISCORD_TOKEN` to the exporter from `~/.config/mise/config.local.toml`. Never print,
 read, or pass it on the command line.

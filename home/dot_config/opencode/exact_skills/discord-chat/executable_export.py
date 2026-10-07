@@ -15,7 +15,7 @@ from typing import NoReturn
 
 DISCORD_EPOCH_MS = 1_420_070_400_000
 URL_PATTERN = re.compile(
-    r"https://discord\.com/channels/(?P<server>\d+)/(?P<channel>\d+)"
+    r"https://discord\.com/channels/(?P<server>\d+|@me)/(?P<channel>\d+)"
     r"(?:/(?P<message>\d+))?/?(?:\?.*)?"
 )
 
@@ -52,7 +52,7 @@ def main() -> None:
 
     match = URL_PATTERN.fullmatch(args.url)
     if match is None:
-        fail("Expected https://discord.com/channels/<server>/<channel>[/<message>]")
+        fail("Expected https://discord.com/channels/<server|@me>/<channel>[/<message>]")
 
     channel_id = match.group("channel")
     message_id = match.group("message")
