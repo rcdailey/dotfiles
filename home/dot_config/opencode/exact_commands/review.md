@@ -125,6 +125,7 @@ Limit: {what stayed unverified and whether it changes the verdict; omit when not
   the source: `new` and `pending` are yours; `by @login` names who already raised it, appending
   `(resolved)` when the thread is resolved. Do not add findings, harden or soften verdicts or
   dispositions, or imply a review was submitted.
+- A limit on paths the PR or its rollout activates is material; always show it.
 - Optional findings are findings; an approve with optional comments still lists them. Never move a
   posted finding into `Not staged`.
 - Clean PR: no finding bullets; end the context paragraph with why it is safe and the assumption the

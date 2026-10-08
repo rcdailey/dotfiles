@@ -279,7 +279,9 @@ constraints; do not assume a company, domain, platform, or tracker.
 
 When the PR title, branch, or body carries a ticket key, MUST read that ticket before analysis: for
 Linear keys load `linear-cli` and include comments and any parent issue; otherwise use permitted
-tools. Read relevant design decisions the same way and record the ticket in `Refs`. An unreadable
+tools. Read relevant design decisions the same way and record the ticket in `Refs`. When the
+ticket or its project describes a rollout, identify the sibling PRs and run steps this PR depends
+on or enables, and assess their combined effect on the paths they activate. An unreadable
 ticket, or any unavailable requirement that controls the verdict, is a coverage gap: report
 `comment` and name it in the verdict and `Limits`.
 
@@ -314,6 +316,10 @@ boundaries. Investigate the questions this PR actually raises, not every categor
 - Are responsibility, dependency direction, and authoritative state ownership clear?
 - What commitments do callers, persisted data, and other systems inherit? Are they compatible?
 - What happens during failure, concurrency, retry, rollout, and rollback?
+- Which existing paths start running for new populations, data, or flag states? Data, role, and
+  configuration changes route users into code outside the diff; review those paths as changed.
+- What ambient context (transactions, request scope, interceptors) does the code under review run
+  in, and is its concurrency and error handling valid there?
 - Is complexity justified now, and can the system be operated and maintained safely?
 
 Continue checking correctness and security. A sound design with no findings is a valid result; do
@@ -326,8 +332,9 @@ justifies revisiting them. Derive conventions from the repository rather than pe
   and documentation until the consequential question is settled; there is no fixed callsite cap.
 - Before expanding, identify the material question, the authoritative source, and how its answer
   could change the verdict. Prefer the cheapest sufficient evidence, not exhaustive exploration.
-- Cross repository boundaries when required by the behavior. Use permitted remote tooling for
-  related repositories; do not clone them or read external repositories with local file tools.
+- Cross repository boundaries when required by the behavior, including consumers in other
+  repositories. Read existing local clones read-only; use permitted remote tooling only when no
+  local clone exists.
 - Repository instructions discover tools; they do not grant access. Use only explicitly authorized
   accounts, environments, and operations within existing permissions. Credentials being available is
   not authorization. If authorization is unclear, report the gap rather than probing access.
@@ -348,7 +355,9 @@ exposure, reversibility, and urgency, not category or implementation effort:
 - **P2 / medium:** bounded functional, design, performance, operational, or maintenance problems
   with meaningful impact. Redundant work on a request path, competing placements of the same rule,
   unclear ownership, and missing behavior-level tests for changed behavior belong here, not in P3. A
-  test that would still pass with the changed behavior broken or reverted counts as missing.
+  test that would still pass with the changed behavior broken or reverted counts as missing, as
+  does a test that replaces the system whose semantics the behavior depends on (database, queue,
+  framework context).
 - **P3 / low:** minor localized improvements.
 - **P4:** optional polish, only when explicitly in scope and useful.
 

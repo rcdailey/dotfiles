@@ -42,9 +42,9 @@ rg --hidden -g "!**/.git/**"    # include dot-directories
 
 ## Agents
 
-- Subagents MUST use their designated tools for repo exploration; MUST NOT clone repos or use local
-  file tools on external repositories. The reviewer may inspect its assigned PR in task-owned local
-  worktrees under its caller protocol.
+- Subagents MUST NOT clone repositories. Read related project repositories through existing local
+  clones; use designated remote tools when no local clone exists and for third-party upstream state.
+  The reviewer may inspect its assigned PR in task-owned local worktrees under its caller protocol.
 - Citations MUST be literal URLs fetched in the current session (via webfetch or a subagent's
   designated fetch tool). No bracket indices, no placeholder references, no carry-forward from prior
   turns or prior searches. If a URL was not fetched this session, the citation does not exist and
