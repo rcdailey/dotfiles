@@ -3,6 +3,7 @@
   "providers": [
     {
       "id": "codex",
+      "enabled": false,
       "hiddenUsageItemIDs": [
         "metric:codex-spark",
         "metric:codex-spark-weekly"
@@ -15,7 +16,7 @@
     },
     {
       "id": "opencodego",
-      "enabled": true,
+      "enabled": false,
       "source": "api"
     }
   ]
