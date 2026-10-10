@@ -43,8 +43,8 @@ Before editing, trace the affected flow and inspect relevant callers.
 - Keep PR descriptions high-level, focused on the change. Skip test plans and template boilerplate.
 - Prefer structured output (JSON + jq/yq) for CLIs that support it (aws, gh, kubectl, docker), but
   print only projected fields: filter at the source, project with jq/yq (`@tsv` for rows), cap
-  output near 50 lines and 200 columns, and search unstructured text with `rg`. Widen only when
-  the narrowed result is insufficient.
+  output near 50 lines and 200 columns, and search unstructured text with `rg`. Widen only when the
+  narrowed result is insufficient.
 
 ## Code Documentation
 
@@ -62,12 +62,25 @@ Before editing, trace the affected flow and inspect relevant callers.
 
 ## Git
 
-- When creating local branches, MUST NOT set a tracking branch initially (`git checkout -b` or `git
-  branch` without `-t`/`--track`). Tracking is set later via `git push -u`.
+- When creating local branches, MUST NOT set a tracking branch initially (`git checkout -b` or
+  `git branch` without `-t`/`--track`). Tracking is set later via `git push -u`.
 - For UD/DU conflicts (file deleted on one side, modified on the other), MUST NOT blindly accept the
   deletion. Run `git diff REBASE_HEAD...HEAD -- <file>` to see the upstream modifications being
-  discarded, then port any meaningful changes to the replacement files before resolving with `git
-rm`.
+  discarded, then port any meaningful changes to the replacement files before resolving with
+`git rm`.
+
+## Repository Locations
+
+- Personal projects live in `~/code/<repo>`; forks of third-party repositories the user contributes
+  to live in `~/code/forks/<repo>`. Reuse an existing clone before creating one.
+- To fork and clone, run `gh repo fork <owner>/<repo> --clone` from `~/code/forks/`. It reuses an
+  existing fork and sets `origin` to the fork and `upstream` to the parent. Do not add `--remote`;
+  it applies only inside an existing clone.
+- Read third-party repositories without planned contributions through `gh`, or clone them under
+  `/tmp/opencode/`.
+- Put repository-specific mise tools and env, including secrets, in that repository's
+  `mise.local.toml`. The global gitignore excludes `*.local.toml`; never add these values to a
+  tracked mise config.
 
 ## Architecture
 
@@ -86,5 +99,5 @@ Apply KISS, DRY, SOLID, and YAGNI pragmatically.
   compiler commands for diagnostics until OpenCode V2 restores its LSP runtime.
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
 - Use `pdf2md` for local PDF files: `pdf2md <file>`. Run `pdf2md --help` for full usage.
-- The Glob tool skips dot-directories (`.github/`, `.vscode/`, etc.). For those, use shell: `rg
---files --hidden -g "pattern" --glob '!**/.git/**'`.
+- The Glob tool skips dot-directories (`.github/`, `.vscode/`, etc.). For those, use shell:
+`rg --files --hidden -g "pattern" --glob '!**/.git/**'`.
