@@ -10,3 +10,5 @@ config:
     code_blocks: false
     tables: false
   no-duplicate-heading: false
+  # Spaces inside code spans are deliberate here (e.g. documenting `: `); the fix would strip them
+  no-space-in-code: false
