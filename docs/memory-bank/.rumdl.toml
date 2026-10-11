@@ -1,0 +1,4 @@
+# TODO: Remove once rumdl honors markdownlint-cli2 `ignores`
+# (https://github.com/rvben/rumdl/issues/943); the root config already excludes this directory.
+[global]
+exclude = ["docs/memory-bank/**"]

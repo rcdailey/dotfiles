@@ -39,6 +39,9 @@ export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
 
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 
+# rumdl defaults to a .rumdl_cache directory in the working directory
+export RUMDL_CACHE_DIR="$XDG_CACHE_HOME/rumdl"
+
 # Point Terraform (and other Go net/netrc consumers) at a dedicated netrc file. Siggy (the Statsig
 # CLI) hardcodes ~/.netrc and writes non-RFC keywords that break Terraform parsing.
 export NETRC="$HOME/.netrc.terraform"

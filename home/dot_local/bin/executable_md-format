@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Format one Markdown file with rumdl. Prose is reflowed only where a rumdl or markdownlint
+# config sets a line length, so repos that do not hard-wrap keep their line breaks. An
+# .editorconfig max_line_length alone does not count: `rumdl config get` does not report it.
+set -euo pipefail
+
+cd "$(dirname "$1")"
+reflow=()
+if [[ $(rumdl config get MD013.line-length) != *"[from default]"* ]]; then
+  reflow=(--config MD013.reflow=true --config 'MD013.reflow-mode="normalize"')
+fi
+exec rumdl fmt --silent "${reflow[@]}" -- "${1##*/}"
