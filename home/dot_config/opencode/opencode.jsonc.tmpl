@@ -1,6 +1,4 @@
 {{- $models := index .opencodeModels .opencodeProvider -}}
-{{- $compaction := $models.compaction -}}
-{{- if eq .env "personal" }}{{ $compaction = .opencodePersonalCompaction }}{{ end -}}
 {
   "$schema": "https://opencode.ai/config.json",
   "update": "disable",
@@ -25,7 +23,7 @@
       "model": {{ $models.title.model | quote }},
     },
     "compaction": {
-      "model": {{ printf "%s#%s" $compaction.model $compaction.variant | quote }},
+      "model": {{ printf "%s#%s" $models.compaction.model $models.compaction.variant | quote }},
     },
     "general": { "disabled": true },
     "explore": {
