@@ -1,0 +1,7 @@
+# Personal defaults: rumdl layers these below any project config, including markdownlint ones.
+# Repos opt out with `MD060: false` (markdownlint) or an `[MD060]` section (rumdl).
+[global]
+extend-enable = ["MD060"]
+
+[MD060]
+style = "aligned"
