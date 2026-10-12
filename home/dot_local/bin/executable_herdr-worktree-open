@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Open a worktree as a herdr child space of its repo's space and focus it. A newly opened space
+# (one idle shell pane) also gets the agent layout. Run by worktrunk's post-switch hook.
+# Usage: herdr-worktree-open <repo_path> <worktree_path>
+set -euo pipefail
+
+repo="${1:?Usage: herdr-worktree-open <repo_path> <worktree_path>}"
+worktree="${2:?Usage: herdr-worktree-open <repo_path> <worktree_path>}"
+[[ -n "${HERDR_ENV-}" ]] || exit 0
+# The main checkout is the repo's own space; there is no child space to open
+[[ "$(cd "$repo" && pwd -P)" != "$(cd "$worktree" && pwd -P)" ]] || exit 0
+
+workspace=$(herdr worktree open --cwd "$repo" --path "$worktree" --focus |
+  jq -r '.result.workspace.workspace_id')
+panes=$(herdr pane list --workspace "$workspace" | jq -c '[.result.panes[] | {pane_id, agent}]')
+if [[ $(jq 'length == 1 and .[0].agent == null' <<<"$panes") == true ]]; then
+  herdr-agent-split "$(jq -r '.[0].pane_id' <<<"$panes")"
+fi

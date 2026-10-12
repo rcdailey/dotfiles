@@ -10,6 +10,10 @@
 # Colocated OpenCode directory plugin tests
 **/*.test.ts
 
+# Installed and updated by `herdr integration install opencode` (kitty shell line);
+# ignoring keeps exact_plugins from deleting it
+.config/opencode/plugins/herdr-agent-state.js
+
 
 
 # Run the appropriate scripts based on OS

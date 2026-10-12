@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Reload the running herdr server when any managed herdr config file changes.
+{{ range glob (joinPath .chezmoi.sourceDir "dot_config/herdr/**") -}}
+{{   if not (stat .).isDir -}}
+# {{ include . | sha256sum }} {{ . }}
+{{   end -}}
+{{ end -}}
+
+command -v herdr >/dev/null || exit 0
+herdr server reload-config &>/dev/null || true

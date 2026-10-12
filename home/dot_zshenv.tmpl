@@ -53,6 +53,8 @@ fi
 
 # mise shims for all shell types (interactive and non-interactive, login and non-login)
 # Full activation in 05-configuration.sh replaces shims PATH for interactive shells
-if command -v mise >/dev/null 2>&1; then
-    eval "$(mise activate zsh --shims)"
+# ~/.local/bin (mise's install location) joins PATH only in interactive shells, so fall back to it
+mise_bin="${commands[mise]:-$HOME/.local/bin/mise}"
+if [[ -x "$mise_bin" ]]; then
+    eval "$("$mise_bin" activate zsh --shims)"
 fi

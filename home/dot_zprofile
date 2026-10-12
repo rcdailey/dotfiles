@@ -6,8 +6,8 @@
 # shells only) pushes them behind /opt/homebrew/bin. Interactive login shells
 # recover via full mise activation in .zshrc; this covers non-interactive
 # login shells (zsh -lc, SSH commands, kitty tab launches).
-if command -v mise >/dev/null 2>&1; then
-    eval "$(mise activate zsh --shims)"
+if [[ -x "$mise_bin" ]]; then
+    eval "$("$mise_bin" activate zsh --shims)"
 fi
 
 # Added by Toolbox App

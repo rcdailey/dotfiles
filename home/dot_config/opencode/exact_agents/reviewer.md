@@ -6,26 +6,21 @@ description: >
   Do not use for commit ranges or local code changes.
 mode: subagent
 permissions:
-  - action: "*"
+  # edit also covers the write and patch tools
+  - action: edit
     resource: "*"
     effect: deny
-  - action: read
+  - action: subagent
     resource: "*"
-    effect: allow
-  - action: grep
+    effect: deny
+  - action: question
     resource: "*"
-    effect: allow
-  - action: glob
+    effect: deny
+  - action: session_rename
     resource: "*"
-    effect: allow
-  - action: external_directory
+    effect: deny
+  - action: opencode_session_rename
     resource: "*"
-    effect: allow
-  - action: skill
-    resource: "*"
-    effect: allow
-  - action: skill
-    resource: customize-opencode
     effect: deny
   - action: skill
     resource: gh-api
@@ -39,8 +34,12 @@ permissions:
   - action: skill
     resource: domain-modeling
     effect: deny
+  # Pending review replies and deletions are this agent's job; global rules ask for them
   - action: shell
-    resource: "*"
+    resource: "*gh-review reply*"
+    effect: allow
+  - action: shell
+    resource: "*gh-review delete*"
     effect: allow
   - action: shell
     resource: "git push*"

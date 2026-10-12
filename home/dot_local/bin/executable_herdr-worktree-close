@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Close the herdr child space of a removed worktree. Run by worktrunk's post-remove hook.
+# Usage: herdr-worktree-close <worktree_path>
+set -euo pipefail
+
+worktree="${1:?Usage: herdr-worktree-close <worktree_path>}"
+[[ -n "${HERDR_ENV-}" ]] || exit 0
+
+herdr workspace list |
+  jq -r --arg path "$worktree" \
+    '.result.workspaces[] | select(.worktree.checkout_path? == $path) | .workspace_id' |
+  while read -r workspace; do
+    herdr workspace close "$workspace" >/dev/null
+  done

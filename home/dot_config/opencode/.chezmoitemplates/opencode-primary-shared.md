@@ -134,6 +134,16 @@ constraints, analogous code when known, verification commands, unresolved uncert
 repository revision or dirty-state detail that affects the findings. Omit search history and dead
 ends.
 
+## Worktree branches
+
+The user creates worktrees (worktrunk, often from herdr); never create one. When asked to work on
+an issue or create a branch:
+
+- In a linked worktree (`git rev-parse --git-dir` differs from `--git-common-dir`): confirm the
+  current branch belongs to that work, then rename it to repository convention, including any issue
+  key, with `git branch -m`. Worktree names stay short and need not match the branch.
+- In the main checkout: ask whether to continue there or wait for the user to create a worktree.
+
 ## Change boundaries
 
 Build a contract graph before behavior slices. Every new reusable schema, API, event, repository

@@ -4,6 +4,7 @@ os:
 
 promptToReturnFromSubprocess: false
 disableStartupPopups: true
+quitOnTopLevelReturn: true
 notARepository: skip
 
 refresher:

@@ -33,7 +33,6 @@
         { "action": "question", "resource": "*", "effect": "deny" },
         { "action": "session_rename", "resource": "*", "effect": "deny" },
         { "action": "opencode_session_rename", "resource": "*", "effect": "deny" },
-        { "action": "shell", "resource": "*", "effect": "allow" },
         { "action": "shell", "resource": "*> /*", "effect": "deny" },
         { "action": "shell", "resource": "*>> /*", "effect": "deny" },
         { "action": "shell", "resource": "*tee /*", "effect": "deny" },
@@ -106,6 +105,17 @@
     { "action": "shell", "resource": "pkill*", "effect": "ask" },
     { "action": "shell", "resource": "shutdown*", "effect": "ask" },
     { "action": "shell", "resource": "reboot*", "effect": "ask" },
+
+    // herdr: the user owns tab and pane layout; the rest stop agents or delete checkouts
+    { "action": "shell", "resource": "*herdr pane swap*", "effect": "deny" },
+    { "action": "shell", "resource": "*herdr pane move*", "effect": "deny" },
+    { "action": "shell", "resource": "*herdr pane close*", "effect": "deny" },
+    { "action": "shell", "resource": "*herdr tab close*", "effect": "deny" },
+    { "action": "shell", "resource": "*herdr server stop*", "effect": "ask" },
+    { "action": "shell", "resource": "*herdr session stop*", "effect": "ask" },
+    { "action": "shell", "resource": "*herdr session delete*", "effect": "ask" },
+    { "action": "shell", "resource": "*herdr workspace close*", "effect": "ask" },
+    { "action": "shell", "resource": "*herdr worktree remove*", "effect": "ask" },
 
     // GitHub mutations
     { "action": "shell", "resource": "*gh pr create*", "effect": "ask" },

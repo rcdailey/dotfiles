@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/v2/cli.json",
+  "plugins": ["./herdr-opencode"],
   "attention": {
     "notifications": false,
     "sound": true,

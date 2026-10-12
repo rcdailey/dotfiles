@@ -1,0 +1,80 @@
+onboarding = false
+
+[theme]
+name = "dracula"
+
+[session]
+resume_agents_on_restore = true
+
+[ui]
+sidebar_width = 32
+confirm_close = true
+prompt_new_tab_name = false
+show_agent_labels_on_pane_borders = true
+
+# OpenCode titles its terminal "OC | <session title>"; show that instead of the agent name
+[ui.sidebar.agents.rows_by_agent]
+opencode = [
+  ["state_icon", "workspace", "tab"],
+  ["terminal_title_stripped"],
+]
+
+[ui.toast]
+delivery = "terminal"
+
+[ui.sound]
+enabled = false
+
+# Keybindings: direct shortcuts keep the former kitty-native split/tab muscle memory.
+# herdr prefix (ctrl+b) is kept as default for workspace/sidebar actions.
+[keys]
+# Splits (herdr horizontal = top/bottom, vertical = left/right)
+split_horizontal = ["prefix+minus", "ctrl+shift+e"]
+split_vertical = ["prefix+v", "ctrl+shift+o"]
+
+# Pane focus
+focus_pane_left = ["prefix+h", "ctrl+shift+left"]
+focus_pane_right = ["prefix+l", "ctrl+shift+right"]
+focus_pane_up = ["prefix+k", "ctrl+shift+up"]
+focus_pane_down = ["prefix+j", "ctrl+shift+down"]
+
+# Pane management
+close_pane = ["prefix+x", "ctrl+shift+w"]
+zoom = ["prefix+z", "ctrl+shift+z"]
+
+resize_pane_left = "ctrl+alt+left"
+resize_pane_right = "ctrl+alt+right"
+resize_pane_up = "ctrl+alt+up"
+resize_pane_down = "ctrl+alt+down"
+
+goto = ["prefix+g", "ctrl+shift+k"]
+
+# Tabs
+new_tab = "prefix+c"
+previous_tab = ["prefix+p", "ctrl+alt+["]
+next_tab = ["prefix+n", "ctrl+alt+]"]
+rename_tab = ["prefix+shift+t", "f2"]
+close_tab = ["prefix+shift+x", "ctrl+shift+q"]
+
+# Agent tab: OpenCode on the left, a shell on the right (herdr has no per-tab default layout)
+[[keys.command]]
+key = "ctrl+shift+t"
+type = "shell"
+description = "new agent tab"
+command = 'herdr-agent-split "$(herdr tab create --focus | jq -r .result.root_pane.pane_id)"'
+
+# Worktree picker; worktrunk's post-switch hook gives new worktree spaces the agent layout
+[[keys.command]]
+key = "ctrl+shift+b"
+type = "plugin_action"
+command = "worktrunk.open"
+description = "worktree"
+
+# Esc at lazygit's top level quits it (quitOnTopLevelReturn), closing the popup
+[[keys.command]]
+key = "ctrl+shift+g"
+type = "popup"
+command = 'lazygit -p "$HERDR_ACTIVE_PANE_CWD"'
+description = "lazygit"
+width = "90%"
+height = "90%"

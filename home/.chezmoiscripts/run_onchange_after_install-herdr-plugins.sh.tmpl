@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Install or update herdr plugins (reinstall replaces the checkout with the latest default branch).
+# Runs when this script or any managed herdr config file changes, and at most once per week.
+# week {{ div (now | unixEpoch) 604800 }}
+{{ range glob (joinPath .chezmoi.sourceDir "dot_config/herdr/**") -}}
+{{   if not (stat .).isDir -}}
+# {{ include . | sha256sum }} {{ . }}
+{{   end -}}
+{{ end -}}
+
+command -v herdr >/dev/null || exit 0
+herdr plugin install devashish2203/herdr-worktrunk --yes
