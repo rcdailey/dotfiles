@@ -86,8 +86,8 @@ first, and treat replies as part of the same review pass as your inline comments
 `--publish` skips the pending review and posts the reply immediately. Use it in exactly one case:
 the PR is the user's own and the comment you are answering came from a bot (CodeRabbit, Copilot,
 Qodana, any `[bot]` author). Batching those into a review the user then has to submit on their own
-PR buys nothing, so do NOT `start` a review for bot replies. Every other reply, on someone else's
-PR or to a human on the user's, MUST go through the pending review.
+PR buys nothing, so do NOT `start` a review for bot replies. Every other reply, on someone else's PR
+or to a human on the user's, MUST go through the pending review.
 
 GitHub rejects a published reply while you hold a pending review on that PR. If `reply --publish`
 fails, inspect and preserve that review. Ask before discarding it; a failed reply is not deletion
@@ -96,15 +96,17 @@ authorization. Delete only the explicitly authorized review, then retry.
 A reply targets the numeric database ID shown as `#ID` in `view` output headers (e.g.
 `@reviewer (2026-05-14) #98765 PRRC_kwDO...:`). Extract the number after `#`, not the node ID.
 
-Conversation comments (the PR's main timeline) have no thread and cannot be replied to this way.
+Only thread comments carry `#ID`. Review bodies (tagged `[review body, no reply thread]`) and
+conversation comments have no thread and cannot be replied to, even when a review body lists file
+and line findings (e.g. CodeRabbit's collapsed "Other comments").
 
 ## Editing and Removing Comments
 
 `gh-review edit` changes a body in place, but any positioning change deletes the comment and
 recreates it on the same pending review. Repositioning therefore needs the full target position
-restated, not just the part that changed: the comment node does not expose its own line, and
-omitted values fall back to defaults rather than the old comment. Published comments and replies
-support body edits only.
+restated, not just the part that changed: the comment node does not expose its own line, and omitted
+values fall back to defaults rather than the old comment. Published comments and replies support
+body edits only.
 
 ## Line Targeting
 

@@ -7,6 +7,7 @@ from typing import Any
 from gh_review._sanitize import is_bot, sanitize_bot_body, truncate_body
 
 PENDING_MARKER = " [pending, unsubmitted]"
+REVIEW_BODY_MARKER = "review body, no reply thread"
 
 
 def _author_info(author: dict[str, Any] | None) -> tuple[str, str]:
@@ -80,6 +81,7 @@ def _comment_lines(
     indent: str,
     max_body: int,
     no_bots: bool,
+    database_id: bool = True,
     node_id: bool = True,
     extra_markers: str = "",
 ) -> list[str] | None:
@@ -100,7 +102,7 @@ def _comment_lines(
         login,
         (comment.get("createdAt") or "")[:10],
         markers,
-        comment.get("databaseId"),
+        comment.get("databaseId") if database_id else None,
         indent,
         comment.get("id") if node_id else None,
     )
@@ -145,14 +147,18 @@ def format_reviews(
         if review is not None:
             if not (review.get("body") or "").strip() and not threads:
                 continue
+            # Review bodies have no reply thread, even when they quote file and line findings, so
+            # they omit the #ID that reply and resolve accept. Only thread comments carry it.
             state = (review.get("state") or "").lower()
+            markers = f"{state}, {REVIEW_BODY_MARKER}" if state else REVIEW_BODY_MARKER
             rendered = _comment_lines(
                 review,
                 indent="",
                 max_body=max_body,
                 no_bots=no_bots,
+                database_id=False,
                 node_id=False,
-                extra_markers=f" [{state}]" if state else "",
+                extra_markers=f" [{markers}]",
             )
             if rendered is None and not threads:
                 continue
@@ -189,6 +195,7 @@ def format_conversation_comments(
             indent="",
             max_body=max_body,
             no_bots=no_bots,
+            database_id=False,
             node_id=False,
         )
         if rendered is not None:
