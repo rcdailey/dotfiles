@@ -158,7 +158,9 @@
     { "action": "shell", "resource": "gh api* --method GET*", "effect": "allow" },
     { "action": "shell", "resource": "*gh-review reply*", "effect": "ask" },
     { "action": "shell", "resource": "*gh-review delete*", "effect": "ask" },
-    { "action": "shell", "resource": "*gh-review*--help", "effect": "allow" },
+
+    // Help output is read-only; last so it overrides the shell deny and ask rules above
+    { "action": "shell", "resource": "* --help *", "effect": "allow" },
 
     { "action": "skill", "resource": "customize-opencode", "effect": "deny" },
     { "action": "read", "resource": "*", "effect": "allow" },
