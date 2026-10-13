@@ -16,6 +16,8 @@ if [ -d "$HOME/bin" ]; then
   export PATH="$HOME/bin:$PATH"
 fi
 
+# Also added in .zshenv for all shells; re-prepend so macOS /etc/zprofile path_helper,
+# which moves system directories first, cannot demote it
 if [ -d "$HOME/.local/bin" ]; then
   export PATH="$HOME/.local/bin:$PATH"
 fi

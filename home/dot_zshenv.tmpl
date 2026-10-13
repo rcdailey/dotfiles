@@ -51,10 +51,14 @@ if [[ -d "$XDG_CONFIG_HOME/zsh/functions" ]]; then
   autoload -Uz $XDG_CONFIG_HOME/zsh/functions/*(:t)
 fi
 
+# User executables (mise, custom scripts) for all shell types. Non-interactive shells need them
+# too, e.g. `zsh -lc 'exec herdr'` in kitty, whose server runs keybinding commands with this PATH.
+# -U drops duplicate entries when 05-configuration.sh re-prepends after macOS path_helper.
+typeset -U path
+[[ -d "$HOME/.local/bin" ]] && path=("$HOME/.local/bin" $path)
+
 # mise shims for all shell types (interactive and non-interactive, login and non-login)
 # Full activation in 05-configuration.sh replaces shims PATH for interactive shells
-# ~/.local/bin (mise's install location) joins PATH only in interactive shells, so fall back to it
-mise_bin="${commands[mise]:-$HOME/.local/bin/mise}"
-if [[ -x "$mise_bin" ]]; then
-    eval "$("$mise_bin" activate zsh --shims)"
+if (( $+commands[mise] )); then
+    eval "$(mise activate zsh --shims)"
 fi
