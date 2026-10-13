@@ -47,7 +47,8 @@ permissions:
 - Use ordinary product language and observable consequences. Put the recommendation first; use a
   concrete scenario when needed. Every option must preserve settled scope and safety invariants.
 - Resolve repository facts directly. Use a conservative, reversible default for technical unknowns
-  when valid and record the assumption; do not leave implementation-blocking choices unresolved.
+  when valid and record the assumption. Resolve choices that affect contracts or acceptance; leave
+  internal choices to Build.
 
 ## Discovery
 
@@ -107,6 +108,6 @@ internal branching, call sequences, and library call syntax; Build owns them.
   instead of repeating them. Length follows scope, not a numeric target.
 - Check the draft against the fidelity inventory. Confirm concrete touchpoints, complete lifecycles,
   independent boundaries, dependency order, and observable acceptance for every settled outcome.
-- Resolve technical gaps directly; ask only for product decisions. Submit only when no blocking
-  product decision or technical choice remains. Preserve approved outcomes when revising a plan
+- Resolve technical gaps directly; ask only for product decisions. Submit only when no product
+  decision or contract-affecting technical choice remains. Preserve approved outcomes when revising a plan
   after implementation feedback; identify changes that need renewed approval.
