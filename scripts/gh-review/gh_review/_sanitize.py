@@ -3,6 +3,17 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
+
+from gh_review import _coderabbit
+
+# Decides whether a collapsed <details> block survives sanitizing, given its summary text and
+# whether an enclosing block was kept. Bots without a policy lose every <details> block.
+type DetailsPolicy = Callable[[str, bool], bool]
+
+# Keyed by login without the REST "[bot]" suffix. Add a module per bot whose review bodies
+# collapse actionable content.
+_DETAILS_POLICIES: dict[str, DetailsPolicy] = {_coderabbit.LOGIN: _coderabbit.keeps_details}
 
 
 def is_bot(login: str, typename: str = "") -> bool:
@@ -15,7 +26,8 @@ def is_bot(login: str, typename: str = "") -> bool:
 
 
 # --- Block-level patterns (applied first, order matters) ---
-_DETAILS_BLOCK = re.compile(r"<details\b[^>]*>.*?</details>", re.DOTALL | re.IGNORECASE)
+_DETAILS_TAG = re.compile(r"<details\b[^>]*>|</details\s*>", re.IGNORECASE)
+_SUMMARY = re.compile(r"\s*<summary\b[^>]*>(.*?)</summary\s*>", re.DOTALL | re.IGNORECASE)
 _HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 _HTML_TABLE = re.compile(r"<table\b[^>]*>.*?</table>", re.DOTALL | re.IGNORECASE)
 _MERMAID_BLOCK = re.compile(r"```mermaid\b.*?```", re.DOTALL)
@@ -51,15 +63,52 @@ def _strip_html_paired_tags(text: str) -> str:
     return text
 
 
-def sanitize_bot_body(body: str) -> str:
+def _drop_all_details(summary: str, in_kept: bool) -> bool:
+    return False
+
+
+def _filter_details(text: str, keeps: DetailsPolicy, in_kept: bool = False) -> str:
+    """Drop collapsed <details> blocks except those the author's policy keeps.
+
+    Kept blocks render as their summary line followed by their filtered content, so the policy
+    still decides each nested block.
+    """
+    out: list[str] = []
+    pos = 0
+    while (start := _DETAILS_TAG.search(text, pos)) is not None:
+        out.append(text[pos : start.start()])
+        if start.group().startswith("</"):
+            pos = start.end()
+            continue
+        depth = 1
+        end = start
+        while depth and (end := _DETAILS_TAG.search(text, end.end())) is not None:
+            depth += -1 if end.group().startswith("</") else 1
+        if end is None:
+            return "".join(out) + text[start.start() :]
+        inner = text[start.end() : end.start()]
+        pos = end.end()
+        summary_match = _SUMMARY.match(inner)
+        summary = summary_match.group(1).strip() if summary_match else ""
+        if not keeps(summary, in_kept):
+            continue
+        content = inner[summary_match.end() :] if summary_match else inner
+        out.append(f"\n{summary}\n{_filter_details(content, keeps, in_kept=True)}\n")
+    out.append(text[pos:])
+    return "".join(out)
+
+
+def sanitize_bot_body(body: str, login: str = "") -> str:
     """Strip boilerplate noise from a bot comment body.
 
-    Removes: HTML details/table blocks, HTML comments, mermaid diagrams,
-    markdown tables, inline HTML tags (keeping text), badge/image markdown,
-    decorative lines. Collapses whitespace.
+    Removes: HTML details blocks (unless the bot's policy in _DETAILS_POLICIES
+    keeps them), HTML comments and tables, mermaid diagrams, markdown tables,
+    inline HTML tags (keeping text), badge/image markdown, decorative lines.
+    Collapses whitespace.
     """
+    keeps = _DETAILS_POLICIES.get(login.removesuffix("[bot]"), _drop_all_details)
     # Block removals
-    text = _DETAILS_BLOCK.sub("", body)
+    text = _filter_details(body, keeps)
     text = _HTML_COMMENT.sub("", text)
     text = _HTML_TABLE.sub("", text)
     text = _MERMAID_BLOCK.sub("", text)

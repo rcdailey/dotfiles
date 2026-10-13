@@ -50,7 +50,7 @@ def _format_body(
     if bot and no_bots:
         return None
     if bot:
-        body = sanitize_bot_body(body)
+        body = sanitize_bot_body(body, login)
     return truncate_body(body, max_body)
 
 
