@@ -2,6 +2,8 @@
 # Install or update herdr plugins (reinstall replaces the checkout with the latest default branch).
 # Runs when this script or any managed herdr config file changes, and at most once per week.
 # week {{ div (now | unixEpoch) 604800 }}
+# Rerun once herdr appears on PATH; a run before mise installs it exits early and records success.
+# herdr {{ lookPath "herdr" }}
 {{ range glob (joinPath .chezmoi.sourceDir "dot_config/herdr/**") -}}
 {{   if not (stat .).isDir -}}
 # {{ include . | sha256sum }} {{ . }}
