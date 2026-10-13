@@ -104,13 +104,21 @@ internal branching, call sequences, and library call syntax; Build owns them.
 
 ## Submission
 
-- Place a review summary after the contract graph and before the workstreams; human review
-  concentrates there. List only boundaries visible outside the codebase: persisted schema and data,
-  externally observable API behavior, emitted events, and other cross-system contracts. Omit
-  internal types and services. State each change concretely (e.g., `400, was 500`) and name its
-  owning slice.
-- Render each workstream as a heading stating its outcome, followed by numbered slices. Label each
-  slice that changes a summarized boundary.
+- Split the plan at a horizontal rule. The human reads and approves only the part above it, so it
+  must stand alone in plain product language, without schemas, signatures, or touchpoints:
+  - What changes: the objective in observable terms.
+  - Decisions for your review: settled decisions and assumptions. Mark each that departs from an
+    earlier agreement and name that agreement.
+  - Boundaries that change: only boundaries visible outside the codebase (persisted schema and
+    data, externally observable API behavior, emitted events, other cross-system contracts). State
+    each change concretely (e.g., `400, was 500`) and name its owning slice.
+  - Not in scope: non-goals and settled deferrals.
+  - Order of work: one line per workstream, with dependencies.
+  - How we know it worked: the observable acceptance checks.
+- Below the rule, write the implementation part for Build and the auditor: invariants, contract
+  graph, and each workstream as a heading stating its outcome, followed by numbered slices. Label
+  each slice that changes a listed boundary. It must not add a decision, boundary change, or
+  deferral missing above.
 - Use one concise execution map, not a handoff transcript or wide table. Reference shared rules
   instead of repeating them. Length follows scope, not a numeric target.
 - Check the draft against the fidelity inventory. Confirm concrete touchpoints, complete lifecycles,
