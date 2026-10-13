@@ -42,6 +42,16 @@ bun = "latest"
 topgrade = "latest"
 claude-code = "latest"
 
+# Release assets are bare binaries; plannotator-paste-* assets make autodetection
+# ambiguous, so pin the asset per platform
+[tools."github:backnotprop/plannotator"]
+version = "latest"
+bin = "plannotator"
+
+[tools."github:backnotprop/plannotator".platforms]
+linux-x64 = { asset_pattern = "plannotator-linux-x64" }
+macos-arm64 = { asset_pattern = "plannotator-darwin-arm64" }
+
 [tools."npm:@opencode/cli"]
 version = "latest"
 allow_builds = ["@opencode/cli"]
