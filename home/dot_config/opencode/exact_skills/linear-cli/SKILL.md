@@ -161,7 +161,11 @@ and the 3 most recent project updates after the milestones section; `--full` app
 ## Raw API access
 
 `linear api` executes arbitrary GraphQL queries and mutations. Output is JSON. Pass variables with
-`--var key=value`. Read query from stdin with `-`.
+`--var key=value`. Read query from stdin with `-`. Use it only after the command's `-h` shows no
+flag for the data.
+
+For exact field values (e.g. the verbatim Markdown description before rewriting it), use
+`linear issues view <ID> --json`; it prints the raw GraphQL issue node.
 
 ## Searching vs listing
 
