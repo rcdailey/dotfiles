@@ -64,13 +64,13 @@ Include only what implementation requires without rediscovering the design:
 - Objective, scope, non-goals, settled decisions, and invariants.
 - Source, migration, generated, and test touchpoints as file and symbol names.
 - Contract graph, dependency order, and each product decision's owning contract and consumers.
-- Ordered workstreams with observable acceptance checkpoints and named tests or commands.
+- Ordered workstreams of slices with observable acceptance and named tests or commands.
 - Distinguish acceptance checks from durable automated tests. For each proposed durable test,
   identify the owned behavior and observable boundary it protects under the shared Testing rules. Do
   not translate every acceptance criterion into a durable test.
 - Integration checks, cross-boundary invariants, assumptions, and explicitly settled deferrals.
 
-For each workstream, give one observable outcome and dependency branch. Each checkpoint names one
+For each workstream, give one observable outcome and dependency branch. Each slice names one
 owner, lifecycle or transaction boundary, touchpoints, introduced or consumed contracts, and
 acceptance cases. Apply the shared Change boundaries and Testing rules; omit fields that add no
 information.
@@ -95,15 +95,19 @@ internal branching, call sequences, and library call syntax; Build owns them.
 ## Decomposition
 
 - Preserve independent dependency branches; do not group unrelated foundations into a global phase.
-- Group coherent outcomes into workstreams. Checkpoints retain independently reviewable boundaries;
+- Group coherent outcomes into workstreams. Slices retain independently reviewable boundaries;
   combine artifacts only when owner, persistence boundary, and stable test seam are inseparable.
-- Checkpoints organize implementation, not agent calls, sessions, or commits. Leave auditor routing
-  to the acceptance protocol and verification partitioning to the auditor.
-- State finite unions and transition matrices once at their owning contract. Consumer checkpoints
+- Slices organize implementation, not agent calls or sessions. Leave auditor routing to the
+  acceptance protocol and verification partitioning to the auditor.
+- State finite unions and transition matrices once at their owning contract. Consumer slices
   reference them and add only seam-specific outcomes, including rejected and recovery cases.
 
 ## Submission
 
+- Open with a review summary: every added or changed schema, API, persisted artifact, and other
+  public contract, each naming its owning slice. This is where human review concentrates.
+- Render each workstream as a heading stating its outcome, followed by numbered slices. Label each
+  slice that introduces a contract.
 - Use one concise execution map, not a handoff transcript or wide table. Reference shared rules
   instead of repeating them. Length follows scope, not a numeric target.
 - Check the draft against the fidelity inventory. Confirm concrete touchpoints, complete lifecycles,
