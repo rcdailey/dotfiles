@@ -2,15 +2,15 @@
 name: gh-api
 description: >-
   Use when operating on the GitHub REST or GraphQL API via `gh api` for cases not covered by
-  higher-level `gh` subcommands, including GitHub Discussions and other raw endpoints.
-  Do NOT use for standard
+  higher-level `gh` subcommands, including GitHub Discussions and other raw endpoints, or when
+  reading failed GitHub Actions jobs, CI logs, or check annotations. Do NOT use for standard
   `gh pr`, `gh issue`, `gh release`, or `gh repo` workflows. Do NOT use for any PR review
   operations (reading comments, posting replies, managing reviews); use `gh-review` instead.
 ---
 
 Use `gh pr create --draft` and `gh pr ready [--undo]` for draft status. Review comments belong to
-`gh-pr-review`. Consult `gh api --help` for request flags; the global explicit-method rule applies to
-REST and GraphQL alike.
+`gh-pr-review`. Consult `gh api --help` for request flags; the global explicit-method rule applies
+to REST and GraphQL alike.
 
 ## Output Filtering
 
@@ -21,6 +21,21 @@ wastes context tokens. Always pipe through `--jq` to extract only the fields you
 
 For any mutation, append `--jq` selecting the fields the caller actually needs. Typical minimal set:
 `{id, body, html_url}`. Add `state`, `title`, or `number` when relevant.
+
+## Failed CI jobs
+
+Use `gh run`, not `gh api .../actions/jobs/<id>/logs`; the raw endpoint refuses ANSI output.
+
+1. `gh run view <run>` lists failed jobs and steps, plus annotations with the offending paths
+   (`job: path#line`). This often answers the failure without logs.
+2. `gh run view <run> --job <id> --log-failed` prints the failed steps' log.
+3. If that returns HTTP 5xx, read the whole job log and strip color codes and the job/step/timestamp
+   prefix:
+
+```sh
+gh run view <run> --job <id> --log \
+  | perl -pe 's/(\e|\^\[)\[[0-9;]*m//g; s/^[^\t]*\t[^\t]*\t\S+ //' | rg -n -A5 '##\[error\]'
+```
 
 ## Discussions (GraphQL)
 
