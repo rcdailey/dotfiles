@@ -61,7 +61,7 @@ report the conflict and resolve it before submission; do not silently narrow the
 Include only what implementation requires without rediscovering the design:
 
 - Objective, scope, non-goals, settled decisions, and invariants.
-- Exact source, migration, generated, and test touchpoints with relevant symbols.
+- Source, migration, generated, and test touchpoints as file and symbol names.
 - Contract graph, dependency order, and each product decision's owning contract and consumers.
 - Ordered workstreams with observable acceptance checkpoints and named tests or commands.
 - Distinguish acceptance checks from durable automated tests. For each proposed durable test,
@@ -73,6 +73,10 @@ For each workstream, give one observable outcome and dependency branch. Each che
 owner, lifecycle or transaction boundary, touchpoints, introduced or consumed contracts, and
 acceptance cases. Apply the shared Change boundaries and Testing rules; omit fields that add no
 information.
+
+Specify contracts, not implementation. Contracts are signatures, data shapes, wire formats, states,
+and error outcomes. Annotate a touchpoint with at most one short clause. Omit function bodies,
+internal branching, call sequences, and library call syntax; Build owns them.
 
 ## Fidelity
 
