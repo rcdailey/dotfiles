@@ -65,7 +65,8 @@ customCommands:
     title: "Commit instructions (empty: commit staged changes only):"
     key: CommitArgs
   command: >-
-    opencode run --title "lazygit commit"
+    opencode run --title "lazygit commit" --agent build
+    --model "anthropic/claude-sonnet-5-5#medium"
     {{printf "Commit authorized. %s"
     (or .Form.CommitArgs "Commit only the staged changes.") | quote}}
   loadingText: OpenCode is committing...
