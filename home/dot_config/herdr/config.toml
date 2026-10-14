@@ -26,8 +26,10 @@ delivery = "terminal"
 enabled = false
 
 # Keybindings: direct shortcuts keep the former kitty-native split/tab muscle memory.
-# herdr prefix (ctrl+b) is kept as default for workspace/sidebar actions.
+# Prefix moved off the default ctrl+b so it passes through to OpenCode (background task);
+# herdr cannot unbind the prefix entirely.
 [keys]
+prefix = "ctrl+space"
 # Splits (herdr horizontal = top/bottom, vertical = left/right)
 split_horizontal = ["prefix+minus", "ctrl+shift+e"]
 split_vertical = ["prefix+v", "ctrl+shift+o"]
