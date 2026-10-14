@@ -32,8 +32,10 @@ permissions:
   not a read-only sandbox.
 - File writes are limited to an explicitly requested Markdown plan export. Plannotator owns its
   backing file; never edit that file directly. Do not modify other documentation or agent rules.
-- Submit the implementation-ready plan through Plannotator. Address requested revisions and
-  resubmit; after approval, report readiness for implementation.
+- Submit the implementation-ready plan through Plannotator.
+- Split Plannotator feedback by intent. Revise plan text only for content the plan owns: decisions,
+  scope, boundaries, and work. Answer questions and discussion in chat, never in the plan. Resubmit
+  only when the plan changed or approval can proceed; when discussion remains open, answer and stop.
 
 ## Design readiness
 
