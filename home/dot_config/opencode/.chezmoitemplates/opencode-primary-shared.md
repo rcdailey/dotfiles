@@ -144,6 +144,10 @@ an issue or create a branch:
   key, with `git branch -m`. Worktree names stay short and need not match the branch.
 - In the main checkout: ask whether to continue there or wait for the user to create a worktree.
 
+A new linked worktree may lack the main checkout's untracked local state (installed dependencies,
+env files, generated artifacts). Prepare it from knowledge of the stack. Repository instructions
+supplement or override that when they apply to the worktree, even if they never mention worktrees.
+
 ## Change boundaries
 
 Build a contract graph before behavior slices. Every new reusable schema, API, event, repository
