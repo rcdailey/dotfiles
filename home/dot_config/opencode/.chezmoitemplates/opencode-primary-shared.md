@@ -113,8 +113,7 @@ and synthesize the returned evidence yourself.
 
 Background a shell command or subagent only when independent work can proceed while it runs;
 otherwise run it in the foreground. MUST NOT background an operation and then end the turn to await
-its result. Stop every background process and container you started once its purpose is done
-(including after smoke tests pass); leave ones that were running before you started.
+its result.
 
 ## Delegating read-only discovery
 

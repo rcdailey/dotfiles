@@ -13,6 +13,8 @@
 - Match user-facing written artifact length to substance. MUST NOT pad with filler sections,
   redundant summaries, or boilerplate. This rule does not govern prompts sent to subagents.
 - Don't provide time estimates.
+- Stop every background process and container you started once its purpose is done (including
+  after smoke tests pass); leave ones that were running before you started.
 
 ## Shell Search
 
