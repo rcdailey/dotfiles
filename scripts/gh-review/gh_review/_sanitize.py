@@ -27,7 +27,8 @@ def is_bot(login: str, typename: str = "") -> bool:
 
 # --- Block-level patterns (applied first, order matters) ---
 _DETAILS_TAG = re.compile(r"<details\b[^>]*>|</details\s*>", re.IGNORECASE)
-_SUMMARY = re.compile(r"\s*<summary\b[^>]*>(.*?)</summary\s*>", re.DOTALL | re.IGNORECASE)
+# Leading ">" covers blocks nested in Markdown blockquotes or callouts.
+_SUMMARY = re.compile(r"[\s>]*<summary\b[^>]*>(.*?)</summary\s*>", re.DOTALL | re.IGNORECASE)
 _HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 _HTML_TABLE = re.compile(r"<table\b[^>]*>.*?</table>", re.DOTALL | re.IGNORECASE)
 _MERMAID_BLOCK = re.compile(r"```mermaid\b.*?```", re.DOTALL)

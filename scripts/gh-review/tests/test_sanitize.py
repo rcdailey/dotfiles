@@ -55,8 +55,44 @@ QUIET_REVIEW = textwrap.dedent("""\
     </details>
     """)
 
+# Shape of a CodeRabbit outside-diff finding: one collapsed block per finding inside a caution
+# callout, its summary ending with the file location.
+OUTSIDE_DIFF_REVIEW = textwrap.dedent("""\
+    > [!CAUTION]
+    > Some comments are outside the diff and can't be posted inline due to GitHub limitations.
+    >
+    > **⚠️ Outside diff range comments (1)**
+    >
+    > <details>
+    > <summary><strong>🟠 Major</strong> · Fix guard. · <code>guard.sh:4-9</code></summary><blockquote>
+    >
+    > **Match flagged and admin commands in Cursor.**
+    >
+    > <details>
+    > <summary>🤖 Prompt for AI Agents</summary>
+    >
+    > Review comment at guard.sh
+    > </details>
+    >
+    > </blockquote></details>
+
+    <details>
+    <summary>🤖 Prompt to fix review comments</summary>
+
+    Outside diff comments: duplicated agent prompt
+    </details>
+    """)
+
 
 class SanitizeBotBodyTest(unittest.TestCase):
+    def test_keeps_coderabbit_outside_diff_findings(self) -> None:
+        text = sanitize_bot_body(OUTSIDE_DIFF_REVIEW, "coderabbitai")
+
+        self.assertIn("guard.sh:4-9", text)
+        self.assertIn("Match flagged and admin commands in Cursor.", text)
+        self.assertNotIn("Prompt for AI Agents", text)
+        self.assertNotIn("duplicated agent prompt", text)
+
     def test_keeps_coderabbit_findings_grouped_in_collapsed_comment_blocks(self) -> None:
         for login in ("coderabbitai", "coderabbitai[bot]"):
             text = sanitize_bot_body(QUIET_REVIEW, login)
