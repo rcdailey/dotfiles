@@ -28,8 +28,8 @@ This skill covers workflow and semantics only.
 ## Critical Rules
 
 - NEVER submit reviews. The user manually submits pending reviews via GitHub UI.
-- Inline comments MUST go through a pending review; never post them directly. Replies follow the
-  same rule except for the bot-reply case below.
+- Inline comments MUST go through a pending review; never post them directly. Replies never use a
+  pending review; see Replying to Comments.
 - Pass Markdown bodies as `--body -` with a single-quoted heredoc. Double-quoted bodies execute
   backticks as shell commands before `gh-review` receives them.
 - When a line target is outside diff hunks, `comment` automatically retries as a file-level comment
@@ -78,20 +78,18 @@ anyone else yet.
 
 ## Replying to Comments
 
-`gh-review reply` adds a threaded reply to an existing review thread as part of a pending review, so
-it stays invisible until the user submits. It finds the pending review itself; pass `--review-id`
-only when more than one exists. With no pending review it errors instead of posting: `start` one
-first, and treat replies as part of the same review pass as your inline comments.
+Always post replies with `gh-review reply --publish`; never `start` a review for replies.
 
-`--publish` skips the pending review and posts the reply immediately. Use it in exactly one case:
-the PR is the user's own and the comment you are answering came from a bot (CodeRabbit, Copilot,
-Qodana, any `[bot]` author). Batching those into a review the user then has to submit on their own
-PR buys nothing, so do NOT `start` a review for bot replies. Every other reply, on someone else's PR
-or to a human on the user's, MUST go through the pending review.
+- Bot author (CodeRabbit, Copilot, Qodana, any `[bot]` login) on the user's own PR: publish
+  directly.
+- Every other reply: draft it in chat first. For each thread, quote the comment being answered,
+  then the draft body. Publish only the drafts the user approves, with their edits applied verbatim.
+  Approval covers the shown text only; a revised body needs a new approval.
 
 GitHub rejects a published reply while you hold a pending review on that PR. If `reply --publish`
-fails, inspect and preserve that review. Ask before discarding it; a failed reply is not deletion
-authorization. Delete only the explicitly authorized review, then retry.
+fails, inspect and preserve that review. Ask the user to submit it or authorize discarding it; a
+failed reply is not deletion authorization. Delete only the explicitly authorized review, then
+retry.
 
 A reply targets the numeric database ID shown as `#ID` in `view` output headers (e.g.
 `@reviewer (2026-05-14) #98765 PRRC_kwDO...:`). Extract the number after `#`, not the node ID.
