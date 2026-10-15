@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Remove PR-review worktrees that the OpenCode reviewer agent leaves under /tmp/opencode once they
+# exceed the retention period, then prune Git records for worktrees the OS already deleted.
+# Runs daily from a systemd user timer (Linux) or a LaunchAgent (macOS).
+# Usage: prune-review-worktrees [days]  (default: 7)
+#
+# The OS may empty /tmp before a worktree expires, leaving Git records with no directory. To find
+# those repositories, scan clones up to three levels under ~/code (~/code/<repo>,
+# ~/code/<group>/<repo>) for records pointing at a pr-review-* path. Clones elsewhere are pruned
+# only while one of their review worktrees is still on disk.
+set -euo pipefail
+
+root=/tmp/opencode
+days="${1:-7}"
+repos=""
+
+while IFS= read -r common; do
+  for record in "$common"/worktrees/*/gitdir; do
+    [[ -f "$record" && "$(<"$record")" == */pr-review-* ]] || continue
+    repos+="$common"$'\n'
+    break
+  done
+done < <(find "$HOME/code" -maxdepth 3 -type d -name .git -prune 2>/dev/null)
+
+for task in "$root"/pr-review-*/; do
+  [[ -d "$task" ]] || continue
+  task="${task%/}"
+  expired="$(find "$task" -prune -mtime "+$days")"
+  for worktree in "$task"/*/; do
+    worktree="${worktree%/}"
+    [[ -f "$worktree/.git" ]] || continue
+    common="$(git -C "$worktree" rev-parse --path-format=absolute --git-common-dir)" || continue
+    repos+="$common"$'\n'
+    [[ -n "$expired" ]] || continue
+    if git -C "$worktree" symbolic-ref -q HEAD >/dev/null; then
+      echo "Skipped $worktree: not detached" >&2
+      continue
+    fi
+    git --git-dir="$common" worktree remove "$worktree" || echo "Skipped $worktree" >&2
+  done
+  [[ -z "$expired" ]] || rmdir "$task" 2>/dev/null || true
+done
+
+printf '%s' "$repos" | sort -u | while read -r common; do
+  git --git-dir="$common" worktree prune
+done

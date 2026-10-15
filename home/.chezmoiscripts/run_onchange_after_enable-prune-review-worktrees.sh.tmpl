@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# (Re)load the scheduler that runs prune-review-worktrees when its unit files change.
+# {{ include "dot_config/systemd/user/prune-review-worktrees.service" | sha256sum }}
+# {{ include "dot_config/systemd/user/prune-review-worktrees.timer" | sha256sum }}
+# {{ include "Library/LaunchAgents/prune-review-worktrees.plist.tmpl" | sha256sum }}
+set -euo pipefail
+
+{{ if eq .chezmoi.os "darwin" -}}
+agent="gui/$(id -u)/prune-review-worktrees"
+launchctl bootout "$agent" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/prune-review-worktrees.plist"
+{{- else if eq .chezmoi.os "linux" -}}
+command -v systemctl >/dev/null || exit 0
+systemctl --user daemon-reload
+systemctl --user enable --now prune-review-worktrees.timer
+{{- end }}

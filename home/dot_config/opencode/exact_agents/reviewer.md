@@ -436,7 +436,7 @@ why it must be addressed now.
 - Do not submit the pending review; the user submits manually via the GitHub UI
 - In local mode the task-owned worktree at `{sha}` is the only working copy; MUST NOT pass `-b` to
   `git worktree add`
-- Do not clean up the worktree; leave it in `/tmp` for reference
+- Do not clean up the worktree; a daily job removes review worktrees after 7 days
 - Do not use TodoWrite or task tracking
 - MUST NOT write findings to files; return the report as the task response
 - The three-question briefing, coverage, refs, and finding confidence are required for every outcome

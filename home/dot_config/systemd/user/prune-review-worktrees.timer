@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily removal of expired OpenCode PR-review worktrees
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,6 @@
+[Unit]
+Description=Remove expired OpenCode PR-review worktrees
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/prune-review-worktrees
