@@ -324,6 +324,23 @@ class CommitSaveTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("-s", result.stderr)
 
+    def test_wrapped_paragraph_lines_are_not_parsed_as_footers(self):
+        rules = {"rules": {"footer-leading-blank": [2, "always"]}}
+        self.config(content=json.dumps(rules))
+        self.write_change()
+        # At 72 columns this wraps so a line starts with "them: ", a commitlint footer token.
+        paragraph = (
+            "CodeRabbit now posts findings that fall outside the diff inside a caution callout,"
+            " one collapsed block per finding. The sanitizer dropped them: the summary regex"
+            " did not allow the blockquote marker."
+        )
+        result = self.run_save(
+            "change.txt", ".commitlintrc.json", "-s", "feat: subject", "-p", paragraph
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        body = self.git("log", "-1", "--format=%b").stdout
+        self.assertEqual(" ".join(body.split()), paragraph)
+
 
 if __name__ == "__main__":
     unittest.main()

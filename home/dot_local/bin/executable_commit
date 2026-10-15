@@ -96,6 +96,8 @@ def print_section(header: str, content: str) -> None:
 # -- save ------------------------------------------------------------------
 
 _BARE_HEADER_RE = re.compile(r"^[\w /'-]{1,30}:\s*$")
+# conventional-commits-parser footer token, with config-conventional's "#" issue prefix.
+_FOOTER_TOKEN_RE = re.compile(r"^(?:BREAKING CHANGE|[\w-]+)(?::\s+|\s+#).+", re.IGNORECASE)
 
 _COMMITLINT_CONFIG_NAMES = (
     "package.json",
@@ -120,8 +122,22 @@ _COMMITLINT_CONFIG_NAMES = (
 
 
 def wrap_paragraph(text: str) -> str:
-    """Wrap a plain-text paragraph to BODY_WIDTH."""
-    return textwrap.fill(text.strip(), width=BODY_WIDTH)
+    """Wrap a plain-text paragraph to BODY_WIDTH.
+
+    commitlint treats any line shaped like a footer token ("word: text" or "word #ref") as the
+    start of the footer, so a wrapped line must not begin that way. When one does, the previous
+    line's last word moves down and the remainder rewraps.
+    """
+    lines = textwrap.wrap(text.strip(), width=BODY_WIDTH)
+    for i in range(1, len(lines)):
+        if not _FOOTER_TOKEN_RE.match(lines[i]):
+            continue
+        head, _, last = lines[i - 1].rpartition(" ")
+        if not head:
+            continue
+        lines[i - 1] = head
+        lines[i:] = textwrap.wrap(f"{last} {' '.join(lines[i:])}", width=BODY_WIDTH)
+    return "\n".join(lines)
 
 
 def wrap_bullet(text: str) -> str:
