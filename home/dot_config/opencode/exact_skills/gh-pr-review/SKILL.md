@@ -28,8 +28,8 @@ This skill covers workflow and semantics only.
 ## Critical Rules
 
 - NEVER submit reviews. The user manually submits pending reviews via GitHub UI.
-- Inline comments MUST go through a pending review; never post them directly. Replies never use a
-  pending review; see Replying to Comments.
+- Inline comments MUST go through a pending review; never post them directly. Replies follow
+  Replying to Comments.
 - Pass Markdown bodies as `--body -` with a single-quoted heredoc. Double-quoted bodies execute
   backticks as shell commands before `gh-review` receives them.
 - When a line target is outside diff hunks, `comment` automatically retries as a file-level comment
@@ -78,13 +78,16 @@ anyone else yet.
 
 ## Replying to Comments
 
-Always post replies with `gh-review reply --publish`; never `start` a review for replies.
-
-- Bot author (CodeRabbit, Copilot, Qodana, any `[bot]` login) on the user's own PR: publish
-  directly.
-- Every other reply: draft it in chat first. For each thread, quote the comment being answered,
-  then the draft body. Publish only the drafts the user approves, with their edits applied verbatim.
-  Approval covers the shown text only; a revised body needs a new approval.
+- Reviewing someone else's PR: `gh-review reply` stages the reply in the same pending review as
+  your inline comments, invisible until the user submits. It finds the pending review itself; pass
+  `--review-id` only when more than one exists. With none it errors instead of posting; `start` one
+  first.
+- Otherwise, post with `gh-review reply --publish`; never `start` a review for these replies:
+  - Bot author (CodeRabbit, Copilot, Qodana, any `[bot]` login) on the user's own PR: publish
+    directly.
+  - Every other reply: draft it in chat first. For each thread, quote the comment being answered,
+    then the draft body. Publish only the drafts the user approves, with their edits applied
+    verbatim. Approval covers the shown text only; a revised body needs a new approval.
 
 GitHub rejects a published reply while you hold a pending review on that PR. If `reply --publish`
 fails, inspect and preserve that review. Ask the user to submit it or authorize discarding it; a

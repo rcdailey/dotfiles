@@ -34,11 +34,10 @@ permissions:
   - action: skill
     resource: domain-modeling
     effect: deny
-  # Replies need user approval in the caller's chat; this agent returns drafts instead
+  # Pending review replies and deletions are this agent's job; global rules ask for them
   - action: shell
     resource: "*gh-review reply*"
-    effect: deny
-  # Pending review deletions are this agent's job; global rules ask for them
+    effect: allow
   - action: shell
     resource: "*gh-review delete*"
     effect: allow
@@ -147,7 +146,6 @@ sound.}
 {Finding resolutions and dispositions, or prerequisites and assumptions supporting a clean verdict.}
 
 **Not staged:** {below-scope findings and dispositions, or none}
-**Draft replies:** {per thread: `#ID`, quoted comment being answered, reply body; or none}
 **Coverage:**
 
 - Inspected: {consequential boundaries traced}
@@ -300,10 +298,10 @@ not count as raised and is not a coverage gap. Do not recover it with other tool
 
 This is deduplication, not a reason to ignore unresolved issues when deciding the verdict. Report
 confirmed existing issues with their source tag (see Return Contract), never as new. On follow-ups,
-validate author responses, then draft a threaded reply in `Draft replies` only when something
-remains to say: the fix is incomplete, a new issue appeared, or the author asked a question. Never
-post replies; the caller publishes them after user approval. Never draft a reply to acknowledge a
-resolved finding; report the resolution in the briefing and set `Review: none`.
+validate author responses, then stage a threaded reply in the pending review via `gh-pr-review`
+only when something remains to say: the fix is incomplete, a new issue appeared, or the author asked
+a question. Never reply to acknowledge a resolved finding; report the resolution in the briefing and
+set `Review: none`.
 
 ### 3. Analyze
 

@@ -151,9 +151,6 @@ recorded `sessionID` rather than spawning a fresh one; it still holds the diff, 
 findings. Pass only what changed (new commits, resolved threads, unanswered questions) and the
 priority scope. Spawn a new subagent only when no `sessionID` was recorded for that PR.
 
-**Draft replies need approval:** show each reviewer `Draft replies` entry with its quoted comment,
-and publish only what the user approves, per `gh-pr-review`.
-
 **Comment mechanics stay on `gh-review`:** reading threads, replying, editing or removing your own
 comments, and inspecting an unsubmitted review all go through it; load the `gh-pr-review` skill
 first. Never reach for raw `gh api` or `gh pr` for review comments.
