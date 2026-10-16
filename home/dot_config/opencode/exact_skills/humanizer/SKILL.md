@@ -1,12 +1,11 @@
 ---
 name: humanizer
 description: >-
-  Use when writing text intended for people: pull request titles and descriptions, including when
-  opening a pull request, documentation, changelogs, issue text, email drafts, READMEs, release
-  notes, announcements, blog posts, or gist content. Do NOT use for machine-to-machine text,
-  including subagent prompts, delegation briefs, coding instructions, implementation handoffs, or
-  other agent communication. Also exclude in-session chat, code, commit messages, and structured
-  data (JSON, YAML, tables).
+  Use when writing prose that people will read, regardless of addressee: anything posted to
+  GitHub, Linear, Slack, or email (PR descriptions, review comments and replies, including replies
+  to bots), docs, READMEs, changelogs, and release notes. Do NOT use for text only agents read
+  (subagent prompts, delegation briefs, handoffs), in-session chat, code, commit messages, or
+  structured data.
 ---
 
 # Humanizer
@@ -86,10 +85,10 @@ The strongest and most frequent tells in current model prose. Act on one sightin
 
 #### 1. Not X but Y
 
-**Watch for:** `not X but Y`; `not just`, `not only`, or `not merely X, but Y`; `it's not X, it's
-Y`; the reversed `X rather than Y`; the contrast split across sentences ("This does not mean X. It
-means Y."); a clipped negative tail ("..., no guessing"). Treat the equivalent construction in any
-language the same way.
+**Watch for:** `not X but Y`; `not just`, `not only`, or `not merely X, but Y`;
+`it's not X, it's Y`; the reversed `X rather than Y`; the contrast split across sentences ("This
+does not mean X. It means Y."); a clipped negative tail ("..., no guessing"). Treat the equivalent
+construction in any language the same way.
 
 **Problem:** The negative half names something no one claimed, so the positive half sounds larger.
 It adds weight without adding a claim. State the point directly. Keep a contrast only when the
@@ -144,8 +143,9 @@ Repeated closer, each sentence its own paragraph:
 #### 3. Sayings that sound deep
 
 **Watch for:** `the real question is`, `at its core`, `in reality`, `what really matters`,
-`fundamentally`, `the deeper issue`, `the heart of the matter`, `X is the Y of Z`, `X becomes a
-trap`, `X is not a tool but a mirror`, `the language of`, `the currency of`, `the architecture of`
+`fundamentally`, `the deeper issue`, `the heart of the matter`, `X is the Y of Z`,
+`X becomes a trap`, `X is not a tool but a mirror`, `the language of`, `the currency of`,
+`the architecture of`
 
 **Problem:** An ordinary point is dressed as a hidden truth or an aphorism, and the dressing adds no
 detail. Replace the saying with the specific claim.
@@ -166,10 +166,11 @@ Aphorism:
 
 #### 4. Staged run-up before the point
 
-**Watch for:** `Let's dive in`, `let's explore`, `let's break this down`, `here's what you need to
-know`, `now let's look at`, `without further ado`, `heads up`, `quick note`, `before I forget`,
-`Honestly?`, `Look`, `Here's the thing`, `The thing is`, `Let's be honest`, `Real talk`, and casual
-versions such as "one thing that bit me, so pay attention"
+**Watch for:** `Let's dive in`, `let's explore`, `let's break this down`,
+`here's what you need to know`, `now let's look at`, `without further ado`, `heads up`,
+`quick note`, `before I forget`, `Honestly?`, `Look`, `Here's the thing`, `The thing is`,
+`Let's be honest`, `Real talk`, and casual versions such as "one thing that bit me, so pay
+attention"
 
 **Problem:** The writer announces the point or stages a moment of candor instead of making the
 point. Remove the run-up, not just its tone. "Honestly" or "look" inside a casual sentence is
@@ -187,11 +188,11 @@ Staged candor:
 
 #### 5. Arguing with no one
 
-**Watch for:** `This isn't (mainly or really) about`, `I'm not saying`, `I'm not arguing`, `I'm not
-trying to`, `To be clear`, `Don't get me wrong`, `This is not to say`, `you could argue`, `you could
-frame this differently`, `Some might say... but`, `some would suggest`, `A tempting approach would
-be`, `One might be tempted to`, `An obvious approach would be`, `You might think... but`, `It would
-be easy to just`
+**Watch for:** `This isn't (mainly or really) about`, `I'm not saying`, `I'm not arguing`,
+`I'm not trying to`, `To be clear`, `Don't get me wrong`, `This is not to say`, `you could argue`,
+`you could frame this differently`, `Some might say... but`, `some would suggest`,
+`A tempting approach would be`, `One might be tempted to`, `An obvious approach would be`,
+`You might think... but`, `It would be easy to just`
 
 **Problem:** The text answers an objection or rejects an option that appears nowhere else, usually a
 leftover from an earlier draft. Remove the defense; if it holds a real claim, state the claim. Keep
@@ -268,8 +269,8 @@ a text full of them is not.
 
 #### 9. Stacked qualifiers
 
-**Watch for:** `to be fair`, `it's also possible`, `could potentially`, `might arguably`, `in some
-cases it may`, `this is an inference`
+**Watch for:** `to be fair`, `it's also possible`, `could potentially`, `might arguably`,
+`in some cases it may`, `this is an inference`
 
 **Problem:** Repeated editing adds one qualifier after another until every claim sounds uncertain,
 usually to repair an earlier overstatement rather than to report real doubt. Keep a qualifier only
@@ -330,9 +331,10 @@ technical uses such as gating a release on a test result or a robust estimator.
 
 **Watch for:** `stands as a testament`, a `pivotal` or `crucial` moment, `plays a key role`,
 `marking` or `shaping the`, `underscores its importance`, `reflects a broader`, `enduring` or
-`lasting legacy`, `setting the stage for`, `evolving landscape`, `indelible mark`; `Despite these
-challenges... continues to thrive`, `Challenges and Legacy`, `Future Outlook`, `Awards and
-recognition`; `the future looks bright`, `exciting times ahead`, `a step in the right direction`
+`lasting legacy`, `setting the stage for`, `evolving landscape`, `indelible mark`;
+`Despite these challenges... continues to thrive`, `Challenges and Legacy`, `Future Outlook`,
+`Awards and recognition`; `the future looks bright`, `exciting times ahead`,
+`a step in the right direction`
 
 **Problem:** An ordinary detail is said to mark a change, prove a legacy, or promise a future. The
 move appears at three scales: a phrase, a stock challenges-and-outlook section, and a send-off
@@ -402,9 +404,10 @@ organizations. State what the thing is.
 
 #### 17. Borrowed authority
 
-**Watch for:** `experts argue`, `observers have cited`, `industry reports`, `some critics`, `several
-publications`; cited, featured, or profiled in a list of outlets, `trade publications`, `independent
-coverage`, `written by a leading expert`; `active social media presence`, follower counts
+**Watch for:** `experts argue`, `observers have cited`, `industry reports`, `some critics`,
+`several publications`; cited, featured, or profiled in a list of outlets, `trade publications`,
+`independent coverage`, `written by a leading expert`; `active social media presence`, follower
+counts
 
 **Problem:** A name or an unnamed authority stands in for what was said. Unnamed experts prop up a
 claim; a list of prestige outlets props up a person. When the source text names the real source and
@@ -492,9 +495,9 @@ Remove these outright. Nothing here needs rewriting.
 
 #### 22. Chatbot residue
 
-**Watch for:** `I hope this helps`, `Of course!`, `Certainly!`, `Great question!`, `You're
-absolutely right`, `Would you like...`, `Want me to...?`, `Should I continue?`, generic `let me
-know`, `here is a...`
+**Watch for:** `I hope this helps`, `Of course!`, `Certainly!`, `Great question!`,
+`You're absolutely right`, `Would you like...`, `Want me to...?`, `Should I continue?`, generic
+`let me know`, `here is a...`
 
 **Problem:** A chatbot's greeting, praise, offer, or closing remains in text that should stand on
 its own. It is the most certain tell in this list and the easiest to miss when it wraps real
@@ -507,11 +510,11 @@ content. Remove the wrapper and keep the content.
 
 #### 23. Knowledge-limit disclaimers and guesses
 
-**Watch for:** `as of [date]`, `up to my last training update`, `while specific details are
-limited`, `based on available information`, `not publicly available`, `not widely documented or
-disclosed`, `in the provided or available sources`, `maintains a low profile`, `keeps personal
-details private`, `prefers to stay out of the spotlight`, `likely [grew up, studied, began]`, `it is
-believed that`
+**Watch for:** `as of [date]`, `up to my last training update`,
+`while specific details are limited`, `based on available information`, `not publicly available`,
+`not widely documented or disclosed`, `in the provided or available sources`,
+`maintains a low profile`, `keeps personal details private`, `prefers to stay out of the spotlight`,
+`likely [grew up, studied, began]`, `it is believed that`
 
 **Problem:** The text mentions where the model's knowledge ends, or admits it found no source and
 then fills the gap with a plausible guess. State what the source does not show, or remove the
@@ -586,9 +589,9 @@ full write-up.
 
 > Before: Yeah, you're right, this works around the issue rather than fixing it. The real fix is in
 > `MergeService`: when we move a child under a new parent, it should update `pipeline_id` along with
-> `parent_id`. We can backfill the bad rows from the audit log with `Change.where(field:
-> "pipeline_id", source: "merge")`. I checked QA: 123 past merges, only 6 rows wrong now, so the
-> cleanup is small.
+> `parent_id`. We can backfill the bad rows from the audit log with
+> `Change.where(field: "pipeline_id", source: "merge")`. I checked QA: 123 past merges, only 6 rows
+> wrong now, so the cleanup is small.
 >
 > Since `MergeService` is shared and not specific to this account, I'd rather open a separate ticket
 > than widen this PR. The fallback here is fine to keep until then.
@@ -652,8 +655,8 @@ the reasoning or turn the conclusion into a formal verdict.
 
 ## Reference
 
-Adapted from [blader/humanizer](https://github.com/blader/humanizer), which is based on [Wikipedia:
-Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing).
+Adapted from [blader/humanizer](https://github.com/blader/humanizer), which is based on
+[Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing).
 
 <!-- ============================================================================ -->
 <!-- BEGIN LOCAL ADDITION: User Voice Profile                                     -->
