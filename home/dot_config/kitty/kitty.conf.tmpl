@@ -57,6 +57,10 @@ map ctrl+shift+, load_config_file
 # New OS window
 map ctrl+shift+n new_os_window_with_cwd
 
+# Lazygit window following the focused herdr pane's repo; a login shell supplies the PATH that
+# kitty lacks when started from a desktop launcher
+map ctrl+shift+g launch --type=background --allow-remote-control zsh -lc 'herdr-lazygit open'
+
 # Pass keys to herdr - explicit unmapping required because kitty has built-in
 # defaults for many of these (ctrl+shift+t=new_tab, ctrl+shift+w=close_window,
 # etc). Without explicit unmapping, kitty intercepts them before herdr sees them.
@@ -76,7 +80,6 @@ map ctrl+alt+right
 map ctrl+alt+up
 map ctrl+alt+down
 map ctrl+shift+z
-map ctrl+shift+g
 map ctrl+shift+k
 map ctrl+shift+q
 map ctrl+shift+b

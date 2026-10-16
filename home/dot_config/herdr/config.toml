@@ -72,15 +72,6 @@ type = "plugin_action"
 command = "worktrunk.open"
 description = "worktree"
 
-# Esc at lazygit's top level quits it (quitOnTopLevelReturn), closing the popup
-[[keys.command]]
-key = "ctrl+shift+g"
-type = "popup"
-command = 'lazygit -p "$HERDR_ACTIVE_PANE_CWD"'
-description = "lazygit"
-width = "90%"
-height = "90%"
-
 # Scratch shell for quick commands; exiting it (Esc, see zsh 05-configuration.sh) closes the popup
 # and ends anything it started, so long-running processes belong in a plain shell tab (prefix+c)
 [[keys.command]]

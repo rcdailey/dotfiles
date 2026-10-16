@@ -1,0 +1,11 @@
+# Local plugin: point the herdr-lazygit window at the focused pane's repo. Every workspace or tab
+# focus change also emits pane.focused, so this one hook covers them.
+id = "lazygit-follow"
+name = "Lazygit follow"
+version = "0.1.0"
+min_herdr_version = "0.9.5"
+platforms = ["linux", "macos"]
+
+[[events]]
+on = "pane.focused"
+command = ["herdr-lazygit", "follow"]

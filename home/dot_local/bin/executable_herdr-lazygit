@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Lazygit in its own kitty OS window that follows the focused herdr pane's git repository.
+#   herdr-lazygit open    focus the window, or open it if closed (kitty ctrl+shift+g)
+#   herdr-lazygit run     window process: run lazygit, restarting it when the followed repo changes
+#   herdr-lazygit follow  herdr focus hook: retarget a running window at the focused pane's repo
+# A repo switch stops lazygit with SIGTERM, so anything unsaved inside lazygit is lost.
+set -euo pipefail
+
+state="${XDG_STATE_HOME:-$HOME/.local/state}/herdr-lazygit"
+# Identifies the window to kitty; a title would not work because lazygit rewrites it
+window_match="var:herdr_lazygit"
+
+# Toplevel of the focused herdr pane's repo (a linked worktree resolves to its own root)
+focused_repo() {
+  local cwd
+  # Without HERDR_PANE_ID, `pane current` reports the focused pane instead of the calling one
+  cwd=$(env -u HERDR_PANE_ID herdr pane current | jq -r '.result.pane.cwd // empty')
+  [[ -n "$cwd" ]] && git -C "$cwd" rev-parse --show-toplevel 2>/dev/null
+}
+
+lazygit_running() {
+  local pid
+  pid=$(cat "$state/pid" 2>/dev/null) && kill -0 "$pid" 2>/dev/null
+}
+
+open() {
+  kitten @ focus-window --match "$window_match" 2>/dev/null && return
+  local id
+  id=$(kitten @ launch --type=os-window --var herdr_lazygit=1 zsh -lc 'herdr-lazygit run')
+  # Landscape, unlike kitty's portrait initial_window_* default sized for the herdr window
+  kitten @ resize-os-window --match "id:$id" --unit pixels --width 1500 --height 800
+}
+
+run() {
+  mkdir -p "$state"
+  local repo
+  if ! repo=$(focused_repo); then
+    read -rp "The focused herdr pane is not in a git repository. Press Enter to close."
+    exit 1
+  fi
+  echo "$repo" >"$state/repo"
+  trap 'rm -f "$state/pid"' EXIT
+  while :; do
+    # sh records its own PID, which exec hands to lazygit, so follow can stop lazygit
+    sh -c 'echo $$ >"$1" && cd "$2" && exec lazygit' sh "$state/pid" "$repo" || true
+    local next
+    next=$(cat "$state/repo")
+    # An unchanged repo means the user quit lazygit rather than follow restarting it
+    [[ "$next" != "$repo" ]] || exit 0
+    repo=$next
+  done
+}
+
+follow() {
+  lazygit_running || return 0
+  local repo
+  repo=$(focused_repo) || return 0
+  [[ "$repo" != "$(cat "$state/repo")" ]] || return 0
+  echo "$repo" >"$state/repo"
+  # lazygit may have exited since the check
+  kill "$(cat "$state/pid")" 2>/dev/null || true
+}
+
+case "${1-}" in
+  open | run | follow) "$1" ;;
+  *)
+    echo "Usage: herdr-lazygit open|run|follow" >&2
+    exit 2
+    ;;
+esac

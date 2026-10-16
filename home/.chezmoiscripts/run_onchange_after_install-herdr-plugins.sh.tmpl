@@ -12,3 +12,4 @@
 
 command -v herdr >/dev/null || exit 0
 herdr plugin install devashish2203/herdr-worktrunk --yes
+herdr plugin link {{ joinPath .chezmoi.homeDir ".config/herdr/lazygit-follow" | quote }} >/dev/null
