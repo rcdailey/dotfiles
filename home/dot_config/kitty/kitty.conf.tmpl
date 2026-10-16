@@ -22,8 +22,9 @@ font_size {{ .terminal.fontSize }}
 # Window management
 confirm_os_window_close 0
 remember_window_size no
-initial_window_width 120c
-initial_window_height 782
+# herdr sidebar (32) plus a single OpenCode pane wide enough for 100-column diffs (~120)
+initial_window_width 155c
+initial_window_height 1300
 remember_window_position yes
 
 copy_on_select clipboard
@@ -79,6 +80,7 @@ map ctrl+shift+g
 map ctrl+shift+k
 map ctrl+shift+q
 map ctrl+shift+b
+map ctrl+shift+s
 
 # Insert newline without executing
 map shift+enter send_text all \n

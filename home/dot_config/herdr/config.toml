@@ -58,14 +58,14 @@ next_tab = ["prefix+n", "ctrl+alt+]"]
 rename_tab = ["prefix+shift+t", "f2"]
 close_tab = ["prefix+shift+x", "ctrl+shift+q"]
 
-# Agent tab: OpenCode on the left, a shell on the right (herdr has no per-tab default layout)
+# Agent tab: a new tab running OpenCode; prefix+c opens a plain shell tab instead
 [[keys.command]]
 key = "ctrl+shift+t"
 type = "shell"
 description = "new agent tab"
-command = 'herdr-agent-split "$(herdr tab create --focus | jq -r .result.root_pane.pane_id)"'
+command = 'herdr pane run "$(herdr tab create --focus | jq -r .result.root_pane.pane_id)" opencode'
 
-# Worktree picker; worktrunk's post-switch hook gives new worktree spaces the agent layout
+# Worktree picker; worktrunk's post-switch hook starts OpenCode in new worktree spaces
 [[keys.command]]
 key = "ctrl+shift+b"
 type = "plugin_action"
@@ -78,5 +78,15 @@ key = "ctrl+shift+g"
 type = "popup"
 command = 'lazygit -p "$HERDR_ACTIVE_PANE_CWD"'
 description = "lazygit"
+width = "90%"
+height = "90%"
+
+# Scratch shell for quick commands; exiting it (Esc, see zsh 05-configuration.sh) closes the popup
+# and ends anything it started, so long-running processes belong in a plain shell tab (prefix+c)
+[[keys.command]]
+key = "ctrl+shift+s"
+type = "popup"
+command = 'cd "$HERDR_ACTIVE_PANE_CWD" && HERDR_SCRATCH_SHELL=1 exec zsh'
+description = "shell"
 width = "90%"
 height = "90%"

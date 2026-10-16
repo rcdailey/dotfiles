@@ -117,3 +117,15 @@ bindkey '^[OF' end-of-line        # GNOME Terminal / JetBrains IDE END
 
 # Key binding for DEL key (forward delete)
 bindkey '^[[3~' delete-char       # DEL key deletes character under cursor
+
+# herdr scratch popup (ctrl+shift+s): Esc exits the shell, which closes the popup. Unset so
+# shells started inside it keep normal Esc behavior.
+if [[ -n $HERDR_SCRATCH_SHELL ]]; then
+    unset HERDR_SCRATCH_SHELL
+    _herdr_scratch_exit() { BUFFER=exit; zle accept-line; }
+    zle -N _herdr_scratch_exit
+    bindkey '^[' _herdr_scratch_exit
+    # Esc also prefixes multi-key sequences, so zsh waits KEYTIMEOUT (default 0.4s) before
+    # treating it as a bare Esc; 10ms still lets terminal sequences like arrows arrive whole
+    KEYTIMEOUT=1
+fi
