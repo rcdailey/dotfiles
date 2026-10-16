@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { devNull, tmpdir } from "node:os";
 import { join } from "node:path";
-import { begin, diff, finish } from "./state.ts";
+import { begin, diff, finish, workspace } from "./state.ts";
 
 let root: string;
 let repository: string;
@@ -110,6 +111,41 @@ test("a session rejects a different repository", async () => {
   await expect(begin({ sessionID: "session-a", directory: other })).rejects.toThrow(
     "session belongs to",
   );
+});
+
+test("workspace stages the pending tree on top of the previous tree", async () => {
+  commit();
+  await writeFile(join(repository, "staged.txt"), "changed\n");
+  await begin(session());
+
+  const output = await workspace(session());
+
+  const path = output.match(/^Workspace: (.+)$/m)?.[1] ?? "";
+  const inWorkspace = (...args: string[]) =>
+    execFileSync("git", args, { cwd: path, encoding: "utf8" }).trim();
+  expect(inWorkspace("diff", "--cached", "--name-status")).toBe(
+    "A\t.gitignore\nM\tstaged.txt\nA\tuntracked.txt",
+  );
+  expect(inWorkspace("status", "--porcelain", "--untracked-files=all")).not.toMatch(/^.[^ ]/m);
+  expect(await readFile(join(path, "staged.txt"), "utf8")).toBe("changed\n");
+  expect(existsSync(join(path, "ignored.txt"))).toBe(false);
+});
+
+test("workspace discards earlier edits and leaves the repository untouched", async () => {
+  await begin(session());
+  const first = await workspace(session());
+  const path = first.match(/^Workspace: (.+)$/m)?.[1] ?? "";
+  await writeFile(join(path, "staged.txt"), "rewritten by a hook\n");
+
+  await workspace(session());
+
+  expect(await readFile(join(path, "staged.txt"), "utf8")).toBe("staged\n");
+  expect(git("diff", "--cached", "--name-only")).toBe("staged.txt");
+  expect(await finish(session())).toEndWith("Result: stable");
+});
+
+test("workspace requires a pending iteration", async () => {
+  await expect(workspace(session())).rejects.toThrow("run acceptance_begin first");
 });
 
 test("captures leave the repository index untouched", async () => {

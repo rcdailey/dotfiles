@@ -6,6 +6,7 @@ import {
   captureTree,
   changedPaths,
   headTree,
+  materializeWorkspace,
   repositoryRoot,
   resolveTree,
   SnapshotError,
@@ -179,6 +180,22 @@ export async function diff(scope: Scope, paths: string[]) {
     const pending = pendingTree(state);
     const patch = await treeDiff(repository, directory, previousTree(state), pending, paths);
     return patch || "(no changes)";
+  });
+}
+
+/** Recreates the session's disposable checkout of the pending tree and returns its location. */
+export async function workspace(scope: Scope) {
+  const { repository, directory } = await prepare(scope);
+  return locked(directory, async () => {
+    const state = await validatedState(directory, repository);
+    const pending = pendingTree(state);
+    const path = join(directory, "workspace");
+    await materializeWorkspace(repository, directory, path, previousTree(state), pending);
+    return [
+      `Workspace: ${path}`,
+      `HEAD: previous tree ${previousTree(state)}`,
+      `Index and files: pending tree ${pending}`,
+    ].join("\n");
   });
 }
 

@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { realpath, rm } from "node:fs/promises";
+import { realpath, rm, writeFile } from "node:fs/promises";
 import { devNull } from "node:os";
 import { delimiter, join } from "node:path";
 import { promisify } from "node:util";
@@ -61,16 +61,16 @@ export async function headTree(repository: string) {
   return (await git(repository, ["hash-object", "-t", "tree", devNull])).trim();
 }
 
+async function objectDirectory(repository: string) {
+  const args = ["rev-parse", "--path-format=absolute", "--git-path", "objects"];
+  return (await git(repository, args)).trim();
+}
+
 // Snapshot objects live in the state directory; the repository's objects stay readable as an
 // alternate, so captures never write to the repository's index or object store.
 async function snapshotEnvironment(repository: string, stateDirectory: string) {
-  const objects = await git(repository, [
-    "rev-parse",
-    "--path-format=absolute",
-    "--git-path",
-    "objects",
-  ]);
-  const alternates = [objects.trim(), process.env.GIT_ALTERNATE_OBJECT_DIRECTORIES]
+  const repositoryObjects = await objectDirectory(repository);
+  const alternates = [repositoryObjects, process.env.GIT_ALTERNATE_OBJECT_DIRECTORIES]
     .filter(Boolean)
     .join(delimiter);
   return {
@@ -94,6 +94,36 @@ export async function captureTree(repository: string, stateDirectory: string, in
   } finally {
     await cleanup();
   }
+}
+
+const WORKSPACE_IDENTITY = {
+  GIT_AUTHOR_NAME: "acceptance",
+  GIT_AUTHOR_EMAIL: "acceptance@localhost",
+  GIT_COMMITTER_NAME: "acceptance",
+  GIT_COMMITTER_EMAIL: "acceptance@localhost",
+};
+
+/**
+ * Recreates a standalone Git checkout whose HEAD commits the previous tree and whose index and
+ * files hold the pending tree. Objects resolve through alternates, so nothing is copied into or
+ * written to the audited repository.
+ */
+export async function materializeWorkspace(
+  repository: string,
+  stateDirectory: string,
+  workspace: string,
+  previousTree: string,
+  pendingTree: string,
+) {
+  await rm(workspace, { recursive: true, force: true });
+  await git(stateDirectory, ["init", "--quiet", "--initial-branch=audit", workspace]);
+  const alternates = [await objectDirectory(repository), join(stateDirectory, "objects")];
+  await writeFile(join(workspace, ".git/objects/info/alternates"), `${alternates.join("\n")}\n`);
+  const env = { ...process.env, ...WORKSPACE_IDENTITY };
+  const message = ["commit-tree", previousTree, "-m", "Previous audited tree"];
+  const commit = (await git(workspace, message, env)).trim();
+  await git(workspace, ["update-ref", "refs/heads/audit", commit]);
+  await git(workspace, ["read-tree", "--reset", "-u", pendingTree]);
 }
 
 const DIFF_FLAGS = ["diff", "--no-color", "--no-ext-diff", "--no-textconv", "--find-renames"];

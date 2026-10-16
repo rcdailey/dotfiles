@@ -1,6 +1,6 @@
 import type { Plugin } from "@opencode/plugin";
 import { DIRECT_TOOL } from "../lib/direct-tool.ts";
-import { begin, diff, finish, type Scope } from "./state.ts";
+import { begin, diff, finish, type Scope, workspace } from "./state.ts";
 
 // Snapshot state is keyed by the calling session, so a resumed acceptance task continues its own
 // iteration history and parallel audits stay isolated. Tools resolve the repository from the
@@ -72,6 +72,20 @@ export const Acceptance = {
         options: DIRECT_TOOL,
         async execute(input, context) {
           return { content: await diff(scope(context.sessionID), pathsField(input)) };
+        },
+      });
+
+      tools.add({
+        name: "acceptance_workspace",
+        description:
+          "Recreate a disposable Git checkout of the pending tree outside the repository: HEAD " +
+          "commits the previous audited tree, and the index and files hold the pending tree. " +
+          "Ignored files such as dependencies are absent. Each call discards prior edits. " +
+          "Requires acceptance_begin first.",
+        input: NO_INPUT,
+        options: DIRECT_TOOL,
+        async execute(_input, context) {
+          return { content: await workspace(scope(context.sessionID)) };
         },
       });
 
