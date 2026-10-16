@@ -118,6 +118,13 @@ bindkey '^[OF' end-of-line        # GNOME Terminal / JetBrains IDE END
 # Key binding for DEL key (forward delete)
 bindkey '^[[3~' delete-char       # DEL key deletes character under cursor
 
+# A TUI that crashes without restoring the terminal leaves mouse tracking on, so mouse
+# movement prints escape codes at the prompt. Disable tracking modes (1000/1002/1003) and
+# SGR encoding (1006) before each prompt; precmd never runs while a foreground TUI owns the TTY.
+_reset_mouse_tracking() { print -n '\e[?1000l\e[?1002l\e[?1003l\e[?1006l'; }
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _reset_mouse_tracking
+
 # herdr scratch popup (ctrl+shift+s): Esc exits the shell, which closes the popup. Unset so
 # shells started inside it keep normal Esc behavior.
 if [[ -n $HERDR_SCRATCH_SHELL ]]; then
