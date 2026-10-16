@@ -70,16 +70,17 @@ them from the repository.
 
 The auditor returns independent evidence, findings, snapshot state, and one exact resume action. On
 failure, fix the findings and resume the same task with only the addressed findings and changed
-check commands. The auditor discovers the iteration delta and rechecks failed and affected cases
-while preserving unaffected passes.
+check commands, under the same omissions. The auditor discovers the iteration delta and rechecks
+failed and affected cases while preserving unaffected passes.
 
 On `incomplete`, resume the same task for its named remaining verification; supply missing evidence
-when available. Do not repeat unchanged attempts when evidence is unavailable; report the gap
-without claiming completion. On `retry`, resume the same task without restoring or editing files.
-Launch a fresh audit only when the prior task or snapshot state is unavailable, or the goal or
-acceptance matrix changes. Any edit after a pass invalidates it and must return to the same
-acceptance session. Do not commit, deploy, or mark the work complete until the current
-implementation passes with a stable snapshot.
+when available. When the auditor names unknowns no available evidence can resolve, ask the user
+whether to accept each as a gap; resume with the accepted gaps verbatim. Do not repeat unchanged
+attempts or accept a gap yourself; report unaccepted gaps without claiming completion. On `retry`,
+resume the same task without restoring or editing files. Launch a fresh audit only when the prior
+task or snapshot state is unavailable, or the goal or acceptance matrix changes. Any edit after a
+pass invalidates it and must return to the same acceptance session. Do not commit, deploy, or mark
+the work complete until the current implementation passes with a stable snapshot.
 
 ## Commits
 
