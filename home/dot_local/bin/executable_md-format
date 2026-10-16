@@ -9,4 +9,4 @@ reflow=()
 if [[ $(rumdl config get MD013.line-length) != *"[from default]"* ]]; then
   reflow=(--config MD013.reflow=true --config 'MD013.reflow-mode="normalize"')
 fi
-exec rumdl fmt --silent "${reflow[@]}" -- "${1##*/}"
+exec rumdl fmt --silent ${reflow[@]+"${reflow[@]}"} -- "${1##*/}"
