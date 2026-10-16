@@ -53,6 +53,15 @@
   },
   "formatter": {
     "shfmt": { "disabled": true },
+    // Built-ins run before custom entries and stop at the first success, so a project's
+    // Prettier would otherwise preempt md-format on Markdown.
+    "prettier": {
+      "extensions": [
+        ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts", ".html", ".htm", ".css",
+        ".scss", ".sass", ".less", ".vue", ".svelte", ".json", ".jsonc", ".yaml", ".yml", ".toml",
+        ".xml", ".graphql", ".gql",
+      ],
+    },
     "markdown": {
       "command": ["md-format", "$FILE"],
       "extensions": [".md", ".mdx", ".md.tmpl"],
