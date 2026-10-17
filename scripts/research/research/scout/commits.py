@@ -12,7 +12,7 @@ from research._ghapi import (
     view_commit,
 )
 from research._render import (
-    DEFAULT_SCOUT_MAX_CHARS,
+    DEFAULT_MAX_CHARS,
     fenced_code,
     format_commit_item,
     kv_line,
@@ -88,8 +88,8 @@ def commits(
 @click.option("--path", help="filter files by path prefix")
 @click.option(
     "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
+    type=click.IntRange(min=0),
+    default=DEFAULT_MAX_CHARS,
 )
 def commit(repo: str, sha: str, patch: bool, path: str | None, max_chars: int) -> None:
     """View a commit summary and associated PRs; add --patch for diffs."""

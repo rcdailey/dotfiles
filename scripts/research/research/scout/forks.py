@@ -9,7 +9,7 @@ import sys
 import click
 
 from research._ghapi import APIError, graphql_partial, view_commit
-from research._render import DEFAULT_SCOUT_MAX_CHARS, format_commit_item, truncate_output
+from research._render import DEFAULT_MAX_CHARS, format_commit_item, truncate_output
 from research._source_ledger import record_visible_sources
 from research.scout import cli
 from research.scout._common import die, github_url, more_results_hint, parse_repo
@@ -251,8 +251,8 @@ def _render_fork(owner: str, name: str, base: str, fork: dict, branches: list[di
 @click.option("--limit", "-L", type=click.IntRange(min=1), default=10, help="max forks shown")
 @click.option(
     "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
+    type=click.IntRange(min=0),
+    default=DEFAULT_MAX_CHARS,
 )
 def forks(
     repo: str,

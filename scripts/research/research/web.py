@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import re
 import subprocess
 import sys
 from collections.abc import Iterable
@@ -22,16 +23,16 @@ from research._cache import (
 from research._fetch import FetchError, fetch_markdown
 from research._render import (
     DEFAULT_MAX_CHARS,
-    DEFAULT_SCOUT_MAX_CHARS,
     apply_find,
     is_github_url,
     is_pdf_url,
+    raw_github_to_blob,
     reroute_message,
     strip_github_host,
     truncate_output,
 )
 from research._source_ledger import record_source, record_visible_sources
-from research._tavily import TavilyError, format_search_results, format_sourced_answer
+from research._tavily import TavilyError, format_search_results
 
 DEFAULT_MAX_RESULTS = 5
 
@@ -71,13 +72,32 @@ def cli() -> None:
 
 @cli.command(name="search")
 @click.argument("query")
-@click.option("--max-results", type=click.IntRange(min=1, max=10), default=DEFAULT_MAX_RESULTS)
-@click.option("--results", is_flag=True, help="return search results instead of a sourced answer")
+@click.option("--max-results", type=click.IntRange(min=1, max=20), default=DEFAULT_MAX_RESULTS)
+@click.option("--domain", "domains", multiple=True, help="only return results from this site")
+@click.option("--exclude-domain", "exclude_domains", multiple=True, help="drop this site")
+@click.option(
+    "--time-range",
+    type=click.Choice(["day", "week", "month", "year"]),
+    help="only results published within this period",
+)
+@click.option("--exact", is_flag=True, help="quoted phrases must appear verbatim")
 @click.option("--critical", is_flag=True, help="use a reserved post-warning call")
-def search_cmd(query: str, max_results: int, results: bool, critical: bool) -> None:
-    """Search the web via Tavily."""
-    sourced_answer = not results
-    cache_key = f"tavily:v2:{sourced_answer}:{max_results}:{query}"
+def search_cmd(
+    query: str,
+    max_results: int,
+    domains: tuple[str, ...],
+    exclude_domains: tuple[str, ...],
+    time_range: str | None,
+    exact: bool,
+    critical: bool,
+) -> None:
+    """Search the web via Tavily; results are discovery only."""
+    if exact and not re.search(r'"[^"]+"', query):
+        raise click.UsageError('--exact requires a "quoted phrase" in the query')
+    cache_key = (
+        f"tavily:v3:{max_results}:{sorted(domains)}:{sorted(exclude_domains)}:"
+        f"{time_range}:{exact}:{query}"
+    )
     cached = read_cached_search(cache_key)
     if cached is not None:
         budget_cache_hit(get_cache())
@@ -90,12 +110,8 @@ def search_cmd(query: str, max_results: int, results: bool, critical: bool) -> N
     try:
         from research._tavily import search
 
-        response = search(query, max_results, sourced_answer)
-        rendered = (
-            format_sourced_answer(response, max_results)
-            if sourced_answer
-            else format_search_results(response["results"])
-        )
+        response = search(query, max_results, domains, exclude_domains, time_range, exact)
+        rendered = format_search_results(response["results"])
         write_cached_search(cache_key, rendered)
         click.echo(rendered)
     except TavilyError as e:
@@ -120,6 +136,7 @@ def fetch_cmd(
     critical: bool,
 ) -> None:
     """Fetch a URL as clean markdown."""
+    url = raw_github_to_blob(url)
     # Check for reroutes before burning budget
     if is_github_url(url):
         path = strip_github_host(url)
@@ -145,7 +162,7 @@ def fetch_cmd(
                 except APIError as e:
                     click.echo(f"error: {e}", err=True)
                     sys.exit(1)
-                category = data.get("category", {}).get("name", "")
+                category = (data.get("category") or {}).get("name", "")
                 cat_str = f" [{category}]" if category else ""
                 output = format_issue_body(
                     data["number"],
@@ -318,17 +335,7 @@ def fetch_cmd(
                     click.echo(f"error: file not found: {file_path} at ref {ref}", err=True)
                     sys.exit(1)
                 content = f"Source: {url}\n\n{result_proc.stdout}"
-                github_max = min(max_chars, DEFAULT_SCOUT_MAX_CHARS)
-                if max_chars <= 0:
-                    github_max = max_chars
-                _emit_retrieved_output(
-                    content,
-                    [url],
-                    find,
-                    context,
-                    github_max,
-                    offset,
-                )
+                _emit_retrieved_output(content, [url], find, context, max_chars, offset)
                 return
 
             elif len(parts) >= 4 and parts[2] == "commit":
@@ -430,7 +437,11 @@ def fetch_cmd(
                 return
             if e.page_missing:
                 budget_refund(cache, base_url)
-                click.echo(f"error: fetch failed: {msg}; the URL does not exist", err=True)
+                click.echo(
+                    f"error: fetch failed: {msg}; the URL does not exist. Do not guess another "
+                    "URL; discover it with a search restricted to the site's domain.",
+                    err=True,
+                )
                 sys.exit(1)
             click.echo(f"[local fetch failed: {msg}; trying Tavily]", err=True)
             try:

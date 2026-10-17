@@ -8,7 +8,7 @@ from collections import Counter
 import click
 
 from research._ghapi import APIError, api, api_raw
-from research._render import DEFAULT_SCOUT_MAX_CHARS, truncate_output
+from research._render import DEFAULT_MAX_CHARS, truncate_output
 from research._source_ledger import record_source, record_visible_sources
 from research.scout import cli
 from research.scout._common import die, github_url, parse_repo
@@ -155,8 +155,8 @@ def orient(repo: str, full: bool, ref: str | None) -> None:
 @click.option("--path", help="filter files by path prefix")
 @click.option(
     "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
+    type=click.IntRange(min=0),
+    default=DEFAULT_MAX_CHARS,
 )
 def diff_cmd(repo: str, spec: str, path: str | None, max_chars: int) -> None:
     """Compare two refs: `scout diff REPO base..head`."""

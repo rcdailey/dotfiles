@@ -9,7 +9,7 @@ from pathlib import Path
 
 import click
 
-from research._render import DEFAULT_SCOUT_MAX_CHARS, truncate_output
+from research._render import DEFAULT_MAX_CHARS, truncate_output
 from research._source_ledger import record_visible_sources
 from research.scout import cli
 from research.scout._clone import current_head, ensure_ref, ensure_repo
@@ -76,12 +76,12 @@ def _report_missing_paths(valid: list[str], missing: list[str]) -> None:
 @click.option("--max-count", "-m", type=click.IntRange(min=1), help="max matches per file")
 @click.option("--ignore-case", "-i", is_flag=True, help="case-insensitive search")
 @click.option("--fixed-strings", "-F", is_flag=True, help="treat pattern as literal string")
+@click.option("--word-regexp", "-w", is_flag=True, help="match whole words only")
+@click.option("--files-with-matches", "-l", is_flag=True, help="list matching files only")
+@click.option("--count", "-c", is_flag=True, help="count matching lines per file")
+@click.option("--line-number", "-n", is_flag=True, hidden=True, help="always on; accepted")
 @click.option("--ref", help="branch, tag, or SHA (uses git grep)")
-@click.option(
-    "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
-)
+@click.option("--max-chars", type=click.IntRange(min=0), default=DEFAULT_MAX_CHARS)
 def rg_cmd(
     repo: str,
     pattern: str,
@@ -94,6 +94,10 @@ def rg_cmd(
     max_count: int | None,
     ignore_case: bool,
     fixed_strings: bool,
+    word_regexp: bool,
+    files_with_matches: bool,
+    count: bool,
+    line_number: bool,
     ref: str | None,
     max_chars: int,
 ) -> None:
@@ -106,6 +110,9 @@ def rg_cmd(
         *(["-A", str(after_context)] if after_context > 0 else []),
         *(["-B", str(before_context)] if before_context > 0 else []),
         *(["--max-count", str(max_count)] if max_count else []),
+        *(["-w"] if word_regexp else []),
+        *(["-l"] if files_with_matches else []),
+        *(["-c"] if count else []),
     ]
 
     if ref:
@@ -181,11 +188,7 @@ def rg_cmd(
 @click.argument("pattern")
 @click.option("--limit", "-L", type=int, default=100, help="max results (0 = no limit)")
 @click.option("--ref", help="branch, tag, or SHA (uses git ls-tree)")
-@click.option(
-    "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
-)
+@click.option("--max-chars", type=click.IntRange(min=0), default=DEFAULT_MAX_CHARS)
 def find_cmd(
     repo: str,
     pattern: str,
@@ -246,11 +249,7 @@ def find_cmd(
 @click.option("--limit", "-L", type=int, default=240, help="max lines (0 = no limit)")
 @click.option("--offset", type=int, default=0, help="skip first N lines")
 @click.option("--ref", help="branch, tag, or SHA (uses git show)")
-@click.option(
-    "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
-)
+@click.option("--max-chars", type=click.IntRange(min=0), default=DEFAULT_MAX_CHARS)
 def cat_cmd(
     repo: str,
     path: str,

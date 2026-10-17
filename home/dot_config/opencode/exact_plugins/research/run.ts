@@ -1,5 +1,40 @@
 import { spawn } from "node:child_process";
 
+/**
+ * Splits one command-line string into words with POSIX shell quoting rules (single quotes,
+ * double quotes, backslash escapes). Models sometimes send tool arguments as one string; passing
+ * it through unsplit would hand the CLI a single positional value.
+ */
+export function shellWords(line: string) {
+  const words: string[] = [];
+  let word = "";
+  let started = false;
+  let quote: string | undefined;
+  for (let index = 0; index < line.length; index++) {
+    const char = line[index] as string;
+    if (quote) {
+      if (char === quote) quote = undefined;
+      else if (char === "\\" && quote === '"' && index + 1 < line.length) word += line[++index];
+      else word += char;
+    } else if (char === "'" || char === '"') {
+      quote = char;
+      started = true;
+    } else if (char === "\\" && index + 1 < line.length) {
+      word += line[++index];
+      started = true;
+    } else if (/\s/.test(char)) {
+      if (started) words.push(word);
+      word = "";
+      started = false;
+    } else {
+      word += char;
+      started = true;
+    }
+  }
+  if (started) words.push(word);
+  return words;
+}
+
 /** A research CLI invocation failed; the message carries the CLI's combined output. */
 export class ResearchError extends Error {}
 

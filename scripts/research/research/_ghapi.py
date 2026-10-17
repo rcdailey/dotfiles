@@ -361,7 +361,8 @@ query($owner:String!,$repo:String!,$limit:Int!) {
     except APIError as e:
         raise APIError(f"failed to list discussions: {e}") from e
 
-    nodes = data.get("data", {}).get("repository", {}).get("discussions", {}).get("nodes", [])
+    repository = (data.get("data") or {}).get("repository") or {}
+    nodes = (repository.get("discussions") or {}).get("nodes") or []
     if search:
         needle = search.lower()
         nodes = [n for n in nodes if needle in n.get("title", "").lower()][:limit]
@@ -388,10 +389,10 @@ query($owner:String!,$repo:String!,$number:Int!) {
     except APIError as e:
         raise APIError(f"failed to view discussion #{number}: {e}") from e
 
-    disc = data.get("data", {}).get("repository", {}).get("discussion")
+    disc = ((data.get("data") or {}).get("repository") or {}).get("discussion")
     if not disc:
         raise APIError(f"discussion #{number} not found in {owner}/{repo}")
-    disc["comments"] = disc.get("comments", {}).get("nodes", [])
+    disc["comments"] = (disc.get("comments") or {}).get("nodes") or []
     return disc
 
 

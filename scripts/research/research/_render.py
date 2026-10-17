@@ -34,7 +34,6 @@ def fenced_code(content: str, language: str = "") -> str:
 
 
 DEFAULT_MAX_CHARS = 12000
-DEFAULT_SCOUT_MAX_CHARS = DEFAULT_MAX_CHARS
 
 
 def truncate_output(text: str, max_chars: int, hint: str | None = None) -> str:
@@ -264,6 +263,25 @@ def strip_github_host(url: str) -> str:
 def is_github_url(url: str) -> bool:
     """Check if URL is a github.com URL."""
     return bool(re.match(r"^https?://(?:www\.)?github\.com/", url, re.IGNORECASE))
+
+
+_RAW_GITHUB_RE = re.compile(
+    r"^https?://raw\.githubusercontent\.com/([^/]+)/([^/]+)/(?:refs/heads/)?([^/]+)/(.+)$",
+    re.IGNORECASE,
+)
+
+
+def raw_github_to_blob(url: str) -> str:
+    """Rewrite a raw.githubusercontent.com file URL to its github.com blob URL.
+
+    The blob form routes through the repository reader, which reads the file from a clone, follows
+    repository renames, and reports a citable blob URL.
+    """
+    match = _RAW_GITHUB_RE.match(url.split("?")[0].split("#")[0])
+    if not match:
+        return url
+    owner, repo, ref, path = match.groups()
+    return f"https://github.com/{owner}/{repo}/blob/{ref}/{path}"
 
 
 def is_pdf_url(url: str) -> bool:

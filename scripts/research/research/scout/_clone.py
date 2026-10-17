@@ -95,8 +95,10 @@ def _do_pull_if_stale(repo_dir: Path, owner: str, repo: str) -> None:
     if age <= STALE_SECONDS:
         return
     click.echo(f"[updating {owner}/{repo} (stale: {int(age)}s)]", err=True)
+    # Fetch the remote's current default branch; the shallow clone's refspec still names the
+    # default branch at clone time, which fails once upstream renames or deletes it.
     result = subprocess.run(
-        ["git", "fetch", "--depth=1", "-q", "origin"],
+        ["git", "fetch", "--depth=1", "-q", "origin", "HEAD"],
         cwd=repo_dir,
         capture_output=True,
         text=True,

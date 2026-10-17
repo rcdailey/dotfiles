@@ -94,9 +94,7 @@ def run_with_error_ledger(
 
 
 def _error_kind(code: object, message: str) -> str:
-    """Classify failures so expected guards are not confused with retrieval errors."""
-    if "CRITICAL RESERVE" in message or "BUDGET EXCEEDED" in message:
-        return "guard"
+    """Classify failures so caller mistakes are not confused with retrieval errors."""
     if code == 2 or "Usage:" in message:
         return "usage"
     return "retrieval"

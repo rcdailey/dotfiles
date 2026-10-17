@@ -1,6 +1,6 @@
 import type { Plugin } from "@opencode/plugin";
 import { DIRECT_TOOL } from "../lib/direct-tool.ts";
-import { runResearch } from "./run.ts";
+import { runResearch, shellWords } from "./run.ts";
 
 // Thin tools over the Python `research` CLI. They exist to pass the calling session's ID, which
 // scopes the CLI's call budget and source/error ledgers, so parallel researchers stay isolated.
@@ -24,7 +24,7 @@ const SCOUT_USAGE = [
     "[--comments] [--reviews] [--max-chars N]  List or view",
   "release REPO [TAG] [-L/--limit N=30] [--since DATE] [--until DATE] [--max-chars N]",
   "rg REPO PATTERN [--path PATH] [-g/--glob X] [--type X] [-C/--context N] [-A N] [-B N] " +
-    "[-m/--max-count N] [-i] [-F] [--ref REF] [--max-chars N]  Search file contents",
+    "[-m/--max-count N] [-i] [-F] [-w] [-l] [-c] [--ref REF] [--max-chars N]  Search contents",
   "search QUERY [-L/--limit N=30] [--sort stars|forks|updated] [--language X] [--stars N] " +
     "[--forks N] [--max-chars N]  Search GitHub repositories",
 ];
@@ -59,16 +59,29 @@ export const Research = {
       tools.add({
         name: "research_search",
         description:
-          "Search the web. Budgeted. Returns a sourced answer by default, or a ranked result " +
-          "list with `results`. Search results are discovery only; fetch a source before " +
-          "citing it. Call sequentially so each budget report can shape the next call. If " +
-          "results miss the required source type, narrow the query to a named source or domain.",
+          "Search the web for candidate URLs. Budgeted. Results are discovery only and never " +
+          "citable; fetch a URL before citing it. To find a page on a known site, restrict " +
+          "`domains` instead of guessing its URL.",
         input: {
           type: "object",
           properties: {
             query: { type: "string", minLength: 1 },
-            max_results: { type: "integer", minimum: 1, maximum: 10, description: "Default 5" },
-            results: { type: "boolean", description: "Return result URLs and snippets" },
+            max_results: { type: "integer", minimum: 1, maximum: 20, description: "Default 5" },
+            domains: {
+              type: "array",
+              items: { type: "string", minLength: 1 },
+              description: "Only return results from these sites, e.g. learn.microsoft.com",
+            },
+            exclude_domains: { type: "array", items: { type: "string", minLength: 1 } },
+            time_range: {
+              type: "string",
+              enum: ["day", "week", "month", "year"],
+              description: "Only results published within this period",
+            },
+            exact: {
+              type: "boolean",
+              description: "Quoted phrases in `query` must appear verbatim, e.g. an error string",
+            },
             critical,
           },
           required: ["query"],
@@ -77,13 +90,21 @@ export const Research = {
         options: DIRECT_TOOL,
         async execute(input, context) {
           const value = record(input);
+          const list = (field: string, flag: string) =>
+            (Array.isArray(value[field]) ? value[field] : []).flatMap((item) => [
+              flag,
+              String(item),
+            ]);
           const args = [
             "web",
             "search",
             String(value.query),
+            ...list("domains", "--domain"),
+            ...list("exclude_domains", "--exclude-domain"),
             ...flags(value, {
               max_results: "--max-results",
-              results: "--results",
+              time_range: "--time-range",
+              exact: "--exact",
               critical: "--critical",
             }),
           ];
@@ -94,10 +115,11 @@ export const Research = {
       tools.add({
         name: "research_fetch",
         description:
-          "Fetch any URL as clean markdown. Budgeted; cached pages and pagination are free. " +
+          "Fetch a URL as clean markdown. Budgeted; cached pages and pagination are free, and " +
+          "a 404 is refunded. Fetch only URLs seen in tool output or supplied by the caller. " +
           "PDFs are converted automatically. GitHub issue, pull request, discussion, release, " +
-          "commit, file, and repository URLs are routed to the matching GitHub reader. Call " +
-          "sequentially. When targeting a named field, option, symbol, or phrase, start with " +
+          "commit, file, raw file, and repository URLs are routed to the matching GitHub " +
+          "reader. When targeting a named field, option, symbol, or phrase, start with " +
           "`find`; page cached content with `offset`. A `find` no-match is failed evidence: " +
           "retry without `find` or with a corrected pattern.",
         input: {
@@ -140,7 +162,8 @@ export const Research = {
         description: [
           "Explore GitHub repositories. Not budgeted. REPO is OWNER/REPO. Pass `command` and " +
             "its CLI arguments in `args`, for example command `rg`, args " +
-            '["owner/repo", "pattern", "--path", "src"].',
+            '["owner/repo", "pattern", "--path", "src"]. `--max-chars` defaults to 12000; 0 ' +
+            "disables truncation.",
           "Fetch a direct primary URL matching the target before broad exploration. Start with " +
             "the narrowest command; when paths are unknown, use `orient`, then `find`, before " +
             "`rg` or `cat`. After a missing path, run `find`; do not guess another path. For " +
@@ -153,7 +176,12 @@ export const Research = {
           type: "object",
           properties: {
             command: { type: "string", enum: SCOUT_COMMANDS },
-            args: { type: "array", items: { type: "string" } },
+            args: {
+              anyOf: [
+                { type: "array", items: { type: "string" } },
+                { type: "string", description: "Shell-quoted argument string" },
+              ],
+            },
           },
           required: ["command", "args"],
           additionalProperties: false,
@@ -161,7 +189,9 @@ export const Research = {
         options: DIRECT_TOOL,
         async execute(input, context) {
           const value = record(input);
-          const args = Array.isArray(value.args) ? value.args.map(String) : [];
+          const args = Array.isArray(value.args)
+            ? value.args.map(String)
+            : shellWords(String(value.args ?? ""));
           const argv = ["scout", String(value.command), ...args];
           return { content: await runResearch(context.sessionID, argv, context.signal) };
         },
@@ -170,8 +200,9 @@ export const Research = {
       tools.add({
         name: "research_ledger",
         description:
-          "List every source URL retrieved and every research tool failure in this session. " +
-          "Call before responding; cite only listed sources and report every failure.",
+          "List every citable source URL retrieved and every research tool failure in this " +
+          "session. Call once before the final response; cite only listed sources and report " +
+          "every listed failure.",
         input: { type: "object", properties: {}, additionalProperties: false },
         options: DIRECT_TOOL,
         async execute(_input, context) {

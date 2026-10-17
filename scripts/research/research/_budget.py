@@ -22,35 +22,23 @@ _SEEN_PREFIX = "seen:"
 def budget_message(count: int) -> str:
     """Return a budget message for the current call count."""
     remaining = MAX_CALLS - count
-    counter = (
-        f"[budget reservation #{count} of {MAX_CALLS}; {remaining} slots remain; "
-        "parallel responses may arrive out of order]"
-    )
-
     if remaining < 0:
         return (
-            f"\n=== BUDGET EXCEEDED ({MAX_CALLS}/{MAX_CALLS} calls used) ===\n"
-            "You MUST synthesize your answer NOW from what you have gathered.\n"
-            "No more tool calls will be executed."
+            f"\n=== BUDGET EXHAUSTED ({MAX_CALLS}/{MAX_CALLS} calls used; not a tool failure) ===\n"
+            "This call did not run. Synthesize from the evidence gathered."
         )
     if count == CHECKPOINT_AT:
         return (
-            f"\n=== CHECKPOINT RESERVATION #{count} OF {MAX_CALLS}; "
-            f"{remaining} slots remain ===\n"
-            "Parallel responses may arrive out of reservation order.\n"
-            "Stop and assess: can you answer the question now?\n"
-            "If yes, synthesize. If not, identify the ONE specific "
-            "gap that remains."
+            f"\n=== CHECKPOINT: budget call {count} of {MAX_CALLS}; {remaining} remain ===\n"
+            "Reassess every pending evidence track. Synthesize tracks that are supported; "
+            "spend the rest only on tracks that still lack required evidence."
         )
     if count == WARNING_AT:
         return (
-            f"\n=== WARNING RESERVATION #{count} OF {MAX_CALLS}; "
-            f"{remaining} slots remain ===\n"
-            "Parallel responses may arrive out of reservation order.\n"
-            "Synthesize your answer NOW. Do not launch another batch.\n"
-            "A later call requires --critical and one named blocking gap."
+            f"\n=== WARNING: budget call {count} of {MAX_CALLS}; {remaining} remain ===\n"
+            "Synthesize now. Later calls require `critical` and one named blocking gap."
         )
-    return f"\n{counter}"
+    return f"\n[budget call {count} of {MAX_CALLS}; {remaining} remain]"
 
 
 def _session_key(key: str) -> str | None:
@@ -72,7 +60,8 @@ def budget_reserve(
     invocation order. Parallel callers serialize inside cache.transact().
 
     If cached_url was already seen this session, no slot is consumed.
-    On budget exhaustion, prints the message then exits 1.
+    When the budget or its reserve blocks the call, prints the guard and exits 0: the guard is a
+    budget decision, not a tool failure, so it stays out of the error ledger.
     """
     count_key = _session_key(_COUNT_KEY)
     if count_key is None:
@@ -92,15 +81,15 @@ def budget_reserve(
 
         if count >= MAX_CALLS:
             click.echo(budget_message(MAX_CALLS + 1))
-            sys.exit(1)
+            sys.exit(0)
 
         if count >= WARNING_AT and not critical:
             click.echo(
-                f"\n=== CRITICAL RESERVE ({count}/{MAX_CALLS} calls used) ===\n"
-                f"The final {MAX_CALLS - count} calls are reserved. Synthesize now.\n"
-                "Use --critical for one specific gap that prevents an answer."
+                f"\n=== RESERVED ({count}/{MAX_CALLS} calls used; not a tool failure) ===\n"
+                f"This call did not run. The final {MAX_CALLS - count} calls are reserved; "
+                "synthesize now, or retry with `critical` for one named blocking gap."
             )
-            sys.exit(1)
+            sys.exit(0)
 
         count += 1
         cache.set(count_key, count, expire=24 * 3600)

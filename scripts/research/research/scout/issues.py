@@ -18,7 +18,7 @@ from research._ghapi import (
     view_release,
 )
 from research._render import (
-    DEFAULT_SCOUT_MAX_CHARS,
+    DEFAULT_MAX_CHARS,
     format_comment,
     format_issue_body,
     format_list_item,
@@ -44,7 +44,7 @@ def _format_comments(comments: list[dict], heading: str = "Comments") -> str:
         return ""
     parts = [section_heading(heading)]
     for c in comments:
-        author = c.get("author", {}).get("login", "unknown")
+        author = (c.get("author") or {}).get("login", "ghost")
         parts.append(format_comment(author, c.get("createdAt", ""), c.get("body", "")))
     return "\n\n".join(parts)
 
@@ -58,8 +58,8 @@ def _format_comments(comments: list[dict], heading: str = "Comments") -> str:
 @click.option("--comments", is_flag=True, help="include comments when viewing one issue")
 @click.option(
     "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
+    type=click.IntRange(min=0),
+    default=DEFAULT_MAX_CHARS,
 )
 def issue(
     repo: str,
@@ -142,8 +142,8 @@ def issue(
 @click.option("--reviews", is_flag=True, help="include reviews when viewing one PR")
 @click.option(
     "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
+    type=click.IntRange(min=0),
+    default=DEFAULT_MAX_CHARS,
 )
 def pr(
     repo: str,
@@ -195,7 +195,7 @@ def pr(
         if review_items:
             output += section_heading("Reviews")
             for r in review_items:
-                author = r.get("author", {}).get("login", "unknown")
+                author = (r.get("author") or {}).get("login", "ghost")
                 rstate = r.get("state", "unknown")
                 output += f"\n**@{author} ({rstate}):**\n\n{r.get('body', '')}\n"
         rendered = truncate_output(
@@ -243,8 +243,8 @@ def pr(
 @click.option("--until", type=click.DateTime(formats=["%Y-%m-%d"]))
 @click.option(
     "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
+    type=click.IntRange(min=0),
+    default=DEFAULT_MAX_CHARS,
 )
 def release(
     repo: str,
@@ -330,8 +330,8 @@ def release(
 @click.option("--limit", "-L", type=click.IntRange(min=1), default=30)
 @click.option(
     "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
+    type=click.IntRange(min=0),
+    default=DEFAULT_MAX_CHARS,
 )
 def discussion(
     repo: str,
@@ -352,7 +352,7 @@ def discussion(
             data = view_discussion(owner, name, n)
         except APIError as e:
             die(str(e))
-        category = data.get("category", {}).get("name", "")
+        category = (data.get("category") or {}).get("name", "")
         cat_str = f" [{category}]" if category else ""
         source = data.get("url") or github_url(owner, name, "discussions", n)
         output = format_issue_body(
@@ -385,7 +385,7 @@ def discussion(
         item.get("url") or github_url(owner, name, "discussions", item["number"]) for item in shown
     )
     for d in shown:
-        category = d.get("category", {}).get("name", "")
+        category = (d.get("category") or {}).get("name", "")
         cat_str = f" [{category}]" if category else ""
         click.echo(
             format_list_item(

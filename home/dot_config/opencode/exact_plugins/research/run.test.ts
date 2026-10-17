@@ -1,6 +1,19 @@
 import { expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
-import { ResearchError, runResearch } from "./run.ts";
+import { ResearchError, runResearch, shellWords } from "./run.ts";
+
+test("argument strings split into the words a shell would pass", () => {
+  expect(shellWords(`dotnet/sdk "NoCache|no-cache" --path 'src/Cli' -C 2`)).toEqual([
+    "dotnet/sdk",
+    "NoCache|no-cache",
+    "--path",
+    "src/Cli",
+    "-C",
+    "2",
+  ]);
+  expect(shellWords(String.raw`a\ b "say \"hi\"" '' `)).toEqual(["a b", 'say "hi"', ""]);
+  expect(shellWords("   ")).toEqual([]);
+});
 
 // Runs the real CLI with an invocation that fails before any network access.
 test("failures are recorded only in the calling session's ledger", async () => {

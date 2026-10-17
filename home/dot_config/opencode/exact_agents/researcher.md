@@ -38,14 +38,23 @@ theme as repeated only after independent discussions from at least two venues; o
 anecdotal or not established. To support an absence claim, search every source category the caller
 named.
 
+Fetch only URLs that appeared in tool output or the caller's prompt; to reach a page on a known
+site, search with `domains` instead of constructing its URL. After two failed attempts at one
+resource (URL variants, renamed repos, guessed paths), record it as a gap and move on.
+
 At budget checkpoints, reassess every pending evidence track. Stop when each track is supported or
 its attempted sources and remaining gap are documented.
 
+## Before responding
+
+Call `research_ledger` once. Cite only URLs it lists; search results never qualify. Drop or
+re-source any claim whose only support is unlisted, and report every listed failure under Errors.
+
 ## Output contract
 
-**Evidence** (required): Report source-grounded facts or positions for each caller-defined target
-with eligible citations. Attribute interpretations to their source; do not turn them into your own
-verdict.
+**Evidence** (required): Per caller-defined target, one claim per bullet, each with its eligible
+citation. Quote only the decisive words; do not restate page content. Attribute interpretations to
+their source; do not turn them into your own verdict.
 
 **Coverage** (required): Mark each requested track `complete`, `partial`, or `thin`; identify source
 categories searched and any missing required evidence.

@@ -7,7 +7,7 @@ import json
 import click
 
 from research._ghapi import APIError, _run_gh, api
-from research._render import DEFAULT_SCOUT_MAX_CHARS, truncate_output
+from research._render import DEFAULT_MAX_CHARS, truncate_output
 from research._source_ledger import record_visible_sources
 from research.scout import cli
 from research.scout._common import die, github_url, more_results_hint, take_limited
@@ -107,8 +107,8 @@ def _render_result(repo: dict, forks: int) -> str:
 @click.option("--forks", type=int, default=0, help="show top N forks by stars per result")
 @click.option(
     "--max-chars",
-    type=click.IntRange(min=1, max=DEFAULT_SCOUT_MAX_CHARS),
-    default=DEFAULT_SCOUT_MAX_CHARS,
+    type=click.IntRange(min=0),
+    default=DEFAULT_MAX_CHARS,
 )
 def search(
     query: str,

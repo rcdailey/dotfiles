@@ -78,14 +78,28 @@ def translate_error(action: str, e: Exception) -> str:
     return f"{action} failed: {reason}"
 
 
-def search(query: str, max_results: int = 5, sourced_answer: bool = True) -> dict:
-    """Execute a Tavily search with optional answer generation."""
+def search(
+    query: str,
+    max_results: int,
+    domains: tuple[str, ...] = (),
+    exclude_domains: tuple[str, ...] = (),
+    time_range: str | None = None,
+    exact_match: bool = False,
+) -> dict:
+    """Execute a Tavily search and return its ranked results.
+
+    `domains` restricts results to those sites; `exact_match` requires quoted phrases in the query
+    to appear verbatim in each result.
+    """
     try:
         return get_client().search(
             query=query,
             search_depth="basic",
             max_results=max_results,
-            include_answer="basic" if sourced_answer else False,
+            include_domains=list(domains) or None,
+            exclude_domains=list(exclude_domains) or None,
+            time_range=time_range,
+            exact_match=exact_match or None,
         )
     except TavilyError:
         raise
@@ -139,7 +153,7 @@ def _unique_results(results: list[dict]) -> list[dict]:
     return unique
 
 
-def format_search_results(results: list[dict], *, include_notice: bool = True) -> str:
+def format_search_results(results: list[dict]) -> str:
     """Format search results as markdown prose."""
     lines: list[str] = []
     for i, r in enumerate(_unique_results(results), 1):
@@ -148,16 +162,6 @@ def format_search_results(results: list[dict], *, include_notice: bool = True) -
         snippet = content.strip().replace("\n", " ")
         if len(snippet) > 750:
             snippet = snippet[:750] + "..."
-        lines.append(f"{i}. {title}\n   URL: {r['url']}\n   {snippet}")
+        lines.append(f"{i}. {title}\n   Discovered: {r['url']}\n   {snippet}")
     output = "\n\n".join(lines) if lines else "[no results]"
-    return f"{_DISCOVERY_NOTICE}\n\n{output}" if include_notice else output
-
-
-def format_sourced_answer(response: dict, max_results: int) -> str:
-    """Format Tavily's answer and result sources."""
-    answer = response.get("answer") or "[no answer]"
-    sources = response.get("results", [])
-    if not sources:
-        return f"{_DISCOVERY_NOTICE}\n\n{answer}"
-    formatted = format_search_results(list(sources)[:max_results], include_notice=False)
-    return f"{_DISCOVERY_NOTICE}\n\n{answer}\n\n## Sources\n\n{formatted}"
+    return f"{_DISCOVERY_NOTICE}\n\n{output}"
