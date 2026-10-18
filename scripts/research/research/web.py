@@ -27,7 +27,6 @@ from research._render import (
     is_github_url,
     is_pdf_url,
     raw_github_to_blob,
-    reroute_message,
     strip_github_host,
     truncate_output,
 )
@@ -148,11 +147,6 @@ def fetch_cmd(
 
             if len(parts) >= 4 and parts[2] == "discussions" and parts[3].isdigit():
                 number = int(parts[3])
-                reroute_message(
-                    url,
-                    f"scout discussion {owner}/{repo_name} {number}",
-                    "github.com discussion",
-                )
                 from research._ghapi import APIError, view_discussion
                 from research._render import format_issue_body
                 from research.scout.issues import _format_comments
@@ -180,15 +174,11 @@ def fetch_cmd(
                     context,
                     max_chars,
                     offset,
-                    "use scout discussion for narrower follow-up",
                 )
                 return
 
             elif len(parts) >= 4 and parts[2] == "issues" and parts[3].isdigit():
                 number = int(parts[3])
-                reroute_message(
-                    url, f"scout issue {owner}/{repo_name} {number}", "github.com issue"
-                )
                 from research._ghapi import APIError, view_issue
                 from research._render import format_issue_body
 
@@ -212,13 +202,11 @@ def fetch_cmd(
                     context,
                     max_chars,
                     offset,
-                    "use scout issue for narrower follow-up",
                 )
                 return
 
             elif len(parts) >= 4 and parts[2] in ("pull", "pulls") and parts[3].isdigit():
                 number = int(parts[3])
-                reroute_message(url, f"scout pr {owner}/{repo_name} {number}", "github.com PR")
                 from research._ghapi import APIError, view_pr
                 from research._render import format_issue_body
 
@@ -246,13 +234,11 @@ def fetch_cmd(
                     context,
                     max_chars,
                     offset,
-                    "use scout pr for narrower follow-up",
                 )
                 return
 
             elif len(parts) >= 5 and parts[2:4] == ["releases", "tag"]:
                 tag = "/".join(parts[4:])
-                reroute_message(url, f"scout release {owner}/{repo_name} {tag}", "GitHub release")
                 from research._ghapi import APIError, view_release
 
                 try:
@@ -281,7 +267,6 @@ def fetch_cmd(
                 return
 
             elif len(parts) == 3 and parts[2] == "releases":
-                reroute_message(url, f"scout release {owner}/{repo_name}", "GitHub releases")
                 from research._ghapi import APIError, list_releases
 
                 try:
@@ -300,7 +285,7 @@ def fetch_cmd(
                     sources.append(source)
                     lines.append(f"- {tag} ({published})\n  Source: {source}")
                 if len(releases) > 30:
-                    lines.append("... more results available; use scout release --limit 31")
+                    lines.append("... more results available")
                 _emit_retrieved_output(
                     "\n".join(lines),
                     [url, *sources],
@@ -308,18 +293,12 @@ def fetch_cmd(
                     context,
                     max_chars,
                     offset,
-                    "use scout release with a narrower tag or date range",
                 )
                 return
 
             elif len(parts) >= 4 and parts[2] == "blob":
                 ref = parts[3]
                 file_path = "/".join(parts[4:])
-                reroute_message(
-                    url,
-                    f"scout cat {owner}/{repo_name} {file_path} --ref {ref}",
-                    "github.com blob",
-                )
                 from research.scout._clone import ensure_ref, ensure_repo
 
                 repo_dir = ensure_repo(owner, repo_name)
@@ -340,7 +319,6 @@ def fetch_cmd(
 
             elif len(parts) >= 4 and parts[2] == "commit":
                 sha = parts[3]
-                reroute_message(url, f"scout commit {owner}/{repo_name} {sha}", "github.com commit")
                 from research._ghapi import APIError, view_commit
                 from research._render import kv_line, section_heading
 
@@ -376,7 +354,7 @@ def fetch_cmd(
                             f"\n**{f.get('filename', '?')}** "
                             f"({f.get('status', 'modified')}, +{additions} -{deletions})"
                         )
-                    lines.append("\nPatches omitted; use scout commit --patch for bounded diffs.")
+                    lines.append("\nPatches omitted.")
                 _emit_retrieved_output(
                     "\n".join(lines),
                     [url],
@@ -384,7 +362,6 @@ def fetch_cmd(
                     context,
                     max_chars,
                     offset,
-                    "use scout commit --path PATH for narrower evidence",
                 )
                 return
 
@@ -392,7 +369,6 @@ def fetch_cmd(
                 pass  # fall through to web fetch; wiki pages are HTML
 
             elif len(parts) == 2:
-                reroute_message(url, f"scout orient {owner}/{repo_name}", "github.com pages")
                 from research.scout.explore import _render_orient
 
                 buffer = io.StringIO()
@@ -405,12 +381,10 @@ def fetch_cmd(
                     context,
                     max_chars,
                     offset,
-                    "use scout find or scout rg for narrower repository evidence",
                 )
                 return
 
     if is_pdf_url(url):
-        reroute_message(url, f"pdf {url}", "URL points to a PDF")
         from research.pdf import _do_pdf
 
         _do_pdf(url, find, context, max_chars, offset, critical)
@@ -430,7 +404,6 @@ def fetch_cmd(
         except FetchError as e:
             msg = str(e)
             if "file, not an HTML page" in msg:
-                reroute_message(url, f"pdf {url}", "response is a file, not HTML")
                 from research.pdf import _do_pdf
 
                 _do_pdf(url, find, context, max_chars, offset, critical)

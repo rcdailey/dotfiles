@@ -189,14 +189,6 @@ def apply_find(text: str, pattern: str, context: int) -> tuple[str, bool]:
     return "\n\n".join(_para_text(i) for i in sorted(keep)), True
 
 
-def reroute_message(url: str, new_command: str, reason: str) -> None:
-    """Print a concise reroute banner to stderr."""
-    click.echo(
-        f"[reroute: {url} -> {new_command}; reason: {reason}; rerouted output follows]",
-        err=True,
-    )
-
-
 def format_error(action: str, reason: str) -> str:
     """Return a formatted error message."""
     return f"error: {action} failed: {reason}"

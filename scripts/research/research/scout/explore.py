@@ -98,7 +98,7 @@ def _render_orient(owner: str, repo: str, ref: str | None, brief: bool) -> None:
             click.echo(f"{directory:<{col1}}  {f'{count} files':<{col2}}  {exts}")
         omitted = len(rows) - len(visible_rows)
         if omitted:
-            click.echo(f"... {omitted} directory groups omitted; use scout find for paths")
+            click.echo(f"... {omitted} directory groups omitted")
 
     if brief:
         return
