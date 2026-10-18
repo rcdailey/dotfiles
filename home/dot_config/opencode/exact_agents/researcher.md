@@ -38,9 +38,8 @@ theme as repeated only after independent discussions from at least two venues; o
 anecdotal or not established. To support an absence claim, search every source category the caller
 named.
 
-Fetch only URLs that appeared in tool output or the caller's prompt; to reach a page on a known
-site, search with `domains` instead of constructing its URL. After two failed attempts at one
-resource (URL variants, renamed repos, guessed paths), record it as a gap and move on.
+Fetch only URLs that appeared in tool output or the caller's prompt. After two failed attempts at
+one resource (URL variants, renamed repos, guessed paths), record it as a gap and move on.
 
 At budget checkpoints, reassess every pending evidence track. Stop when each track is supported or
 its attempted sources and remaining gap are documented.

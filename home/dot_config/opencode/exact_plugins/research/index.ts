@@ -1,56 +1,256 @@
 import type { Plugin } from "@opencode/plugin";
 import { DIRECT_TOOL } from "../lib/direct-tool.ts";
-import { runResearch, shellWords } from "./run.ts";
+import { runResearch } from "./run.ts";
 
 // Thin tools over the Python `research` CLI. They exist to pass the calling session's ID, which
 // scopes the CLI's call budget and source/error ledgers, so parallel researchers stay isolated.
 
-const SCOUT_USAGE = [
-  "activity REPO [--days N=7]  Recent commits, merged PRs, and closed issues",
-  "cat REPO PATH [-L/--limit N=240] [--offset N=0] [--ref REF] [--max-chars N]  Read a file",
-  "changelog REPO [--since-tag TAG] [--since DATE] [--until DATE] [--limit N=10]",
-  "commit REPO SHA [--patch] [--path PATH] [--max-chars N]  Commit summary and linked PRs",
-  "commits REPO [--since X] [--until X] [--path PATH] [--author X] [-L/--limit N=30]",
-  "diff REPO BASE..HEAD [--path PATH] [--max-chars N]  Compare two refs",
-  "discussion REPO [NUMBER] [-S/--search X] [-L/--limit N=30] [--max-chars N]  List or view",
-  "find REPO GLOB [-L/--limit N=100] [--ref REF] [--max-chars N]  Find files by glob",
-  "forks REPO [--grep X] [--path PATH] [--diff X] [--sort pushed|stars] [--scan N=40] " +
-    "[-L/--limit N=10] [--max-chars N]  Forks with their own commits",
-  "history REPO PATH [-L/--limit N=30]  Commit history for a file",
-  "issue REPO [NUMBER] [-S/--search X] [-s/--state open|closed|all] [-L/--limit N=30] " +
-    "[--comments] [--max-chars N]  List or view",
-  "orient REPO [--full] [--ref REF]  Metadata, structure summary, key files",
-  "pr REPO [NUMBER] [-S/--search X] [-s/--state open|closed|merged|all] [-L/--limit N=30] " +
-    "[--comments] [--reviews] [--max-chars N]  List or view",
-  "release REPO [TAG] [-L/--limit N=30] [--since DATE] [--until DATE] [--max-chars N]",
-  "rg REPO PATTERN [--path PATH] [-g/--glob X] [--type X] [-C/--context N] [-A N] [-B N] " +
-    "[-m/--max-count N] [-i] [-F] [-w] [-l] [-c] [--ref REF] [--max-chars N]  Search contents",
-  "search QUERY [-L/--limit N=30] [--sort stars|forks|updated] [--language X] [--stars N] " +
-    "[--forks N] [--max-chars N]  Search GitHub repositories",
-];
-const SCOUT_COMMANDS = SCOUT_USAGE.map((line) => line.split(" ")[0] as string);
-
 type Input = Record<string, unknown>;
+type Schema = Record<string, unknown>;
 const record = (input: unknown) => (input && typeof input === "object" ? input : {}) as Input;
 
-// Maps optional tool fields to CLI flags; booleans become bare flags when true.
+// Maps optional tool fields to CLI flags: true becomes a bare flag, arrays repeat the flag.
 function flags(input: Input, names: Record<string, string>) {
   return Object.entries(names).flatMap(([field, flag]) => {
     const value = input[field];
     if (value === undefined || value === false) return [];
     if (value === true) return [flag];
+    if (Array.isArray(value)) return value.flatMap((item) => [flag, String(item)]);
     return [flag, String(value)];
   });
 }
 
-const critical = {
-  type: "boolean",
-  description:
-    "Use a reserved slot after the budget warning; only for one named blocking gap. " +
+// Field schemas stay minimal because every byte ships in each researcher prompt; the CLI
+// validates value ranges and reports violations as usage errors.
+const described = (schema: Schema, description?: string) =>
+  description ? { ...schema, description } : schema;
+const text = (description?: string) => described({ type: "string" }, description);
+const integer = (description?: string) => described({ type: "integer" }, description);
+const flag = (description?: string) => described({ type: "boolean" }, description);
+const texts = (description?: string) =>
+  described({ type: "array", items: { type: "string" } }, description);
+const choice = (values: string[], description?: string) =>
+  described({ type: "string", enum: values }, description);
+
+const critical = flag(
+  "Use a reserved slot after the budget warning; only for one named blocking gap. " +
     "Otherwise synthesize; a budget limit is not evidence that a source does not exist.",
-} as const;
-const integer = (description: string, minimum = 0) =>
-  ({ type: "integer", minimum, description }) as const;
+);
+
+const repo = text("OWNER/REPO");
+const number = integer();
+const ref = text("Branch, tag, or SHA");
+const date = { type: "string", format: "date" };
+const maxChars = integer("Output bound; default 12000, 0 = none");
+const limit = (fallback: number, unit = "") => integer(`${unit}Default ${fallback}`);
+const threadList = {
+  search: text(),
+  limit: limit(30),
+  max_chars: maxChars,
+};
+
+/**
+ * One tool per `research scout` subcommand. `arguments` names the fields passed positionally, in
+ * CLI order; `positional` overrides how they render when the CLI combines them. Every other field
+ * becomes the same-named flag (`max_chars` -> `--max-chars`), so field names must match the CLI's
+ * long option names.
+ */
+interface GitHubTool {
+  description: string;
+  arguments: string[];
+  positional?: (input: Input) => unknown[];
+  required: string[];
+  properties: Record<string, Schema>;
+}
+
+const GITHUB_TOOLS: Record<string, GitHubTool> = {
+  activity: {
+    description: "Recent commits, merged PRs, and closed issues.",
+    arguments: ["repo"],
+    required: ["repo"],
+    properties: { repo, days: limit(7) },
+  },
+  cat: {
+    description:
+      "Read a repository file. After a missing path, use research_github_find; do not guess.",
+    arguments: ["repo", "path"],
+    required: ["repo", "path"],
+    properties: {
+      repo,
+      path: text(),
+      limit: integer("Lines; default 240, 0 = all"),
+      offset: integer("Lines to skip"),
+      ref,
+      max_chars: maxChars,
+    },
+  },
+  changelog: {
+    description: "Changelog file and releases, optionally narrowed to a version or date range.",
+    arguments: ["repo"],
+    required: ["repo"],
+    properties: { repo, since_tag: text(), since: date, until: date, limit: limit(10) },
+  },
+  commit: {
+    description: "One commit with its linked PRs.",
+    arguments: ["repo", "sha"],
+    required: ["repo", "sha"],
+    properties: {
+      repo,
+      sha: text(),
+      patch: flag("Include file patches"),
+      path: text("Path prefix filter"),
+      max_chars: maxChars,
+    },
+  },
+  commits: {
+    description: "List commits.",
+    arguments: ["repo"],
+    required: ["repo"],
+    properties: {
+      repo,
+      since: text("ISO 8601"),
+      until: text("ISO 8601"),
+      path: text(),
+      author: text(),
+      limit: limit(30),
+    },
+  },
+  diff: {
+    description: "Compare two refs.",
+    arguments: ["repo", "base", "head"],
+    positional: (input) => [input.repo, `${input.base}..${input.head}`],
+    required: ["repo", "base", "head"],
+    properties: {
+      repo,
+      base: text(),
+      head: text(),
+      path: text("Path prefix filter"),
+      max_chars: maxChars,
+    },
+  },
+  discussion: {
+    description: "List discussions, or view one by number. Search matches titles.",
+    arguments: ["repo", "number"],
+    required: ["repo"],
+    properties: { repo, number, ...threadList },
+  },
+  find: {
+    description: "Find files by glob. Use when paths are unknown, before rg or cat.",
+    arguments: ["repo", "glob"],
+    required: ["repo", "glob"],
+    properties: {
+      repo,
+      glob: text(),
+      limit: integer("Default 100, 0 = all"),
+      ref,
+      max_chars: maxChars,
+    },
+  },
+  forks: {
+    description:
+      "Find fork commits absent upstream, such as unmerged fixes. Filter with grep or path, " +
+      "then read matches with research_github_commit.",
+    arguments: ["repo"],
+    required: ["repo"],
+    properties: {
+      repo,
+      grep: text("Regex on commit messages"),
+      path: text("File or directory the commits touch"),
+      diff: text("Regex on changed lines; requires grep or path"),
+      sort: choice(["pushed", "stars"], "Which forks to scan first; default pushed"),
+      scan: integer("Forks compared; default 40, max 100"),
+      limit: limit(10, "Forks shown; "),
+      max_chars: maxChars,
+    },
+  },
+  history: {
+    description: "Commit history for one file.",
+    arguments: ["repo", "path"],
+    required: ["repo", "path"],
+    properties: { repo, path: text(), limit: limit(30) },
+  },
+  issue: {
+    description: "List issues, or view one by number.",
+    arguments: ["repo", "number"],
+    required: ["repo"],
+    properties: {
+      repo,
+      number,
+      state: choice(["open", "closed", "all"], "Default open"),
+      comments: flag("Include comments when viewing one"),
+      ...threadList,
+    },
+  },
+  orient: {
+    description: "Repository metadata, structure, and key files. Start here for unknown layouts.",
+    arguments: ["repo"],
+    required: ["repo"],
+    properties: { repo, full: flag("Include key file contents"), ref },
+  },
+  pr: {
+    description: "List pull requests, or view one by number.",
+    arguments: ["repo", "number"],
+    required: ["repo"],
+    properties: {
+      repo,
+      number,
+      state: choice(["open", "closed", "merged", "all"], "Default open"),
+      comments: flag("Include comments when viewing one"),
+      reviews: flag("Include reviews when viewing one"),
+      ...threadList,
+    },
+  },
+  release: {
+    description: "List releases, or view one by tag.",
+    arguments: ["repo", "tag"],
+    required: ["repo"],
+    properties: {
+      repo,
+      tag: text(),
+      since: date,
+      until: date,
+      limit: limit(30),
+      max_chars: maxChars,
+    },
+  },
+  rg: {
+    description: "Search file contents with ripgrep.",
+    arguments: ["repo", "pattern"],
+    required: ["repo", "pattern"],
+    properties: {
+      repo,
+      pattern: text("Regex unless fixed_strings"),
+      path: texts("Default repository root"),
+      glob: texts(),
+      type: texts("ripgrep file types"),
+      context: integer(),
+      after_context: integer(),
+      before_context: integer(),
+      max_count: integer("Matches per file"),
+      ignore_case: flag(),
+      fixed_strings: flag(),
+      word_regexp: flag(),
+      files_with_matches: flag(),
+      count: flag("Matching lines per file"),
+      ref,
+      max_chars: maxChars,
+    },
+  },
+  search: {
+    description: "Search GitHub repositories.",
+    arguments: ["query"],
+    required: ["query"],
+    properties: {
+      query: text(),
+      sort: choice(["stars", "forks", "updated"], "Default stars"),
+      language: text(),
+      stars: integer("Minimum stars"),
+      forks: integer("Top forks listed per result"),
+      limit: limit(30),
+      max_chars: maxChars,
+    },
+  },
+};
 
 export const Research = {
   id: "local.research",
@@ -65,23 +265,15 @@ export const Research = {
         input: {
           type: "object",
           properties: {
-            query: { type: "string", minLength: 1 },
-            max_results: { type: "integer", minimum: 1, maximum: 20, description: "Default 5" },
-            domains: {
-              type: "array",
-              items: { type: "string", minLength: 1 },
-              description: "Only return results from these sites, e.g. learn.microsoft.com",
-            },
-            exclude_domains: { type: "array", items: { type: "string", minLength: 1 } },
-            time_range: {
-              type: "string",
-              enum: ["day", "week", "month", "year"],
-              description: "Only results published within this period",
-            },
-            exact: {
-              type: "boolean",
-              description: "Quoted phrases in `query` must appear verbatim, e.g. an error string",
-            },
+            query: text(),
+            max_results: integer("Default 5, max 20"),
+            domains: texts("Only return results from these sites, e.g. learn.microsoft.com"),
+            exclude_domains: texts(),
+            time_range: choice(
+              ["day", "week", "month", "year"],
+              "Only results published within this period",
+            ),
+            exact: flag("Quoted phrases in `query` must appear verbatim, e.g. an error string"),
             critical,
           },
           required: ["query"],
@@ -90,18 +282,13 @@ export const Research = {
         options: DIRECT_TOOL,
         async execute(input, context) {
           const value = record(input);
-          const list = (field: string, flag: string) =>
-            (Array.isArray(value[field]) ? value[field] : []).flatMap((item) => [
-              flag,
-              String(item),
-            ]);
           const args = [
             "web",
             "search",
             String(value.query),
-            ...list("domains", "--domain"),
-            ...list("exclude_domains", "--exclude-domain"),
             ...flags(value, {
+              domains: "--domain",
+              exclude_domains: "--exclude-domain",
               max_results: "--max-results",
               time_range: "--time-range",
               exact: "--exact",
@@ -125,8 +312,8 @@ export const Research = {
         input: {
           type: "object",
           properties: {
-            url: { type: "string", minLength: 1 },
-            find: { type: "string", description: "Show only paragraphs matching this pattern" },
+            url: text(),
+            find: text("Show only paragraphs matching this pattern"),
             context: integer("Paragraphs of context around `find` matches"),
             max_chars: integer(
               "Output bound; default 12000, 0 disables truncation. Prefer a narrower `find` " +
@@ -157,45 +344,33 @@ export const Research = {
         },
       });
 
-      tools.add({
-        name: "research_github",
-        description: [
-          "Explore GitHub repositories. Not budgeted. REPO is OWNER/REPO. Pass `command` and " +
-            "its CLI arguments in `args`, for example command `rg`, args " +
-            '["owner/repo", "pattern", "--path", "src"]. `--max-chars` defaults to 12000; 0 ' +
-            "disables truncation.",
-          "Fetch a direct primary URL matching the target before broad exploration. Start with " +
-            "the narrowest command; when paths are unknown, use `orient`, then `find`, before " +
-            "`rg` or `cat`. After a missing path, run `find`; do not guess another path. For " +
-            "changes absent upstream, run `forks` with `--grep` or `--path`, then inspect " +
-            "matches with `commit`. A partial aggregate warning means incomplete evidence.",
-          "Commands:",
-          ...SCOUT_USAGE,
-        ].join("\n"),
-        input: {
-          type: "object",
-          properties: {
-            command: { type: "string", enum: SCOUT_COMMANDS },
-            args: {
-              anyOf: [
-                { type: "array", items: { type: "string" } },
-                { type: "string", description: "Shell-quoted argument string" },
-              ],
-            },
+      for (const [command, tool] of Object.entries(GITHUB_TOOLS)) {
+        const options = Object.keys(tool.properties)
+          .filter((field) => !tool.arguments.includes(field))
+          .map((field) => [field, `--${field.replaceAll("_", "-")}`]);
+        tools.add({
+          name: `research_github_${command}`,
+          description: tool.description,
+          input: {
+            type: "object",
+            properties: tool.properties,
+            required: tool.required,
+            additionalProperties: false,
           },
-          required: ["command", "args"],
-          additionalProperties: false,
-        },
-        options: DIRECT_TOOL,
-        async execute(input, context) {
-          const value = record(input);
-          const args = Array.isArray(value.args)
-            ? value.args.map(String)
-            : shellWords(String(value.args ?? ""));
-          const argv = ["scout", String(value.command), ...args];
-          return { content: await runResearch(context.sessionID, argv, context.signal) };
-        },
-      });
+          options: DIRECT_TOOL,
+          async execute(input, context) {
+            const value = record(input);
+            const positional = tool.positional?.(value) ?? tool.arguments.map((f) => value[f]);
+            const argv = [
+              "scout",
+              command,
+              ...positional.filter((item) => item !== undefined).map(String),
+              ...flags(value, Object.fromEntries(options)),
+            ];
+            return { content: await runResearch(context.sessionID, argv, context.signal) };
+          },
+        });
+      }
 
       tools.add({
         name: "research_ledger",
