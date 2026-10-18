@@ -163,7 +163,7 @@ test("native reminders never split parallel tool results or unfinished tool call
     result(),
     result("read_2"),
   ]);
-  expect(complete.body.messages.at(-1).clear_at).toBe("next_user_message");
+  expect(complete.body.messages.at(-1)?.clear_at).toBe("next_user_message");
 });
 
 test("native delivery requires Anthropic Opus 4.8+ or Fable 5+", async () => {
@@ -178,7 +178,7 @@ test("native delivery requires Anthropic Opus 4.8+ or Fable 5+", async () => {
   ]) {
     const host = await harness();
     const model = { providerID: "anthropic", id };
-    expect((await host.http([user()], model)).body.messages.at(-1).clear_at).toBe(
+    expect((await host.http([user()], model)).body.messages.at(-1)?.clear_at).toBe(
       "next_user_message",
     );
     expect(await host.context([user()], model)).toEqual([user()]);
@@ -192,7 +192,7 @@ test("native delivery requires Anthropic Opus 4.8+ or Fable 5+", async () => {
   ]) {
     const host = await harness();
     expect((await host.http([user()], model)).body.messages).toEqual([user()]);
-    expect((await host.context([user()], model))[0].content.at(-1).text).toBe("Keep it short");
+    expect((await host.context([user()], model))[0].content.at(-1)?.text).toBe("Keep it short");
   }
 });
 
@@ -213,11 +213,11 @@ test("compaction, provider switches, undo, and sessions stay isolated", async ()
   const compacted = [user("Summary of earlier work"), call(), result()];
   const after = await host.http(compacted);
   expect(after.body.messages.slice(0, 3)).toEqual(compacted);
-  expect(after.body.messages.at(-1).clear_at).toBe("next_user_message");
+  expect(after.body.messages.at(-1)?.clear_at).toBe("next_user_message");
   const restarted = await harness({ store: host.store, text: "Changed later" });
   expect((await restarted.http([user()])).body).toEqual(first.body);
   const separate = await restarted.http([user()], anthropic, "primary", "other-session");
-  expect(separate.body.messages.at(-1).content).toBe("Changed later");
+  expect(separate.body.messages.at(-1)?.content).toBe("Changed later");
 });
 
 test("primary and child scopes compose with stable historical placement", async () => {
@@ -265,7 +265,7 @@ test("failed writes leave requests unchanged and allow recovery", async () => {
   expect(await request.json()).toEqual({ model: anthropic.id, messages: [user()] });
   expect(store.size).toBe(0);
   const retry = await harness({ store });
-  expect((await retry.http([user()])).body.messages.at(-1).clear_at).toBe("next_user_message");
+  expect((await retry.http([user()])).body.messages.at(-1)?.clear_at).toBe("next_user_message");
 });
 
 test("fallback preserves history and adds nothing to tool results", async () => {

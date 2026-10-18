@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "paths": {
+      "@opencode/plugin": ["./tests/opencode/node_modules/@opencode/plugin/dist/promise/index.d.ts"]
+    },
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "typeRoots": ["./tests/opencode/node_modules/@types"],
+    "types": ["bun"]
+  },
+  "include": ["home/dot_config/opencode/exact_plugins/**/*.ts", "tests/opencode/**/*.ts"],
+  "exclude": ["**/node_modules/**"]
+}

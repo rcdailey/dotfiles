@@ -54,6 +54,15 @@ repos:
     entry: biome check --write --no-errors-on-unmatched
     language: system
     files: \.(ts|tsx|js|jsx)$
+  # Checks every managed TypeScript file via the root tsconfig.json, which sits outside home/ so
+  # editors find it without chezmoi deploying it. Types resolve from tests/opencode/node_modules:
+  # run `bun install --cwd tests/opencode --frozen-lockfile` first.
+  - id: tsc
+    name: TypeScript typecheck
+    entry: tests/opencode/node_modules/.bin/tsc -p tsconfig.json
+    language: system
+    files: (\.ts|^tsconfig\.json)$
+    pass_filenames: false
 
 # Markdown formatting
 - repo: https://github.com/DavidAnson/markdownlint-cli2
