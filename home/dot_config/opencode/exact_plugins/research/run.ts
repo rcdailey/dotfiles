@@ -14,7 +14,7 @@ export function runResearch(sessionID: string, args: string[], signal?: AbortSig
       stdio: ["ignore", "pipe", "pipe"],
       signal,
     });
-    // Reroute notices go to stderr and results to stdout; keep them in arrival order.
+    // Warnings and errors go to stderr and results to stdout; keep them in arrival order.
     const chunks: Buffer[] = [];
     child.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
     child.stderr.on("data", (chunk: Buffer) => chunks.push(chunk));

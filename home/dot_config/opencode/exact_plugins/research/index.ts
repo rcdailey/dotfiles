@@ -41,7 +41,8 @@ const repo = text("OWNER/REPO");
 const number = integer();
 const ref = text("Branch, tag, or SHA");
 const date = { type: "string", format: "date" };
-const maxChars = integer("Output bound; default 12000, 0 = none");
+// Truncated output explains this bound, so the field carries no description.
+const maxChars = integer();
 const limit = (fallback: number, unit = "") => integer(`${unit}Default ${fallback}`);
 const threadList = {
   search: text(),
@@ -306,8 +307,9 @@ export const Research = {
           "a 404 is refunded. Fetch only URLs seen in tool output or supplied by the caller. " +
           "PDFs are converted automatically. GitHub issue, pull request, discussion, release, " +
           "commit, file, raw file, and repository URLs are routed to the matching GitHub " +
-          "reader. When targeting a named field, option, symbol, or phrase, start with " +
-          "`find`; page cached content with `offset`. A `find` no-match is failed evidence: " +
+          "reader without budget cost. When targeting a named field, option, symbol, or " +
+          "phrase, start with `find`; page cached content with `offset`. A `find` no-match is " +
+          "failed evidence: " +
           "retry without `find` or with a corrected pattern.",
         input: {
           type: "object",
