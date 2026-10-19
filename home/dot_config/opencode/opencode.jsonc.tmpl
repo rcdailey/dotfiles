@@ -13,9 +13,8 @@
     ],
   },
   "agents": {
-    "plan": {
-      "model": {{ printf "%s#%s" $models.plan.model $models.plan.variant | quote }},
-    },
+    // Planning runs as /plan inside build; switching agents mid-session invalidates prompt caching
+    "plan": { "disabled": true },
     "build": {
       "model": {{ printf "%s#%s" $models.build.model $models.build.variant | quote }},
     },
@@ -68,7 +67,12 @@
     },
   },
   "plugins": [
-    "@plannotator/opencode@latest",
+    // user-managed exposes submit_plan to build without plan-agent prompt rewrites, which would
+    // inject plan-only rules into every build turn and block implementation after approval
+    {
+      "package": "@plannotator/opencode@latest",
+      "options": { "workflow": "user-managed" },
+    },
 {{- if eq .opencodeProvider "anthropic" }}
     // The next tag is the OpenCode V2 release line; latest is V1 and does not load in V2
     "@ex-machina/opencode-anthropic-auth@next",

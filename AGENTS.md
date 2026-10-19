@@ -60,12 +60,11 @@ under `~/.config/opencode/` do not have these prefixes.
 - `dcp.jsonc`, `cli.json` - Additional config files
 - `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory
   contains a `SKILL.md`. Some are managed via `.chezmoiexternal.toml` in this directory.
-- `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). The primary
-  `plan` agent designs changes for Plannotator approval; `build` implements in the same session.
-  Both include `opencode-coding-directives.md` and `opencode-primary-shared.md`; execution and
-  acceptance orchestration live only in Build. Read-only `acceptance` audits completed local work
-  with a fresh high-capability model. Other specialists (`researcher`, `reviewer`,
-  `upgrade-analyst`) are plain Markdown with self-contained protocols.
+- `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). `build` is the
+  only primary agent (built-in `plan` is disabled so sessions never switch agents and lose prompt
+  caching); planning runs on demand through `/plan`, which submits via Plannotator. Read-only
+  `acceptance` audits completed local work with a fresh high-capability model. Other specialists
+  (`researcher`, `reviewer`, `upgrade-analyst`) are plain Markdown with self-contained protocols.
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)
 - `exact_plugins/` - Plugins (target: `~/.config/opencode/plugins/`). Hooks that rewrite model
   requests MUST keep earlier conversation content byte-identical across requests; edits invalidate
@@ -76,8 +75,7 @@ under `~/.config/opencode/` do not have these prefixes.
   a global namespace across all `.chezmoitemplates/` directories in the source state; prefix names
   with `opencode-` to avoid collisions. Current partials: `opencode-coding-directives.md`
   (development, tools, git, architecture), `opencode-testing-directives.md` (behavioral testing and
-  failure diagnosis), `opencode-primary-shared.md` (chat, authoring, testing, discovery delegation,
-  and change boundaries).
+  failure diagnosis).
 
 **pi (`home/private_dot_pi/private_agent/`):**
 

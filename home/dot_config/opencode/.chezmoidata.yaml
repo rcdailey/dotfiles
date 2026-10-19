@@ -1,8 +1,5 @@
 opencodeModels:
   anthropic:
-    plan:
-      model: anthropic/claude-opus-5-5
-      variant: high
     build:
       model: anthropic/claude-opus-5-5
       variant: medium
@@ -28,9 +25,6 @@ opencodeModels:
       variant: high
 
   openai:
-    plan:
-      model: openai/gpt-6-astra
-      variant: medium
     build:
       model: openai/gpt-6-sol
       variant: medium
