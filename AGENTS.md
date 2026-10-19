@@ -62,7 +62,7 @@ under `~/.config/opencode/` do not have these prefixes.
   contains a `SKILL.md`. Some are managed via `.chezmoiexternal.toml` in this directory.
 - `exact_agents/` - Custom agent definitions (target: `~/.config/opencode/agents/`). `build` is the
   only primary agent (built-in `plan` is disabled so sessions never switch agents and lose prompt
-  caching); planning runs on demand through `/plan`, which submits via Plannotator. Read-only
+  caching); build plans through the `planning` skill, which submits via Plannotator. Read-only
   `acceptance` audits completed local work with a fresh high-capability model. Other specialists
   (`researcher`, `reviewer`, `upgrade-analyst`) are plain Markdown with self-contained protocols.
 - `exact_commands/` - Slash commands (target: `~/.config/opencode/commands/`)

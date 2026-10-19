@@ -13,7 +13,8 @@
     ],
   },
   "agents": {
-    // Planning runs as /plan inside build; switching agents mid-session invalidates prompt caching
+    // Planning runs inside build via the planning skill; switching agents mid-session invalidates
+    // prompt caching
     "plan": { "disabled": true },
     "build": {
       "model": {{ printf "%s#%s" $models.build.model $models.build.variant | quote }},

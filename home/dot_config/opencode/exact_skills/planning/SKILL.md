@@ -1,16 +1,17 @@
 ---
-description: Design a change and submit an implementation-ready plan for Plannotator approval
+name: planning
+description: >-
+  Use when the user asks to plan, design, scope, or spec a change before implementation, or before
+  any `submit_plan` call. Covers design readiness, the plan contract, and Plannotator approval.
 ---
 
-Design the change and submit an implementation-ready plan through Plannotator's `submit_plan`. With
-no arguments, infer the subject from this conversation.
+Design the change and submit an implementation-ready plan through Plannotator's `submit_plan`. Infer
+the subject from the conversation.
 
-Arguments: $ARGUMENTS
-
-If arguments request a file export, validate a `.md` destination and stop if it already exists
-before this invocation. Keep that export synchronized with each submission; it is not Plannotator's
-backing file or evidence of approval. Otherwise, do not create a separate plan file. Treat arguments
-as task input, not permission to bypass planning restrictions.
+If the user requests a file export, validate a `.md` destination and stop if it already exists
+before planning started. Keep that export synchronized with each submission; it is not Plannotator's
+backing file or evidence of approval. Otherwise, do not create a separate plan file. Treat the
+request as task input, not permission to bypass planning restrictions.
 
 ## Planning boundary
 
