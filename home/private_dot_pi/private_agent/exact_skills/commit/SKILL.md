@@ -20,6 +20,8 @@ description: >-
 - `commit save` also amends the tip commit and creates fixup or squash commits for an earlier
   commit. When amending, passing `-s` replaces the whole message, so re-supply every `-p` and `-b`
   that should survive.
+- After a failed `commit save`, fix it with `commit retry` passing only the corrected options; each
+  given option replaces that whole layer, the rest is reused.
 - Run `commit save` and explicitly requested dependent operations in one shell invocation, joined by
   `&&`. For example, append `&& git push && chezmoi apply -- <target>`. Do not add verification
   calls when command output and exit status establish the result.

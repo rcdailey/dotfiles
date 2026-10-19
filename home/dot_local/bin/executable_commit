@@ -10,6 +10,10 @@ Usage:
     commit save --amend [files] [-s "..." [-p "..."] [-b "..."] [-i "..."]]
     commit save --fixup <commit> [files]
     commit save --squash <commit> [files] [-p "..."] [-b "..."] [-i "..."]
+    commit retry [-s "..."] [-p "..."] [-b "..."] [-i "..."]
+
+A failed save keeps its arguments as a draft in the Git directory; retry reruns
+it, replacing only the message layers it is given.
 
 Environment:
     GIT_COMMIT_FMT_SUBJECT_WIDTH  Subject char limit (default: 72)
@@ -20,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -51,6 +56,7 @@ subcommands:
   save --amend [files]       fold staged files into HEAD; -s rewrites its message
   save --fixup <commit>      commit staged files as a fixup! of <commit>
   save --squash <commit>     commit staged files as a squash! of <commit>
+  retry [-s/-p/-b/-i ...]    rerun the last failed save, replacing given layers
 
 Use 'commit <subcommand> --help' for subcommand details."""
 
@@ -447,7 +453,94 @@ def cmd_save(args: list[str]) -> None:
         help="like --fixup, but -p, -b, and -i add a body kept when squashing",
     )
     args_parsed = parser.parse_args(args)
+    args_parsed.files = [os.path.abspath(f) for f in args_parsed.files]
+    _save_with_draft(args_parsed)
 
+
+def _draft_path() -> Path | None:
+    """Locate the per-worktree draft file, or None outside a repository."""
+    result = git(
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-path",
+        "commit-draft.json",
+        check=False,
+        capture=True,
+    )
+    return Path(result.stdout.strip()) if result.returncode == 0 else None
+
+
+def _head() -> str | None:
+    result = git("rev-parse", "--verify", "--quiet", "HEAD", check=False, capture=True)
+    return result.stdout.strip() or None
+
+
+def _index_empty() -> bool:
+    return git("diff", "--cached", "--quiet", check=False, capture=True).returncode == 0
+
+
+def _save_with_draft(args_parsed: argparse.Namespace) -> None:
+    """Run a save, keeping its arguments as a retry draft only while it fails.
+
+    The draft records HEAD so a retry cannot replay a message composed for a
+    tip that has since changed. File paths are absolute so retry works from
+    any directory.
+    """
+    draft = _draft_path()
+    head = _head()
+    index_was_empty = _index_empty()
+    try:
+        _save(args_parsed)
+    except SystemExit as exit_:
+        if draft is None:
+            raise
+        if not exit_.code:
+            draft.unlink(missing_ok=True)
+            raise
+        options = dict(vars(args_parsed))
+        # A failure after -a staged everything leaves that content in the index, which -a
+        # mode would then reject; staged-only mode commits exactly what -a staged.
+        if options["a"] and index_was_empty and not _index_empty():
+            options["a"] = False
+        draft.write_text(json.dumps({"head": head, "options": options}))
+        print(
+            "\n=== RETRY WITHOUT RETYPING ===\n"
+            "Do not rerun commit save. Fix the cause above, then pass only what changes:\n"
+            '  commit retry -s "<corrected subject>"\n'
+            "Each -s, -p, -b, or -i given replaces that whole layer; omitted layers,\n"
+            "files, and mode are reused from the failed save.",
+            file=sys.stderr,
+        )
+        raise
+
+
+def cmd_retry(args: list[str]) -> None:
+    parser = argparse.ArgumentParser(
+        prog="commit retry",
+        description="rerun the last failed save; each given option replaces that whole layer",
+    )
+    parser.add_argument("-s", help="subject")
+    parser.add_argument("-p", action="append", help="body paragraph")
+    parser.add_argument("-b", action="append", help="technical outline bullet")
+    parser.add_argument("-i", action="append", help="issue reference")
+    overrides = parser.parse_args(args)
+
+    draft = _draft_path()
+    if draft is None or not draft.is_file():
+        die("no failed save to retry; use commit save")
+    saved = json.loads(draft.read_text())
+    if saved["head"] != _head():
+        draft.unlink()
+        die("HEAD moved since the failed save; draft discarded, use commit save")
+
+    options = saved["options"]
+    for layer, value in vars(overrides).items():
+        if value is not None:
+            options[layer] = value
+    _save_with_draft(argparse.Namespace(**options))
+
+
+def _save(args_parsed: argparse.Namespace) -> None:
     has_files = bool(args_parsed.files)
     amend = args_parsed.amend
     target = args_parsed.fixup or args_parsed.squash
@@ -463,7 +556,7 @@ def cmd_save(args: list[str]) -> None:
             die("--fixup takes no message; use --squash to add a body")
     elif not has_message:
         if not amend:
-            parser.error("the following arguments are required: -s")
+            die("the following arguments are required: -s")
         if has_body:
             die("-p, -b, and -i rewrite the message and require -s")
 
@@ -605,6 +698,7 @@ def cmd_save(args: list[str]) -> None:
 
 COMMANDS = {
     "save": cmd_save,
+    "retry": cmd_retry,
 }
 
 

@@ -341,6 +341,71 @@ class CommitSaveTests(unittest.TestCase):
         body = self.git("log", "-1", "--format=%b").stdout
         self.assertEqual(" ".join(body.split()), paragraph)
 
+    def run_retry(self, *args, cwd=None):
+        return subprocess.run(
+            [sys.executable, str(COMMIT), "retry", *args],
+            cwd=cwd or self.repo,
+            env=self.env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+    def test_retry_replaces_only_given_layers_of_failed_save(self):
+        self.write_change()
+        result = self.run_save(
+            "change.txt", "-s", "x" * 80, "-p", "Why it changed.", "-b", "detail", "-i", "Refs #1"
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("commit retry", result.stderr)
+        subdirectory = self.repo / "nested"
+        subdirectory.mkdir()
+        result = self.run_retry("-s", "Short subject", cwd=subdirectory)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(
+            self.git("log", "-1", "--format=%B").stdout,
+            "Short subject\n\nWhy it changed.\n\n- detail\n\nRefs #1\n\n",
+        )
+        result = self.run_retry("-s", "Again")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("no failed save", result.stderr)
+
+    def test_retry_recovers_from_lint_failure_and_retry_failure(self):
+        before = self.commit_initial()
+        result = self.run_save("--amend", "-s", "feat: wrong type", "-p", "Kept.")
+        self.assertNotEqual(result.returncode, 0)
+        result = self.run_retry("-s", "fix: still wrong")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.git("rev-parse", "HEAD").stdout.strip(), before)
+        result = self.run_retry("-s", "project: reworded")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.git("rev-list", "--count", "HEAD").stdout.strip(), "1")
+        self.assertEqual(
+            self.git("log", "-1", "--format=%B").stdout, "project: reworded\n\nKept.\n\n"
+        )
+
+    def test_retry_after_all_mode_staged_before_failing(self):
+        self.commit_initial()
+        self.change.write_text("changed\n")
+        result = self.run_save("-a", "-s", "feat: wrong type")
+        self.assertNotEqual(result.returncode, 0)
+        result = self.run_retry("-s", "project: fixed")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(
+            self.git("show", "--name-only", "--format=", "HEAD").stdout.splitlines(),
+            ["change.txt"],
+        )
+
+    def test_retry_rejects_draft_after_head_moves(self):
+        self.commit_initial()
+        result = self.run_save("--amend", "-s", "feat: wrong type")
+        self.assertNotEqual(result.returncode, 0)
+        self.git("commit", "--allow-empty", "--quiet", "-m", "project: other")
+        result = self.run_retry("-s", "project: reworded")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("HEAD moved", result.stderr)
+        self.assert_committed("project: other")
+
 
 if __name__ == "__main__":
     unittest.main()

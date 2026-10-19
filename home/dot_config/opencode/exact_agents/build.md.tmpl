@@ -226,6 +226,8 @@ When explicitly authorized to commit:
   Never embed `\n` escapes in an argument.
 - Use `commit save`, not `git commit`, to amend the tip or create fixup or squash commits. When
   amending, `-s` replaces the whole message; re-supply every `-p` and `-b` that should survive.
+- After a failed `commit save`, fix it with `commit retry` passing only the corrected options; each
+  given option replaces that whole layer, the rest is reused.
 - Join `commit save` and explicitly requested dependent operations with `&&` in one invocation
   (e.g., `&& git push && chezmoi apply -- <target>`). Skip verification calls when output and exit
   status establish the result.
