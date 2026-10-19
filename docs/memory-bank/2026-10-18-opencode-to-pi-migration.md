@@ -447,6 +447,12 @@ Consequences for chunk 6 [verified, gotgenes docs/configuration.md]:
   boundaries (chunk 7) belong there. Child detection: `exact_extensions/lib/subagent-children.ts`.
 - Children inherit all parent skills and extensions; no `skills:`, `inheritSkills`, or
   `inheritGlobalContext` keys. Opt-outs: `excludedExtensionPackages` setting.
+- Agent models: `extensions/model-roles.ts` registers virtual models `role/<name>`; settings.json
+  `modelRoles` (managed whole in `modify_settings.json`) maps provider x role to model + thinking (per-role, not tiers: variants
+  differ per provider). Provider = root session's selected model, snapshotted per child at spawn.
+  Agent files set `model: role/<name>` and no `thinking`. Add a role row with each new agent.
+- nicobailon re-checked at `95683a4` (2026-10-17): foreground children still load no ambient
+  extensions and reject frontmatter bash rules, so the gotgenes choice stands.
 - Agent files: `~/.pi/agent/agents/<name>.md`, frontmatter `description`, `tools`, `model`,
   `thinking`, `max_turns`, `prompt_mode` (`append`|`replace`), `inherit_context`,
   `run_in_background`, `enabled`, `locked`, plus permission-system `permission:`.
