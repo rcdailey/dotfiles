@@ -13,9 +13,17 @@ MANAGED = {
     "defaultModel": "claude-opus-5-5",
     "defaultThinkingLevel": "medium",
     # Major-only ranges: pi installs the newest matching minor and never crosses a major.
+    # 0.x packages pin the minor instead, since semver treats 0.x minors as breaking.
     "packages": [
         "npm:@gotgenes/pi-anthropic-auth@3",
         "npm:@gotgenes/pi-permission-system@41",
+        "npm:pi-mcp-adapter@5",
+        "npm:pi-web-access@0.42",
+        "npm:pi-subagents@0.79",
+        "npm:@plannotator/pi-extension@0.28",
+        "npm:pi-powerline-footer@0.20",
+        "npm:pi-lens@4",
+        "npm:@anishthite/pi-themes@0.1",
     ],
     "hideThinkingBlock": True,
     "branchSummary": {"skipPrompt": True},
