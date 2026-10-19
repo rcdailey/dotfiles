@@ -12,6 +12,7 @@ MANAGED = {
     "defaultProvider": "anthropic",
     "defaultModel": "claude-opus-5-5",
     "defaultThinkingLevel": "medium",
+    "treeFilterMode": "user-only",
     # Major-only ranges: pi installs the newest matching minor and never crosses a major.
     # 0.x packages pin the minor instead, since semver treats 0.x minors as breaking.
     "packages": [
