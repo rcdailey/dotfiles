@@ -85,8 +85,8 @@ Target `~/.pi/agent`. Fully separate from OpenCode: MUST NOT share templates, pa
 `home/dot_config/opencode/`. MUST NOT make the agent directory `exact_`; pi stores auth, sessions,
 and installed packages there. Running sessions pick up applied changes only after `/reload`.
 
-- `modify_settings.json` - Merges managed keys into `settings.json`, which pi also writes
-  (changelog version, installs, saved selections). Managed keys win on apply; pi owns the rest.
+- `modify_settings.json` - Merges managed keys into `settings.json`, which pi also writes (changelog
+  version, installs, saved selections). Managed keys win on apply; pi owns the rest.
 - `AGENTS.md` - Global directives.
 - `exact_extensions/` - Extensions (target: `~/.pi/agent/extensions/`). Hooks that change model
   input MUST keep earlier conversation content byte-identical: use static system-prompt content or
@@ -168,11 +168,13 @@ Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
 
 ### humanizer skill (upstream sync)
 
-`home/dot_config/opencode/exact_skills/humanizer/SKILL.md` is a semantic compression of
-[blader/humanizer](https://github.com/blader/humanizer), not a verbatim copy. Use
-`.opencode/commands/sync-humanizer.md` as the authoritative sync procedure. MUST merge upstream
-detection behavior into the local structure; MUST NOT overwrite the skill. Preserve every
-local-owned section exactly, especially the marked `User Voice Profile` block.
+`home/dot_config/opencode/exact_skills/humanizer/SKILL.md` and
+`home/private_dot_pi/private_agent/exact_skills/humanizer/SKILL.md` are semantic compressions of
+[blader/humanizer](https://github.com/blader/humanizer), not verbatim copies. Each has its own sync
+procedure: `.opencode/commands/sync-humanizer.md` (OpenCode) and `.pi/prompts/sync-humanizer.md`
+(pi; loads after project trust). MUST merge upstream detection behavior into the local structure;
+MUST NOT overwrite the skill. Preserve every local-owned section exactly, especially the marked
+`User Voice Profile` block.
 
 ## Constraints
 
