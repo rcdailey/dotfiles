@@ -23,7 +23,15 @@ MANAGED = {
         "npm:@plannotator/pi-extension@0.28",
         "npm:pi-powerline-footer@0.20",
         "npm:pi-lens@4",
-        "npm:@anishthite/pi-themes@0.1",
+        {
+            # cursor-* and mercury-* use 8-digit hex (#RRGGBBAA), which pi rejects.
+            "source": "npm:@anishthite/pi-themes@0.1",
+            "themes": [
+                "themes/*.json",
+                "!themes/cursor-*.json",
+                "!themes/mercury-*.json",
+            ],
+        },
     ],
     "hideThinkingBlock": True,
     "branchSummary": {"skipPrompt": True},
