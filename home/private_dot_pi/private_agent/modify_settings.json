@@ -12,8 +12,11 @@ MANAGED = {
     "defaultProvider": "anthropic",
     "defaultModel": "claude-opus-5-5",
     "defaultThinkingLevel": "medium",
-    # Major-only range: pi installs the newest matching 3.x and never moves to 4.0.
-    "packages": ["npm:@gotgenes/pi-anthropic-auth@3"],
+    # Major-only ranges: pi installs the newest matching minor and never crosses a major.
+    "packages": [
+        "npm:@gotgenes/pi-anthropic-auth@3",
+        "npm:@gotgenes/pi-permission-system@41",
+    ],
     "hideThinkingBlock": True,
     "branchSummary": {"skipPrompt": True},
     "enableInstallTelemetry": False,

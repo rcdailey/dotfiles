@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/gotgenes/pi-packages/main/packages/pi-permission-system/schemas/permissions.schema.json",
+  "permission": {
+    "*": "allow",
+    "bash": {
+      "*": "allow",
+      "git commit *": { "action": "deny", "reason": "Use the commit skill and 'commit save'" },
+      "git -C * commit *": { "action": "deny", "reason": "Use the commit skill and 'commit save'" }
+    }
+  }
+}
