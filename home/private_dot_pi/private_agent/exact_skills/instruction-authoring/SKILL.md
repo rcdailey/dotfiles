@@ -2,9 +2,9 @@
 name: instruction-authoring
 description: >-
   Use when proposing, drafting, creating, editing, refactoring, or reviewing model instructions:
-  AGENTS.md, CLAUDE.md, SYSTEM.md, APPEND_SYSTEM.md, SKILL.md or a skill directory, pi prompt
-  templates (slash commands in a prompts directory), or pi-subagents agent files and
-  `subagents.agentOverrides` entries, including chezmoi source forms and edits that arise mid-task.
+  AGENTS.md, PRIMARY.md, CLAUDE.md, SYSTEM.md, APPEND_SYSTEM.md, SKILL.md or a skill directory, pi
+  prompt templates (slash commands in a prompts directory), or subagent agent files, including
+  chezmoi source forms and edits that arise mid-task.
 ---
 
 # Instruction Authoring
@@ -66,8 +66,9 @@ For package-specific guidance, choose deliberately:
 - A root pointer to the package file when sessions start at the repository root.
 - A skill when the rules apply only to a nameable task.
 
-Scope delegation rules explicitly. pi-subagents children omit global AGENTS.md unless
-`inheritGlobalContext: true` or forked context; most keep project context files.
+Subagent children inherit global and project AGENTS.md, so write it for every agent. Put rules for
+the main session only (chatting with the user, orchestrating subagents) in `~/.pi/agent/PRIMARY.md`;
+the `primary-instructions` extension adds it to the main session's system prompt and skips children.
 
 ## Skills
 
@@ -88,7 +89,8 @@ root. A name collision keeps the first skill found.
 
 The description selects the skill before its body loads. Start with `Use when`; state triggers,
 governed paths, and boundaries, not the procedure. Add a negative trigger only for an ambiguous
-neighbor. pi-subagents children see no skills unless their agent sets `inheritSkills` or `skills`.
+neighbor. Subagent children inherit the full skill catalog; restrict an agent's skills with `skill:`
+rules in its `permission:` frontmatter.
 
 The body holds only purpose, inputs, procedure, failure behavior, and verification the agent cannot
 infer. It must support action without broad preliminary discovery.
@@ -133,36 +135,43 @@ shell-like quoting. There is no agent, model, shell-output, or file-inclusion sy
 Create an agent only for a distinct role, permission boundary, model, or isolated context; do not
 create persona-only agents.
 
-Define agents in `~/.pi/agent/agents/**/*.md` or `.pi/agents/**/*.md` (after trust). A same-name
-file replaces a builtin wholesale; `subagents.agentOverrides.<name>` in settings changes selected
-fields only. Required fields: `name` and `description`. Read the frontmatter reference in
-pi-subagents `docs/agents.md`; do not preserve a model catalog.
+Agents run on `@gotgenes/pi-subagents`. Define them in `~/.pi/agent/agents/<name>.md` or
+`.pi/agents/<name>.md`; the project file wins. The filename is the agent type; a same-name file
+replaces a default agent (`general-purpose`, `Explore`, `Plan`), and `enabled: false` disables one.
+All frontmatter is optional: `description`, `display_name`, `tools`, `model`, `thinking`,
+`max_turns`, `prompt_mode`, `inherit_context`, `run_in_background`, `enabled`, `locked`, plus
+pi-permission-system's `permission:`. Read the package's `docs/configuration.md` for semantics; do
+not preserve a model catalog.
 
-Prompt assembly defaults to a clean child:
+Prompt assembly:
 
-- `systemPromptMode: replace` drops pi's base prompt; `append` keeps it.
-- `inheritProjectContext` keeps project AGENTS.md files; `inheritGlobalContext` (default `false`)
-  adds `~/.pi/agent/AGENTS.md`.
-- `inheritSkills` exposes the skill catalog; `skills` selects specific skills.
-- Forked context (`context: fork`) sends the full parent prompt regardless.
+- A child inherits the parent's pi preamble and `<project_context>` (all AGENTS.md files) byte for
+  byte. Pi rebuilds skills and the working directory for the child, and the child's own extensions
+  rebuild their prompt additions.
+- `prompt_mode: append` (default) wraps the body in `<agent_instructions>` as a parent twin;
+  `replace` appends the body last with the final say. Neither removes AGENTS.md.
+- `inherit_context: true` forks the parent conversation into the child.
+- Callers can override `model`, `thinking`, `max_turns`, `inherit_context`, and `run_in_background`;
+  list fields in `locked` to prevent that.
 
 Permissions:
 
-- Start from a minimal `tools` allowlist. An allowlisted extension tool also needs its provider in
-  `extensions` or `subagentOnlyExtensions`; foreground children never load ambient extensions.
-- Native `permission:` frontmatter gates non-bash tools only, and `ask` goes to a watchdog model,
-  not the user. Command-level policy needs a guard extension loaded in the child.
+- `tools` is the complete allowlist, including extension tools; `none` grants no tools.
+- Children load the parent's extensions, so global permission rules, guards, and reminders apply.
+  Exclude whole packages with `excludedExtensionPackages` in `~/.pi/agent/subagents.json`.
+- `permission:` frontmatter layers over the global pi-permission-system config with the same
+  surfaces, including `bash` patterns and `skill:` rules; last matching rule wins. It accepts
+  scalars and nested maps only. An `ask` forwards to the user and pauses the child.
 - Existing shell policies are deliberate; do not tighten them without explicit approval. Broad shell
   access is not a read-only boundary; check redirection and indirect mutation paths.
 - Define permitted effects, including scratch writes and test artifacts, separately from source
   edits.
-- Allow only the skills and nested subagents (`allowNestedSubagents`, `allowedAgents`) the workflow
-  needs.
+- Deny the `subagent` tool unless the workflow nests agents.
 
 The description states when to delegate, required inputs, the returned result, and whether callers
-must verify it. Set `advertise: true` only when the parent should discover the agent unprompted. The
-prompt defines ownership, workflow boundaries, failure behavior, and output contract. Its prompt,
-skills, readable files, and tools must support that contract without defeating least privilege.
+must verify it. The prompt defines ownership, workflow boundaries, failure behavior, and output
+contract. Its prompt, skills, readable files, and tools must support that contract without defeating
+least privilege.
 
 - Check inherited rules against the role; state the narrow exception when valid work cannot satisfy
   one.
