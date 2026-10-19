@@ -1,7 +1,7 @@
 # OpenCode → pi Migration (Memory Bank)
 
-Session date: 2026-10-18. pi version at time of research: **1.3.0** (installed via mise). Nothing
-has been implemented yet; this file captures research, decisions, and the chunked plan so future
+Session date: 2026-10-18. pi version at time of research: **1.3.0** (installed via mise). Chunks
+1-3 are implemented (see §2); this file captures research, decisions, and the chunked plan so future
 sessions can resume without redoing the investigation.
 
 Status legend used below: **[verified]** = read in source/docs/code this session; **[inferred]** =
@@ -72,17 +72,36 @@ coding/testing directives for now** (they get sorted in chunk 3).
 
 ### Later chunks (proposed order)
 
-1. Chunk 1 (above).
-2. Skills: copy `home/dot_config/opencode/exact_skills/*` into pi's own `skills/` (full copies).
-   The external mattpocock skills (`.chezmoiexternal.toml.tmpl`) need their own pi copy too.
-3. Sort `opencode-coding-directives.md` / `opencode-testing-directives.md` /
-   `opencode-primary-shared.md` into: always-on (`AGENTS.md`), on-demand skill, subagent-only.
-   Testing directives are the strongest skill candidate.
+1. Chunk 1 (above). **Done** (fe2dc58 and follow-ups).
+2. Skills. **Done** (ab9c353, 895c173, fd6cd04). The four OpenCode authoring skills became one
+   `instruction-authoring` skill; `commit` skill added; `discord-chat`, `gh-api`, `gh-pr-review`,
+   `humanizer`, `hunk-staging`, `linear-cli`, `python-scripting` copied (discord paths moved to
+   `~/.pi/agent/skills` and `/tmp/pi`; gh-pr-review dropped the reviewer-subagent hand-off);
+   mattpocock skills via pi-owned `exact_skills/.chezmoiexternal.toml.tmpl`. Humanizer sync for pi:
+   `.pi/prompts/sync-humanizer.md`.
+3. Directive sorting. **Done** (this session). Principle: pi-subagents children do not load global
+   `AGENTS.md` (`inheritGlobalContext: false`), so global `AGENTS.md` is main-session only and
+   subagent rules belong in agent files. Review of OpenCode's global `AGENTS.md` found almost
+   nothing that benefits subagents beyond what guards, permissions, and agent protocols already
+   enforce. Placement:
+   - pi `AGENTS.md`: Implementation Discipline, Architecture, General, Development, Code
+     Documentation, Git (no initial tracking branch; never create worktrees), Repository Locations
+     (`/tmp/pi/`), Tools (rewritten for fff + pi-lens; OpenCode V2 LSP and Glob notes dropped),
+     Output (`file:line`), CLI Prose Arguments, and a one-line pointer to the `testing` skill.
+   - New skills: `testing` (testing directives), `git-conflicts` (UD/DU handling),
+     `worktree-branches`.
+   - Removed from pi `AGENTS.md` (subagents never read it): "Subagents report `blocked`" clause
+     and "Subagents MUST NOT clone". Citations rule kept (renamed section `Citations`).
+   - Deferred: Agents + Delegating read-only discovery -> chunk 6; Change boundaries -> chunk 7.
 4. Shell guards / file-tool guard extension (if not folded into chunk 1).
 5. Permissions (`@gotgenes/pi-permission-system`).
 6. Subagents (agent files for reviewer, researcher, acceptance, upgrade-analyst, scout/explore),
-   model mapping.
-7. Plannotator (`@plannotator/pi-extension`) + `/plan` prompt/skill workflow.
+   model mapping. Carry into agent files: report `blocked` instead of asking; no cloning
+   (reviewer may use task-owned worktrees); the `rg -r` is-replace warning for agents that run
+   `rg`; `skills: [testing]` for agents that judge tests (e.g. acceptance). Port OpenCode
+   primary-shared Agents/Delegating-discovery sections into the main-session side then.
+7. Plannotator (`@plannotator/pi-extension`) + `/plan` prompt/skill workflow. Port OpenCode
+   primary-shared Change boundaries here.
 8. Remaining custom plugins (acceptance, research, chat-brevity, formatter, session naming,
    herdr state, notifications), footer.
 9. Optional non-coding profile for `~/OpenCloud/Documents`.
@@ -459,8 +478,8 @@ Source: `home/dot_config/opencode/`.
 | OpenCode piece | pi approach | Status |
 |---|---|---|
 | `AGENTS.md` global directives | `~/.pi/agent/AGENTS.md` copy | chunk 1 |
-| `coding-directives.md.tmpl` (+ shared partials) | sort into AGENTS.md / skills / agent files | chunk 3 |
-| `exact_skills/` + external mattpocock skills | copies in pi `skills/` | chunk 2 |
+| `coding-directives.md.tmpl` (+ shared partials) | sort into AGENTS.md / skills / agent files | done (chunk 3; agent/plan parts deferred to 6/7) |
+| `exact_skills/` + external mattpocock skills | copies in pi `skills/` | done (chunk 2) |
 | `exact_commands/` (`$ARGUMENTS` compatible) | pi `prompts/` copies; `review`, `renovate-upgrade` depend on subagents | later |
 | `exact_agents/` plan/build (primary) | `/plan` prompt + skill + Plannotator; build = default session | later |
 | `exact_agents/` acceptance/researcher/reviewer/upgrade-analyst | subagent agent files | chunk 6 |
