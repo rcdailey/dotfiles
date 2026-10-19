@@ -216,12 +216,6 @@ permissions:
     resource: "*"
     effect: allow
   - action: skill
-    resource: agents-authoring
-    effect: deny
-  - action: skill
-    resource: command-authoring
-    effect: deny
-  - action: skill
     resource: gh-api
     effect: deny
   - action: skill
@@ -231,13 +225,10 @@ permissions:
     resource: humanizer
     effect: deny
   - action: skill
+    resource: instruction-authoring
+    effect: deny
+  - action: skill
     resource: linear-cli
-    effect: deny
-  - action: skill
-    resource: skill-authoring
-    effect: deny
-  - action: skill
-    resource: subagent-authoring
     effect: deny
 ---
 
