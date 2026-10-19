@@ -77,7 +77,23 @@ MANAGED = {
         },
     },
     # Read by extensions/compaction-model.ts; summarizes compactions instead of the session model.
-    "compactionModel": {"model": "anthropic/claude-haiku-5-5", "thinkingLevel": "low"},
+    "compactionModel": {"model": "role/compaction"},
+    # Read by extensions/model-roles.ts: provider -> role -> model and thinking level. Each role
+    # becomes virtual model role/<role>; the provider of the main session's selected model picks
+    # the row. Agent files and compactionModel select roles. /reload applies edits.
+    # The openai row is unverified; a ChatGPT subscription may use provider id openai-codex.
+    "modelRoles": {
+        "anthropic": {
+            "explore": {"model": "claude-haiku-5-5", "thinkingLevel": "low"},
+            "reviewer": {"model": "claude-opus-5-5", "thinkingLevel": "high"},
+            "compaction": {"model": "claude-haiku-5-5", "thinkingLevel": "low"},
+        },
+        "openai": {
+            "explore": {"model": "gpt-6-luna", "thinkingLevel": "low"},
+            "reviewer": {"model": "gpt-6-sol", "thinkingLevel": "medium"},
+            "compaction": {"model": "gpt-6-luna", "thinkingLevel": "low"},
+        },
+    },
     # Read by pi-powerline-footer; /powerline still owns the preset.
     "powerline": {"disabledSegments": ["cache_read", "cost"]},
     "hideThinkingBlock": True,
@@ -86,9 +102,14 @@ MANAGED = {
 }
 
 
+# Nested managed maps merge into pi's values, except these, which chezmoi owns whole so entries
+# removed here also leave the live file.
+REPLACED = {"compactionModel", "modelRoles"}
+
+
 def merge(current: dict, managed: dict) -> dict:
     for key, value in managed.items():
-        if isinstance(value, dict) and isinstance(current.get(key), dict):
+        if key not in REPLACED and isinstance(value, dict) and isinstance(current.get(key), dict):
             merge(current[key], value)
         else:
             current[key] = value

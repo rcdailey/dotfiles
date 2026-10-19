@@ -5,10 +5,13 @@ import {
   getAgentDir,
   SettingsManager,
 } from "@earendil-works/pi-coding-agent";
+import { loadRoleTable, ROLE_PROVIDER, resolveRole } from "./lib/model-roles.ts";
 
 // Summarizes compactions with the model in settings.json `compactionModel`
-// ({ "model": "provider/modelId", "thinkingLevel": "low" }) instead of the session model. It
-// reuses pi's native compact(), so only the model changes. On a missing key, unknown model, auth
+// ({ "model": "provider/modelId", "thinkingLevel": "low" }) instead of the session model. A
+// `role/<name>` model resolves through settings.json `modelRoles`, which also sets the thinking level; pi
+// cannot compact with a virtual model directly. It reuses pi's native compact(), so only the model
+// changes. On a missing key, unknown model, auth
 // failure, or error, it returns nothing and pi compacts with the session model.
 
 type ThinkingLevel = Parameters<typeof compact>[6];
@@ -39,10 +42,19 @@ export default function compactionModel(pi: ExtensionAPI) {
     if (!config) return;
 
     const slash = config.model.indexOf("/");
-    const model =
-      slash > 0
-        ? ctx.modelRegistry.find(config.model.slice(0, slash), config.model.slice(slash + 1))
-        : undefined;
+    const provider = config.model.slice(0, slash);
+    const id = config.model.slice(slash + 1);
+    let model: ReturnType<typeof ctx.modelRegistry.find>;
+    let thinkingLevel = config.thinkingLevel;
+    if (provider === ROLE_PROVIDER) {
+      try {
+        ({ model, thinkingLevel } = resolveRole(ctx, loadRoleTable(), id));
+      } catch (error) {
+        return warn(`${(error as Error).message}; using the session model.`);
+      }
+    } else {
+      model = slash > 0 ? ctx.modelRegistry.find(provider, id) : undefined;
+    }
     if (!model) return warn(`Unknown model ${config.model}; using the session model.`);
 
     const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
@@ -69,7 +81,7 @@ export default function compactionModel(pi: ExtensionAPI) {
         auth.headers,
         event.customInstructions,
         event.signal,
-        config.thinkingLevel,
+        thinkingLevel,
         undefined,
         auth.env,
       );
