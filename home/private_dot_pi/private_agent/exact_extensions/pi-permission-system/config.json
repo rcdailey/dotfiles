@@ -5,7 +5,18 @@
     "bash": {
       "*": "allow",
       "git commit *": { "action": "deny", "reason": "Use the commit skill and 'commit save'" },
-      "git -C * commit *": { "action": "deny", "reason": "Use the commit skill and 'commit save'" }
+      "git -C * commit *": { "action": "deny", "reason": "Use the commit skill and 'commit save'" },
+      "grep *": { "action": "deny", "reason": "Use 'rg' instead of 'grep'" },
+      "find -name *": { "action": "deny", "reason": "Use 'rg --files -g pattern', not 'find -name'" },
+      "find * -name *": { "action": "deny", "reason": "Use 'rg --files -g pattern', not 'find -name'" },
+      "sops --set*": { "action": "deny", "reason": "Use 'sops set'; see 'sops set --help'" },
+      "sops * --set*": { "action": "deny", "reason": "Use 'sops set'; see 'sops set --help'" },
+      "gh api *": {
+        "action": "deny",
+        "reason": "'gh api' requires an explicit method: gh api --method GET repos/{owner}/{repo}"
+      },
+      "gh api *--method*": "allow",
+      "gh api *-X*": "allow"
     }
   }
 }

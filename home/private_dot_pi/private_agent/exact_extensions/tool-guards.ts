@@ -1,23 +1,36 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-// Best-effort redirects for model-issued bash calls, not authorization. Blocking only rejects the
-// call, so the prompt and cached prefix never change. Skip nested scripts and heredocs rather than
-// treating their data as invocations. File-tool preference is a reminder (file-tools.ts), not a
-// block: chained shell reads and transforms have too many legitimate uses to gate reliably.
-function commandWords(input: string): string[][] {
+// Removes grep-style recursive short flags from model-issued rg calls: rg recurses by default and
+// `-r` is `--replace`, so `rg -rn foo src/` silently treats `n` as replacement text. Rewriting runs
+// the intended search instead of failing the call. Command-level redirects (grep, find -name,
+// sops --set, gh api without --method) are deny rules in pi-permission-system/config.json.
+// Best-effort, not authorization: skip nested scripts and heredocs rather than treating their
+// data as invocations.
+
+interface Word {
+  value: string;
+  start: number;
+  end: number;
+}
+
+function commandWords(input: string): Word[][] {
   if (/<<|\$\(|`/.test(input)) return [];
-  const commands: string[][] = [[]];
+  const commands: Word[][] = [[]];
   let word = "";
-  let open = false;
-  const flush = () => {
-    if (open) commands[commands.length - 1].push(word);
+  let start = -1;
+  const open = () => start !== -1;
+  const begin = (index: number) => {
+    if (start === -1) start = index;
+  };
+  const flush = (end: number) => {
+    if (open()) commands[commands.length - 1].push({ value: word, start, end });
     word = "";
-    open = false;
+    start = -1;
   };
   for (let i = 0; i < input.length; i++) {
     const ch = input[i];
     if (ch === "'" || ch === '"') {
-      open = true;
+      begin(i);
       const quote = ch;
       while (++i < input.length && input[i] !== quote) {
         if (quote === '"' && input[i] === "\\") i++;
@@ -25,16 +38,14 @@ function commandWords(input: string): string[][] {
       }
       if (i === input.length) return [];
     } else if (ch === "\\") {
+      begin(i);
       const next = input[++i];
-      if (next && next !== "\n") {
-        word += next;
-        open = true;
-      }
-    } else if (ch === "#" && !open) {
+      if (next && next !== "\n") word += next;
+    } else if (ch === "#" && !open()) {
       while (i < input.length && input[i] !== "\n") i++;
-      flush();
+      flush(i);
       commands.push([]);
-    } else if (ch === "(" && open) {
+    } else if (ch === "(" && open()) {
       // Keep attached zsh glob qualifiers in their argument, not as command groups.
       word += ch;
       let depth = 1;
@@ -46,18 +57,18 @@ function commandWords(input: string): string[][] {
       }
     } else if (
       /[|&;\n()]/.test(ch) ||
-      (/[{}]/.test(ch) && !open && (!input[i + 1] || /[\s;]/.test(input[i + 1])))
+      (/[{}]/.test(ch) && !open() && (!input[i + 1] || /[\s;]/.test(input[i + 1])))
     ) {
-      flush();
+      flush(i);
       commands.push([]);
     } else if (/\s/.test(ch)) {
-      flush();
+      flush(i);
     } else {
+      begin(i);
       word += ch;
-      open = true;
     }
   }
-  flush();
+  flush(input.length);
   return commands.filter((words) => words.length > 0);
 }
 
@@ -74,15 +85,15 @@ const WRAPPERS: Record<string, { flags: RegExp; operands?: RegExp }> = {
 };
 
 // Unknown wrapper options can change execution semantics (e.g. env -S or command -v).
-function localInvocation(words: string[]): string[] {
+function localInvocation(words: Word[]): Word[] {
   while (words.length) {
-    while (/^[A-Za-z_][A-Za-z0-9_]*=/.test(words[0] ?? "")) words.shift();
-    const name = words[0]?.split("/").pop() ?? "";
+    while (/^[A-Za-z_][A-Za-z0-9_]*=/.test(words[0]?.value ?? "")) words.shift();
+    const name = words[0]?.value.split("/").pop() ?? "";
     const wrapper = Object.hasOwn(WRAPPERS, name) ? WRAPPERS[name] : undefined;
     if (!wrapper) return words;
     words.shift();
-    while (words[0]?.startsWith("-")) {
-      const option = words[0];
+    while (words[0]?.value.startsWith("-")) {
+      const option = words[0].value;
       words.shift();
       if (option === "--") break;
       if (wrapper.flags.test(option)) continue;
@@ -93,55 +104,33 @@ function localInvocation(words: string[]): string[] {
   return words;
 }
 
-interface RedirectionRule {
-  command: string;
-  option?: string;
-  message: string;
-}
-
-const REDIRECTIONS: RedirectionRule[] = [
-  {
-    command: "grep",
-    message: "Use 'rg' instead of 'grep' for better performance and features",
-  },
-  {
-    command: "find",
-    option: "-name",
-    message: "Use 'rg --files -g pattern' instead of 'find -name'",
-  },
-  {
-    command: "sops",
-    option: "--set",
-    message: "Use 'sops set' instead of 'sops --set'; consult 'sops set --help' for syntax",
-  },
-];
-
-/** The violation message for a model-issued bash command, or undefined to allow it. */
-export function bashViolation(command: string): string | undefined {
-  for (const segment of commandWords(command)) {
-    // Only the executable is redirected. git grep and remote arguments are not local grep.
+/** The command with `r` removed from every rg short-flag cluster (`-rl` -> `-l`, `-r` -> ''). */
+export function stripRipgrepRecursiveFlag(input: string): string {
+  const edits: Word[] = [];
+  for (const segment of commandWords(input)) {
     const words = localInvocation(segment);
-    const name = words[0]?.split("/").pop();
-    for (const rule of REDIRECTIONS) {
-      if (name !== rule.command) continue;
-      if (
-        rule.option &&
-        !words.slice(1).some((word) => word === rule.option || word.startsWith(`${rule.option}=`))
-      ) {
-        continue;
-      }
-      return rule.message;
+    if (words[0]?.value.split("/").pop() !== "rg") continue;
+    for (const word of words.slice(1)) {
+      if (word.value === "--") break;
+      const match = /^-([A-Za-z]*r[A-Za-z]*)$/.exec(word.value);
+      if (!match) continue;
+      const flags = match[1].replaceAll("r", "");
+      let end = word.end;
+      if (!flags) while (/[ \t]/.test(input[end] ?? "")) end++;
+      edits.push({ start: word.start, end, value: flags && `-${flags}` });
     }
   }
+  return edits.reduceRight(
+    (command, edit) => command.slice(0, edit.start) + edit.value + command.slice(edit.end),
+    input,
+  );
 }
 
 export default function toolGuards(pi: ExtensionAPI) {
   pi.on("tool_call", async (event) => {
     if (event.toolName !== "bash") return;
     // CustomToolCallEvent keeps toolName from narrowing the input type.
-    const command = (event.input as { command?: unknown }).command;
-    if (typeof command !== "string") return;
-    const message = bashViolation(command);
-    if (message) return { block: true, reason: `TOOL USAGE VIOLATION: ${message}` };
+    const input = event.input as { command?: unknown };
+    if (typeof input.command === "string") input.command = stripRipgrepRecursiveFlag(input.command);
   });
 }
