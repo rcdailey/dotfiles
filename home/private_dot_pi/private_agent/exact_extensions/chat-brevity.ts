@@ -1,4 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { isSubagentChild, trackSubagentChildren } from "./lib/subagent-children.ts";
 
 // Turn-start chat guidance. pi persists the returned message in the session, so history replays
 // byte-identically and the cached prefix never changes; only the new turn's tail is uncached.
@@ -42,7 +43,10 @@ export const reminder = (provider: string | undefined) =>
   ].join("\n");
 
 export default function chatBrevity(pi: ExtensionAPI) {
+  trackSubagentChildren(pi);
   pi.on("before_agent_start", async (event, ctx) => {
+    // Subagents report to a parent model, not the user.
+    if (isSubagentChild(ctx)) return;
     // Runs started by extension messages are not user turns; the last turn's reminder still applies.
     if (event.messageType !== "user") return;
     // Empty prompts are synthetic probes (pi-context-view's /context sends one, then omits only its
