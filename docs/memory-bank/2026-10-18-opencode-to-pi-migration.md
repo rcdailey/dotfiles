@@ -19,6 +19,10 @@ reasoned from docs, not tested; **[open]** = unresolved.
   `~/.pi/agent` are already mode 700; `private_` keeps that. **Never `exact_` the agent dir**
   (it holds `auth.json`, `sessions/`, `npm/`, `bin/`, caches).
 - Willing to change mental model to "the pi way" rather than replicate OpenCode 1:1.
+- **Question OpenCode assumptions.** Before porting any piece, check pi built-ins, installed
+  packages, and community extensions for a more idiomatic solution; port as-is only when none fits.
+- **Edit this file only for facts or decisions that change future work.** Never just to mark
+  progress; git log records what is done.
 - Work in **small chunks, foundational basics first**. Minimal-friction pilot.
 - **No temporary test directories** (e.g. `PI_CODING_AGENT_DIR=/tmp/...`) for experiments.
 - **Do not force `ask` → `deny`** via hacks.
