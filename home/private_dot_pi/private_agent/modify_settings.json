@@ -75,6 +75,8 @@ MANAGED = {
             },
         },
     },
+    # Read by extensions/compaction-model.ts; summarizes compactions instead of the session model.
+    "compactionModel": {"model": "anthropic/claude-haiku-5-5", "thinkingLevel": "low"},
     "hideThinkingBlock": True,
     "branchSummary": {"skipPrompt": True},
     "enableInstallTelemetry": False,
