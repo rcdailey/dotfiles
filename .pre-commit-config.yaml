@@ -10,7 +10,8 @@ repos:
   - id: check-yaml
     args: [--allow-multiple-documents]
   - id: check-json
-    exclude: ^home/\.chezmoitemplates/
+    # chezmoi modify_ scripts keep the target's .json name but contain code
+    exclude: ^home/\.chezmoitemplates/|/modify_[^/]+\.json$
   - id: check-merge-conflict
   - id: check-added-large-files
     args: [--maxkb=500]
