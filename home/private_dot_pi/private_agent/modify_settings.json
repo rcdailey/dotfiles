@@ -19,7 +19,7 @@ MANAGED = {
         "npm:@gotgenes/pi-permission-system@41",
         "npm:pi-mcp-adapter@5",
         "npm:pi-web-access@0.42",
-        "npm:pi-subagents@0.79",
+        "npm:@gotgenes/pi-subagents@25",
         "npm:@plannotator/pi-extension@0.28",
         "npm:pi-powerline-footer@0.20",
         "npm:pi-lens@4",
