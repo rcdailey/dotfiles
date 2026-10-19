@@ -24,6 +24,7 @@ MANAGED = {
         "npm:pi-powerline-footer@0.20",
         "npm:pi-lens@4",
         "npm:@ff-labs/pi-fff@0.11",
+        "npm:@ian-pascoe/pi-formatter@0.6",
         {
             # cursor-* and mercury-* use 8-digit hex (#RRGGBBAA), which pi rejects.
             "source": "npm:@anishthite/pi-themes@0.1",
@@ -34,6 +35,45 @@ MANAGED = {
             ],
         },
     ],
+    # Read by @ian-pascoe/pi-formatter. A trusted project's .pi/settings.json entry with the
+    # same ID replaces the global one; a project disables one with "command": "true".
+    "formatter": {
+        "formatters": {
+            # Runs only where a Prettier config exists, using the project's own install.
+            # Markdown is excluded so md-format owns it.
+            "prettier": {
+                "command": "npx",
+                "args": ["--no-install", "prettier", "--write", "$FILE"],
+                "files": {
+                    "extensions": [
+                        ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts",
+                        ".html", ".htm", ".css", ".scss", ".sass", ".less", ".vue",
+                        ".svelte", ".json", ".jsonc", ".yaml", ".yml", ".toml", ".xml",
+                        ".graphql", ".gql",
+                    ],
+                },
+                "requireRootMarker": True,
+                "rootMarkers": [".prettierrc*", "prettier.config.*"],
+            },
+            "markdown": {
+                "command": "md-format",
+                "args": ["$FILE"],
+                "files": {"extensions": [".md", ".mdx"]},
+            },
+            # Matching uses only the last extension, so .md.tmpl arrives as .tmpl; the guard
+            # skips other templates (.sh.tmpl, .jsonc.tmpl).
+            "markdown-template": {
+                "command": "bash",
+                "args": [
+                    "-c",
+                    'case $1 in *.md.tmpl) exec md-format "$1" ;; esac',
+                    "_",
+                    "$FILE",
+                ],
+                "files": {"extensions": [".tmpl"]},
+            },
+        },
+    },
     "hideThinkingBlock": True,
     "branchSummary": {"skipPrompt": True},
     "enableInstallTelemetry": False,
