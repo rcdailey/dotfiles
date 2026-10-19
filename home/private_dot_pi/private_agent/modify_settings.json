@@ -25,6 +25,7 @@ MANAGED = {
         "npm:pi-lens@4",
         "npm:@ff-labs/pi-fff@0.11",
         "npm:@ian-pascoe/pi-formatter@0.6",
+        "npm:pi-context-view@0.7",
         {
             # cursor-* and mercury-* use 8-digit hex (#RRGGBBAA), which pi rejects.
             "source": "npm:@anishthite/pi-themes@0.1",
