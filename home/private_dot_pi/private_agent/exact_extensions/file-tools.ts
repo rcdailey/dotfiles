@@ -18,6 +18,9 @@ export default function fileTools(pi: ExtensionAPI) {
   pi.on("before_agent_start", async (event, ctx) => {
     // Runs started by extension messages are not user turns; the last turn's reminder still applies.
     if (event.messageType !== "user" || ctx.model?.provider !== "anthropic") return;
+    // Empty prompts are synthetic probes (pi-context-view's /context sends one, then omits only its
+    // own messages); a reminder attached to one would stay orphaned in context.
+    if (!event.prompt && !event.images?.length) return;
     return { message: { customType: "file-tools", content: REMINDER, display: false } };
   });
 }
