@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Remove PR-review worktrees that the OpenCode reviewer agent leaves under /tmp/opencode once they
-# exceed the retention period, then prune Git records for worktrees the OS already deleted.
+# Remove PR-review worktrees that the OpenCode and pi reviewer agents leave under /tmp/opencode and
+# /tmp/pi once they exceed the retention period, then prune Git records for worktrees the OS already deleted.
 # Runs daily from a systemd user timer (Linux) or a LaunchAgent (macOS).
 # Usage: prune-review-worktrees [days]  (default: 7)
 #
@@ -10,7 +10,6 @@
 # only while one of their review worktrees is still on disk.
 set -euo pipefail
 
-root=/tmp/opencode
 days="${1:-7}"
 repos=""
 
@@ -22,7 +21,7 @@ while IFS= read -r common; do
   done
 done < <(find "$HOME/code" -maxdepth 3 -type d -name .git -prune 2>/dev/null)
 
-for task in "$root"/pr-review-*/; do
+for task in /tmp/opencode/pr-review-*/ /tmp/pi/pr-review-*/; do
   [[ -d "$task" ]] || continue
   task="${task%/}"
   expired="$(find "$task" -prune -mtime "+$days")"

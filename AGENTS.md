@@ -89,6 +89,8 @@ and installed packages there. Running sessions pick up applied changes only afte
 - `exact_extensions/` - Extensions (target: `~/.pi/agent/extensions/`). Hooks that change model
   input MUST keep earlier conversation content byte-identical: use static system-prompt content or
   messages persisted through `before_agent_start`, never per-request rewrites of history.
+- `exact_agents/` - Subagent definitions for `@gotgenes/pi-subagents` (target:
+  `~/.pi/agent/agents/`). A file named after a default agent (`Explore`) replaces it.
 
 **Tool configs:** `home/dot_config/` contains per-tool configuration directories (git, kitty, mise,
 lazygit, etc.). Browse the directory to discover what's managed.

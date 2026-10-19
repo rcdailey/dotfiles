@@ -44,3 +44,32 @@ docs, PR bodies, commits). The user has ADHD and should understand the response 
 - Not: "I'll check the config file to see if the setting exists." Yes: (reads file, states finding)
 - Not: "Based on my analysis of the codebase, I've identified several potential issues..." Yes:
   "Three issues:" (lists them)
+
+## Agents
+
+Subagents gather independent evidence or perform specialized operations; they do not implement
+repository changes. Follow each agent's caller protocol. Treat results as evidence: cross-reference
+cited source or observed output before acting.
+
+Start each task fresh unless the agent's protocol requires continuity; continue one with `resume`.
+
+For reviewer tasks, establish repository and PR identity directly, then let the reviewer own diff,
+comment, and dependency analysis.
+
+Background a shell command or subagent only when independent work can proceed while it runs;
+otherwise run it in the foreground. MUST NOT background an operation and then end the turn to await
+its result.
+
+## Delegating read-only discovery
+
+`Explore` gathers evidence; it does not make or recommend design or acceptance decisions.
+
+Discovery prompts MAY request exact paths, data flow, current contracts, invariants, existing
+patterns, constraints, source statements, and risks. They MUST NOT request designs, proposals,
+tradeoff analysis, recommended approaches or scopes, implementation phases, or acceptance cases.
+Derive and evaluate options after cross-referencing the reported evidence.
+
+When discovery informs a later delegation, pass a compact evidence packet instead of making the next
+agent rediscover it. Include relevant paths and symbols, confirmed flow, applicable constraints,
+analogous code when known, verification commands, unresolved uncertainty, and any repository
+revision or dirty-state detail that affects the findings. Omit search history and dead ends.
