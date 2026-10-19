@@ -79,6 +79,19 @@ under `~/.config/opencode/` do not have these prefixes.
   failure diagnosis), `opencode-primary-shared.md` (chat, authoring, testing, discovery delegation,
   and change boundaries).
 
+**pi (`home/private_dot_pi/private_agent/`):**
+
+Target `~/.pi/agent`. Fully separate from OpenCode: MUST NOT share templates, paths, or data with
+`home/dot_config/opencode/`. MUST NOT make the agent directory `exact_`; pi stores auth, sessions,
+and installed packages there. Running sessions pick up applied changes only after `/reload`.
+
+- `modify_settings.json` - Merges managed keys into `settings.json`, which pi also writes
+  (changelog version, installs, saved selections). Managed keys win on apply; pi owns the rest.
+- `AGENTS.md` - Global directives.
+- `exact_extensions/` - Extensions (target: `~/.pi/agent/extensions/`). Hooks that change model
+  input MUST keep earlier conversation content byte-identical: use static system-prompt content or
+  messages persisted through `before_agent_start`, never per-request rewrites of history.
+
 **Tool configs:** `home/dot_config/` contains per-tool configuration directories (git, kitty, mise,
 lazygit, etc.). Browse the directory to discover what's managed.
 
@@ -95,6 +108,8 @@ lazygit, etc.). Browse the directory to discover what's managed.
   `*.test.ts` tests beside their modules. MUST NOT run OpenCode to verify any plugin.
 - OpenCode config (`opencode.jsonc.tmpl`, `.chezmoidata.yaml`, agents, commands, skills): MUST NOT
   add durable tests; verify by rendering templates and running pre-commit.
+- pi extensions (`exact_extensions/`): MUST NOT add durable tests for single-file extensions; verify
+  them with side-effect-free checks (e.g., importing pure functions with `bun`).
 
 **Test execution:**
 

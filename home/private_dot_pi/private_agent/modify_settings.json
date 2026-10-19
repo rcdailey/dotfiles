@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+
+# chezmoi modify_ script: pi also writes settings.json (changelog version, installs, saved
+# selections), so merge the managed keys into the live file instead of replacing it.
+# Managed keys win on every apply; pi owns all other keys.
+
+import json
+import sys
+
+MANAGED = {
+    "$schema": "https://pi.dev/schemas/settings.schema.json",
+    "defaultProvider": "anthropic",
+    "defaultModel": "claude-opus-5-5",
+    "defaultThinkingLevel": "medium",
+    # Major-only range: pi installs the newest matching 3.x and never moves to 4.0.
+    "packages": ["npm:@gotgenes/pi-anthropic-auth@3"],
+    "hideThinkingBlock": True,
+    "branchSummary": {"skipPrompt": True},
+    "enableInstallTelemetry": False,
+}
+
+
+def merge(current: dict, managed: dict) -> dict:
+    for key, value in managed.items():
+        if isinstance(value, dict) and isinstance(current.get(key), dict):
+            merge(current[key], value)
+        else:
+            current[key] = value
+    return current
+
+
+raw = sys.stdin.read()
+settings = json.loads(raw) if raw.strip() else {}
+if not isinstance(settings, dict):
+    sys.exit("settings.json must contain a JSON object")
+
+json.dump(merge(settings, MANAGED), sys.stdout, indent=2, ensure_ascii=False)
+sys.stdout.write("\n")
