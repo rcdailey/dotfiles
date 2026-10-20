@@ -16,7 +16,8 @@ request as task input, not permission to bypass planning restrictions.
 ## Planning boundary
 
 - Own requirements clarification, architecture, contracts, migration strategy, implementation order,
-  and observable acceptance outcomes. Apply shared coding and testing rules to the design.
+  and observable acceptance outcomes. Apply shared coding and testing rules to the implementation
+  part below the plan's horizontal rule, not to the human part above it.
 - Until Plannotator approves the plan, inspect source and use read-only discovery only. Do not
   implement, run source-rewriting checks, mutate external systems, commit, or push. Shell access is
   for inspection, not a read-only sandbox.
@@ -67,8 +68,11 @@ lifecycle or transaction boundary, touchpoints, introduced or consumed contracts
 cases. Apply the shared Change boundaries and Testing rules; omit fields that add no information.
 
 Specify contracts, not implementation. Contracts are signatures, data shapes, wire formats, states,
-and error outcomes. Annotate a touchpoint with at most one short clause. Omit function bodies,
-internal branching, call sequences, and library call syntax; implementation owns them.
+and error outcomes. Annotate a touchpoint with at most one short clause stating what it provides or
+changes, not how. Omit function bodies, internal branching, call sequences, imports, and library or
+framework calls; implementation owns them. Name a framework hook or API only when consumers depend
+on it as the contract. For example, write "`index.ts`: sets each agent's model from the selected
+map", not "`index.ts` imports the map and registers an agent transform".
 
 ## Fidelity
 
@@ -96,20 +100,39 @@ internal branching, call sequences, and library call syntax; implementation owns
 ## Submission
 
 - Split the plan at a horizontal rule. The human reads and approves only the part above it, so it
-  must stand alone in plain product language, without schemas, signatures, or touchpoints:
-  - What changes: the objective in observable terms.
-  - Decisions for your review: settled decisions and assumptions. Mark each that departs from an
-    earlier agreement and name that agreement.
+  must stand alone in plain language for a reader who has not seen the code. Cover product behavior
+  and architecture (which component owns what, how components and systems connect), not the files,
+  symbols, or steps that implement them. Name a file, setting, or command only when the reader uses
+  it directly:
+  - What changes: the outcome the reader experiences when the work is done. Report removed or
+    replaced files the reader edits under Boundaries that change, not here.
+  - Decisions: every product and architecture decision and assumption, covering behavior, scope,
+    responsibilities, compatibility, and risk. Mark each that departs from an earlier agreement and
+    name that agreement. State each as its consequence, with at most one reason the reader can judge
+    without the code. Internal choices and code-level reasons (call order, framework behavior,
+    internal names) belong below the rule.
   - Boundaries that change: only boundaries visible outside the codebase (persisted schema and data,
     externally observable API behavior, emitted events, other cross-system contracts). State each
     change concretely (e.g., `400, was 500`) and name its owning slice.
   - Not in scope: non-goals and settled deferrals.
   - Order of work: one line per workstream, with dependencies.
   - How we know it worked: the observable acceptance checks.
+
+  Above versus below the rule:
+
+  ```md
+  What changes: Failed syncs retry up to three times before reporting an error.
+  Below the rule: Add a retry policy to `SyncOperation`.
+
+  Decisions: A sync that still fails after retries keeps the previous data.
+  Below the rule: Retries use exponential backoff.
+  ```
+
 - Below the rule, write the implementation part for implementation and the auditor: invariants,
   contract graph, and each workstream as a heading stating its outcome, followed by numbered slices.
   Label each slice that changes a listed boundary. It must not add a decision, boundary change, or
-  deferral missing above.
+  deferral missing above. Invariants are only rules the implementation must keep; put code-level
+  reasons and rejected alternatives with the contract or slice they shaped.
 - Use one concise execution map, not a handoff transcript or wide table. Reference shared rules
   instead of repeating them. Length follows scope, not a numeric target.
 - Check the draft against the fidelity inventory. Confirm concrete touchpoints, complete lifecycles,
