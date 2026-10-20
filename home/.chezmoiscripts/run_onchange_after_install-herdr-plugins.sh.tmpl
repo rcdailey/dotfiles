@@ -11,5 +11,8 @@
 {{ end -}}
 
 command -v herdr >/dev/null || exit 0
-herdr plugin install devashish2203/herdr-worktrunk --yes
+if ! out=$(herdr plugin install devashish2203/herdr-worktrunk --yes 2>&1); then
+  printf '%s\n' "$out" >&2
+  exit 1
+fi
 herdr plugin link {{ joinPath .chezmoi.homeDir ".config/herdr/lazygit-follow" | quote }} >/dev/null
