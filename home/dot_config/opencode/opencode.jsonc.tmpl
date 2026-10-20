@@ -1,4 +1,3 @@
-{{- $models := index .opencodeModels .opencodeProvider -}}
 {
   "$schema": "https://opencode.ai/config.json",
   "update": "disable",
@@ -12,22 +11,13 @@
       { "action": "provider.use", "resource": "opencode", "effect": "deny" },
     ],
   },
+  // Agent models come from virtual-models.jsonc; a `model` here would override it
   "agents": {
     // Planning runs inside build via the planning skill; switching agents mid-session invalidates
     // prompt caching
     "plan": { "disabled": true },
-    "build": {
-      "model": {{ printf "%s#%s" $models.build.model $models.build.variant | quote }},
-    },
-    "title": {
-      "model": {{ $models.title.model | quote }},
-    },
-    "compaction": {
-      "model": {{ printf "%s#%s" $models.compaction.model $models.compaction.variant | quote }},
-    },
     "general": { "disabled": true },
     "explore": {
-      "model": {{ printf "%s#%s" $models.explore.model $models.explore.variant | quote }},
       "permissions": [
         { "action": "edit", "resource": "*", "effect": "deny" },
         { "action": "question", "resource": "*", "effect": "deny" },
@@ -37,18 +27,6 @@
         { "action": "shell", "resource": "*>> /*", "effect": "deny" },
         { "action": "shell", "resource": "*tee /*", "effect": "deny" },
       ],
-    },
-    "acceptance": {
-      "model": {{ printf "%s#%s" $models.acceptance.model $models.acceptance.variant | quote }},
-    },
-    "researcher": {
-      "model": {{ printf "%s#%s" $models.researcher.model $models.researcher.variant | quote }},
-    },
-    "reviewer": {
-      "model": {{ printf "%s#%s" $models.reviewer.model $models.reviewer.variant | quote }},
-    },
-    "upgrade-analyst": {
-      "model": {{ printf "%s#%s" $models.upgradeAnalyst.model $models.upgradeAnalyst.variant | quote }},
     },
   },
   "formatter": {

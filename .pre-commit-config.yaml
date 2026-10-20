@@ -64,6 +64,13 @@ repos:
     language: system
     files: (\.ts|^tsconfig\.json)$
     pass_filenames: false
+  # Every enabled OpenCode agent needs a model under each provider in virtual-models.jsonc
+  - id: virtual-models
+    name: OpenCode virtual model mappings
+    entry: bun hooks/check-virtual-models.mts
+    language: system
+    files: ^(hooks/check-virtual-models\.mts|home/dot_config/opencode/(exact_agents/|opencode\.jsonc\.tmpl|virtual-models\.jsonc\.tmpl))
+    pass_filenames: false
 
 # Markdown formatting
 - repo: https://github.com/DavidAnson/markdownlint-cli2

@@ -1,0 +1,28 @@
+// Agent models per provider, applied at startup by the virtual-models plugin. Keys are agent IDs;
+// values are "provider/model#variant". Every provider must map the same agents; pre-commit
+// enforces this for agent files and the enabled built-in agents.
+{
+  "provider": {{ .opencodeProvider | quote }},
+  "providers": {
+    "anthropic": {
+      "build": "anthropic/claude-opus-5-5#medium",
+      "title": "anthropic/claude-haiku-5-5",
+      "compaction": "anthropic/claude-haiku-5-5#low",
+      "explore": "anthropic/claude-haiku-5-5#low",
+      "acceptance": "anthropic/claude-opus-5-5#high",
+      "researcher": "anthropic/claude-sonnet-5-5#medium",
+      "reviewer": "anthropic/claude-opus-5-5#high",
+      "upgrade-analyst": "anthropic/claude-sonnet-5-5#high",
+    },
+    "openai": {
+      "build": "openai/gpt-6-sol#medium",
+      "title": "openai/gpt-6-luna",
+      "compaction": "openai/gpt-6-luna#low",
+      "explore": "openai/gpt-6-luna#low",
+      "acceptance": "openai/gpt-6-sol#high",
+      "researcher": "openai/gpt-6-luna#low",
+      "reviewer": "openai/gpt-6-sol#medium",
+      "upgrade-analyst": "openai/gpt-6-sol#high",
+    },
+  },
+}

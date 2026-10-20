@@ -55,7 +55,10 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 Source directories use `exact_` prefixes (chezmoi strips unmanaged files on apply), but target paths
 under `~/.config/opencode/` do not have these prefixes.
 
-- `opencode.jsonc` - Main config (model, agent overrides, LSP, formatters, providers, MCP servers)
+- `opencode.jsonc` - Main config (agent overrides, LSP, formatters, providers, MCP servers)
+- `virtual-models.jsonc` - Agent models per provider, applied at startup by the `virtual-models`
+  plugin. A new agent needs a mapping under every provider (pre-commit enforces). MUST NOT set agent
+  `model` in `opencode.jsonc` or agent files; it overrides the plugin.
 - `AGENTS.md` - Global directives (the file at `~/.config/opencode/AGENTS.md`)
 - `dcp.jsonc`, `cli.json` - Additional config files
 - `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory

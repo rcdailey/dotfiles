@@ -13,6 +13,10 @@
     "typeRoots": ["./tests/opencode/node_modules/@types"],
     "types": ["bun"]
   },
-  "include": ["home/dot_config/opencode/exact_plugins/**/*.ts", "tests/opencode/**/*.ts"],
+  "include": [
+    "home/dot_config/opencode/exact_plugins/**/*.ts",
+    "hooks/**/*.mts",
+    "tests/opencode/**/*.ts"
+  ],
   "exclude": ["**/node_modules/**"]
 }
