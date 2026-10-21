@@ -5,6 +5,7 @@
   "default_agent": "build",
   "compaction": { "auto": true },
   "experimental": {
+    "location_idle_timeout": "2 hours",
     "policies": [
       // Hide these providers even when their credentials are detected
       { "action": "provider.use", "resource": "github-copilot", "effect": "deny" },
