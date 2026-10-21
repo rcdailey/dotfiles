@@ -1,0 +1,61 @@
+#!/usr/bin/env zsh
+# ocr <host> [dir]: open the OpenCode TUI against another tailnet machine's OpenCode service,
+# published there at https://<host>.<tailnet>.ts.net by Tailscale Serve (see the
+# tailscale-serve-opencode chezmoi script). Sessions, tools, and files stay on that host.
+#
+# Paths under $HOME map to the host's home; without dir, the current directory maps the same way,
+# falling back to the host's home. The password is read over SSH on each call and never stored.
+# Each call starts a new session because OpenCode resolves a directory argument on the client
+# (anomalyco/opencode#47665); switch to existing sessions from the TUI.
+
+emulate -L zsh
+
+if (( $# < 1 || $# > 2 )); then
+  print -u2 "usage: ocr <host> [dir]"
+  return 2
+fi
+
+local -A hosts
+local name fqdn
+while IFS=$'\t' read -r name fqdn; do
+  hosts[$name]=$fqdn
+done < <(_ocr_hosts)
+
+fqdn=${hosts[${1:l}]-}
+if [[ -z $fqdn ]]; then
+  local -a available=(${(ok)hosts})
+  print -u2 "ocr: unknown host '$1'; available: ${(j:, :)available:-none}"
+  return 1
+fi
+
+local -a remote
+# accept-new: first contact with a tailnet host should not need an interactive host-key prompt
+remote=("${(@f)$(ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$fqdn" \
+  'printf "%s\n" "$HOME" && opencode service get password')}")
+if (( ${#remote} != 2 )) || [[ -z ${remote[1]} || -z ${remote[2]} ]]; then
+  print -u2 "ocr: could not read the OpenCode password from $fqdn over SSH"
+  return 1
+fi
+local remote_home=${remote[1]} password=${remote[2]}
+
+local dir=${2:-$PWD}
+dir=${dir:a}
+if [[ $dir == $HOME || $dir == $HOME/* ]]; then
+  dir=$remote_home${dir#$HOME}
+elif (( $# < 2 )); then
+  dir=$remote_home
+fi
+
+local url="https://$fqdn" session
+session=$(
+  jq -n --arg dir "$dir" '{location: {directory: $dir}}' |
+    curl -fsS -K <(print -r -- "user = \"opencode:$password\"") \
+      -H 'Content-Type: application/json' --data @- "$url/api/session" |
+    jq -r '.data.id // empty'
+)
+if [[ -z $session ]]; then
+  print -u2 "ocr: could not create a session in $dir on $url"
+  return 1
+fi
+
+OPENCODE_PASSWORD=$password opencode --server "$url" --session "$session"

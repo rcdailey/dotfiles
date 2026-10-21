@@ -1,0 +1,5 @@
+#compdef ocr
+
+# Host names come from the tailnet; directories are local and `ocr` maps them to the host's home
+local -a hosts=(${${(f)"$(_ocr_hosts)"}%%$'\t'*})
+_arguments '1:host:compadd -a hosts' '2:directory:_directories'

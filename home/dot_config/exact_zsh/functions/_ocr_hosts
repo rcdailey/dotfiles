@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# Print "<name>\t<fqdn>" for each tailnet desktop machine (self included) that `ocr` can target.
+# Names are lowercase MagicDNS host labels. Shared by `ocr` and its completion.
+
+tailscale status --json 2>/dev/null | jq -r '
+  [.Self] + [(.Peer // {})[]]
+  | .[]
+  | select(.OS == "linux" or .OS == "macOS" or .OS == "windows")
+  | (.DNSName | rtrimstr(".")) as $fqdn
+  | [($fqdn | split(".")[0] | ascii_downcase), $fqdn]
+  | @tsv'
