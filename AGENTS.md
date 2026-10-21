@@ -128,9 +128,18 @@ lazygit, etc.). Browse the directory to discover what's managed.
 - Document new root-suite commands here; project-owned commands belong in that project's guidance.
 
 **Commit messages:** Conventional Commits, enforced by commitlint (`commitlint.config.mjs`; `wip`
-subjects bypass it). Scope is the tool or component, not the path: `opencode`, `research`,
-`gh-review`, `mise`, `git`, `commit`. Classify the semantic outcome first; paths only decide the
-type when no behavior changes:
+subjects bypass it). Scopes name a broad area, never a single tool; omit the scope when a commit
+spans areas:
+
+- `agents` - OpenCode, pi, and their agents, skills, commands, and plugins
+- `scripts` - custom CLIs in `scripts/` and `home/dot_local/bin/`
+- `shell` - zsh startup, functions, and prompt
+- `terminal` - terminal emulator and multiplexer
+- `git` - git config, git helpers, and git UIs
+- `tooling` - tool installation, updates, and per-app configs
+- `repo` - repo infrastructure: linters, pre-commit, Renovate, `docs/`, root tests
+
+Classify the semantic outcome first; paths only decide the type when no behavior changes:
 
 - `docs:` - `docs/**`, `*.md`, including AGENTS.md and skill or agent prose
 - `chore:` - root linter, formatter, pre-commit, and `mise.toml` config
