@@ -216,6 +216,30 @@ def snippet(text: str, terms: list[str], width: int) -> str:
     return f"{prefix}{one_line(text[start:end])}{suffix}"
 
 
+def resolve_session(connection: sqlite3.Connection, ref: str) -> sqlite3.Row:
+    session = connection.execute("SELECT * FROM session_v2 WHERE id = ?", [ref]).fetchone()
+    if session:
+        return session
+    # Slugs are not unique; refuse to guess between sessions that share one.
+    matches = connection.execute(
+        "SELECT * FROM session_v2 WHERE slug = ? ORDER BY time_updated DESC", [ref]
+    ).fetchall()
+    if len(matches) == 1:
+        return matches[0]
+    if not matches:
+        raise UsageError(f"no session with ID or slug {ref}")
+    candidates = "\n".join(f"  {session_line(row)}" for row in matches)
+    raise UsageError(f"slug {ref} matches {len(matches)} sessions; pass an ID:\n{candidates}")
+
+
+def decode(value: str | None):
+    return json.loads(value) if value else None
+
+
+def rule_line(rule: dict) -> str:
+    return f"{rule.get('effect', '?'):<5}  {rule.get('action', '?')}  {rule.get('resource', '?')}"
+
+
 def load_sessions(connection: sqlite3.Connection, ids: list[str]) -> dict[str, sqlite3.Row]:
     if not ids:
         return {}
@@ -295,11 +319,7 @@ def command_search(connection: sqlite3.Connection, args: argparse.Namespace) -> 
 
 
 def command_show(connection: sqlite3.Connection, args: argparse.Namespace) -> None:
-    session = connection.execute(
-        "SELECT * FROM session_v2 WHERE id = ? OR slug = ?", [args.session, args.session]
-    ).fetchone()
-    if session is None:
-        raise UsageError(f"no session with ID or slug {args.session}")
+    session = resolve_session(connection, args.session)
     print(f"# {session['title'] or 'Untitled'}")
     print(
         f"id: {session['id']}  dir: {short_path(session['directory'])}  "
@@ -311,6 +331,11 @@ def command_show(connection: sqlite3.Connection, args: argparse.Namespace) -> No
     )
     if session["parent_id"]:
         print(f"parent: {session['parent_id']}")
+    if session["fork_session_id"]:
+        print(f"forked from: {session['fork_session_id']}")
+    rules = decode(session["permission"]) or []
+    if rules:
+        print(f"session permissions: {len(rules)} rules (see 'info')")
     children = connection.execute(
         "SELECT * FROM session_v2 WHERE parent_id = ? ORDER BY time_created", [session["id"]]
     ).fetchall()
@@ -350,7 +375,7 @@ def command_show(connection: sqlite3.Connection, args: argparse.Namespace) -> No
         for scope, text in blocks:
             if scope == "tool":
                 summary, _, output = text.partition("\n")
-                lines.append(f"> {clip(summary, 300)}")
+                lines.append(f"> {clip(summary, None if args.full else 300)}")
                 if args.tool_output and output.strip():
                     lines.append(clip(output.rstrip(), limit))
             elif text.strip():
@@ -372,6 +397,8 @@ def command_show(connection: sqlite3.Connection, args: argparse.Namespace) -> No
 
 
 def command_tools(connection: sqlite3.Connection, args: argparse.Namespace) -> None:
+    if args.session:
+        args.session_id = resolve_session(connection, args.session)["id"]
     clauses, params = session_filters(args)
     time_clauses, time_params = time_filters(args, "m.time_created")
     clauses += time_clauses + ["m.type = 'assistant'", "json_extract(c.value, '$.type') = 'tool'"]
@@ -397,13 +424,83 @@ def command_tools(connection: sqlite3.Connection, args: argparse.Namespace) -> N
         block = json.loads(row["block"])
         print(
             f"{row['session_id']} [{row['seq']}] {format_time(row['time_created'])}  "
-            f"{clip(tool_summary(block), 300)}"
+            f"{clip(tool_summary(block), None if args.full else 300)}"
         )
         output = tool_output(block).strip()
-        if output and (args.output or output.startswith("ERROR:")):
+        if not output or not (args.output or output.startswith("ERROR:")):
+            continue
+        if args.full:
+            print(output)
+        else:
             print(f"  {clip(one_line(output), args.width * 2)}")
     if not rows:
         print("No tool calls matched.")
+
+
+def command_info(connection: sqlite3.Connection, args: argparse.Namespace) -> None:
+    session = resolve_session(connection, args.session)
+    record = dict(session)
+    for key in ("fork_boundary", "summary_diffs", "metadata", "revert", "permission", "model"):
+        record[key] = decode(record[key])
+    approvals = connection.execute(
+        "SELECT action, resource, time_created FROM permission WHERE project_id = ? "
+        "ORDER BY time_created",
+        [session["project_id"]],
+    ).fetchall()
+    record["saved_approvals"] = [dict(row) for row in approvals]
+    if args.json:
+        print(json.dumps(record, indent=2, ensure_ascii=False))
+        return
+
+    print(f"# {session['title'] or 'Untitled'}")
+    fields = {
+        "id": session["id"],
+        "slug": session["slug"],
+        "project": session["project_id"],
+        "workspace": session["workspace_id"],
+        "parent": session["parent_id"],
+        "forked from": session["fork_session_id"],
+        "dir": short_path(session["directory"]),
+        "version": session["version"],
+        "agent": session["agent"],
+        "model": model_name(session["model"]),
+        "cost": f"${session['cost']:.2f}",
+        "tokens": (
+            f"in {session['tokens_input']}  out {session['tokens_output']}  "
+            f"reasoning {session['tokens_reasoning']}  cache read {session['tokens_cache_read']}  "
+            f"cache write {session['tokens_cache_write']}"
+        ),
+        "idle outcome": session["idle_outcome"],
+        "resume attempts": session["resume_attempts"] or None,
+    }
+    for column in (
+        "created",
+        "updated",
+        "idle",
+        "viewed",
+        "compacting",
+        "archived",
+        "suspended",
+    ):
+        value = session[f"time_{column}"]
+        if value:
+            fields[column] = format_time(value)
+    for label, value in fields.items():
+        if value is not None:
+            print(f"{label}: {value}")
+    if record["metadata"]:
+        print(f"metadata: {json.dumps(record['metadata'], ensure_ascii=False)}")
+    if record["revert"]:
+        print(f"revert: {json.dumps(record['revert'], ensure_ascii=False)}")
+
+    # Evaluation order: agent rules (config), then these session rules, then saved approvals.
+    rules = record["permission"] or []
+    print(f"\nsession permissions ({len(rules)}):")
+    for rule in rules:
+        print(f"  {rule_line(rule)}")
+    print(f"\nsaved approvals for project ({len(approvals)}):")
+    for row in approvals:
+        print(f"  allow  {row['action']}  {row['resource']}  ({format_time(row['time_created'])})")
 
 
 def add_session_filters(parser: argparse.ArgumentParser) -> None:
@@ -427,7 +524,8 @@ def parse_args() -> argparse.Namespace:
         description="Find and read OpenCode V2 sessions from the local database as prose.",
         epilog=(
             "Typical flow: 'list' or 'search' to identify a session, then 'show ID --grep TERM' "
-            "or 'show ID --range A:B' to read it. Message numbers in [brackets] are seq values."
+            "or 'show ID --range A:B' to read it; 'tools ID' for its tool calls and 'info ID' "
+            "for its permission state. Message numbers in [brackets] are seq values."
         ),
     )
     commands = parser.add_subparsers(dest="command", required=True)
@@ -483,22 +581,40 @@ def parse_args() -> argparse.Namespace:
     )
     show.add_argument("--reasoning", action="store_true", help="add reasoning text")
     show.add_argument("--max-chars", type=int, default=800, help="per-block text limit")
-    show.add_argument("--full", action="store_true", help="disable the per-block text limit")
+    show.add_argument(
+        "--full", action="store_true", help="disable text and tool-summary length limits"
+    )
     show.set_defaults(handler=command_show)
 
     tools = commands.add_parser("tools", help="list tool calls, newest first")
+    tools.add_argument("session", nargs="?", help="only this session (ID or slug)")
     tools.add_argument("--name", help="tool name substring, e.g. shell or research_")
     tools.add_argument("--status", choices=("completed", "error", "running", "pending"))
     tools.add_argument(
         "--match", action="append", metavar="TERM", help="input/output substring (repeatable)"
     )
     tools.add_argument("--output", action="store_true", help="print output for successful calls")
+    tools.add_argument(
+        "--full", action="store_true", help="print complete inputs and multi-line output"
+    )
     add_session_filters(tools)
-    tools.add_argument("--session", dest="session_id", help="only this session")
     tools.add_argument("--roots", action="store_true", help="exclude child sessions")
     tools.add_argument("-n", "--limit", type=int, default=40)
     tools.add_argument("--width", type=int, default=160, help="half the output line limit")
-    tools.set_defaults(handler=command_tools)
+    tools.set_defaults(handler=command_tools, session_id=None)
+
+    info = commands.add_parser(
+        "info",
+        help="print a session's record: lineage, timing, usage, and permission state",
+        description=(
+            "Prints session-scoped permission rules (evaluated after agent and config rules) "
+            "and the project's saved approvals (evaluated last). Config rules are not stored "
+            "per session; read opencode.json(c) files for those."
+        ),
+    )
+    info.add_argument("session", help="session ID or slug")
+    info.add_argument("--json", action="store_true", help="print the decoded record as JSON")
+    info.set_defaults(handler=command_info)
 
     return parser.parse_args()
 
