@@ -59,6 +59,10 @@ under `~/.config/opencode/` do not have these prefixes.
 - `virtual-models.jsonc` - Agent models per provider, applied at startup by the `virtual-models`
   plugin. A new agent needs a mapping under every provider (pre-commit enforces). MUST NOT set agent
   `model` in `opencode.jsonc` or agent files; it overrides the plugin.
+- `session-permissions.jsonc` - Permission rules the `session-permissions` plugin appends to every
+  session when created, forked, or prompted (never idle ones); they evaluate after all configured
+  rules, including repository configs. Use only to override false-positive matches that configured
+  rules cannot (e.g., a repository deny); put policy in `opencode.jsonc` `permissions`.
 - `AGENTS.md` - Global directives (the file at `~/.config/opencode/AGENTS.md`)
 - `dcp.jsonc`, `cli.json` - Additional config files
 - `exact_skills/` - Skill definitions (target: `~/.config/opencode/skills/`). Each subdirectory

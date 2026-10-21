@@ -1,0 +1,8 @@
+// Permission rules the session-permissions plugin appends to every new session. Session rules
+// evaluate after all configured rules, including repository configs, and the last match wins.
+// Reserve this for false positives that configured rules cannot override; put policy in
+// opencode.jsonc `permissions`.
+[
+  // Commit messages that mention "git commit" match `*git commit*` denies
+  { "action": "shell", "resource": "commit save*", "effect": "allow" },
+]
