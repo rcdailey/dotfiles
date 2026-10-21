@@ -95,18 +95,37 @@ def clip(text: str, limit: int | None) -> str:
     return f"{text[:limit].rstrip()} [... +{len(text) - limit} chars]"
 
 
+def like_escape(text: str) -> str:
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 def like_pattern(term: str) -> str:
-    escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    return f"%{escaped}%"
+    return f"%{like_escape(term)}%"
+
+
+def compile_terms(terms: list[str], substring: bool) -> list[re.Pattern[str]]:
+    """Compile case-insensitive term matchers.
+
+    By default a term that starts with a letter or digit matches only where a word starts, so
+    "LTI" finds "LTIs" and "canvasLTI" but not "multi-line". A word starts after an underscore,
+    punctuation, or whitespace, or at a lowercase-to-uppercase change. With substring set, every
+    term matches anywhere.
+    """
+    word_start = r"(?:(?<![^\W_])|(?-i:(?<=[a-z])(?=[A-Z])))"
+    patterns = []
+    for term in terms:
+        anchor = "" if substring or not term[:1].isalnum() else word_start
+        patterns.append(re.compile(anchor + re.escape(term), re.IGNORECASE))
+    return patterns
 
 
 def session_filters(args: argparse.Namespace, alias: str = "s") -> tuple[list[str], list]:
     """Translate the shared session filter options into SQL conditions and parameters."""
     clauses, params = [], []
     if args.dir:
-        directory = os.getcwd() if args.dir == "." else os.path.expanduser(args.dir)
-        clauses.append(f"{alias}.directory LIKE ? ESCAPE '\\'")
-        params.append(like_pattern(directory))
+        directory = os.path.abspath(os.path.expanduser(args.dir))
+        clauses.append(f"({alias}.directory = ? OR {alias}.directory LIKE ? ESCAPE '\\')")
+        params += [directory, like_escape(directory.rstrip("/")) + "/%"]
     if args.title:
         clauses.append(f"{alias}.title LIKE ? ESCAPE '\\'")
         params.append(like_pattern(args.title))
@@ -205,12 +224,11 @@ def message_blocks(kind: str, data: dict, scopes: tuple[str, ...]) -> list[tuple
     return blocks
 
 
-def snippet(text: str, terms: list[str], width: int) -> str:
-    lowered = text.lower()
-    positions = [lowered.find(term.lower()) for term in terms]
-    found = [position for position in positions if position >= 0]
-    start = max(0, min(found) - width) if found else 0
-    end = min(len(text), start + 2 * width + max(map(len, terms)))
+def snippet(text: str, patterns: list[re.Pattern[str]], width: int) -> str:
+    matches = [match for match in (pattern.search(text) for pattern in patterns) if match]
+    first = min(matches, key=lambda match: match.start(), default=None)
+    start = max(0, first.start() - width) if first else 0
+    end = min(len(text), start + 2 * width + (len(first[0]) if first else 0))
     prefix = "..." if start else ""
     suffix = "..." if end < len(text) else ""
     return f"{prefix}{one_line(text[start:end])}{suffix}"
@@ -285,27 +303,29 @@ def command_search(connection: sqlite3.Connection, args: argparse.Namespace) -> 
     # The SQL filter matches raw JSON, including signatures and keys; re-check visible text.
     hits: dict[str, list[str]] = {}
     totals: dict[str, int] = {}
-    terms = [term.lower() for term in args.terms]
+    unlisted: set[str] = set()
+    patterns = compile_terms(args.terms, args.substring)
     test = any if args.any else all
     for row in rows:
         blocks = message_blocks(row["type"], json.loads(row["data"]), args.scopes)
-        combined = "\n".join(text for _, text in blocks).lower()
-        if not test(term in combined for term in terms):
+        combined = "\n".join(text for _, text in blocks)
+        if not test(pattern.search(combined) for pattern in patterns):
             continue
         session_id = row["session_id"]
         if session_id not in hits and len(hits) >= args.limit:
+            unlisted.add(session_id)
             continue
         totals[session_id] = totals.get(session_id, 0) + 1
         session_hits = hits.setdefault(session_id, [])
         if len(session_hits) >= args.per_session:
             continue
         scope, text = next(
-            (block for block in blocks if any(term in block[1].lower() for term in terms)),
+            (block for block in blocks if any(pattern.search(block[1]) for pattern in patterns)),
             blocks[0],
         )
         session_hits.append(
             f"  [{row['seq']}] {format_time(row['time_created'])} {scope}: "
-            f"{snippet(text, args.terms, args.width)}"
+            f"{snippet(text, patterns, args.width)}"
         )
 
     sessions = load_sessions(connection, list(hits))
@@ -314,6 +334,11 @@ def command_search(connection: sqlite3.Connection, args: argparse.Namespace) -> 
         more = f"  (+{hidden} more matching messages)" if hidden else ""
         print(session_line(sessions[session_id]) + more)
         print("\n".join(session_hits))
+    if unlisted:
+        print(
+            f"\n[{len(unlisted)} more matching sessions not shown; "
+            f"{len(hits) + len(unlisted)} matched. Raise -n or narrow the search]"
+        )
     if not hits:
         print("No messages matched.")
 
@@ -357,19 +382,22 @@ def command_show(connection: sqlite3.Connection, args: argparse.Namespace) -> No
         if last:
             clauses.append("seq <= ?")
             params.append(int(last))
+    time_clauses, time_params = time_filters(args, "time_created")
     rows = connection.execute(
-        f"SELECT seq, type, time_created, data FROM session_message {where(clauses)} ORDER BY seq",
-        params,
+        f"""
+        SELECT seq, type, time_created, data FROM session_message
+        {where(clauses + time_clauses)} ORDER BY seq
+        """,
+        params + time_params,
     ).fetchall()
 
     messages = []
-    terms = [term.lower() for term in args.grep or []]
+    patterns = compile_terms(args.grep or [], args.substring)
     limit = None if args.full else args.max_chars
     for row in rows:
         blocks = message_blocks(row["type"], json.loads(row["data"]), scopes)
-        if terms and not all(
-            term in "\n".join(text for _, text in blocks).lower() for term in terms
-        ):
+        combined = "\n".join(text for _, text in blocks)
+        if not all(pattern.search(combined) for pattern in patterns):
             continue
         lines = []
         for scope, text in blocks:
@@ -385,13 +413,15 @@ def command_show(connection: sqlite3.Connection, args: argparse.Namespace) -> No
             role = "summary" if row["type"] == "compaction" else row["type"]
             header = f"\n--- [{row['seq']}] {role} {format_time(row['time_created'])}"
             messages.append("\n".join([header, *lines]))
-    # A range reads forward from its start; otherwise the latest messages matter most.
+    # A range or --since reads forward from its start; otherwise the latest messages matter most.
+    forward = bool(args.range or args.since)
     omitted = max(0, len(messages) - args.limit) if args.limit else 0
     if omitted:
-        messages = messages[: args.limit] if args.range else messages[-args.limit :]
-        side = "later" if args.range else "earlier"
+        messages = messages[: args.limit] if forward else messages[-args.limit :]
+        side = "later" if forward else "earlier"
         messages.append(
-            f"\n[{omitted} {side} messages omitted; narrow with --range, --grep, or -n]"
+            f"\n[{omitted} {side} messages omitted; narrow with --range, --since, --until, "
+            "--grep, or -n]"
         )
     print("\n".join(messages) if messages else "\nNo messages matched.")
 
@@ -503,14 +533,28 @@ def command_info(connection: sqlite3.Connection, args: argparse.Namespace) -> No
         print(f"  allow  {row['action']}  {row['resource']}  ({format_time(row['time_created'])})")
 
 
+def add_time_window(parser) -> None:
+    parser.add_argument("--since", type=parse_time, help="30m, 12h, 3d, 2w, or a local date/time")
+    parser.add_argument("--until", type=parse_time, help="same formats as --since")
+
+
+def add_substring_option(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--substring",
+        action="store_true",
+        help="match terms anywhere, not only where a word starts",
+    )
+
+
 def add_session_filters(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("session filters")
-    group.add_argument("--dir", help="directory substring; '.' means the current directory")
+    group.add_argument(
+        "--dir", help="this directory or a subdirectory; relative paths resolve from the cwd"
+    )
     group.add_argument("--title", help="title substring")
     group.add_argument("--agent", help="exact agent name, e.g. build or reviewer")
     group.add_argument("--parent", metavar="ID", help="only child sessions of this session")
-    group.add_argument("--since", type=parse_time, help="30m, 12h, 3d, 2w, or a local date/time")
-    group.add_argument("--until", type=parse_time, help="same formats as --since")
+    add_time_window(group)
     group.add_argument(
         "--include-current",
         action="store_true",
@@ -540,11 +584,16 @@ def parse_args() -> argparse.Namespace:
 
     search = commands.add_parser(
         "search",
-        help="find messages containing every term (case-insensitive substrings)",
-        description="Results are grouped by session, ordered by most recent match.",
+        help="find messages containing every term (case-insensitive, at word starts)",
+        description=(
+            "Results are grouped by session, ordered by most recent match. A term that starts "
+            "with a letter or digit matches only where a word starts: 'LTI' finds 'LTIs' and "
+            "'canvasLTI' but not 'multi-line'."
+        ),
     )
     search.add_argument("terms", nargs="+")
     search.add_argument("--any", action="store_true", help="match any term instead of all")
+    add_substring_option(search)
     search.add_argument(
         "--in",
         dest="scopes",
@@ -566,14 +615,21 @@ def parse_args() -> argparse.Namespace:
     )
     show.add_argument("session", help="session ID or slug")
     show.add_argument("--range", metavar="A:B", help="seq range; either end may be omitted")
-    show.add_argument("--grep", nargs="+", metavar="TERM", help="only messages with every term")
+    show.add_argument(
+        "--grep", nargs="+", metavar="TERM", help="only messages with every term (as in search)"
+    )
+    add_substring_option(show)
+    add_time_window(show)
     show.add_argument(
         "-n",
         "--limit",
         type=int,
         default=12,
         metavar="N",
-        help="message cap: the last N, or the first N of --range; 0 disables (default: 12)",
+        help=(
+            "message cap: the last N, or the first N with --range or --since; 0 disables "
+            "(default: 12)"
+        ),
     )
     show.add_argument("--tools", action="store_true", help="add one-line tool call summaries")
     show.add_argument(
