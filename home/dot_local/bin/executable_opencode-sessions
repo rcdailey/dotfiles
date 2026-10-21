@@ -1,0 +1,520 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = []
+# ///
+"""Find and read OpenCode V2 sessions as compact prose.
+
+Reads the V2 tables (session_v2, session_message) of the OpenCode database in read-only mode.
+Every session, including those created before V2, is migrated into these tables, so the V1
+tables (session, message, part) are never needed. The schema is internal to OpenCode; if a
+release changes it, update the queries here.
+"""
+
+import argparse
+import json
+import os
+import re
+import sqlite3
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+
+HOME = str(Path.home())
+SCOPES = ("user", "text", "reasoning", "tool", "summary")
+DEFAULT_SCOPES = ("user", "text")
+SCOPE_TYPES = {
+    "user": "user",
+    "text": "assistant",
+    "reasoning": "assistant",
+    "tool": "assistant",
+    "summary": "compaction",
+}
+RELATIVE_TIME = re.compile(r"^(\d+)([mhdw])$")
+TIME_UNITS = {"m": "minutes", "h": "hours", "d": "days", "w": "weeks"}
+
+
+class UsageError(Exception):
+    pass
+
+
+def database_path() -> Path:
+    data_home = os.environ.get("XDG_DATA_HOME") or f"{HOME}/.local/share"
+    return Path(data_home) / "opencode" / "opencode.db"
+
+
+def connect() -> sqlite3.Connection:
+    path = database_path()
+    if not path.exists():
+        raise UsageError(f"OpenCode database not found: {path}")
+    connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    connection.row_factory = sqlite3.Row
+    return connection
+
+
+def parse_time(value: str) -> int:
+    match = RELATIVE_TIME.match(value)
+    if match:
+        delta = timedelta(**{TIME_UNITS[match[2]]: int(match[1])})
+        return int((datetime.now() - delta).timestamp() * 1000)
+    try:
+        return int(datetime.fromisoformat(value).timestamp() * 1000)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(
+            "use a relative age (30m, 12h, 3d, 2w) or a local date/time (2026-10-01 14:00)"
+        ) from error
+
+
+def parse_scopes(value: str) -> tuple[str, ...]:
+    scopes = tuple(scope.strip() for scope in value.split(",") if scope.strip())
+    if scopes == ("all",):
+        return SCOPES
+    unknown = [scope for scope in scopes if scope not in SCOPES]
+    if unknown or not scopes:
+        raise argparse.ArgumentTypeError(f"choose from {', '.join(SCOPES)}, or all")
+    return scopes
+
+
+def format_time(milliseconds: int | None) -> str:
+    if not milliseconds:
+        return "-"
+    return datetime.fromtimestamp(milliseconds / 1000).strftime("%Y-%m-%d %H:%M")
+
+
+def short_path(path: str) -> str:
+    return "~" + path[len(HOME) :] if path.startswith(HOME) else path
+
+
+def one_line(text: str) -> str:
+    return " ".join(text.split())
+
+
+def clip(text: str, limit: int | None) -> str:
+    if limit is None or len(text) <= limit:
+        return text
+    return f"{text[:limit].rstrip()} [... +{len(text) - limit} chars]"
+
+
+def like_pattern(term: str) -> str:
+    escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
+def session_filters(args: argparse.Namespace, alias: str = "s") -> tuple[list[str], list]:
+    """Translate the shared session filter options into SQL conditions and parameters."""
+    clauses, params = [], []
+    if args.dir:
+        directory = os.getcwd() if args.dir == "." else os.path.expanduser(args.dir)
+        clauses.append(f"{alias}.directory LIKE ? ESCAPE '\\'")
+        params.append(like_pattern(directory))
+    if args.title:
+        clauses.append(f"{alias}.title LIKE ? ESCAPE '\\'")
+        params.append(like_pattern(args.title))
+    if args.agent:
+        clauses.append(f"{alias}.agent = ?")
+        params.append(args.agent)
+    if args.roots:
+        clauses.append(f"{alias}.parent_id IS NULL")
+    if args.parent:
+        clauses.append(f"{alias}.parent_id = ?")
+        params.append(args.parent)
+    session_id = getattr(args, "session_id", None)
+    if session_id:
+        clauses.append(f"{alias}.id = ?")
+        params.append(session_id)
+    elif not args.include_current and os.environ.get("OPENCODE_SESSION_ID"):
+        clauses.append(f"{alias}.id != ?")
+        params.append(os.environ["OPENCODE_SESSION_ID"])
+    return clauses, params
+
+
+def time_filters(args: argparse.Namespace, column: str) -> tuple[list[str], list]:
+    clauses, params = [], []
+    if args.since:
+        clauses.append(f"{column} >= ?")
+        params.append(args.since)
+    if args.until:
+        clauses.append(f"{column} < ?")
+        params.append(args.until)
+    return clauses, params
+
+
+def where(clauses: list[str]) -> str:
+    return f"WHERE {' AND '.join(clauses)}" if clauses else ""
+
+
+def model_name(value: str | None) -> str:
+    if not value:
+        return "-"
+    try:
+        model = json.loads(value)
+    except json.JSONDecodeError:
+        return value
+    variant = f"#{model['variant']}" if model.get("variant") else ""
+    return f"{model.get('providerID', '?')}/{model.get('id', '?')}{variant}"
+
+
+def session_line(row: sqlite3.Row) -> str:
+    child_marker = "  (child)" if row["parent_id"] else ""
+    return (
+        f"{row['id']}  {format_time(row['time_updated'])}  {row['agent'] or '-'}  "
+        f"{short_path(row['directory'])}  {json.dumps(row['title'] or 'Untitled')}{child_marker}"
+    )
+
+
+def tool_summary(block: dict) -> str:
+    state = block.get("state") or {}
+    tool_input = state.get("input") or {}
+    if block.get("name") == "shell" and isinstance(tool_input.get("command"), str):
+        detail = tool_input["command"]
+    else:
+        detail = json.dumps(tool_input, ensure_ascii=False)
+    return f"{block.get('name', '?')} [{state.get('status', '?')}] {one_line(detail)}"
+
+
+def tool_output(block: dict) -> str:
+    state = block.get("state") or {}
+    error = state.get("error")
+    if error:
+        return f"ERROR: {error.get('message', error) if isinstance(error, dict) else error}"
+    content = state.get("content") or []
+    return "\n".join(item.get("text", "") for item in content if item.get("type") == "text")
+
+
+def message_blocks(kind: str, data: dict, scopes: tuple[str, ...]) -> list[tuple[str, str]]:
+    """Return (scope, text) pairs for the parts of one stored message within the given scopes.
+
+    Tool blocks yield their one-line call summary followed by their output or error, so a search
+    in the tool scope matches commands, paths, and results alike.
+    """
+    if kind == "user":
+        return [("user", data.get("text") or "")] if "user" in scopes else []
+    if kind == "compaction":
+        return [("summary", data.get("summary") or "")] if "summary" in scopes else []
+    if kind != "assistant":
+        return []
+    blocks = []
+    for block in data.get("content") or []:
+        scope = block.get("type")
+        if scope not in scopes:
+            continue
+        if scope == "tool":
+            blocks.append((scope, f"{tool_summary(block)}\n{tool_output(block)}"))
+        else:
+            blocks.append((scope, block.get("text") or ""))
+    return blocks
+
+
+def snippet(text: str, terms: list[str], width: int) -> str:
+    lowered = text.lower()
+    positions = [lowered.find(term.lower()) for term in terms]
+    found = [position for position in positions if position >= 0]
+    start = max(0, min(found) - width) if found else 0
+    end = min(len(text), start + 2 * width + max(map(len, terms)))
+    prefix = "..." if start else ""
+    suffix = "..." if end < len(text) else ""
+    return f"{prefix}{one_line(text[start:end])}{suffix}"
+
+
+def load_sessions(connection: sqlite3.Connection, ids: list[str]) -> dict[str, sqlite3.Row]:
+    if not ids:
+        return {}
+    marks = ",".join("?" * len(ids))
+    rows = connection.execute(f"SELECT * FROM session_v2 WHERE id IN ({marks})", ids)
+    return {row["id"]: row for row in rows}
+
+
+def command_list(connection: sqlite3.Connection, args: argparse.Namespace) -> None:
+    clauses, params = session_filters(args)
+    time_clauses, time_params = time_filters(args, "s.time_updated")
+    rows = connection.execute(
+        f"""
+        SELECT s.*, (SELECT count(*) FROM session_v2 c WHERE c.parent_id = s.id) AS children
+        FROM session_v2 s {where(clauses + time_clauses)}
+        ORDER BY s.time_updated DESC LIMIT ?
+        """,
+        [*params, *time_params, args.limit],
+    ).fetchall()
+    for row in rows:
+        children = f"  [{row['children']} children]" if row["children"] else ""
+        print(session_line(row) + children)
+    if not rows:
+        print("No sessions matched.")
+
+
+def command_search(connection: sqlite3.Connection, args: argparse.Namespace) -> None:
+    joiner = " OR " if args.any else " AND "
+    term_sql = joiner.join("m.data LIKE ? ESCAPE '\\'" for _ in args.terms)
+    types = sorted({SCOPE_TYPES[scope] for scope in args.scopes})
+    clauses, params = session_filters(args)
+    time_clauses, time_params = time_filters(args, "m.time_created")
+    clauses += time_clauses + [f"m.type IN ({','.join('?' * len(types))})", f"({term_sql})"]
+    rows = connection.execute(
+        f"""
+        SELECT m.session_id, m.seq, m.type, m.time_created, m.data
+        FROM session_message m JOIN session_v2 s ON s.id = m.session_id
+        {where(clauses)} ORDER BY m.time_created DESC
+        """,
+        [*params, *time_params, *types, *map(like_pattern, args.terms)],
+    )
+
+    # The SQL filter matches raw JSON, including signatures and keys; re-check visible text.
+    hits: dict[str, list[str]] = {}
+    totals: dict[str, int] = {}
+    terms = [term.lower() for term in args.terms]
+    test = any if args.any else all
+    for row in rows:
+        blocks = message_blocks(row["type"], json.loads(row["data"]), args.scopes)
+        combined = "\n".join(text for _, text in blocks).lower()
+        if not test(term in combined for term in terms):
+            continue
+        session_id = row["session_id"]
+        if session_id not in hits and len(hits) >= args.limit:
+            continue
+        totals[session_id] = totals.get(session_id, 0) + 1
+        session_hits = hits.setdefault(session_id, [])
+        if len(session_hits) >= args.per_session:
+            continue
+        scope, text = next(
+            (block for block in blocks if any(term in block[1].lower() for term in terms)),
+            blocks[0],
+        )
+        session_hits.append(
+            f"  [{row['seq']}] {format_time(row['time_created'])} {scope}: "
+            f"{snippet(text, args.terms, args.width)}"
+        )
+
+    sessions = load_sessions(connection, list(hits))
+    for session_id, session_hits in hits.items():
+        hidden = totals[session_id] - len(session_hits)
+        more = f"  (+{hidden} more matching messages)" if hidden else ""
+        print(session_line(sessions[session_id]) + more)
+        print("\n".join(session_hits))
+    if not hits:
+        print("No messages matched.")
+
+
+def command_show(connection: sqlite3.Connection, args: argparse.Namespace) -> None:
+    session = connection.execute(
+        "SELECT * FROM session_v2 WHERE id = ? OR slug = ?", [args.session, args.session]
+    ).fetchone()
+    if session is None:
+        raise UsageError(f"no session with ID or slug {args.session}")
+    print(f"# {session['title'] or 'Untitled'}")
+    print(
+        f"id: {session['id']}  dir: {short_path(session['directory'])}  "
+        f"agent: {session['agent'] or '-'}  model: {model_name(session['model'])}"
+    )
+    print(
+        f"created: {format_time(session['time_created'])}  "
+        f"updated: {format_time(session['time_updated'])}  cost: ${session['cost']:.2f}"
+    )
+    if session["parent_id"]:
+        print(f"parent: {session['parent_id']}")
+    children = connection.execute(
+        "SELECT * FROM session_v2 WHERE parent_id = ? ORDER BY time_created", [session["id"]]
+    ).fetchall()
+    for child in children:
+        print(f"child: {session_line(child)}")
+
+    scopes = ("user", "text", "summary")
+    if args.reasoning:
+        scopes += ("reasoning",)
+    if args.tools or args.tool_output:
+        scopes += ("tool",)
+    clauses = ["session_id = ?"]
+    params: list = [session["id"]]
+    if args.range:
+        first, _, last = args.range.partition(":")
+        if first:
+            clauses.append("seq >= ?")
+            params.append(int(first))
+        if last:
+            clauses.append("seq <= ?")
+            params.append(int(last))
+    rows = connection.execute(
+        f"SELECT seq, type, time_created, data FROM session_message {where(clauses)} ORDER BY seq",
+        params,
+    ).fetchall()
+
+    messages = []
+    terms = [term.lower() for term in args.grep or []]
+    limit = None if args.full else args.max_chars
+    for row in rows:
+        blocks = message_blocks(row["type"], json.loads(row["data"]), scopes)
+        if terms and not all(
+            term in "\n".join(text for _, text in blocks).lower() for term in terms
+        ):
+            continue
+        lines = []
+        for scope, text in blocks:
+            if scope == "tool":
+                summary, _, output = text.partition("\n")
+                lines.append(f"> {clip(summary, 300)}")
+                if args.tool_output and output.strip():
+                    lines.append(clip(output.rstrip(), limit))
+            elif text.strip():
+                label = "(reasoning) " if scope == "reasoning" else ""
+                lines.append(label + clip(text.strip(), limit))
+        if lines:
+            role = "summary" if row["type"] == "compaction" else row["type"]
+            header = f"\n--- [{row['seq']}] {role} {format_time(row['time_created'])}"
+            messages.append("\n".join([header, *lines]))
+    # A range reads forward from its start; otherwise the latest messages matter most.
+    omitted = max(0, len(messages) - args.limit) if args.limit else 0
+    if omitted:
+        messages = messages[: args.limit] if args.range else messages[-args.limit :]
+        side = "later" if args.range else "earlier"
+        messages.append(
+            f"\n[{omitted} {side} messages omitted; narrow with --range, --grep, or -n]"
+        )
+    print("\n".join(messages) if messages else "\nNo messages matched.")
+
+
+def command_tools(connection: sqlite3.Connection, args: argparse.Namespace) -> None:
+    clauses, params = session_filters(args)
+    time_clauses, time_params = time_filters(args, "m.time_created")
+    clauses += time_clauses + ["m.type = 'assistant'", "json_extract(c.value, '$.type') = 'tool'"]
+    if args.name:
+        clauses.append("json_extract(c.value, '$.name') LIKE ? ESCAPE '\\'")
+        params.append(like_pattern(args.name))
+    if args.status:
+        clauses.append("json_extract(c.value, '$.state.status') = ?")
+        params.append(args.status)
+    for term in args.match or []:
+        clauses.append("c.value LIKE ? ESCAPE '\\'")
+        params.append(like_pattern(term))
+    rows = connection.execute(
+        f"""
+        SELECT m.session_id, m.seq, m.time_created, c.value AS block
+        FROM session_message m JOIN session_v2 s ON s.id = m.session_id,
+             json_each(m.data, '$.content') c
+        {where(clauses)} ORDER BY m.time_created DESC LIMIT ?
+        """,
+        [*params, *time_params, args.limit],
+    ).fetchall()
+    for row in rows:
+        block = json.loads(row["block"])
+        print(
+            f"{row['session_id']} [{row['seq']}] {format_time(row['time_created'])}  "
+            f"{clip(tool_summary(block), 300)}"
+        )
+        output = tool_output(block).strip()
+        if output and (args.output or output.startswith("ERROR:")):
+            print(f"  {clip(one_line(output), args.width * 2)}")
+    if not rows:
+        print("No tool calls matched.")
+
+
+def add_session_filters(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_argument_group("session filters")
+    group.add_argument("--dir", help="directory substring; '.' means the current directory")
+    group.add_argument("--title", help="title substring")
+    group.add_argument("--agent", help="exact agent name, e.g. build or reviewer")
+    group.add_argument("--parent", metavar="ID", help="only child sessions of this session")
+    group.add_argument("--since", type=parse_time, help="30m, 12h, 3d, 2w, or a local date/time")
+    group.add_argument("--until", type=parse_time, help="same formats as --since")
+    group.add_argument(
+        "--include-current",
+        action="store_true",
+        help="include the calling session (excluded via $OPENCODE_SESSION_ID by default)",
+    )
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="opencode-sessions",
+        description="Find and read OpenCode V2 sessions from the local database as prose.",
+        epilog=(
+            "Typical flow: 'list' or 'search' to identify a session, then 'show ID --grep TERM' "
+            "or 'show ID --range A:B' to read it. Message numbers in [brackets] are seq values."
+        ),
+    )
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    list_parser = commands.add_parser("list", help="list sessions, newest update first")
+    add_session_filters(list_parser)
+    list_parser.add_argument(
+        "--all", dest="roots", action="store_false", help="include child (subagent) sessions"
+    )
+    list_parser.add_argument("-n", "--limit", type=int, default=30)
+    list_parser.set_defaults(handler=command_list)
+
+    search = commands.add_parser(
+        "search",
+        help="find messages containing every term (case-insensitive substrings)",
+        description="Results are grouped by session, ordered by most recent match.",
+    )
+    search.add_argument("terms", nargs="+")
+    search.add_argument("--any", action="store_true", help="match any term instead of all")
+    search.add_argument(
+        "--in",
+        dest="scopes",
+        type=parse_scopes,
+        default=DEFAULT_SCOPES,
+        help=f"comma-separated scopes from {', '.join(SCOPES)}, or all (default: user,text)",
+    )
+    add_session_filters(search)
+    search.add_argument("--roots", action="store_true", help="exclude child sessions")
+    search.add_argument("-n", "--limit", type=int, default=15, help="maximum sessions")
+    search.add_argument("--per-session", type=int, default=3, help="snippets per session")
+    search.add_argument("--width", type=int, default=160, help="snippet context characters")
+    search.set_defaults(handler=command_search, parent=None)
+
+    show = commands.add_parser(
+        "show",
+        help="print a session transcript as prose",
+        description="Prints user, assistant, and compaction-summary text; tools on request.",
+    )
+    show.add_argument("session", help="session ID or slug")
+    show.add_argument("--range", metavar="A:B", help="seq range; either end may be omitted")
+    show.add_argument("--grep", nargs="+", metavar="TERM", help="only messages with every term")
+    show.add_argument(
+        "-n",
+        "--limit",
+        type=int,
+        default=12,
+        metavar="N",
+        help="message cap: the last N, or the first N of --range; 0 disables (default: 12)",
+    )
+    show.add_argument("--tools", action="store_true", help="add one-line tool call summaries")
+    show.add_argument(
+        "--tool-output", action="store_true", help="add tool output (implies --tools)"
+    )
+    show.add_argument("--reasoning", action="store_true", help="add reasoning text")
+    show.add_argument("--max-chars", type=int, default=800, help="per-block text limit")
+    show.add_argument("--full", action="store_true", help="disable the per-block text limit")
+    show.set_defaults(handler=command_show)
+
+    tools = commands.add_parser("tools", help="list tool calls, newest first")
+    tools.add_argument("--name", help="tool name substring, e.g. shell or research_")
+    tools.add_argument("--status", choices=("completed", "error", "running", "pending"))
+    tools.add_argument(
+        "--match", action="append", metavar="TERM", help="input/output substring (repeatable)"
+    )
+    tools.add_argument("--output", action="store_true", help="print output for successful calls")
+    add_session_filters(tools)
+    tools.add_argument("--session", dest="session_id", help="only this session")
+    tools.add_argument("--roots", action="store_true", help="exclude child sessions")
+    tools.add_argument("-n", "--limit", type=int, default=40)
+    tools.add_argument("--width", type=int, default=160, help="half the output line limit")
+    tools.set_defaults(handler=command_tools)
+
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    try:
+        with connect() as connection:
+            args.handler(connection, args)
+    except UsageError as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
+    except BrokenPipeError:
+        sys.stderr.close()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
