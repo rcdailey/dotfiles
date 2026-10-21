@@ -38,6 +38,12 @@ rg -g "*.py" "pattern" path/    # restrict search to a glob
 rg --hidden -g "!**/.git/**"    # include dot-directories
 ```
 
+## OpenCode Sessions
+
+- To find or read past OpenCode sessions, MUST use `opencode-sessions` (`list`/`search` to identify,
+  `show` to read, `tools` for tool calls; see `--help`) instead of raw `opencode.db` queries. Fall
+  back to read-only SQL only when it cannot answer.
+
 ## GitHub API
 
 - `gh api` commands MUST use `--method` explicitly.
