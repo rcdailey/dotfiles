@@ -58,7 +58,9 @@ macos-arm64 = { asset_pattern = "plannotator-darwin-arm64" }
 version = "latest"
 allow_builds = ["@opencode/cli"]
 allow_low_downloads = true
-postinstall = "opencode service restart && opencode plugin update"
+# No service restart here: during `mise upgrade` this can run before the upgrade finishes, so
+# topgrade's "OpenCode plugins" command restarts the service afterward
+postinstall = "opencode plugin update"
 
 [settings]
 minimum_release_age = "0d"

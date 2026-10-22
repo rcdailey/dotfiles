@@ -40,3 +40,5 @@ dnf_arguments = "--offline --refresh"
 ! test -f /usr/lib/sysimage/libdnf5/offline/transaction.json \
 || sudo env DNF_SYSTEM_UPGRADE_NO_REBOOT=1 /usr/bin/dnf offline reboot -y
 """
+# Runs after the mise step finishes, so the restarted service uses the upgraded binary
+"OpenCode plugins" = "opencode plugin update && opencode service restart"
