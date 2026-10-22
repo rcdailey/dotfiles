@@ -1,2 +1,2 @@
 [commands]
-"CodexBar Plasma widget" = "mise install github:steipete/CodexBar && update-codexbar-plasmoid"
+"CodexBar Plasma widget" = "update-codexbar-plasmoid"
