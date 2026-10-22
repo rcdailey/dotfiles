@@ -33,15 +33,6 @@ function __reset_mouse_tracking --on-event fish_prompt
     printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l'
 end
 
-# herdr reflows wrapped lines on pane resize, then fish redraws the prompt from a stale row and
-# leaves shifted copies behind. fish's own OSC 133 prompt mark lacks redraw=1, which makes herdr's
-# VT erase the prompt on resize so fish redraws it cleanly.
-if test "$TERM_PROGRAM" = herdr
-    function __herdr_prompt_mark --on-event fish_prompt
-        printf '\e]133;A;redraw=1\a'
-    end
-end
-
 # herdr scratch popup (ctrl+shift+s): Esc exits the shell, which closes the popup. Unset so shells
 # started inside it keep normal Esc behavior.
 if set -q HERDR_SCRATCH_SHELL
