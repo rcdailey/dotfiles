@@ -1,7 +1,10 @@
-#!/bin/bash
-# Build NODE_PATH from all mise npm package installations
-# This allows npm packages installed via mise to resolve each other
+#!/usr/bin/env bash
+# Print a NODE_PATH covering every mise npm package installation, so npm packages installed via
+# mise resolve each other. mise config reads the output through exec(), not _.source: _.source
+# keeps PATH prepends from the script's bash, and BASH_ENV (~/.config/bash/env.bash) prepends the
+# shims directory there, which leaked shims into interactive PATH.
+node_path=
 for dir in ~/.local/share/mise/installs/npm-*/*/lib/node_modules; do
-  [ -d "$dir" ] && NODE_PATH="${NODE_PATH:+$NODE_PATH:}$dir"
+  [ -d "$dir" ] && node_path="${node_path:+$node_path:}$dir"
 done
-export NODE_PATH
+printf '%s' "$node_path"

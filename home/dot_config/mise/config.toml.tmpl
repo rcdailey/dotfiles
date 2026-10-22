@@ -64,11 +64,11 @@ postinstall = "opencode plugin update"
 
 [settings]
 minimum_release_age = "0d"
-# both must be off so hook-env strips the shims dir from interactive PATH
-# (src/path_env.rs); shims list every installed tool, active or not, which
-# breaks PATH-based tool discovery (topgrade, editors) outside project dirs.
-# non-interactive shells still get shims: fish via conf.d/20-mise.fish, bash via
-# BASH_ENV (~/.config/bash/env.bash).
+# Interactive PATH must not hold shims: they list every installed tool, active or
+# not, which breaks PATH-based tool discovery (topgrade, editors) outside project
+# dirs. Non-interactive shells still get shims: fish via conf.d/20-mise.fish, bash
+# via BASH_ENV (~/.config/bash/env.bash). [env] must not use _.source: its bash
+# reads BASH_ENV, and mise keeps the shims dir that bash prepends to PATH.
 activate_aggressive = false
 not_found_auto_install = false
 auto_install = true
@@ -85,7 +85,7 @@ credential_command = "gh auth token"
 # which mise loads automatically and chezmoi does not manage. Never add secret
 # loading (files, templates, env_file) here.
 [env]
-_.source = ["~/.config/mise/scripts/node-path.sh"]
+NODE_PATH = "{{ "{{" }} exec(command='~/.config/mise/scripts/node-path.sh') {{ "}}" }}"
 OPENCODE_LOG_LEVEL = "DEBUG"
 OPENCODE_DISABLE_FREE_MODELS = "1"
 
