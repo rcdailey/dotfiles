@@ -134,7 +134,9 @@ Load the `testing` skill before writing, changing, or diagnosing tests.
 
 ## Tools
 
-- Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
+- Shebangs: `#!/usr/bin/env bash` for shell scripts; `#!/usr/bin/env -S uv run --script` for Python
+  scripts, declaring third-party dependencies in an inline `# /// script` metadata block so uv
+  installs them on first run.
 - Use fff search tools for text and path discovery and pi-lens tools for symbol navigation and
   diagnostics.
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).

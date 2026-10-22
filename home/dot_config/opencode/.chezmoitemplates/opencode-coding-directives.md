@@ -94,7 +94,9 @@ Apply KISS, DRY, SOLID, and YAGNI pragmatically.
 
 ## Tools
 
-- Default shell is zsh. Use `#!/usr/bin/env <interpreter>` for shebangs.
+- Shebangs: `#!/usr/bin/env bash` for shell scripts; `#!/usr/bin/env -S uv run --script` for Python
+  scripts, declaring third-party dependencies in an inline `# /// script` metadata block so uv
+  installs them on first run.
 - Use glob, grep, and targeted reads for symbol and text discovery. Use project lint, typecheck, and
   compiler commands for diagnostics until OpenCode V2 restores its LSP runtime.
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
