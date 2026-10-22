@@ -22,6 +22,10 @@ opencode = [
 [ui.toast]
 delivery = "terminal"
 
+# OpenCode shows its own copy toast; herdr would repeat it when relaying OpenCode's OSC 52 copy
+[ui.toast.clipboard]
+enabled = false
+
 [ui.sound]
 enabled = false
 
