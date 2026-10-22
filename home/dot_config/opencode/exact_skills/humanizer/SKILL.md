@@ -1,11 +1,12 @@
 ---
 name: humanizer
 description: >-
-  Use when writing prose that people will read, regardless of addressee: anything posted to
-  GitHub, Linear, Slack, or email (PR descriptions, review comments and replies, including replies
-  to bots), docs, READMEs, changelogs, and release notes. Do NOT use for text only agents read
-  (subagent prompts, delegation briefs, handoffs), in-session chat, code, commit messages, or
-  structured data.
+  Use when writing or revising prose that people will read, regardless of addressee: anything
+  posted to GitHub, Linear, Slack, or email (PR descriptions, issues, review comments and replies,
+  including replies to bots), docs, READMEs, changelogs, and release notes. Includes drafts shown
+  in chat for approval and drafts the user wrote. Do NOT use for text only agents read (subagent
+  prompts, delegation briefs, handoffs), replies to the user, code, commit messages, or structured
+  data.
 ---
 
 # Humanizer
