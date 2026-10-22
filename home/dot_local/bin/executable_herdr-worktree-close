@@ -6,6 +6,13 @@ set -euo pipefail
 worktree="${1:?Usage: herdr-worktree-close <worktree_path>}"
 [[ -n "${HERDR_ENV-}" ]] || exit 0
 
+# wt remove deletes the directory in a background process that dies with the space; closing the
+# space first leaves an empty directory and an undeleted trash copy. Wait up to 60s for removal.
+for _ in {1..120}; do
+  [[ -e "$worktree" ]] || break
+  sleep 0.5
+done
+
 herdr workspace list |
   jq -r --arg path "$worktree" \
     '.result.workspaces[] | select(.worktree.checkout_path? == $path) | .workspace_id' |
