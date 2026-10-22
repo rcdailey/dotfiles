@@ -10,6 +10,9 @@ test "$TERM_PROGRAM" = vscode; and set -e GIT_PAGER
 command -q starship; and starship init fish | source
 command -q fzf; and fzf --fish | source
 
+# Open the completion pager in search mode so typing filters it instead of dismissing it
+bind tab complete-and-search
+
 abbr -a c docker compose
 abbr -a lg lazygit
 abbr -a tf terraform
