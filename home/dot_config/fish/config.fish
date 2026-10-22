@@ -12,6 +12,9 @@ command -q fzf; and fzf --fish | source
 
 # Open the completion pager in search mode so typing filters it instead of dismissing it
 bind tab complete-and-search
+# Run copied bash snippets without translating them; Enter confirms after checking the clipboard.
+# Replaces the preset alt-b (prevd-or-backward-word).
+bind alt-b 'commandline -r "pbpaste | bash"'
 
 abbr -a c docker compose
 abbr -a lg lazygit

@@ -35,6 +35,9 @@ docs, PR bodies, commits). The user has ADHD; each response must be clear on fir
   or decisions, then continue.
 - Never use emojis, em or en dashes, curly quotes, or Unicode symbols; use commas, semicolons, or
   parentheses for asides, and straight quotes. Preserve existing symbols in others' content.
+- Commands for the user to run: their shell is fish. Give one-liners fish runs as-is. Give
+  multi-line logic as a bash block they run with `pbpaste | bash` (bound to Alt-B), using
+  literal values, not arguments. If it reads stdin, write a temp script and give `bash <path>`.
 
 **Anti-patterns:**
 

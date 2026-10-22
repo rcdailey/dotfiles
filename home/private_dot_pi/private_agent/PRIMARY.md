@@ -38,6 +38,9 @@ docs, PR bodies, commits). The user has ADHD and should understand the response 
 - Never use emojis, em dashes, en dashes, curly quotes, or Unicode symbols in chat output. Use
   commas, semicolons, or parentheses instead of dashes for parenthetical content. Use straight
   quotes. Preserve existing symbols when editing others' content.
+- Commands for the user to run: their shell is fish. Give one-liners fish runs as-is. Give
+  multi-line logic as a bash block they run with `pbpaste | bash` (bound to Alt-B), using literal
+  values, not arguments. If it reads stdin, write a temp script and give `bash <path>`.
 
 **Anti-patterns:**
 
