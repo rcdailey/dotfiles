@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Lazygit in its own kitty OS window that follows the focused herdr pane's git repository.
 #   herdr-lazygit open    focus the window, or open it if closed (kitty ctrl+shift+g)
-#   herdr-lazygit run     window process: run lazygit, restarting it when the followed repo changes
-#   herdr-lazygit follow  herdr focus hook: retarget a running window at the focused pane's repo
+#   herdr-lazygit run     window process: run lazygit, restarting it when the followed repo changes;
+#                         opened outside a git repo, it waits for follow to supply one
+#   herdr-lazygit follow  herdr focus hook: retarget an open window at the focused pane's repo
 # A repo switch stops lazygit with SIGTERM, so anything unsaved inside lazygit is lost.
 set -euo pipefail
 
@@ -23,6 +24,33 @@ lazygit_running() {
   pid=$(cat "$state/pid" 2>/dev/null) && kill -0 "$pid" 2>/dev/null
 }
 
+window_waiting() {
+  local pid
+  pid=$(cat "$state/waiting" 2>/dev/null) && kill -0 "$pid" 2>/dev/null
+}
+
+# Keeps the window open until follow records a repo (printed) or the user presses q (fails)
+wait_for_repo() {
+  : >"$state/repo"
+  echo $$ >"$state/waiting"
+  echo "Waiting for a herdr pane in a git repository. Press q to close." >&2
+  local key repo
+  while :; do
+    repo=$(cat "$state/repo")
+    if [[ -n "$repo" ]]; then
+      rm -f "$state/waiting"
+      echo "$repo"
+      return
+    fi
+    if read -rsn1 -t 1 key; then
+      [[ "$key" != q ]] || return 1
+    elif (($? <= 128)); then
+      # EOF rather than a timeout: without this, a closed stdin spins the loop
+      sleep 1
+    fi
+  done
+}
+
 open() {
   kitten @ focus-window --match "$window_match" 2>/dev/null && return
   local id
@@ -34,13 +62,10 @@ open() {
 
 run() {
   mkdir -p "$state"
+  trap 'rm -f "$state/pid" "$state/waiting"' EXIT
   local repo
-  if ! repo=$(focused_repo); then
-    read -rp "The focused herdr pane is not in a git repository. Press Enter to close."
-    exit 1
-  fi
+  repo=$(focused_repo) || repo=$(wait_for_repo) || exit 0
   echo "$repo" >"$state/repo"
-  trap 'rm -f "$state/pid"' EXIT
   while :; do
     # sh records its own PID, which exec hands to lazygit, so follow can stop lazygit
     sh -c 'echo $$ >"$1" && cd "$2" && exec lazygit' sh "$state/pid" "$repo" || true
@@ -53,13 +78,14 @@ run() {
 }
 
 follow() {
-  lazygit_running || return 0
+  lazygit_running || window_waiting || return 0
   local repo
   repo=$(focused_repo) || return 0
-  [[ "$repo" != "$(cat "$state/repo")" ]] || return 0
+  [[ "$repo" != "$(cat "$state/repo" 2>/dev/null)" ]] || return 0
   echo "$repo" >"$state/repo"
-  # lazygit may have exited since the check
-  kill "$(cat "$state/pid")" 2>/dev/null || true
+  # A waiting window has no lazygit to stop; it polls the repo file instead. lazygit may also have
+  # exited since the check.
+  kill "$(cat "$state/pid" 2>/dev/null)" 2>/dev/null || true
 }
 
 case "${1-}" in
