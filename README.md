@@ -32,7 +32,7 @@ Run automated system setup:
 
 This installs and configures:
 
-- Package manager (Homebrew on macOS)
+- Package manager (Homebrew on macOS and Fedora)
 - Shell (fish) and sets it as the login shell
 - Terminal (kitty) with Fira Code font
 - Password manager (rbw; chezmoi already configured it)

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # System setup after chezmoi apply: packages, mise tools, and the login shell.
-# Supports macOS (Apple Silicon Homebrew) and Fedora. Idempotent: reruns change nothing once set up.
+# Supports macOS (Apple Silicon) and Fedora, both with Homebrew. Idempotent: reruns change nothing
+# once set up.
 
 set -euo pipefail
 
@@ -27,10 +28,6 @@ die() {
   exit 1
 }
 
-command_exists() {
-  command -v "$1" >/dev/null 2>&1
-}
-
 detect_platform() {
   case "$(uname -s)" in
   Darwin)
@@ -49,46 +46,44 @@ detect_platform() {
   esac
 }
 
-# The dotfiles (fish conf.d, pinentry-serialized) assume this prefix
-readonly BREW=/opt/homebrew/bin/brew
+install_fedora_packages() {
+  log_info "Installing dnf packages..."
+  # Desktop packages, the login shell (fixed /usr/bin/fish), and Homebrew's Linux prerequisites;
+  # dnf skips packages that are already installed
+  sudo dnf install -y fish pinentry-qt kitty fira-code-fonts procps-ng curl file git gcc ||
+    die "dnf package installation failed"
+}
 
 setup_homebrew() {
-  if [[ ! -x "$BREW" ]]; then
+  local platform="$1" brew
+  # The dotfiles (fish conf.d, pinentry-serialized) assume these prefixes
+  case "$platform" in
+  macos) brew=/opt/homebrew/bin/brew ;;
+  fedora) brew=/home/linuxbrew/.linuxbrew/bin/brew ;;
+  esac
+
+  if [[ ! -x "$brew" ]]; then
     log_info "Installing Homebrew..."
-    # Interactive: the installer needs a sudo password prompt to create /opt/homebrew
+    # Interactive: the installer prompts for sudo to create its prefix directory
     /bin/bash -c \
       "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" ||
       die "Homebrew installation failed"
   fi
-  eval "$("$BREW" shellenv bash)"
+  # Puts brew on this process's PATH, so later steps need no new shell or logout
+  eval "$("$brew" shellenv bash)"
   log_success "Homebrew: $(brew --version | head -n1)"
 }
 
-install_system_packages() {
-  local platform="$1"
+install_brew_packages() {
+  local platform="$1" brewfile
+  brewfile=$'brew "mise"\nbrew "rbw"\n'
+  if [[ "$platform" == macos ]]; then
+    brewfile+=$'brew "fish"\nbrew "pinentry-mac"\ncask "kitty"\ncask "font-fira-code"\n'
+  fi
 
-  log_info "Installing system packages..."
-  case "$platform" in
-  macos)
-    # Installs only what is missing; without --no-upgrade, bundle also upgrades outdated packages
-    brew bundle --no-upgrade --file=- <<'EOF' || die "Homebrew package installation failed"
-brew "fish"
-brew "mise"
-brew "rbw"
-brew "pinentry-mac"
-cask "kitty"
-cask "font-fira-code"
-EOF
-    ;;
-  fedora)
-    # dnf skips packages that are already installed
-    sudo dnf install -y fish rbw pinentry-qt kitty fira-code-fonts ||
-      die "dnf package installation failed"
-    command_exists mise || curl -fsSL https://mise.run | sh || die "mise installation failed"
-    export PATH="$HOME/.local/bin:$PATH"
-    ;;
-  esac
-  log_success "System packages installed"
+  log_info "Installing Homebrew packages..."
+  # Installs only what is missing; without --no-upgrade, bundle also upgrades outdated packages
+  brew bundle --no-upgrade --file=- <<<"$brewfile" || die "Homebrew package installation failed"
 }
 
 install_dev_tools() {
@@ -137,11 +132,11 @@ main() {
   platform="$(detect_platform)"
   log_info "Platform: $platform"
 
-  if [[ "$platform" == "macos" ]]; then
-    setup_homebrew
+  if [[ "$platform" == fedora ]]; then
+    install_fedora_packages
   fi
-
-  install_system_packages "$platform"
+  setup_homebrew "$platform"
+  install_brew_packages "$platform"
   install_dev_tools
   setup_fish_shell "$platform"
 
