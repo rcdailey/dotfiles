@@ -25,9 +25,13 @@ function parseEnv(output: string): Map<string, string> {
 /**
  * Gives every agent shell command the mise environment (tool PATH and [env] variables) of its own
  * working directory. Without it, commands inherit a snapshot taken when the TUI started, so they
- * miss other repos' tools and secrets and ignore mise.toml edits made since. MCP servers are not
- * covered: they inherit the env of whichever shell started the OpenCode service. When mise is
- * missing or fails, the command runs with the env it would have had anyway.
+ * miss other repos' tools and secrets and ignore mise.toml edits made since. When mise is missing
+ * or fails, the command runs with the env it would have had anyway.
+ *
+ * Local MCP servers start once with the OpenCode service's env (whichever shell started the
+ * service), in their project directory. Prefixing their command with `mise exec --` applies that
+ * directory's mise env instead. Remote servers are untouched: their only local inputs are
+ * {env:...} config substitutions, which read the service env.
  */
 export const MiseEnv = {
   id: "local.mise-env",
@@ -51,6 +55,20 @@ export const MiseEnv = {
       }
       for (const [key, value] of next) {
         if (!SHELL_OWNED.has(key)) invocation.env[key] = value;
+      }
+    });
+
+    await ctx.mcp.transform((editor) => {
+      for (const [, server] of editor.list()) {
+        if (server.type !== "local") continue;
+        // Transforms rerun on config reload; OpenCode special-cases a bare `opencode` command
+        const [command] = server.command;
+        if (command === "mise" || command === "opencode") continue;
+        // mise exec overwrites inherited variables its [env] also sets; re-applying the server's
+        // own environment after it keeps explicit config values winning
+        const assignments = Object.entries(server.environment ?? {}).map(([k, v]) => `${k}=${v}`);
+        const prefix = assignments.length > 0 ? ["env", ...assignments] : [];
+        server.command = ["mise", "exec", "--", ...prefix, ...server.command];
       }
     });
   },
