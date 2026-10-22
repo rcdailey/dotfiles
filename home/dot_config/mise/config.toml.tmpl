@@ -66,9 +66,7 @@ postinstall = "opencode plugin update"
 minimum_release_age = "0d"
 # Interactive PATH must not hold shims: they list every installed tool, active or
 # not, which breaks PATH-based tool discovery (topgrade, editors) outside project
-# dirs. Non-interactive shells still get shims: fish via conf.d/20-mise.fish, bash
-# via BASH_ENV (~/.config/bash/env.bash). [env] must not use _.source: its bash
-# reads BASH_ENV, and mise keeps the shims dir that bash prepends to PATH.
+# dirs. `fish -c` shells still get shims via conf.d/20-mise.fish.
 activate_aggressive = false
 not_found_auto_install = false
 auto_install = true
@@ -85,9 +83,8 @@ credential_command = "gh auth token"
 # which mise loads automatically and chezmoi does not manage. Never add secret
 # loading (files, templates, env_file) here.
 [env]
-NODE_PATH = "{{ "{{" }} exec(command='~/.config/mise/scripts/node-path.sh') {{ "}}" }}"
+# Lets npm packages installed via mise resolve each other. Inline under sh rather than a bash
+# script: mise re-renders this on every cd, so process startup cost matters.
+NODE_PATH = "{{ "{{" }} exec(command='for d in ~/.local/share/mise/installs/npm-*/*/lib/node_modules; do [ -d \"$d\" ] && p=\"${p:+$p:}$d\"; done; printf %s \"$p\"') {{ "}}" }}"
 OPENCODE_LOG_LEVEL = "DEBUG"
 OPENCODE_DISABLE_FREE_MODELS = "1"
-
-[hooks]
-cd = "mise current 2>/dev/null | head -5 || true"

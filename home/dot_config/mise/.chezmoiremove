@@ -1,0 +1,2 @@
+# node-path.sh moved inline into config.toml as an exec() template
+scripts
