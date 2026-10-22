@@ -27,27 +27,15 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --ssh rcdailey/dotfiles
 Run automated system setup:
 
 ```bash
-setup-system
+~/.local/bin/setup-system
 ```
 
 This installs and configures:
 
 - Package manager (Homebrew on macOS)
-- Shell (zsh) and sets as default
+- Shell (fish) and sets it as the login shell
 - Terminal (kitty) with Fira Code font
-- Password manager (rbw) with your Bitwarden email
-- AI coding assistant (OpenCode)
-- Runtime manager (mise) and development tools
+- Password manager (rbw; chezmoi already configured it)
+- Runtime manager (mise) and its tools, including OpenCode
 
-Reboot to activate zsh:
-
-```bash
-sudo reboot
-```
-
-> [!WARNING]
->
-> A full reboot is required. Logout alone may not update `$SHELL`.
-
-After reboot, launch kitty terminal. The shell will prompt for Bitwarden login and load secrets
-automatically.
+It is safe to rerun. Log out and back in (or reboot) to start using fish, then launch kitty.

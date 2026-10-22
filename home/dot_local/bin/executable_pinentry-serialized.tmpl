@@ -6,7 +6,8 @@
 # with a protocol cancel instead of prompting.
 
 {{- if eq .chezmoi.os "darwin" }}
-PINENTRY="{{ output "brew" "--prefix" "pinentry-mac" | trim }}/bin/pinentry-mac"
+# Static path: chezmoi apply runs before setup-system installs Homebrew on a new Mac
+PINENTRY=/opt/homebrew/opt/pinentry-mac/bin/pinentry-mac
 {{- else }}
 PINENTRY=/usr/bin/pinentry-qt
 {{- end }}
