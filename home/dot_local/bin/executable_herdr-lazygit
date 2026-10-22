@@ -71,8 +71,13 @@ run() {
     sh -c 'echo $$ >"$1" && cd "$2" && exec lazygit' sh "$state/pid" "$repo" || true
     local next
     next=$(cat "$state/repo")
-    # An unchanged repo means the user quit lazygit rather than follow restarting it
-    [[ "$next" != "$repo" ]] || exit 0
+    if [[ "$next" == "$repo" ]]; then
+      # An unchanged repo that still exists means the user quit lazygit. A deleted one (a removed
+      # worktree) crashed it: retarget at the focused pane's repo instead of closing the window.
+      [[ ! -d "$repo" ]] || exit 0
+      next=$(focused_repo) || next=$(wait_for_repo) || exit 0
+      echo "$next" >"$state/repo"
+    fi
     repo=$next
   done
 }
