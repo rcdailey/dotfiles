@@ -1,0 +1,7 @@
+function open-here --description 'Open the current directory in the file manager'
+{{- if eq .chezmoi.os "darwin" }}
+    open .
+{{- else }}
+    xdg-open .
+{{- end }}
+end

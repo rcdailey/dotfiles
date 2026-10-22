@@ -1,0 +1,68 @@
+# Environment for every fish (interactive or `fish -c`); conf.d runs in filename order
+
+set -gx XDG_CONFIG_HOME $HOME/.config
+set -gx XDG_DATA_HOME $HOME/.local/share
+set -gx XDG_CACHE_HOME $HOME/.cache
+set -gx XDG_STATE_HOME $HOME/.local/state
+{{- if eq .chezmoi.os "darwin" }}
+set -q XDG_RUNTIME_DIR; or set -gx XDG_RUNTIME_DIR $TMPDIR
+{{- end }}
+
+{{- if eq .chezmoi.os "darwin" }}
+set -gx HOMEBREW_PREFIX /opt/homebrew
+{{- else if eq .chezmoi.os "linux" }}
+set -gx HOMEBREW_PREFIX /home/linuxbrew/.linuxbrew
+{{- end }}
+test -x $HOMEBREW_PREFIX/bin/brew; and $HOMEBREW_PREFIX/bin/brew shellenv fish | source
+set -gx HOMEBREW_NO_ANALYTICS 1
+set -gx HOMEBREW_BOOTSNAP 1
+set -gx HOMEBREW_NO_ENV_HINTS 1
+set -gx HOMEBREW_NO_UPDATE_REPORT_FORMULAE 1
+set -gx HOMEBREW_NO_UPDATE_REPORT_CASKS 1
+
+set -gx COLORTERM truecolor
+set -gx EDITOR code
+set -gx KUBE_EDITOR "code --wait"
+set -q TMPDIR; or set -gx TMPDIR /tmp
+# POSIX format with DST support, for kubectl logs and other tools
+set -gx TZ America/Chicago
+
+set -gx LESS "-RSic~ -x2"
+set -gx LESSHISTSIZE 0
+set -gx LESSCHARSET UTF-8
+set -gx DELTA_PAGER less
+set -gx PSQL_PAGER pspg
+
+set -gx DOCKER_UID (id -u)
+set -gx DOCKER_GID (id -g)
+# Husky git hooks slow down git; HUSKY_SKIP_HOOKS covers legacy versions
+set -gx HUSKY 0
+set -gx HUSKY_SKIP_HOOKS 1
+set -gx RIPGREP_CONFIG_PATH $XDG_CONFIG_HOME/ripgrep/config
+# rumdl defaults to a .rumdl_cache directory in the working directory
+set -gx RUMDL_CACHE_DIR $XDG_CACHE_HOME/rumdl
+# Point Terraform (and other Go net/netrc consumers) at a dedicated netrc file. Siggy (the Statsig
+# CLI) hardcodes ~/.netrc and writes non-RFC keywords that break Terraform parsing.
+set -gx NETRC $HOME/.netrc.terraform
+
+# Non-interactive bash (OpenCode's shell tool falls back to bash under fish, scripts) reads this
+# file; it puts mise shims on PATH so project-pinned tools resolve
+set -gx BASH_ENV $XDG_CONFIG_HOME/bash/env.bash
+{{ if eq .chezmoi.os "darwin" }}
+# rbw SSH agent (directories crate uses DARWIN_USER_TEMP_DIR, not XDG)
+set -gx SSH_AUTH_SOCK (getconf DARWIN_USER_TEMP_DIR)rbw-(id -u)/ssh-agent-socket
+set -gx CLICOLOR 1
+set -gx LSCOLORS ExFxBxDxCxegedabagacad
+set -gx DOCKER_DATA_PATH /Volumes/docker
+{{- else if eq .chezmoi.os "linux" }}
+set -gx SSH_AUTH_SOCK $XDG_RUNTIME_DIR/rbw/ssh-agent-socket
+# Supports the migration to k8s in the nezuko repository
+set -gx DOCKER_DATA_PATH /mnt/docker-data
+if command -q dircolors
+    if test -r ~/.dircolors
+        dircolors -c ~/.dircolors | source
+    else
+        dircolors -c | source
+    end
+end
+{{- end }}

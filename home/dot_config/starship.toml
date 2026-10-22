@@ -1,0 +1,8 @@
+"$schema" = "https://starship.rs/config-schema.json"
+
+[status]
+disabled = false
+
+# Show the cluster before kubectl or talosctl commands run against the wrong one
+[kubernetes]
+disabled = false

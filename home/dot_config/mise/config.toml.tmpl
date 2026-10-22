@@ -27,6 +27,7 @@ pre-commit = "latest"
 rclone = "latest"
 ripgrep = "latest"
 rumdl = "latest"
+starship = "latest"
 task = "latest"
 uv = "latest"
 worktrunk = "latest"
@@ -64,7 +65,8 @@ minimum_release_age = "0d"
 # both must be off so hook-env strips the shims dir from interactive PATH
 # (src/path_env.rs); shims list every installed tool, active or not, which
 # breaks PATH-based tool discovery (topgrade, editors) outside project dirs.
-# non-interactive shells still get shims via .zshenv (mise activate --shims).
+# non-interactive shells still get shims: fish via conf.d/20-mise.fish, bash via
+# BASH_ENV (~/.config/bash/env.bash).
 activate_aggressive = false
 not_found_auto_install = false
 auto_install = true

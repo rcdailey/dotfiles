@@ -72,12 +72,12 @@ type = "plugin_action"
 command = "worktrunk.open"
 description = "worktree"
 
-# Scratch shell for quick commands; exiting it (Esc, see zsh 05-configuration.sh) closes the popup
+# Scratch shell for quick commands; exiting it (Esc, see fish config.fish) closes the popup
 # and ends anything it started, so long-running processes belong in a plain shell tab (prefix+c)
 [[keys.command]]
 key = "ctrl+shift+s"
 type = "popup"
-command = 'cd "$HERDR_ACTIVE_PANE_CWD" && HERDR_SCRATCH_SHELL=1 exec zsh'
+command = 'cd "$HERDR_ACTIVE_PANE_CWD" && HERDR_SCRATCH_SHELL=1 exec fish'
 description = "shell"
 width = "90%"
 height = "90%"

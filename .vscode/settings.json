@@ -10,7 +10,6 @@
     "*.md.tmpl": "markdown",
     "*_config": "ssh_config",
     "Brewfile.tmpl": "ruby",
-    "*zshenv.tmpl": "shellscript",
     "*.jsonc.tmpl": "jsonc"
   },
   "[yaml]": {

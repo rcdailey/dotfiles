@@ -1,0 +1,9 @@
+# PATH for every fish; fish_add_path skips missing directories and duplicates.
+# -g keeps entries out of universal variables so this file stays the only source.
+{{- if eq .chezmoi.os "darwin" }}
+fish_add_path -g /opt/homebrew/opt/python/libexec/bin
+{{- end }}
+set -l go_bin ~/go/bin
+set -q GOPATH; and set go_bin $GOPATH/bin
+fish_add_path -g -m ~/.dotnet/tools $go_bin ~/.local/bin ~/bin
+fish_add_path -g --append --path ~/git-scripts ~/.local/share/JetBrains/Toolbox/scripts

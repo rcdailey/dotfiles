@@ -1,0 +1,18 @@
+function clip --description 'Copy stdin to the system clipboard'
+{{- if and (hasKey .chezmoi "kernel") (hasKey .chezmoi.kernel "osrelease") (contains "WSL" .chezmoi.kernel.osrelease) }}
+    clip.exe
+{{- else if eq .chezmoi.os "darwin" }}
+    pbcopy
+{{- else if eq .chezmoi.os "linux" }}
+    # Fill both the clipboard and the primary (middle-click) selection
+    # A temp file, because command substitutions do not see a redirect applied to the function
+    set -l data (mktemp)
+    cat >$data
+    xclip -selection clipboard <$data
+    xclip -selection primary <$data
+    rm -f $data
+{{- else }}
+    echo "Error: Unsupported platform for clipboard operations" >&2
+    return 1
+{{- end }}
+end
