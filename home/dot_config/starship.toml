@@ -6,3 +6,8 @@ disabled = false
 # Show the cluster before kubectl or talosctl commands run against the wrong one
 [kubernetes]
 disabled = false
+
+# Only real Node projects; a stray .mjs config file in a repo root would otherwise trigger it
+[nodejs]
+detect_extensions = []
+detect_files = ["package.json", ".nvmrc", ".node-version"]
