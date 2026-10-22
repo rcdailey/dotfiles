@@ -17,8 +17,6 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 - `home/dot_config/fish/` - fish (login shell). `exact_conf.d/` (env, PATH, mise; every fish),
   `config.fish` (interactive only: prompt, abbreviations, bindings), `exact_functions/` and
   `exact_completions/` (autoloaded by name)
-- `home/dot_config/bash/env.bash` - `BASH_ENV` target; mise shims for non-interactive bash
-  (OpenCode's shell tool runs bash because it refuses fish)
 - `home/dot_config/starship.toml` - Prompt
 
 **Scripts:**
@@ -166,8 +164,9 @@ shells alike (kitty and herdr launch `fish -lc`).
   in `config.fish`.
 - MUST NOT use universal variables (`set -U`, `fish_add_path` without `-g`/`-P`); fish stores them
   in unmanaged `fish_variables`.
-- mise split: full activation interactively (strips shims), shims for `fish -c` and `BASH_ENV` bash.
-  Tool-presence checks for mise-managed tools must run after `conf.d/20-mise.fish`.
+- mise split: full activation interactively (no shims), shims for `fish -c`. OpenCode shell commands
+  get their directory's mise env from the `mise-env` plugin, not shell startup files. Tool-presence
+  checks for mise-managed tools must run after `conf.d/20-mise.fish`.
 - Scripts never use fish or zsh; see the shebang rule in OpenCode directives.
 
 ## Workflow

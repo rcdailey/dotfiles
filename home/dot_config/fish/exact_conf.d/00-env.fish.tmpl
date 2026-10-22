@@ -45,9 +45,6 @@ set -gx RUMDL_CACHE_DIR $XDG_CACHE_HOME/rumdl
 # CLI) hardcodes ~/.netrc and writes non-RFC keywords that break Terraform parsing.
 set -gx NETRC $HOME/.netrc.terraform
 
-# Non-interactive bash (OpenCode's shell tool falls back to bash under fish, scripts) reads this
-# file; it puts mise shims on PATH so project-pinned tools resolve
-set -gx BASH_ENV $XDG_CONFIG_HOME/bash/env.bash
 # conf.d/20-mise.fish owns activation; Homebrew's vendor_conf.d/mise-activate.fish would activate
 # again (duplicate hook output, full activation in `fish -c` shells that should get shims)
 set -gx MISE_FISH_AUTO_ACTIVATE 0
