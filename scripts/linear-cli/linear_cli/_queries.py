@@ -418,7 +418,7 @@ PROJECT_ISSUE_CONNECTION = """
     }
 """
 
-# Selection for `projects view`, embedded in a by-name or by-UUID projects lookup.
+# Selection for `project view`, embedded in a by-name or by-UUID projects lookup.
 PROJECT_FIELDS = """
     id
     name

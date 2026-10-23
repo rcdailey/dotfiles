@@ -69,7 +69,7 @@ def _echo_milestone_groups(proj: Project, issue_nodes: list[dict]) -> None:
         _echo_issue_group(
             f"{name}  [{status}]  target: {date}  progress: {pct}",
             by_milestone.pop(ms.get("id"), []),
-            f"linear milestones view {shlex.quote(name)} --project {project_arg} --all",
+            f"linear milestone view {shlex.quote(name)} --project {project_arg} --all",
             gap=index > 0,
         )
     unassigned = [issue for issues in by_milestone.values() for issue in issues]
@@ -77,7 +77,7 @@ def _echo_milestone_groups(proj: Project, issue_nodes: list[dict]) -> None:
         _echo_issue_group(
             "no milestone",
             unassigned,
-            f"linear issues list --project {project_arg} --milestone none --limit {len(unassigned)}",
+            f"linear issue list --project {project_arg} --milestone none --limit {len(unassigned)}",
             gap=bool(proj.milestones),
         )
 

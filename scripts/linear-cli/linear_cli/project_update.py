@@ -19,7 +19,7 @@ from linear_cli._resolve import Batch, resolve_project_id
 _HEALTH_CHOICES = ["onTrack", "atRisk", "offTrack"]
 
 
-@click.group("project-updates", cls=HelpfulGroup)
+@click.group("project-update", cls=HelpfulGroup)
 def cli() -> None:
     """List and create Linear project updates."""
 

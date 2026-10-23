@@ -25,7 +25,7 @@ from linear_cli._queries import (
 )
 from linear_cli._render import echo_comments, echo_issue_summary, estimate_text
 from linear_cli._resolve import Batch, project_filter, team_filter, user_filter
-from linear_cli.relations import RELATION_TYPES, relation_input
+from linear_cli.relation import RELATION_TYPES, relation_input
 
 _STATE_TYPES = ["triage", "backlog", "unstarted", "started", "completed", "canceled"]
 _TIME_HELP = "ISO date/datetime or duration (e.g. 2026-09-20, -P1D = 1 day ago)."
@@ -44,7 +44,7 @@ def _print_scope(project_name: str | None, milestone_name: str | None) -> None:
 
 @dataclass(frozen=True)
 class _IssueQuery:
-    """CLI filter options shared by `issues list` and `issues search`."""
+    """CLI filter options shared by `issue list` and `issue search`."""
 
     team_key: str | None
     state_type: str | None
@@ -166,7 +166,7 @@ def _show_issues(opts: _IssueQuery, term: str | None) -> None:
 
 
 def _filter_options(func: Callable) -> Callable:
-    """Attach the filter options shared by `issues list` and `issues search`."""
+    """Attach the filter options shared by `issue list` and `issue search`."""
     options = [
         click.option("--team", "team_key", default=None, help="Team key (e.g. ENG)."),
         click.option(

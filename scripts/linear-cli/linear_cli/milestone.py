@@ -99,7 +99,7 @@ def view_milestone(milestone_name: str, project: str, limit: int, show_all: bool
     hidden = len(issues) - len(shown)
     if hidden > 0:
         args = f"{shlex.quote(milestone_name)} --project {shlex.quote(project)}"
-        click.echo(f"  +{hidden} more: linear milestones view {args} --all")
+        click.echo(f"  +{hidden} more: linear milestone view {args} --all")
 
 
 @cli.command("create")

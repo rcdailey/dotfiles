@@ -7,18 +7,18 @@ import click
 from linear_cli import (
     api,
     auth,
-    comments,
-    documents,
-    issues,
-    labels,
-    links,
+    comment,
+    document,
+    issue,
+    label,
+    link,
     me,
-    milestones,
-    project_updates,
-    projects,
-    relations,
-    states,
-    teams,
+    milestone,
+    project,
+    project_update,
+    relation,
+    state,
+    team,
 )
 from linear_cli._click import HelpfulGroup
 
@@ -34,15 +34,15 @@ def cli() -> None:
 
 cli.add_command(api.cli, "api")
 cli.add_command(auth.cli, "auth")
-cli.add_command(comments.cli, "comments")
-cli.add_command(documents.cli, "documents")
-cli.add_command(issues.cli, "issues")
-cli.add_command(labels.cli, "labels")
-cli.add_command(links.cli, "links")
+cli.add_command(comment.cli, "comment")
+cli.add_command(document.cli, "document")
+cli.add_command(issue.cli, "issue")
+cli.add_command(label.cli, "label")
+cli.add_command(link.cli, "link")
 cli.add_command(me.cli, "me")
-cli.add_command(milestones.cli, "milestones")
-cli.add_command(project_updates.cli, "project-updates")
-cli.add_command(projects.cli, "projects")
-cli.add_command(relations.cli, "relations")
-cli.add_command(states.cli, "states")
-cli.add_command(teams.cli, "teams")
+cli.add_command(milestone.cli, "milestone")
+cli.add_command(project.cli, "project")
+cli.add_command(project_update.cli, "project-update")
+cli.add_command(relation.cli, "relation")
+cli.add_command(state.cli, "state")
+cli.add_command(team.cli, "team")
