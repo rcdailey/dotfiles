@@ -45,6 +45,9 @@ set -gx RUMDL_CACHE_DIR $XDG_CACHE_HOME/rumdl
 # Point Terraform (and other Go net/netrc consumers) at a dedicated netrc file. Siggy (the Statsig
 # CLI) hardcodes ~/.netrc and writes non-RFC keywords that break Terraform parsing.
 set -gx NETRC $HOME/.netrc.terraform
+# Inside herdr, worktrunk's post-switch hook opens the worktree in its own child space, so the
+# calling shell stays put (wt switch --cd overrides)
+set -q HERDR_ENV; and set -gx WORKTRUNK_SWITCH__CD false
 
 # conf.d/20-mise.fish owns activation; Homebrew's vendor_conf.d/mise-activate.fish would activate
 # again (duplicate hook output, full activation in `fish -c` shells that should get shims)
