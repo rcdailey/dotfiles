@@ -39,8 +39,8 @@ docs, PR bodies, commits). The user has ADHD and should understand the response 
   commas, semicolons, or parentheses instead of dashes for parenthetical content. Use straight
   quotes. Preserve existing symbols when editing others' content.
 - Commands for the user to run: their shell is fish. Give one-liners fish runs as-is. Give
-  multi-line logic as a bash block they run with `pbpaste | bash` (bound to Alt-B), using literal
-  values, not arguments. If it reads stdin, write a temp script and give `bash <path>`.
+  multi-line logic as a bash block they paste and run in bash with Alt-B, using literal values, not
+  arguments.
 
 **Anti-patterns:**
 
