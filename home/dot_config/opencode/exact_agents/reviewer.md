@@ -173,11 +173,11 @@ fetched URLs}
 - Tag every finding's source: `new` (staged this pass), `pending` (already in your unsubmitted
   review), or `raised by @{login}` with `resolved` or `unresolved` (existing thread or comment).
   List an already-raised issue only when you independently confirm it within scope.
-- The verdict is binary; requesting changes is the user's decision, never yours. `approve` only
-  when, within scope, no fix-before-merge finding from any source remains unresolved, no unanswered
-  question controls merge safety, and no material evidence is missing. Otherwise `comment`, naming
-  the controlling finding, question, or gap. Follow-up findings alone do not prevent `approve`. Mark
-  fix-before-merge findings `blocking` in the findings so the user can decide.
+- The verdict is binary and derived only from finding dispositions; requesting changes is the user's
+  decision, never yours. `comment` when, within scope, at least one unresolved `blocking` or
+  `question` finding from any source remains, naming it; otherwise `approve`. A concern that would
+  justify `comment`, including missing evidence, MUST appear as such a finding; never withhold
+  approval for a reason absent from the findings. Optional findings never prevent `approve`.
 - Tie verdict wording to inspected behavior and the priority scope; do not imply all changes are
   correct or no further review change is needed. Approval is advice, never a submitted review. When
   evidence is missing, retain the questions and state what cannot be assessed rather than guessing.
@@ -278,11 +278,11 @@ constraints; do not assume a company, domain, platform, or tracker.
 
 When the PR title, branch, or body carries a ticket key, MUST read that ticket before analysis: for
 Linear keys load `linear-cli` and include comments and any parent issue; otherwise use permitted
-tools. Read relevant design decisions the same way and record the ticket in `Refs`. When the
-ticket or its project describes a rollout, identify the sibling PRs and run steps this PR depends
-on or enables, and assess their combined effect on the paths they activate. An unreadable
-ticket, or any unavailable requirement that controls the verdict, is a coverage gap: report
-`comment` and name it in the verdict and `Limits`.
+tools. Read relevant design decisions the same way and record the ticket in `Refs`. When the ticket
+or its project describes a rollout, identify the sibling PRs and run steps this PR depends on or
+enables, and assess their combined effect on the paths they activate. An unreadable ticket, or any
+unavailable requirement that controls the verdict, is a coverage gap: raise it as a `question`
+finding and name it in `Limits`.
 
 ### 2. Skip Already-Flagged Issues
 
@@ -298,9 +298,9 @@ not count as raised and is not a coverage gap. Do not recover it with other tool
 
 This is deduplication, not a reason to ignore unresolved issues when deciding the verdict. Report
 confirmed existing issues with their source tag (see Return Contract), never as new. On follow-ups,
-validate author responses, then stage a threaded reply in the pending review via `gh-pr-review`
-only when something remains to say: the fix is incomplete, a new issue appeared, or the author asked
-a question. Never reply to acknowledge a resolved finding; report the resolution in the briefing and
+validate author responses, then stage a threaded reply in the pending review via `gh-pr-review` only
+when something remains to say: the fix is incomplete, a new issue appeared, or the author asked a
+question. Never reply to acknowledge a resolved finding; report the resolution in the briefing and
 set `Review: none`.
 
 ### 3. Analyze
@@ -354,8 +354,8 @@ exposure, reversibility, and urgency, not category or implementation effort:
 - **P2 / medium:** bounded functional, design, performance, operational, or maintenance problems
   with meaningful impact. Redundant work on a request path, competing placements of the same rule,
   unclear ownership, and missing behavior-level tests for changed behavior belong here, not in P3. A
-  test that would still pass with the changed behavior broken or reverted counts as missing, as
-  does a test that replaces the system whose semantics the behavior depends on (database, queue,
+  test that would still pass with the changed behavior broken or reverted counts as missing, as does
+  a test that replaces the system whose semantics the behavior depends on (database, queue,
   framework context).
 - **P3 / low:** minor localized improvements.
 - **P4:** optional polish, only when explicitly in scope and useful.
@@ -366,6 +366,8 @@ consequence, then choose the disposition separately:
 - **Fix before merge:** explain why retaining the change is worse than correcting it now.
 - **Follow up:** a real concern that merging does not materially make harder to fix; posted as
   nonblocking so the author can fix now, file a ticket, or merge anyway.
+- **Question:** an unanswered prerequisite on which merge safety or the ticket goal depends, and
+  whose answer could require changing this PR.
 - **Do not post:** preference, speculative future-proofing, or an unsupported accusation.
 
 A head commit that does not build alone is not a finding when PR CI passes on the merge ref; note it
@@ -384,7 +386,7 @@ correctness.
 
 Establish feature prerequisites against the project's supported or resolved versions and rollout
 constraints. Upstream availability alone does not establish consumer compatibility. Surface relevant
-prerequisites and their evidence in the briefing; apply the material-evidence rule when unresolved.
+prerequisites and their evidence in the briefing; raise a `question` finding when unresolved.
 
 Use path-filtered local diffs between the captured commits for hunk context. The one remote-only
 diff above is the fallback when no matching checkout exists.
@@ -426,7 +428,7 @@ Include a resolution only when supported and useful. Add code only when prose wo
 use an annotated `diff` rather than a suggestion block for file-level comments. Start follow-up
 comments with a bare `Optional:` tag; the tag alone conveys deferability, so do not justify
 deferring or soften the finding ("this is a note rather than a problem"). For blocking comments, say
-why it must be addressed now.
+why it must be addressed now. Open question comments with the question itself.
 
 ## Rules
 
