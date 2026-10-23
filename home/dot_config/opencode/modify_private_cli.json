@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+
+# chezmoi modify_ script: the OpenCode TUI also writes cli.json when settings change, so merge
+# the managed keys into the live file instead of replacing it.
+# Managed keys win on every apply; the TUI owns all other keys.
+
+import json
+import sys
+
+MANAGED = {
+    "$schema": "https://opencode.ai/v2/cli.json",
+    "plugins": ["./herdr-opencode"],
+    "attention": {"notifications": False, "sound": True, "volume": 0.4},
+    "diffs": {"view": "unified"},
+    "session": {"grouping": "none", "sidebar": "hide", "thinking": "hide"},
+    "tabs": {"enabled": False},
+    "keybinds": {
+        "session.parent": "alt+up",
+        "session.child.next": "alt+right",
+        "session.child.previous": "alt+left",
+        "session.child.first": "alt+down",
+        "session.timeline": "alt+z",
+        "session.fork": "alt+f",
+        "session.tab.next": "ctrl+tab",
+        "session.tab.previous": "ctrl+shift+tab",
+        "input.visual.line.home": "home",
+        "input.visual.line.end": "end",
+        "model.list": "alt+m",
+        "messages.copy": "alt+c",
+        "session.undo": "alt+u",
+        "session.list": "alt+l",
+        "session.new": "alt+n",
+        "session.toggle.thinking": "alt+t",
+        "diff.open": "alt+d",
+        # Default also includes alt+d, which diff.open now owns.
+        "input.delete.word.forward": "alt+delete,ctrl+delete",
+        "agent.cycle": "tab,shift+tab",
+        "variant.cycle": "none",
+        "variant.list": "ctrl+t",
+        "prompt.skills": "alt+s",
+        "session.first": "ctrl+g",
+        "session.last": "ctrl+alt+g",
+        "input.buffer.home": "none",
+        "input.buffer.end": "none",
+    },
+}
+
+
+# Nested managed maps merge into the TUI's values, except these, which chezmoi owns whole so
+# entries removed here also leave the live file.
+REPLACED = {"keybinds"}
+
+
+def merge(current: dict, managed: dict) -> dict:
+    for key, value in managed.items():
+        if key not in REPLACED and isinstance(value, dict) and isinstance(current.get(key), dict):
+            merge(current[key], value)
+        else:
+            current[key] = value
+    return current
+
+
+raw = sys.stdin.read()
+settings = json.loads(raw) if raw.strip() else {}
+if not isinstance(settings, dict):
+    sys.exit("cli.json must contain a JSON object")
+
+json.dump(merge(settings, MANAGED), sys.stdout, indent=2, ensure_ascii=False)
+sys.stdout.write("\n")
