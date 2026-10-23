@@ -101,5 +101,7 @@ Apply KISS, DRY, SOLID, and YAGNI pragmatically.
   compiler commands for diagnostics until OpenCode V2 restores its LSP runtime.
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
 - Use `pdf2md` for local PDF files: `pdf2md <file>`. Run `pdf2md --help` for full usage.
+- Keep stderr visible (`2>&1`, not `2>/dev/null`) when parsing or reporting command output; a hidden
+  usage error reads as empty data. Run `<cli> --help` before guessing a subcommand.
 - The Glob tool skips dot-directories (`.github/`, `.vscode/`, etc.). For those, use shell:
 `rg --files --hidden -g "pattern" --glob '!**/.git/**'`.

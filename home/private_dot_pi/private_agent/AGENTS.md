@@ -141,6 +141,8 @@ Load the `testing` skill before writing, changing, or diagnosing tests.
   diagnostics.
 - Use `gh` CLI for GitHub operations (issues, PRs, releases, repos, auth, mutations).
 - Use `pdf2md` for local PDF files: `pdf2md <file>`. Run `pdf2md --help` for full usage.
+- Keep stderr visible (`2>&1`, not `2>/dev/null`) when parsing or reporting command output; a hidden
+  usage error reads as empty data. Run `<cli> --help` before guessing a subcommand.
 
 ## Shell Search
 
