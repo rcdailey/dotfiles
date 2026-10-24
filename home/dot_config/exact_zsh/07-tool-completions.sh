@@ -2,24 +2,17 @@
 # Loads last: generators and `compdef` targets must be on the final PATH, which depends on
 # 05-configuration.sh (~/bin, mise activate) and 06-platform.sh. compinit runs in 03-completion.sh.
 
-# Cached generators: regenerated when `zinit update -u` re-runs atpull (see topgrade.toml)
-zinit ice as"completion" id-as"mise" \
-  atclone"mise completion zsh > _mise && zinit creinstall mise" \
-  atpull"%atclone"
-zinit load zdharma-continuum/null
-
-# Task completions, deferred until after the first prompt
-zinit ice wait lucid nocompile atload'eval "$(task --completion zsh 2>/dev/null)"'
-zinit load zdharma-continuum/null
-
 # Source a generator's output from a cache file, regenerated when the binary is newer
 _source_cached() {
   local cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/$1.zsh"
   if [[ ! -s $cache || $commands[$1] -nt $cache ]]; then
-    mkdir -p "${cache:h}" && "$@" >| "$cache"
+    mkdir -p "${cache:h}" && "$@" >| "$cache" && zcompile -R -- "$cache.zwc" "$cache"
   fi
   source "$cache"
 }
+
+(( $+commands[mise] )) && _source_cached mise completion zsh
+(( $+commands[task] )) && _source_cached task --completion zsh
 
 # chezmoi is a standalone binary without a packaged completion; `cm` reuses it
 if (( $+commands[chezmoi] )); then

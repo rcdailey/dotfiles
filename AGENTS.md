@@ -18,9 +18,9 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 - `home/dot_zshrc` - P10k instant prompt, sources numbered configs
 - `home/dot_config/exact_zsh/` - Numbered configs, strict load sequence:
   - `01-environment.sh` - Shell options, PATH, tool env vars
-  - `02-zinit.sh` - Zinit plugin manager bootstrap
   - `03-completion.sh` - compinit, P10k workaround (DO NOT REMOVE)
-  - `04-plugins.sh` - Zinit plugin loads (fzf-tab, syntax highlighting, etc.)
+  - `04-plugins.sh` - Sources plugins from `home/dot_local/share/zsh-plugins/` (chezmoi externals,
+    no plugin manager) in a fixed order
   - `05-configuration.sh` - Aliases, keybinds, mise activate, tool configs
   - `06-platform.sh.tmpl` - Platform-specific settings (Linux/macOS)
   - `07-tool-completions.sh` - Per-tool completion registration (needs final PATH)
