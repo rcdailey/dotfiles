@@ -57,8 +57,8 @@ fi
 typeset -U path
 [[ -d "$HOME/.local/bin" ]] && path=("$HOME/.local/bin" $path)
 
-# mise shims for all shell types (interactive and non-interactive, login and non-login)
-# Full activation in 05-configuration.sh replaces shims PATH for interactive shells
-if (( $+commands[mise] )); then
+# mise shims for non-interactive shells; interactive shells get full activation in
+# 05-configuration.sh, which would strip the shims again
+if [[ ! -o interactive ]] && (( $+commands[mise] )); then
     eval "$(mise activate zsh --shims)"
 fi

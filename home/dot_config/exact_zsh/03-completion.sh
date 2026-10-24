@@ -6,12 +6,17 @@ fpath=("${XDG_DATA_HOME:-$HOME/.local/share}/zinit/completions" $fpath)
 # Skip security check and initialize zsh completion system
 # Reason: Single user machines, no security risk, improves automation
 # Daily cache optimization: only rebuild completion dump once per day
+# Glob qualifiers do not expand inside [[ ]], so test the expanded array instead
 autoload -Uz compinit
-if [[ ~/.zcompdump(#qNmh+24) ]]; then
-  compinit -u
-else
-  compinit -C -u
-fi
+() {
+  setopt local_options extended_glob
+  local -a stale=(~/.zcompdump(#qNmh+24)) fresh=(~/.zcompdump(#qN))
+  if (( $#stale || ! $#fresh )); then
+    compinit -u
+  else
+    compinit -C -u
+  fi
+}
 
 # Enable bash completion compatibility for tools that only provide bash completions
 autoload -U +X bashcompinit && bashcompinit

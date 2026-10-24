@@ -12,15 +12,24 @@ zinit load zdharma-continuum/null
 zinit ice wait lucid nocompile atload'eval "$(task --completion zsh 2>/dev/null)"'
 zinit load zdharma-continuum/null
 
+# Source a generator's output from a cache file, regenerated when the binary is newer
+_source_cached() {
+  local cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/$1.zsh"
+  if [[ ! -s $cache || $commands[$1] -nt $cache ]]; then
+    mkdir -p "${cache:h}" && "$@" >| "$cache"
+  fi
+  source "$cache"
+}
+
 # chezmoi is a standalone binary without a packaged completion; `cm` reuses it
 if (( $+commands[chezmoi] )); then
-  eval "$(chezmoi completion zsh)"
+  _source_cached chezmoi completion zsh
   compdef cm=chezmoi
 fi
 
 # worktrunk shell integration (directory switching + completions)
 if (( $+commands[wt] )); then
-  eval "$(wt config shell init zsh)"
+  _source_cached wt config shell init zsh
 fi
 
 # Terraform only provides bash completion (via bashcompinit)
@@ -35,7 +44,7 @@ _maybe_load_talosctl_completion() {
   if (( _talosctl_completion_loaded )); then
     return
   fi
-  mise which talosctl &>/dev/null || return
+  (( $+commands[talosctl] )) || return
   eval "$(talosctl completion zsh)"
   _talosctl_completion_loaded=1
 }
@@ -47,7 +56,7 @@ _maybe_load_kubectl_completion() {
   if (( _kubectl_completion_loaded )); then
     return
   fi
-  mise which kubectl &>/dev/null || return
+  (( $+commands[kubectl] )) || return
   eval "$(kubectl completion zsh)"
   _kubectl_completion_loaded=1
 }
