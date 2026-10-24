@@ -18,11 +18,11 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
   setup
 - `home/dot_zshrc` - P10k instant prompt, sources numbered configs
 - `home/dot_config/exact_zsh/` - Numbered configs, strict load sequence:
-  - `01-environment.sh` - Shell options, PATH, tool env vars
+  - `01-environment.sh` - Tool env vars, PATH, mise activate
   - `03-completion.sh` - Completion fpath, compinit, zstyles
   - `04-plugins.sh` - Sources plugins from `home/dot_local/share/zsh-plugins/` (chezmoi externals,
     no plugin manager) in a fixed order
-  - `05-configuration.sh` - Aliases, keybinds, mise activate, tool configs
+  - `05-configuration.sh` - Shell options, aliases, keybinds
   - `06-platform.sh.tmpl` - Platform-specific settings (Linux/macOS)
   - `07-tool-completions.sh` - Per-tool completion registration (needs final PATH)
 - `home/dot_config/exact_zsh/functions/` - Autoloaded zsh functions
@@ -170,7 +170,7 @@ Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
 - P10k instant prompt must be early in .zshrc; nothing after it may print or read the terminal
 - Completion dirs join fpath before compinit (03); fzf-tab loads after compinit and before
   widget-wrapping plugins (04)
-- mise split: shims in `.zshenv` for shells that skip `.zshrc`, full `mise activate` in 05 for
+- mise split: shims in `.zshenv` for shells that skip `.zshrc`, full `mise activate` in 01 for
   interactive ones. OpenCode shell commands get their directory's mise env from the `mise-env`
   plugin, not shell startup files.
 - Tool-presence checks (`$+commands[x]`) for mise-managed tools must run after `mise activate`

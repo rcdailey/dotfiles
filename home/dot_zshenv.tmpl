@@ -77,12 +77,12 @@ fi
 
 # User executables (mise, custom scripts) for all shell types. Non-interactive shells need them
 # too, e.g. `zsh -lc 'exec herdr'` in kitty, whose server runs keybinding commands with this PATH.
-# -U drops duplicate entries when 05-configuration.sh re-prepends after macOS path_helper.
+# -U drops duplicate entries when 01-environment.sh re-prepends after macOS path_helper.
 typeset -U path
 [[ -d "$HOME/.local/bin" ]] && path=("$HOME/.local/bin" $path)
 
 # mise shims for shells that skip .zshrc's full setup (non-interactive, or no terminal); full
-# activation in 05-configuration.sh would strip them again
+# activation in 01-environment.sh would strip them again
 if [[ ! -o interactive || ! -t 0 ]] && (( $+commands[mise] )); then
     eval "$(mise activate zsh --shims)"
 fi

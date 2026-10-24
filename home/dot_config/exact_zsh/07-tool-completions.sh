@@ -1,6 +1,6 @@
 # Per-tool completion registration
 # Loads last: generators and `compdef` targets must be on the final PATH, which depends on
-# 05-configuration.sh (~/bin, mise activate) and 06-platform.sh. compinit runs in 03-completion.sh.
+# 01-environment.sh (~/bin, mise activate) and 06-platform.sh. compinit runs in 03-completion.sh.
 
 # Source a generator's output from a cache file. Its first line records the resolved binary; a
 # different path (mise and Homebrew install each version separately) or a newer binary (in-place
@@ -10,7 +10,12 @@ _source_cached() {
   [[ -r $cache ]] && read -r stamp < "$cache"
   if [[ $stamp != "# $bin" || $bin -nt $cache ]]; then
     mkdir -p "${cache:h}"
-    { print -r -- "# $bin"; "$@" } >| "$cache" && zcompile -R -- "$cache.zwc" "$cache"
+    # A failed run leaves no cache, so the next shell retries
+    if ! { print -r -- "# $bin" && "$@" } >| "$cache"; then
+      rm -f "$cache" "$cache.zwc"
+      return 1
+    fi
+    zcompile -R -- "$cache.zwc" "$cache"
   fi
   source "$cache"
   # Some generators (e.g. infisical) define _tool but rely on fpath autoloading to register it
