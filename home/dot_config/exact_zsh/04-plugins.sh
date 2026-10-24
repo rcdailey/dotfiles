@@ -33,6 +33,10 @@ _zsource "$_zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 _zsource "$_zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh"
 _zsource "$_zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
-# After autosuggestions, which would otherwise rebind the arrows (zsh-autosuggestions#678)
+# After autosuggestions, which would otherwise rebind the arrows (zsh-autosuggestions#678).
+# terminfo lists the application-mode codes (^[OA), but nothing enables that mode, so kitty and
+# herdr send the normal-mode codes (^[[A); bind both.
 bindkey "$terminfo[kcuu1]" history-substring-search-up
 bindkey "$terminfo[kcud1]" history-substring-search-down
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
