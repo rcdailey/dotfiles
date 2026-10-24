@@ -39,7 +39,9 @@ if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
 fi
 
 # /etc/zprofile and /etc/zshrc source /etc/profile and /etc/profile.d (~30 ms on Fedora). Their
-# exported environment is inherited, so only the first shell in a process tree needs them.
+# exported environment is inherited, so only the first shell in a process tree needs them. The
+# desktop login shell exports the marker into the session, so terminal shells skip them too and
+# lose only shell-local extras (PackageKit command-not-found, magic-space, grep color aliases).
 if [[ -n "$__ZSH_GLOBAL_RCS_DONE" ]]; then
     setopt no_global_rcs
 else
