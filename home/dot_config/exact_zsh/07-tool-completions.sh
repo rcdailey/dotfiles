@@ -9,6 +9,10 @@ _source_cached() {
     mkdir -p "${cache:h}" && "$@" >| "$cache" && zcompile -R -- "$cache.zwc" "$cache"
   fi
   source "$cache"
+  # Some generators (e.g. infisical) define _tool but rely on fpath autoloading to register it
+  if (( $+functions[_$1] && ! $+_comps[$1] )); then
+    compdef _$1 $1
+  fi
 }
 
 # fzf key bindings: Ctrl-R history, Ctrl-T files, Alt-C directories
@@ -34,16 +38,27 @@ if (( $+commands[terraform] )); then
   complete -o nospace -C terraform tf
 fi
 
-# Project-scoped tools: register once mise puts them on PATH, checked on every cd
-typeset -ga _pending_project_completions=(kubectl talosctl)
+# Tools that may be on PATH only inside some mise projects (e.g. home-ops): register each once it
+# appears, checked at startup and on every cd. Value: generator arguments after the tool name.
+typeset -gA _pending_completions=(
+  flux 'completion zsh'
+  gh 'completion -s zsh'
+  helm 'completion zsh'
+  helmfile 'completion zsh'
+  infisical 'completion zsh'
+  kubectl 'completion zsh'
+  kustomize 'completion zsh'
+  talosctl 'completion zsh'
+  yq 'completion zsh'
+)
 _load_project_completions() {
   local tool
-  for tool in $_pending_project_completions; do
+  for tool in ${(k)_pending_completions}; do
     (( $+commands[$tool] )) || continue
-    _source_cached $tool completion zsh
-    _pending_project_completions=(${_pending_project_completions:#$tool})
+    _source_cached $tool ${(z)_pending_completions[$tool]}
+    unset "_pending_completions[$tool]"
   done
-  (( $#_pending_project_completions )) || chpwd_functions=(${chpwd_functions:#$0})
+  (( $#_pending_completions )) || chpwd_functions=(${chpwd_functions:#$0})
 }
 chpwd_functions+=(_load_project_completions)
 _load_project_completions
