@@ -21,7 +21,12 @@ export HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
 # the prefix. Re-sync if Homebrew changes what shellenv exports.
 if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
     export HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
+{{- if eq .chezmoi.os "darwin" }}
+    # The macOS installer puts the repository at the prefix itself (install.sh)
+    export HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX"
+{{- else }}
     export HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX/Homebrew"
+{{- end }}
     fpath[1,0]="$HOMEBREW_PREFIX/share/zsh/site-functions"
     export FPATH
     export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin${PATH+:$PATH}"

@@ -85,6 +85,6 @@ credential_command = "gh auth token"
 [env]
 # Lets npm packages installed via mise resolve each other. Inline under sh rather than a bash
 # script: mise re-renders this on every cd, so process startup cost matters.
-NODE_PATH = "{{ "{{" }} exec(command='for d in ~/.local/share/mise/installs/npm-*/*/lib/node_modules; do [ -d \"$d\" ] && p=\"${p:+$p:}$d\"; done; printf %s \"$p\"') {{ "}}" }}"
+NODE_PATH = "{{ "{{" }} exec(command='for d in ~/.local/share/mise/installs/npm-*/*/node_modules; do [ -d \"$d\" ] && [ ! -L \"${d%/node_modules}\" ] && p=\"${p:+$p:}$d\"; done; printf %s \"$p\"') {{ "}}" }}"
 OPENCODE_LOG_LEVEL = "DEBUG"
 OPENCODE_DISABLE_FREE_MODELS = "1"

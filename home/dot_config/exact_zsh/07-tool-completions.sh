@@ -2,11 +2,15 @@
 # Loads last: generators and `compdef` targets must be on the final PATH, which depends on
 # 05-configuration.sh (~/bin, mise activate) and 06-platform.sh. compinit runs in 03-completion.sh.
 
-# Source a generator's output from a cache file, regenerated when the binary is newer
+# Source a generator's output from a cache file. Its first line records the resolved binary; a
+# different path (mise and Homebrew install each version separately) or a newer binary (in-place
+# self-update) regenerates it. mtime alone misses upgrades, since mise keeps the archive's mtime.
 _source_cached() {
-  local cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/$1.zsh"
-  if [[ ! -s $cache || $commands[$1] -nt $cache ]]; then
-    mkdir -p "${cache:h}" && "$@" >| "$cache" && zcompile -R -- "$cache.zwc" "$cache"
+  local cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/$1.zsh" bin=${commands[$1]:A} stamp=
+  [[ -r $cache ]] && read -r stamp < "$cache"
+  if [[ $stamp != "# $bin" || $bin -nt $cache ]]; then
+    mkdir -p "${cache:h}"
+    { print -r -- "# $bin"; "$@" } >| "$cache" && zcompile -R -- "$cache.zwc" "$cache"
   fi
   source "$cache"
   # Some generators (e.g. infisical) define _tool but rely on fpath autoloading to register it
@@ -56,6 +60,8 @@ _load_project_completions() {
   for tool in ${(k)_pending_completions}; do
     (( $+commands[$tool] )) || continue
     _source_cached $tool ${(z)_pending_completions[$tool]}
+    # Oh My Zsh kubectl aliases (k, kgp, ...); the plugin returns early without kubectl on PATH
+    [[ $tool == kubectl ]] && _zsource "$_zsh_plugins/ohmyzsh/plugins/kubectl/kubectl.plugin.zsh"
     unset "_pending_completions[$tool]"
   done
   (( $#_pending_completions )) || chpwd_functions=(${chpwd_functions:#$0})

@@ -51,6 +51,30 @@ export HOMEBREW_NO_UPDATE_REPORT_CASKS=1
 # upgrades them on demand
 export HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1
 
+# Add standard user directories to PATH (devbox doesn't include these by default)
+[[ -d "$HOME/bin" ]] && path=("$HOME/bin" $path)
+
+# Also added in .zshenv for all shells; re-prepend so macOS /etc/zprofile path_helper, which moves
+# system directories first, cannot demote it
+[[ -d "$HOME/.local/bin" ]] && path=("$HOME/.local/bin" $path)
+
+path+=("$HOME/git-scripts")
+
+# Go tools; GOPATH defaults to ~/go. Skips `go env GOPATH` (~30 ms), so a GOPATH set only through
+# `go env -w` is not seen.
+path=("${GOPATH:-$HOME/go}/bin" $path)
+
+[[ -d "$HOME/.dotnet/tools" ]] && path=("$HOME/.dotnet/tools" $path)
+
+# Kitty terminal (installed via official installer to ~/.local/kitty.app)
+[[ -d "$HOME/.local/kitty.app/bin" ]] && path=("$HOME/.local/kitty.app/bin" $path)
+
+# mise activation, before plugins so `$+commands` checks see project tools rather than shims
+# inherited from a parent shell. Its script unsets functions that do not exist yet; drop the noise.
+if (( $+commands[mise] )); then
+  eval "$(mise activate zsh)" 2>/dev/null
+fi
+
 # Inside herdr, worktrunk's post-switch hook opens the worktree in its own child space, so the
 # calling shell stays put (wt switch --cd overrides)
 [[ -n "$HERDR_ENV" ]] && export WORKTRUNK_SWITCH__CD=false

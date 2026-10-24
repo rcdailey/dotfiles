@@ -11,34 +11,6 @@ setopt HIST_IGNORE_DUPS  # Don't record duplicates in history
 setopt CORRECT           # Spell correction for commands
 setopt EXTENDED_GLOB     # Extended globbing features
 
-# Add standard user directories to PATH (devbox doesn't include these by default)
-if [ -d "$HOME/bin" ]; then
-  export PATH="$HOME/bin:$PATH"
-fi
-
-# Also added in .zshenv for all shells; re-prepend so macOS /etc/zprofile path_helper,
-# which moves system directories first, cannot demote it
-if [ -d "$HOME/.local/bin" ]; then
-  export PATH="$HOME/.local/bin:$PATH"
-fi
-
-# Append additional directories
-export PATH="$PATH:$HOME/git-scripts"
-
-# Go tools; GOPATH defaults to ~/go. Skips `go env GOPATH` (~30 ms), so a GOPATH set only through
-# `go env -w` is not seen.
-export PATH="${GOPATH:-$HOME/go}/bin:$PATH"
-
-# .NET tools PATH
-if [ -d "$HOME/.dotnet/tools" ]; then
-  export PATH="$HOME/.dotnet/tools:$PATH"
-fi
-
-# Kitty terminal (installed via official installer to ~/.local/kitty.app)
-if [ -d "$HOME/.local/kitty.app/bin" ]; then
-  export PATH="$HOME/.local/kitty.app/bin:$PATH"
-fi
-
 # Essential tool aliases
 alias c="docker compose"
 alias lg="lazygit"
@@ -76,13 +48,7 @@ alias tree='tree -Csu'
 alias cmci='chezmoi git -- caa'
 alias cmst='chezmoi git -- st'
 
-# mise activation - suppress initial cleanup errors from mise's activation script
-# mise unconditionally tries to unset functions/arrays that don't exist yet
-if (( $+commands[mise] )); then
-    eval "$(mise activate zsh)" 2>/dev/null
-fi
-
-# Cross-platform ls replacement with lsd (after mise activate: lsd is mise-managed)
+# Cross-platform ls replacement with lsd (mise-managed, so checked after 01's mise activate)
 unalias ls ll 2>/dev/null
 if (( $+commands[lsd] )); then
     alias ls='lsd --color=auto --icon=auto --group-directories-first'

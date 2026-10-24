@@ -29,7 +29,8 @@ _zsource "$_zsh_plugins/fzf-tab/fzf-tab.plugin.zsh"
 # Oh My Zsh plugins without the framework (ZSH_CACHE_DIR and their fpath are set in 03). The docker
 # plugin moves its generated completion into place with zf_mv.
 zmodload -F zsh/files b:zf_mv
-for _omz_plugin in kubectl git docker brew terraform colored-man-pages extract; do
+# kubectl's plugin loads with its completion in 07, once mise puts kubectl on PATH
+for _omz_plugin in git docker brew terraform colored-man-pages extract; do
   _zsource "$_zsh_plugins/ohmyzsh/plugins/$_omz_plugin/$_omz_plugin.plugin.zsh"
 done
 unset _omz_plugin
