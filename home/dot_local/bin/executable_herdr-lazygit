@@ -54,11 +54,8 @@ wait_for_repo() {
 open() {
   kitten @ focus-window --match "$window_match" 2>/dev/null && return
   local id
-  # Interactive login shell so lazygit inherits the full fish environment (e.g. SSH_AUTH_SOCK).
-  # Absolute path: kitty resolves the command with its own PATH, which lacks Homebrew's bin
-  # when kitty starts from a desktop launcher.
-  id=$(kitten @ launch --type=os-window --var herdr_lazygit=1 \
-    "$(command -v fish)" -lic 'herdr-lazygit run')
+  # Interactive login shell so lazygit inherits the full .zshrc environment (e.g. SSH_AUTH_SOCK)
+  id=$(kitten @ launch --type=os-window --var herdr_lazygit=1 zsh -lic 'herdr-lazygit run')
   # Landscape, unlike kitty's portrait initial_window_* default sized for the herdr window
   kitten @ resize-os-window --match "id:$id" --unit pixels --width 1500 --height 800
 }

@@ -14,10 +14,17 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 
 **Shell:**
 
-- `home/dot_config/fish/` - fish (login shell). `exact_conf.d/` (env, PATH, mise; every fish),
-  `config.fish` (interactive only: prompt, abbreviations, bindings), `exact_functions/` and
-  `exact_completions/` (autoloaded by name)
-- `home/dot_config/starship.toml` - Prompt
+- `home/dot_zshenv.tmpl` - XDG vars, Homebrew, mise shims (runs for ALL shell types)
+- `home/dot_zshrc` - P10k instant prompt, sources numbered configs
+- `home/dot_config/exact_zsh/` - Numbered configs, strict load sequence:
+  - `01-environment.sh` - Shell options, PATH, tool env vars
+  - `02-zinit.sh` - Zinit plugin manager bootstrap
+  - `03-completion.sh` - compinit, P10k workaround (DO NOT REMOVE)
+  - `04-plugins.sh` - Zinit plugin loads (fzf-tab, syntax highlighting, etc.)
+  - `05-configuration.sh` - Aliases, keybinds, mise activate, tool configs
+  - `06-platform.sh.tmpl` - Platform-specific settings (Linux/macOS)
+  - `07-tool-completions.sh` - Per-tool completion registration (needs final PATH)
+- `home/dot_config/exact_zsh/functions/` - Autoloaded zsh functions
 
 **Scripts:**
 
@@ -126,7 +133,7 @@ spans areas:
 
 - `agents` - OpenCode, pi, and their agents, skills, commands, and plugins
 - `scripts` - custom CLIs in `scripts/` and `home/dot_local/bin/`
-- `shell` - shell startup, functions, and prompt
+- `shell` - zsh startup, functions, and prompt
 - `terminal` - terminal emulator and multiplexer
 - `git` - git config, git helpers, and git UIs
 - `tooling` - tool installation, updates, and per-app configs
@@ -155,19 +162,17 @@ directory matches exactly (removes unmanaged files)
 to that directory (e.g., `config.d/file.ssh` not `private_config.d/private_file.ssh`). This keeps
 removal rules discoverable and ensures chezmoi removes the target files on apply.
 
-## Shell Init (fish)
+## Shell Init Order (Critical)
 
-fish loads `conf.d/*.fish` in filename order, then `config.fish`, for interactive and `fish -c`
-shells alike (kitty and herdr launch `fish -lc`).
+Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
 
-- Environment and PATH belong in `conf.d`; interactive-only setup goes after `status is-interactive`
-  in `config.fish`.
-- MUST NOT use universal variables (`set -U`, `fish_add_path` without `-g`/`-P`); fish stores them
-  in unmanaged `fish_variables`.
-- mise split: full activation interactively (no shims), shims for `fish -c`. OpenCode shell commands
-  get their directory's mise env from the `mise-env` plugin, not shell startup files. Tool-presence
-  checks for mise-managed tools must run after `conf.d/20-mise.fish`.
-- Scripts never use fish or zsh; see the shebang rule in OpenCode directives.
+- P10k instant prompt must be early in .zshrc
+- fzf-tab must load after compinit, before widget-wrapping plugins
+- mise split: `mise env` before instant prompt, `mise activate` after. OpenCode shell commands get
+  their directory's mise env from the `mise-env` plugin, not shell startup files.
+- Tool-presence checks (`$+commands[x]`, `command -v`) for mise-managed tools must run after
+  `mise activate`; shims alone are not reliable at startup
+- 03-completion contains P10k bug workaround (DO NOT REMOVE)
 
 ## Workflow
 

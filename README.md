@@ -33,9 +33,9 @@ Run automated system setup:
 This installs and configures:
 
 - Package manager (Homebrew on macOS and Fedora)
-- Shell (fish) and sets it as the login shell
+- Shell (zsh) and sets it as the login shell
 - Terminal (kitty) with Fira Code font
 - Password manager (rbw; chezmoi already configured it)
 - Runtime manager (mise) and its tools, including OpenCode
 
-It is safe to rerun. Log out and back in (or reboot) to start using fish, then launch kitty.
+It is safe to rerun. Log out and back in (or reboot) to start using zsh, then launch kitty.

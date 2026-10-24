@@ -1,12 +1,8 @@
 # Kitty Terminal Configuration
-{{- /* Static paths matching setup-system: chezmoi apply runs before fish is installed */}}
-{{- $fish := "/usr/bin/fish" }}
-{{- if eq .chezmoi.os "darwin" }}{{ $fish = "/opt/homebrew/bin/fish" }}{{ end }}
 
 # Use herdr as the shell - kitty closes when herdr exits. Refresh herdr's
-# OpenCode integration first so it tracks the installed herdr version. Absolute fish path because
-# kitty started from a desktop launcher gets a PATH without the package manager's bin directory.
-shell {{ $fish }} -lc 'herdr integration status | string match -q "*opencode: current*"
+# OpenCode integration first so it tracks the installed herdr version.
+shell zsh -lc '[[ $(herdr integration status) == *"opencode: current"* ]]
 \ || herdr integration install opencode &>/dev/null; exec herdr'
 
 # Remote control for scripting (reload-all alias)
@@ -63,8 +59,7 @@ map ctrl+shift+n new_os_window_with_cwd
 
 # Lazygit window following the focused herdr pane's repo; a login shell supplies the PATH that
 # kitty lacks when started from a desktop launcher
-map ctrl+shift+g launch --type=background --allow-remote-control {{ $fish }} -lc
-\ 'herdr-lazygit open'
+map ctrl+shift+g launch --type=background --allow-remote-control zsh -lc 'herdr-lazygit open'
 
 # Pass keys to herdr - explicit unmapping required because kitty has built-in
 # defaults for many of these (ctrl+shift+t=new_tab, ctrl+shift+w=close_window,

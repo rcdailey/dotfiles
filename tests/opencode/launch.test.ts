@@ -3,7 +3,7 @@ import { chmod, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const functions = join(import.meta.dir, "../../home/dot_config/fish/exact_functions");
+const functions = join(import.meta.dir, "../../home/dot_config/exact_zsh/functions");
 
 async function fixture(miseExit = 0) {
   const directory = await mkdtemp(join(tmpdir(), "opencode-launch-test-"));
@@ -23,14 +23,7 @@ ${name === "mise" ? `exit ${miseExit}` : "exit 0"}
 
 function run(env: Record<string, string | undefined>, args: string[]) {
   return Bun.spawnSync(
-    [
-      "fish",
-      "--no-config",
-      "-c",
-      "set -p fish_function_path $argv[1]; oc $argv[2..]",
-      functions,
-      ...args,
-    ],
+    ["zsh", "-f", "-c", 'fpath=("$1"); autoload -Uz oc; shift; oc "$@"', "zsh", functions, ...args],
     { env },
   );
 }

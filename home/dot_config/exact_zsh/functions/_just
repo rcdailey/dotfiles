@@ -1,0 +1,85 @@
+#compdef just
+
+# Replaces just's own completer, which offers recipes and paths together (`just http<Tab>` becomes
+# `http/` when a directory shares the recipe name) and completes module recipes only as
+# `mod::recipe`. Here recipes and modules complete first, in both `mod recipe` and `mod::recipe`
+# form; files are the fallback and the completion for recipe arguments. Options still come from
+# just's completer. Arguments are consumed greedily up to each recipe's parameter count, matching
+# how just parses them; option values (e.g. `--set name value`) are not tracked.
+
+if [[ $PREFIX == -* ]]; then
+  local -a opts
+  opts=("${(@f)$(_CLAP_IFS=$'\n' _CLAP_COMPLETE_INDEX=$((CURRENT - 1)) JUST_COMPLETE=zsh \
+    just -- "${words[@]}" 2>/dev/null)}")
+  _describe -V options opts
+  return
+fi
+
+# One TSV row per public recipe, alias, and module: kind, full path, max args (-1 = variadic), doc
+local table
+table=$(just --dump --dump-format json 2>/dev/null | jq -r '
+  def arity:
+    if any(.parameters[]; .kind != "singular") then -1 else (.parameters | length) end;
+  def rows($p):
+    (.recipes[] | select(.private | not) | ["r", $p + .name, arity, .doc // ""]),
+    (. as $m | .aliases[] | $m.recipes[.target] as $r | select($r.private | not)
+      | ["r", $p + .name, ($r | arity), "alias for " + .target]),
+    (.modules | to_entries[] | .key as $k
+      | ["m", $p + $k, 0, .value.doc // ""], (.value | rows($p + $k + "::")));
+  rows("") | @tsv')
+
+if [[ -z $table ]]; then
+  _files
+  return
+fi
+
+local -A kind arity doc
+local line
+local -a row
+for line in "${(@f)table}"; do
+  row=("${(@ps:\t:)line}")
+  kind[$row[2]]=$row[1]
+  arity[$row[2]]=$row[3]
+  doc[$row[2]]=$row[4]
+done
+
+# `modpath`, not `path`: zsh ties `path` to PATH
+local modpath='' word name
+integer pending=0
+for word in "${(@)words[2,CURRENT-1]}"; do
+  [[ $word == -* ]] && continue
+  if (( pending != 0 )); then
+    (( pending > 0 )) && (( pending-- ))
+    continue
+  fi
+  name=${modpath:+${modpath}::}$word
+  case $kind[$name] in
+    m) modpath=$name ;;
+    r) pending=$arity[$name]; modpath='' ;;
+    *) modpath='' ;;
+  esac
+done
+
+if (( pending != 0 )); then
+  _files
+  return
+fi
+
+compset -P '*::'
+local scope=${modpath:+${modpath}::}$IPREFIX rest
+local -a recipes modules
+for name in "${(@k)kind}"; do
+  [[ $name == ${scope}* ]] || continue
+  rest=${name#$scope}
+  [[ $rest == *::* ]] && continue
+  if [[ $kind[$name] == m ]]; then
+    modules+=("$rest${doc[$name]:+:$doc[$name]}")
+  else
+    recipes+=("$rest${doc[$name]:+:$doc[$name]}")
+  fi
+done
+
+local ret=1
+_describe -t recipes recipe recipes && ret=0
+_describe -t modules module modules && ret=0
+(( ret == 0 )) || _files

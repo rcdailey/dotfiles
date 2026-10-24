@@ -1,11 +1,3 @@
 # .chezmoiremove - Files to remove from target system
 
 .omp
-
-# zsh configuration replaced by fish (~/.zsh_history is kept)
-.zshrc
-.zshenv
-.zprofile
-.p10k.zsh
-.config/zsh
-.local/share/zinit

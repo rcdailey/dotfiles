@@ -1,0 +1,55 @@
+# Modern zsh configuration with optimal initialization order
+# Priority: Correctness of initialization timing over all other concerns
+
+# Skip full shell initialization for non-interactive shells (no tty)
+if [[ ! -t 0 ]]; then
+    export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin:$PATH"
+    return 0
+fi
+
+# Guard against re-sourcing: source ~/.zshrc causes plugin/state corruption
+# Use 'reload' alias or 'exec zsh' for a clean shell restart
+if [[ -n "$__ZSHRC_LOADED" ]]; then
+    print -P "%F{red}Error:%f source ~/.zshrc is not supported (causes shell corruption)." >&2
+    print -P "Use %F{green}reload%f or %F{green}exec zsh%f instead." >&2
+    return 1
+fi
+__ZSHRC_LOADED=1
+
+# Enable Powerlevel10k instant prompt. MUST be at the very top after pre-setup.
+# Disable instant prompt in VS Code to fix prompt rendering
+if [[ "$TERM_PROGRAM" != "vscode" ]] && [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Load configuration files in strict numerical order for optimal initialization
+for config_file in ~/.config/zsh/[0-9]*.sh*; do
+    [[ -r "$config_file" ]] && source "$config_file"
+done
+
+
+# Shell options required for Powerlevel10k compatibility
+setopt prompt_subst
+
+# Load local customizations (excluded from git)
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Finalize Powerlevel10k setup (must be last)
+if (( ${+functions[p10k]} )); then
+    p10k finalize
+
+    # VS Code compatibility: Powerlevel10k doesn't work properly in VS Code terminal
+    # so we use a fallback prompt that provides similar functionality
+    # if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+    #     typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
+    #     p10k reload 2>/dev/null || true
+
+    #     # If Powerlevel10k still hasn't set up properly, use fallback
+    #     if [[ ${#PS1} -lt 10 ]]; then
+    #         PS1=$'\e[36m%n@%m\e[0m:\e[34m%~\e[0m%# '
+    #     fi
+    # fi
+fi

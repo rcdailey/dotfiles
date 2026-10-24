@@ -27,7 +27,6 @@ pre-commit = "latest"
 rclone = "latest"
 ripgrep = "latest"
 rumdl = "latest"
-starship = "latest"
 task = "latest"
 uv = "latest"
 worktrunk = "latest"
@@ -64,9 +63,10 @@ postinstall = "opencode plugin update"
 
 [settings]
 minimum_release_age = "0d"
-# Interactive PATH must not hold shims: they list every installed tool, active or
-# not, which breaks PATH-based tool discovery (topgrade, editors) outside project
-# dirs. `fish -c` shells still get shims via conf.d/20-mise.fish.
+# both must be off so hook-env strips the shims dir from interactive PATH
+# (src/path_env.rs); shims list every installed tool, active or not, which
+# breaks PATH-based tool discovery (topgrade, editors) outside project dirs.
+# non-interactive shells still get shims via .zshenv (mise activate --shims).
 activate_aggressive = false
 not_found_auto_install = false
 auto_install = true

@@ -14,7 +14,7 @@ workspace=$(herdr worktree open --cwd "$repo" --path "$worktree" --focus |
   jq -r '.result.workspace.workspace_id')
 panes=$(herdr pane list --workspace "$workspace" | jq -c '[.result.panes[] | {pane_id, agent}]')
 if [[ $(jq 'length == 1 and .[0].agent == null' <<<"$panes") == true ]]; then
-  # Typed input waits in the terminal until the shell finishes startup, unlike `agent start`, which
+  # Typed input waits in the terminal until zsh finishes startup, unlike `agent start`, which
   # rejects a pane whose startup commands still hold the foreground
   herdr pane run "$(jq -r '.[0].pane_id' <<<"$panes")" opencode >/dev/null
 fi

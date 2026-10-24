@@ -48,15 +48,15 @@ detect_platform() {
 
 install_fedora_packages() {
   log_info "Installing dnf packages..."
-  # Desktop packages, the login shell (fixed /usr/bin/fish), and Homebrew's Linux prerequisites;
+  # Desktop packages, the login shell (fixed /usr/bin/zsh), and Homebrew's Linux prerequisites;
   # dnf skips packages that are already installed
-  sudo dnf install -y fish pinentry-qt kitty fira-code-fonts procps-ng curl file git gcc ||
+  sudo dnf install -y zsh pinentry-qt kitty fira-code-fonts procps-ng curl file git gcc ||
     die "dnf package installation failed"
 }
 
 setup_homebrew() {
   local platform="$1" brew
-  # The dotfiles (fish conf.d, pinentry-serialized) assume these prefixes
+  # The dotfiles (.zshenv, pinentry-serialized) assume these prefixes
   case "$platform" in
   macos) brew=/opt/homebrew/bin/brew ;;
   fedora) brew=/home/linuxbrew/.linuxbrew/bin/brew ;;
@@ -78,7 +78,7 @@ install_brew_packages() {
   local platform="$1" brewfile
   brewfile=$'brew "mise"\nbrew "rbw"\n'
   if [[ "$platform" == macos ]]; then
-    brewfile+=$'brew "fish"\nbrew "pinentry-mac"\ncask "kitty"\ncask "font-fira-code"\n'
+    brewfile+=$'brew "zsh"\nbrew "pinentry-mac"\ncask "kitty"\ncask "font-fira-code"\n'
   fi
 
   log_info "Installing Homebrew packages..."
@@ -93,38 +93,38 @@ install_dev_tools() {
   log_success "mise tools installed"
 }
 
-setup_fish_shell() {
+setup_zsh_shell() {
   local platform="$1"
 
-  local fish_path login_shell
+  local zsh_path login_shell
   case "$platform" in
   macos)
-    fish_path=/opt/homebrew/bin/fish
+    zsh_path=/opt/homebrew/bin/zsh
     # $SHELL stays stale until the next login, so read the account database
     login_shell="$(dscl . -read "/Users/$USER" UserShell | awk '{print $2}')"
     ;;
   fedora)
-    fish_path=/usr/bin/fish
+    zsh_path=/usr/bin/zsh
     login_shell="$(getent passwd "$USER" | cut -d: -f7)"
     ;;
   esac
 
-  [[ -x "$fish_path" ]] || die "fish not found at $fish_path"
+  [[ -x "$zsh_path" ]] || die "zsh not found at $zsh_path"
 
-  if [[ "$login_shell" == "$fish_path" ]]; then
-    log_success "fish is already the login shell"
+  if [[ "$login_shell" == "$zsh_path" ]]; then
+    log_success "zsh is already the login shell"
     return 0
   fi
 
-  if ! grep -qx "$fish_path" /etc/shells; then
-    log_info "Adding $fish_path to /etc/shells (requires sudo)..."
-    echo "$fish_path" | sudo tee -a /etc/shells >/dev/null || die "Failed to update /etc/shells"
+  if ! grep -qx "$zsh_path" /etc/shells; then
+    log_info "Adding $zsh_path to /etc/shells (requires sudo)..."
+    echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null || die "Failed to update /etc/shells"
   fi
 
   # No sudo: under sudo, chsh changes root's shell instead of the user's
-  log_info "Changing login shell to fish (asks for your password)..."
-  chsh -s "$fish_path" || die "Failed to change login shell to fish"
-  log_success "Login shell changed to fish"
+  log_info "Changing login shell to zsh (asks for your password)..."
+  chsh -s "$zsh_path" || die "Failed to change login shell to zsh"
+  log_success "Login shell changed to zsh"
 }
 
 main() {
@@ -138,12 +138,12 @@ main() {
   setup_homebrew "$platform"
   install_brew_packages "$platform"
   install_dev_tools
-  setup_fish_shell "$platform"
+  setup_zsh_shell "$platform"
 
   echo ""
   log_success "System setup complete!"
   echo ""
-  echo "Next step: log out and back in (or reboot) to start using fish."
+  echo "Next step: log out and back in (or reboot) to start using zsh."
 }
 
 main "$@"

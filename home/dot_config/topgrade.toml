@@ -27,18 +27,27 @@ disable = [
   "pip3",
   # runs `git pull` + apply on the dotfiles repo; risky with in-progress work
   "chezmoi",
+  # topgrade's zinit step re-sources .zshrc, tripping the re-source guard;
+  # replaced by the custom "zinit" command below
+  "shell",
 ]
 
 [linux]
 # refresh repository metadata before staging packages for an offline reboot
 dnf_arguments = "--offline --refresh"
 
-# Commands run through `$SHELL -c`, which stays the previous shell until the next login after
-# chsh; keep them to syntax that bash, zsh, and fish all parse
+# `-i ` prefix runs in an interactive $SHELL, which loads .zshrc once
+# (no explicit re-source, unlike topgrade's built-in zinit step).
+# `-u` forces atpull hooks even with no new commits, so the completion
+# generators pinned to zdharma-continuum/null (just, mise) regenerate
+# after the underlying binary is upgraded
 [commands]
+"zinit" = "-i zinit self-update && zinit update -u --all"
 "prepare DNF offline update" = """
-! test -f /usr/lib/sysimage/libdnf5/offline/transaction.json \
-|| sudo env DNF_SYSTEM_UPGRADE_NO_REBOOT=1 /usr/bin/dnf offline reboot -y
+offline_dir=/usr/lib/sysimage/libdnf5/offline
+if test -f "$offline_dir/transaction.json"; then
+  sudo env DNF_SYSTEM_UPGRADE_NO_REBOOT=1 /usr/bin/dnf offline reboot -y
+fi
 """
 # Runs after the mise step finishes, so the restarted service uses the upgraded binary
 "OpenCode plugins" = "opencode plugin update && opencode service restart"
