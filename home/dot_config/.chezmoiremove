@@ -1,2 +1,6 @@
 # BASH_ENV target replaced by the OpenCode mise-env plugin
 bash/env.bash
+
+# fish replaced by zsh
+fish
+starship.toml
