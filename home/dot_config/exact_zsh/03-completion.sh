@@ -9,19 +9,17 @@ fpath=(
   $fpath
 )
 
-# Skip security check and initialize zsh completion system
-# Reason: Single user machines, no security risk, improves automation
-# Daily cache optimization: only rebuild completion dump once per day
-# Glob qualifiers do not expand inside [[ ]], so test the expanded array instead
+# Load completions from the dump (-C skips the fpath scan and security check). Rebuild it daily, or
+# when this file changes, since it controls which directories the dump covers. compinit without -C
+# keeps an existing dump whenever its file count still matches, so delete it to force a rebuild.
+# Glob qualifiers do not expand inside [[ ]], so test the expanded array instead.
 autoload -Uz compinit
 () {
-  setopt local_options extended_glob
-  local -a stale=(~/.zcompdump(#qNmh+24)) fresh=(~/.zcompdump(#qN))
-  if (( $#stale || ! $#fresh )); then
-    compinit -u
-  else
-    compinit -C -u
+  local -a stale=(~/.zcompdump(Nmh+24))
+  if (( $#stale )) || [[ ${(%):-%x} -nt ~/.zcompdump ]]; then
+    rm -f ~/.zcompdump{,.zwc}
   fi
+  compinit -C -u
 }
 
 # Essential completion behavior options (relevant with fzf-tab)
