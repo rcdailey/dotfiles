@@ -16,14 +16,19 @@ _zsource() {
 export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
 _zsource "$_zsh_plugins/powerlevel10k/powerlevel10k.zsh-theme"
 
+# Workaround for p10k#2887 (open): _p9k_on_expand reports "bad pattern: (utf|UTF)(-|)8" on every
+# tab completion. Silence its stderr; the function exists only once the theme has loaded.
+if (( $+functions[_p9k_on_expand] )); then
+  functions[_p9k_on_expand_orig]=$functions[_p9k_on_expand]
+  _p9k_on_expand() { _p9k_on_expand_orig "$@" 2>/dev/null || true; }
+fi
+
 # fzf-tab wraps the completion widget, so it loads after compinit and before widget wrappers
 _zsource "$_zsh_plugins/fzf-tab/fzf-tab.plugin.zsh"
 
-# Oh My Zsh plugins without the framework. The docker plugin caches its completion under
-# ZSH_CACHE_DIR and moves files with zf_mv.
-export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/omz"
+# Oh My Zsh plugins without the framework (ZSH_CACHE_DIR and their fpath are set in 03). The docker
+# plugin moves its generated completion into place with zf_mv.
 zmodload -F zsh/files b:zf_mv
-fpath=("$_zsh_plugins"/ohmyzsh/plugins/{docker,extract}(N) "$ZSH_CACHE_DIR/completions" $fpath)
 for _omz_plugin in kubectl git docker brew terraform colored-man-pages extract; do
   _zsource "$_zsh_plugins/ohmyzsh/plugins/$_omz_plugin/$_omz_plugin.plugin.zsh"
 done

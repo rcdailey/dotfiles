@@ -59,10 +59,6 @@ alias reload='exec zsh'
 alias reload-all='kitty @ send-text --match all "exec zsh\n"'
 alias keygen-ed25519="ssh-keygen -t ed25519 -a 100 -P ''"
 
-# Platform-specific aliases (Windows/WSL)
-alias npp="notepad++ -multiInst -nosession -noPlugin"
-alias paste="cat /dev/clipboard"
-
 # Directory navigation (optional with zsh AUTO_CD feature)
 alias 1..='cd ..'
 alias 2..='cd ../..'
@@ -80,11 +76,9 @@ alias tree='tree -Csu'
 alias cmci='chezmoi git -- caa'
 alias cmst='chezmoi git -- st'
 
-# Custom functions are autoloaded via .zshenv for all shell types
-
 # mise activation - suppress initial cleanup errors from mise's activation script
 # mise unconditionally tries to unset functions/arrays that don't exist yet
-if command -v mise >/dev/null 2>&1; then
+if (( $+commands[mise] )); then
     eval "$(mise activate zsh)" 2>/dev/null
 fi
 

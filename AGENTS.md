@@ -14,11 +14,12 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 
 **Shell:**
 
-- `home/dot_zshenv.tmpl` - XDG vars, Homebrew, mise shims (runs for ALL shell types)
+- `home/dot_zshenv.tmpl` - XDG vars, Homebrew, PATH (every zsh); mise shims when `.zshrc` skips its
+  setup
 - `home/dot_zshrc` - P10k instant prompt, sources numbered configs
 - `home/dot_config/exact_zsh/` - Numbered configs, strict load sequence:
   - `01-environment.sh` - Shell options, PATH, tool env vars
-  - `03-completion.sh` - compinit, P10k workaround (DO NOT REMOVE)
+  - `03-completion.sh` - Completion fpath, compinit, zstyles
   - `04-plugins.sh` - Sources plugins from `home/dot_local/share/zsh-plugins/` (chezmoi externals,
     no plugin manager) in a fixed order
   - `05-configuration.sh` - Aliases, keybinds, mise activate, tool configs
@@ -166,13 +167,14 @@ removal rules discoverable and ensures chezmoi removes the target files on apply
 
 Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
 
-- P10k instant prompt must be early in .zshrc
-- fzf-tab must load after compinit, before widget-wrapping plugins
-- mise split: `mise env` before instant prompt, `mise activate` after. OpenCode shell commands get
-  their directory's mise env from the `mise-env` plugin, not shell startup files.
-- Tool-presence checks (`$+commands[x]`, `command -v`) for mise-managed tools must run after
-  `mise activate`; shims alone are not reliable at startup
-- 03-completion contains P10k bug workaround (DO NOT REMOVE)
+- P10k instant prompt must be early in .zshrc; nothing after it may print or read the terminal
+- Completion dirs join fpath before compinit (03); fzf-tab loads after compinit and before
+  widget-wrapping plugins (04)
+- mise split: shims in `.zshenv` for shells that skip `.zshrc`, full `mise activate` in 05 for
+  interactive ones. OpenCode shell commands get their directory's mise env from the `mise-env`
+  plugin, not shell startup files.
+- Tool-presence checks (`$+commands[x]`) for mise-managed tools must run after `mise activate`
+- Cache generator output with `_source_cached` (07) instead of `eval "$(tool ...)"`
 
 ## Workflow
 

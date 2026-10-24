@@ -1,5 +1,14 @@
 # Zsh completion system setup
 
+# Completion directories must be on fpath before compinit, which records them in the dump. Oh My
+# Zsh plugins (04-plugins.sh) ship _docker and _extract and generate others into ZSH_CACHE_DIR.
+export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/omz"
+fpath=(
+  "${XDG_DATA_HOME:-$HOME/.local/share}"/zsh-plugins/ohmyzsh/plugins/{docker,extract}(N)
+  "$ZSH_CACHE_DIR/completions"
+  $fpath
+)
+
 # Skip security check and initialize zsh completion system
 # Reason: Single user machines, no security risk, improves automation
 # Daily cache optimization: only rebuild completion dump once per day
@@ -14,9 +23,6 @@ autoload -Uz compinit
     compinit -C -u
   fi
 }
-
-# Enable bash completion compatibility for tools that only provide bash completions
-autoload -U +X bashcompinit && bashcompinit
 
 # Essential completion behavior options (relevant with fzf-tab)
 setopt ALWAYS_TO_END                  # Move cursor to end of completed word
@@ -37,34 +43,10 @@ zstyle ':completion:*' completer _complete _files
 # Case-insensitive completion matching
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 
-# Git alias completion support for fzf-tab
-# This ensures git aliases appear in tab completions
-zstyle ':completion:*:*:git:*' user-commands "$(git config --get-regexp '^alias\.' | cut -c7- | cut -d' ' -f1 2>/dev/null)"
+# Offer git aliases as git subcommands: `--name-only` lists alias.<name> keys, minus the prefix
+zstyle ':completion:*:*:git:*' user-commands \
+  ${${(f)"$(git config --name-only --get-regexp '^alias\.' 2>/dev/null)"}#alias.}
 
 # Disable sorting for git commands to maintain natural order
 zstyle ':completion:*:git:*' sort false
 zstyle ':completion:*:npm:*' sort false
-
-# CRITICAL: Workaround for Powerlevel10k bug - GitHub issue #2887
-# https://github.com/romkatv/powerlevel10k/issues/2887
-# Malformed pattern (utf|UTF)(-|)8 causes infinite error loop during tab completion
-# This suppresses stderr from affected p9k functions until the upstream bug is fixed
-
-# List of known affected functions
-local p9k_buggy_functions=(
-  '_p9k_on_expand'
-  '_p9k__dir'
-  '_p9k__shorten_dir'
-  '_p9k_prompt_dir_init'
-)
-
-for func in $p9k_buggy_functions; do
-  if (( $+functions[$func] )); then
-    functions[${func}_orig]=$functions[$func]
-    eval "
-    $func() {
-      { ${func}_orig \"\$@\"; } 2>/dev/null || true
-    }
-    "
-  fi
-done

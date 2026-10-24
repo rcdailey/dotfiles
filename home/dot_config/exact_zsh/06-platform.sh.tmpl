@@ -6,13 +6,13 @@
 ####################################################################
 
 # rbw SSH Agent (directories crate uses DARWIN_USER_TEMP_DIR, not XDG)
-export SSH_AUTH_SOCK="$(getconf DARWIN_USER_TEMP_DIR)rbw-$(id -u)/ssh-agent-socket"
+export SSH_AUTH_SOCK="$(getconf DARWIN_USER_TEMP_DIR)rbw-$UID/ssh-agent-socket"
 
 # Enable color support
 export CLICOLOR=1
 export LSCOLORS=ExFxBxDxCxegedabagacad
 
-# Homebrew initialization (already handled in .zprofile via HOMEBREW_PREFIX)
+# Unversioned python/pip names for Homebrew's Python
 export PATH="/opt/homebrew/opt/python/libexec/bin:$PATH"
 
 # Docker configuration for specific projects
@@ -28,12 +28,10 @@ export DOCKER_DATA_PATH="/Volumes/docker"
 export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/rbw/ssh-agent-socket"
 
 # Enable color support for ls
-if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+if (( $+commands[dircolors] )); then
+    # (N) drops the argument when ~/.dircolors is missing, so the built-in database is used
+    eval "$(dircolors -b ~/.dircolors(N))"
 fi
-
-# Homebrew initialization (already handled in .zprofile via HOMEBREW_PREFIX)
-
 
 # This is to support the migration to k8s in the nezuko repository
 export DOCKER_DATA_PATH="/mnt/docker-data"

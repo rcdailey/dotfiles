@@ -1,11 +1,7 @@
-# Performance monitoring: Uncomment to profile startup time
-# zmodload zsh/zprof  # Enable at top of .zshrc, then add 'zprof' at bottom
-
-# Prevent duplicate entries in path arrays (idempotent for re-sourcing)
+# Prevent duplicate entries in path arrays
 typeset -U path fpath cdpath manpath
 
-# Environment variables and exports (console-output safe for instant prompt)
-# Note: Core variables (EDITOR, TERM, HISTFILE, etc.) are now in .zshenv
+# Output here would garble the p10k instant prompt; variables needed by every shell live in .zshenv
 
 # GPG/pinentry TTY (use $TTY variable, not $(tty) command which fails during P10k instant prompt)
 export GPG_TTY=$TTY
@@ -17,17 +13,13 @@ export PSQL_PAGER="pspg"
 export LESSHISTSIZE=0
 export LESSCHARSET=UTF-8
 
-# VS Code integration (interactive context)
-# Unset GIT_PAGER if running inside VS Code integrated terminal
-# This addresses a bug where GIT_PAGER is set to `cat` by the Copilot extension.
-if [ "$TERM_PROGRAM" = "vscode" ]; then
+# VS Code integrated terminal: load its shell integration, and drop GIT_PAGER=cat, which the
+# Copilot extension sets
+if [[ $TERM_PROGRAM == vscode ]]; then
   unset GIT_PAGER
+  . "$(code --locate-shell-integration-path zsh)"
 fi
 
-[[ $TERM_PROGRAM == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
-
-# Development tools (command substitution safe for interactive shells)
-export COLUMNS
 export DOCKER_UID=$UID DOCKER_GID=$GID
 
 # Tool configuration (interactive context)

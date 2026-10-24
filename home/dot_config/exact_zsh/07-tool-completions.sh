@@ -11,6 +11,8 @@ _source_cached() {
   source "$cache"
 }
 
+# fzf key bindings: Ctrl-R history, Ctrl-T files, Alt-C directories
+(( $+commands[fzf] )) && _source_cached fzf --zsh
 (( $+commands[mise] )) && _source_cached mise completion zsh
 (( $+commands[task] )) && _source_cached task --completion zsh
 
@@ -25,33 +27,23 @@ if (( $+commands[wt] )); then
   _source_cached wt config shell init zsh
 fi
 
-# Terraform only provides bash completion (via bashcompinit)
+# Terraform only provides bash completion
 if (( $+commands[terraform] )); then
+  autoload -U +X bashcompinit && bashcompinit
   complete -o nospace -C terraform terraform
   complete -o nospace -C terraform tf
 fi
 
 # Project-scoped tools: register once mise puts them on PATH, checked on every cd
-_talosctl_completion_loaded=0
-_maybe_load_talosctl_completion() {
-  if (( _talosctl_completion_loaded )); then
-    return
-  fi
-  (( $+commands[talosctl] )) || return
-  eval "$(talosctl completion zsh)"
-  _talosctl_completion_loaded=1
+typeset -ga _pending_project_completions=(kubectl talosctl)
+_load_project_completions() {
+  local tool
+  for tool in $_pending_project_completions; do
+    (( $+commands[$tool] )) || continue
+    _source_cached $tool completion zsh
+    _pending_project_completions=(${_pending_project_completions:#$tool})
+  done
+  (( $#_pending_project_completions )) || chpwd_functions=(${chpwd_functions:#$0})
 }
-chpwd_functions+=(_maybe_load_talosctl_completion)
-_maybe_load_talosctl_completion
-
-_kubectl_completion_loaded=0
-_maybe_load_kubectl_completion() {
-  if (( _kubectl_completion_loaded )); then
-    return
-  fi
-  (( $+commands[kubectl] )) || return
-  eval "$(kubectl completion zsh)"
-  _kubectl_completion_loaded=1
-}
-chpwd_functions+=(_maybe_load_kubectl_completion)
-_maybe_load_kubectl_completion
+chpwd_functions+=(_load_project_completions)
+_load_project_completions

@@ -1,11 +1,9 @@
 # Modern zsh configuration with optimal initialization order
 # Priority: Correctness of initialization timing over all other concerns
 
-# Skip full shell initialization for non-interactive shells (no tty)
-if [[ ! -t 0 ]]; then
-    export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin:$PATH"
-    return 0
-fi
+# Interactive shells without a terminal (zsh -i <file) skip the full setup; .zshenv gives them
+# mise shims
+[[ -t 0 ]] || return 0
 
 # Guard against re-sourcing: source ~/.zshrc causes plugin/state corruption
 # Use 'reload' alias or 'exec zsh' for a clean shell restart
@@ -38,18 +36,4 @@ setopt prompt_subst
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # Finalize Powerlevel10k setup (must be last)
-if (( ${+functions[p10k]} )); then
-    p10k finalize
-
-    # VS Code compatibility: Powerlevel10k doesn't work properly in VS Code terminal
-    # so we use a fallback prompt that provides similar functionality
-    # if [[ "$TERM_PROGRAM" == "vscode" ]]; then
-    #     typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
-    #     p10k reload 2>/dev/null || true
-
-    #     # If Powerlevel10k still hasn't set up properly, use fallback
-    #     if [[ ${#PS1} -lt 10 ]]; then
-    #         PS1=$'\e[36m%n@%m\e[0m:\e[34m%~\e[0m%# '
-    #     fi
-    # fi
-fi
+(( ! $+functions[p10k] )) || p10k finalize
