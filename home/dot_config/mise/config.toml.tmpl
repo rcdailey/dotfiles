@@ -24,6 +24,9 @@ markdownlint-cli2 = "latest"
 pi = "latest"
 powershell = "latest"
 pre-commit = "latest"
+# pre-commit's zipapp runs `env python3`; without a global python the shim
+# falls back to macOS /usr/bin/python3 (3.9), which pre-commit cannot run on
+python = "latest"
 rclone = "latest"
 ripgrep = "latest"
 rumdl = "latest"
