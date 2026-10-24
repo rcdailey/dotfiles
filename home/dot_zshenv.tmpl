@@ -17,11 +17,29 @@ export HOMEBREW_PREFIX="/opt/homebrew"
 export HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
 {{- end }}
 
-# Set up Homebrew environment for all shell sessions
-# This is critical for zinit plugin compilation which runs in non-login shells
-if [ -n "$HOMEBREW_PREFIX" ] && [ -f "$HOMEBREW_PREFIX/bin/brew" ]; then
-    # Pass shell name to avoid sandboxed /bin/ps lookup in Homebrew's shellenv
-    eval "$($HOMEBREW_PREFIX/bin/brew shellenv zsh)"
+# Homebrew environment for all shell sessions (zinit plugin compilation runs in non-login shells).
+# Static form of `brew shellenv zsh`, which costs a process per shell; its output depends only on
+# the prefix. Re-sync if Homebrew changes what shellenv exports.
+if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
+    export HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
+    export HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX/Homebrew"
+    fpath[1,0]="$HOMEBREW_PREFIX/share/zsh/site-functions"
+    export FPATH
+    export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin${PATH+:$PATH}"
+    # Leading MANPATH colon and trailing INFOPATH colon keep the system default dirs searched
+    if [[ -n "${MANPATH-}" ]]; then
+        export MANPATH="${MANPATH%"${MANPATH##*[!:]}"}"
+        export MANPATH=":${MANPATH#"${MANPATH%%[!:]*}"}"
+    fi
+    export INFOPATH="$HOMEBREW_PREFIX/share/info:${INFOPATH:-}"
+fi
+
+# /etc/zprofile and /etc/zshrc source /etc/profile and /etc/profile.d (~30 ms on Fedora). Their
+# exported environment is inherited, so only the first shell in a process tree needs them.
+if [[ -n "$__ZSH_GLOBAL_RCS_DONE" ]]; then
+    setopt no_global_rcs
+else
+    export __ZSH_GLOBAL_RCS_DONE=1
 fi
 
 # Core shell behavior (needed by all shell types)

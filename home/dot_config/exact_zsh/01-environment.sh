@@ -28,9 +28,7 @@ fi
 
 # Development tools (command substitution safe for interactive shells)
 export COLUMNS
-DOCKER_UID="$(id -u)"
-DOCKER_GID="$(id -g)"
-export DOCKER_UID DOCKER_GID
+export DOCKER_UID=$UID DOCKER_GID=$GID
 
 # Tool configuration (interactive context)
 # Disable husky pre-commit hooks (slows down git)

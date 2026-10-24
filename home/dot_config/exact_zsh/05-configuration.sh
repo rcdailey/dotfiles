@@ -25,15 +25,9 @@ fi
 # Append additional directories
 export PATH="$PATH:$HOME/git-scripts"
 
-# PATH modifications for Go tools (needed in all interactive shells)
-# Add Go tools to PATH if go is installed
-if command -v go >/dev/null 2>&1; then
-  if [[ -z $GOPATH_CACHED ]]; then
-    GOPATH_CACHED="$(go env GOPATH 2>/dev/null)" || GOPATH_CACHED="$HOME/go"
-    export GOPATH_CACHED
-  fi
-  export PATH="$GOPATH_CACHED/bin:$PATH"
-fi
+# Go tools; GOPATH defaults to ~/go. Skips `go env GOPATH` (~30 ms), so a GOPATH set only through
+# `go env -w` is not seen.
+export PATH="${GOPATH:-$HOME/go}/bin:$PATH"
 
 # .NET tools PATH
 if [ -d "$HOME/.dotnet/tools" ]; then
