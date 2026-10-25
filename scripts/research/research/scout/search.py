@@ -6,7 +6,7 @@ import json
 
 import click
 
-from research._ghapi import APIError, _run_gh, api
+from research._ghapi import APIError, _run_gh, api, search_terms
 from research._render import DEFAULT_MAX_CHARS, truncate_output
 from research._source_ledger import record_visible_sources
 from research.scout import cli
@@ -23,7 +23,7 @@ def _search_repos(
     args = [
         "search",
         "repos",
-        query,
+        *search_terms(query),
         "--limit",
         str(limit),
         "--sort",

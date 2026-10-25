@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shlex
 import shutil
 import subprocess
 from typing import Any
@@ -27,6 +28,18 @@ def _run_gh(args: list[str], check: bool = True) -> subprocess.CompletedProcess:
         )
     except FileNotFoundError:
         die("`gh` CLI not found in PATH")
+
+
+def search_terms(query: str) -> list[str]:
+    """Split a search query shell-style: loose words become separate terms, quoted phrases stay one.
+
+    `gh search` quotes any argument containing whitespace, so passing a whole query as one
+    argument would turn every multi-word query into an exact-phrase search.
+    """
+    try:
+        return shlex.split(query)
+    except ValueError as e:
+        raise APIError(f"invalid search query: {e}") from e
 
 
 def api(endpoint: str, method: str = "GET", params: dict[str, str] | None = None) -> dict | list:
@@ -344,9 +357,10 @@ def list_discussions(
     """List discussions in a repository via GraphQL.
 
     GitHub Discussions GraphQL has no server-side search filter, so when
-    ``search`` is provided we fetch a larger batch (up to 100) and filter
-    client-side, then truncate to ``limit``.
+    ``search`` is provided we fetch a larger batch (up to 100) and keep titles
+    containing every search term, then truncate to ``limit``.
     """
+    terms = [term.lower() for term in search_terms(search)] if search else []
     fetch_limit = min(limit * 3, 100) if search else limit
     query = """\
 query($owner:String!,$repo:String!,$limit:Int!) {
@@ -363,9 +377,10 @@ query($owner:String!,$repo:String!,$limit:Int!) {
 
     repository = (data.get("data") or {}).get("repository") or {}
     nodes = (repository.get("discussions") or {}).get("nodes") or []
-    if search:
-        needle = search.lower()
-        nodes = [n for n in nodes if needle in n.get("title", "").lower()][:limit]
+    if terms:
+        nodes = [n for n in nodes if all(term in n.get("title", "").lower() for term in terms)][
+            :limit
+        ]
     return nodes
 
 
