@@ -16,9 +16,6 @@ permissions:
   - action: question
     resource: "*"
     effect: deny
-  - action: session_rename
-    resource: "*"
-    effect: deny
   - action: opencode_session_rename
     resource: "*"
     effect: deny
