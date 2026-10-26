@@ -1,6 +1,9 @@
-# macOS /etc/zprofile runs path_helper after .zshenv and moves system directories ahead of the mise
-# shims. Interactive shells recover through full mise activation; re-prepend for non-interactive
-# login shells (zsh -lc from kitty, SSH commands).
-if [[ $OSTYPE == darwin* && ! -o interactive ]] && (( $+commands[mise] )); then
-    eval "$(mise activate zsh --shims)"
+# macOS /etc/zprofile runs path_helper after .zshenv and moves system directories ahead of the
+# user and mise shim directories. Re-prepend them; interactive shells get full mise activation in
+# .zshrc instead of shims.
+if [[ $OSTYPE == darwin* ]]; then
+    path=($user_path $path)
+    if [[ ! -o interactive ]] && (( $+commands[mise] )); then
+        eval "$(mise activate zsh --shims)"
+    fi
 fi

@@ -1,53 +1,15 @@
 # Platform-specific configurations consolidated using chezmoi templating
 
-{{ if eq .chezmoi.os "darwin" }}
-####################################################################
-# macOS-specific configurations
-####################################################################
-
-# rbw SSH Agent (directories crate uses DARWIN_USER_TEMP_DIR, not XDG)
-export SSH_AUTH_SOCK="$(getconf DARWIN_USER_TEMP_DIR)rbw-$UID/ssh-agent-socket"
-
-# Enable color support
-export CLICOLOR=1
-export LSCOLORS=ExFxBxDxCxegedabagacad
-
-# Unversioned python/pip names for Homebrew's Python
-export PATH="/opt/homebrew/opt/python/libexec/bin:$PATH"
-
-# Docker configuration for specific projects
-export DOCKER_DATA_PATH="/Volumes/docker"
-{{ end }}
-
 {{ if eq .chezmoi.os "linux" }}
 ####################################################################
 # Linux-specific configurations
 ####################################################################
-
-# rbw SSH Agent
-export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/rbw/ssh-agent-socket"
 
 # Enable color support for ls
 if (( $+commands[dircolors] )); then
     # (N) drops the argument when ~/.dircolors is missing, so the built-in database is used
     eval "$(dircolors -b ~/.dircolors(N))"
 fi
-
-# This is to support the migration to k8s in the nezuko repository
-export DOCKER_DATA_PATH="/mnt/docker-data"
-
-{{ end }}
-
-{{ if eq .chezmoi.os "windows" }}
-####################################################################
-# Windows-specific configurations
-####################################################################
-
-# Prepend Chocolatey bin to PATH to prioritize it over Git for Windows tools
-export PATH="$HOME/AppData/Local/UniGetUI/Chocolatey/bin:$PATH"
-
-# Node.js platform check bypass for Windows environments
-export NODE_SKIP_PLATFORM_CHECK=1
 
 {{ end }}
 ####################################################################

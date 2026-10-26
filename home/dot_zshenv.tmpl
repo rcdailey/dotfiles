@@ -69,17 +69,92 @@ fi
 # Timezone for kubectl logs and other tools (POSIX format with DST support)
 export TZ="America/Chicago"
 
+# GPG/pinentry TTY ($TTY, not $(tty), which fails during the p10k instant prompt). Without a
+# controlling terminal $TTY is empty; keep any inherited value.
+[[ -n $TTY ]] && export GPG_TTY=$TTY
+
+# rbw SSH agent
+{{- if eq .chezmoi.os "darwin" }}
+# The directories crate uses DARWIN_USER_TEMP_DIR, not XDG
+export SSH_AUTH_SOCK="$(getconf DARWIN_USER_TEMP_DIR)rbw-$UID/ssh-agent-socket"
+{{- else }}
+export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/rbw/ssh-agent-socket"
+{{- end }}
+
+# Paging
+export LESS="-RSic~ -x2"
+export DELTA_PAGER="less"
+export PSQL_PAGER="pspg"
+export LESSHISTSIZE=0
+export LESSCHARSET=UTF-8
+{{- if eq .chezmoi.os "darwin" }}
+export CLICOLOR=1
+export LSCOLORS=ExFxBxDxCxegedabagacad
+{{- end }}
+
+export DOCKER_UID=$UID DOCKER_GID=$GID
+{{- if eq .chezmoi.os "darwin" }}
+export DOCKER_DATA_PATH="/Volumes/docker"
+{{- else if eq .chezmoi.os "linux" }}
+# Supports the migration to k8s in the nezuko repository
+export DOCKER_DATA_PATH="/mnt/docker-data"
+{{- else if eq .chezmoi.os "windows" }}
+export NODE_SKIP_PLATFORM_CHECK=1
+{{- end }}
+
+# Disable husky pre-commit hooks (slows down git)
+export HUSKY_SKIP_HOOKS=1 # For legacy purposes
+export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
+
+export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
+
+# rumdl defaults to a .rumdl_cache directory in the working directory
+export RUMDL_CACHE_DIR="$XDG_CACHE_HOME/rumdl"
+
+# Point Terraform (and other Go net/netrc consumers) at a dedicated netrc file. Siggy (the Statsig
+# CLI) hardcodes ~/.netrc and writes non-RFC keywords that break Terraform parsing.
+export NETRC="$HOME/.netrc.terraform"
+
+# Homebrew - disable new casks/formula messages and analytics
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_BOOTSNAP=1
+export HOMEBREW_NO_ENV_HINTS=1
+export HOMEBREW_NO_UPDATE_REPORT_FORMULAE=1
+export HOMEBREW_NO_UPDATE_REPORT_CASKS=1
+# Casks with auto_updates true (Vivaldi, Docker Desktop) update themselves; --greedy still
+# upgrades them on demand
+export HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1
+
+# Inside herdr, worktrunk's post-switch hook opens the worktree in its own child space, so the
+# calling shell stays put (wt switch --cd overrides)
+[[ -n "$HERDR_ENV" ]] && export WORKTRUNK_SWITCH__CD=false
+
 # Function autoloading (needed by both interactive and non-interactive shells)
 if [[ -d "$XDG_CONFIG_HOME/zsh/functions" ]]; then
   fpath=("$XDG_CONFIG_HOME/zsh/functions" $fpath)
   autoload -Uz $XDG_CONFIG_HOME/zsh/functions/*(:t)
 fi
 
-# User executables (mise, custom scripts) for all shell types. Non-interactive shells need them
-# too, e.g. `zsh -lc 'exec herdr'` in kitty, whose server runs keybinding commands with this PATH.
-# -U drops duplicate entries when 01-environment.sh re-prepends after macOS path_helper.
+# User executables for all shell types. Non-interactive shells need them too, e.g. `zsh -lc` in
+# kitty and herdr-lazygit, and the commands lazygit runs. Listed in priority order; .zprofile
+# re-prepends them after macOS path_helper. -U keeps the first entry on re-prepend.
 typeset -U path
-[[ -d "$HOME/.local/bin" ]] && path=("$HOME/.local/bin" $path)
+user_path=(
+{{- if eq .chezmoi.os "darwin" }}
+    /opt/homebrew/opt/python/libexec/bin # Unversioned python/pip names for Homebrew's Python
+{{- else if eq .chezmoi.os "windows" }}
+    # Chocolatey ahead of Git for Windows tools
+    "$HOME/AppData/Local/UniGetUI/Chocolatey/bin"
+{{- end }}
+    "$HOME/.local/kitty.app/bin" # kitty's official installer
+    "$HOME/.dotnet/tools"
+    # GOPATH defaults to ~/go. Skips `go env GOPATH` (~30 ms), so a GOPATH set only through
+    # `go env -w` is not seen.
+    "${GOPATH:-$HOME/go}/bin"
+    "$HOME/.local/bin"
+    "$HOME/bin" # devbox doesn't include it by default
+)
+path=($user_path $path "$HOME/git-scripts")
 
 # mise shims for shells that skip .zshrc's full setup (non-interactive, or no terminal); full
 # activation in 01-environment.sh would strip them again
