@@ -348,6 +348,19 @@ def file_history(owner: str, repo: str, path: str, limit: int = 30) -> list[dict
     return list_commits(owner, repo, path=path, limit=limit)
 
 
+def advisories(advisory_id: str) -> list[dict]:
+    """Return global GitHub Advisory Database entries for a GHSA or CVE ID."""
+    if advisory_id.upper().startswith("CVE-"):
+        data = api(f"advisories?cve_id={advisory_id.upper()}")
+        if not isinstance(data, list):
+            raise APIError("unexpected response type from advisories API")
+        return data
+    data = api(f"advisories/{advisory_id}")
+    if not isinstance(data, dict):
+        raise APIError("unexpected response type from advisory API")
+    return [data]
+
+
 def list_discussions(
     owner: str,
     repo: str,

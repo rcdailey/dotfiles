@@ -65,6 +65,14 @@ interface GitHubTool {
 }
 
 const GITHUB_TOOLS: Record<string, GitHubTool> = {
+  advisory: {
+    description:
+      "Security advisory by GHSA or CVE ID: severity, affected version ranges, first patched " +
+      "versions, description, and references.",
+    arguments: ["id"],
+    required: ["id"],
+    properties: { id: text(), max_chars: maxChars },
+  },
   activity: {
     description: "Recent commits, merged PRs, and closed issues.",
     arguments: ["repo"],
