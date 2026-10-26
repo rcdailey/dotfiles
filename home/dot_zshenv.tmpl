@@ -140,9 +140,7 @@ fi
 # re-prepends them after macOS path_helper. -U keeps the first entry on re-prepend.
 typeset -U path
 user_path=(
-{{- if eq .chezmoi.os "darwin" }}
-    /opt/homebrew/opt/python/libexec/bin # Unversioned python/pip names for Homebrew's Python
-{{- else if eq .chezmoi.os "windows" }}
+{{- if eq .chezmoi.os "windows" }}
     # Chocolatey ahead of Git for Windows tools
     "$HOME/AppData/Local/UniGetUI/Chocolatey/bin"
 {{- end }}
