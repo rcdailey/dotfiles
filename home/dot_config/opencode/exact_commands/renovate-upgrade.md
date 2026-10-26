@@ -18,13 +18,13 @@ foreground; never set `background: true`. Wait for all results before analyzing 
 
 Pending or absent checks make a PR ineligible: its CI result is not yet known.
 
-**Bulk mode** (no arguments): Run `dependency-prs`, which prints open Renovate and Dependabot PRs in
-review priority order, one per line with a check state, a best-effort update type, and an author.
-Take the first 5 with `pass` checks. Launch one foreground subagent per selected PR in parallel by
-issuing all calls in the same message. Each subagent receives the PR reference. Collect all results,
-then present a unified summary. Show each PR's detected type; list skipped PRs (number, check state,
-type, title) at the end of the report. Failing PRs may need code fixes for the upgrade; they are
-assessed only when requested as a single PR.
+**Bulk mode** (no arguments): Run `dependency-prs`, which prints each base branch's merge method,
+then open Renovate and Dependabot PRs in review priority order, one per line with a check state, a
+best-effort update type, and an author. Take the first 5 with `pass` checks. Launch one foreground
+subagent per selected PR in parallel by issuing all calls in the same message. Each subagent
+receives the PR reference. Collect all results, then present a unified summary. Show each PR's
+detected type; list skipped PRs (number, check state, type, title) at the end of the report. Failing
+PRs may need code fixes for the upgrade; they are assessed only when requested as a single PR.
 
 **Single PR mode** (argument specifies a PR): Run `gh pr checks <PR> --repo <owner/repo>`. If checks
 are pending or absent, report them and stop; otherwise launch one subagent for the PR, including
@@ -81,18 +81,25 @@ and head SHAs. Never collapse CI-blocked or unknown assessments into this summar
 
 ## Merging
 
-ALWAYS use `gh pr merge --rebase`. Never use merge commits or squash.
+Use the merge method `dependency-prs` reports for each PR's base branch (run it in single PR mode
+too). Never merge a PR whose method is `none`; report it as unmergeable. Never use merge commits.
 
-Merge all approved PRs sequentially in one shell loop, with a three-second delay after each attempt:
+Approve, then merge with `--auto`: gh merges at once when the PR is mergeable, otherwise enables
+auto-merge. Process approved PRs sequentially in one shell loop, with a three-second delay after
+each attempt:
 
 ```bash
-for pr in 101 102 103; do gh pr merge "$pr" --repo owner/repo --rebase; sleep 3; done
+for pr in 101:rebase 102:squash; do
+  gh pr review "${pr%%:*}" --repo owner/repo --approve &&
+    gh pr merge "${pr%%:*}" --repo owner/repo --auto "--${pr#*:}"
+  sleep 3
+done
 ```
 
 Do not make separate `gh pr view` calls before or after merging. The assessment already checks CI
 and the PR head, while `gh pr merge` reports the result of each attempt. Record failures, continue
-through the loop, and finish with the merged and failed PRs. Do not retry a failure without
-resolving its cause.
+through the loop, and finish with merged, auto-merge enabled, and failed PRs. Do not retry a failure
+without resolving its cause.
 
 ## Rules
 

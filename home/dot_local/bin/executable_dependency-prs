@@ -6,16 +6,36 @@
 # Update type is best effort (bot config varies per repo); the first signal found wins:
 # label, "(major)" style title suffix, then the version change in the title
 # ("1.2 -> 1.3" or Dependabot's "from 1.2 to 1.3").
-# Output: one line per PR:
-# <number> <checks> <type>/<signal> <created> [security] <author> <title> [<labels>]
-# (security and labels appear only when present).
+# Output: one header line per PR base branch, then one line per PR:
+# merge <base> <method>
+# <number> <checks> <type>/<signal> <created> [security] [base=<base>] <author> <title>
+#   [<labels>]
+# Method is the `gh pr merge` method the base branch accepts: rebase, else squash, else none.
+# Merge commits are never offered. Repo settings and branch rulesets must both allow the method.
+# Security, labels, and base (only with multiple bases) appear only when present.
 # Extra arguments pass through to `gh pr list` (e.g. --repo owner/name).
 set -euo pipefail
 
-fields=number,title,labels,createdAt,author,statusCheckRollup
-for author in app/renovate app/dependabot; do
+fields=number,title,labels,createdAt,author,statusCheckRollup,url,baseRefName
+prs=$(for author in app/renovate app/dependabot; do
   gh pr list --author "$author" --state open --limit 100 --json "$fields" "$@"
-done | jq -rs '
+done | jq -s add)
+[[ $prs == "[]" ]] && exit 0
+
+repo=$(jq -r '.[0].url | split("/")[3:5] | join("/")' <<<"$prs")
+repo_methods=$(gh repo view "$repo" --json rebaseMergeAllowed,squashMergeAllowed \
+  --jq '[(.rebaseMergeAllowed | select(.) | "rebase"),
+    (.squashMergeAllowed | select(.) | "squash")]')
+bases=$(jq -c 'map(.baseRefName) | unique' <<<"$prs")
+jq -r '.[]' <<<"$bases" | while read -r base; do
+  gh api --method GET "repos/$repo/rules/branches/$base" \
+    | jq -r --arg base "$base" --argjson allowed "$repo_methods" '
+      [.[] | select(.type == "pull_request").parameters.allowed_merge_methods // empty]
+      | reduce .[] as $rule ($allowed; map(select(IN($rule[]))))
+      | "merge \($base) \(first // "none")"'
+done
+
+jq -r --argjson bases "$bases" '
 def semver_type($a; $b): [$a, $b] | map(ltrimstr("v") | split(".")) as [$x, $y]
   | if $x[0] != $y[0] then "major" elif $x[1] != $y[1] then "minor" else "patch" end;
 def checks: [.statusCheckRollup[] | (.conclusion // .state) as $s
@@ -24,8 +44,7 @@ def checks: [.statusCheckRollup[] | (.conclusion // .state) as $s
       else "fail" end]
   | if . == [] then "none" elif any(. == "fail") then "fail"
     elif any(. == "pending") then "pending" else "pass" end;
-add
-| map(
+map(
   [.labels[].name] as $labels
   | ([
       ($labels | map(capture("\\b(?<t>major|minor|patch)\\b"; "i").t) | first
@@ -36,12 +55,14 @@ add
         | {t: semver_type(.a; .b), s: "version"})
     ] | first // {t: "unknown", s: "none"}) as $type
   | {number, title, labels: $labels, createdAt, author: .author.login, checks: checks,
+     base: .baseRefName,
      security: any($labels[]; test("security|vulnerab"; "i")),
      type: ($type.t | ascii_downcase), signal: $type.s})
 | sort_by((if .security then 0 else 1 end),
     ({major: 0, unknown: 0, minor: 1, patch: 2}[.type]), .createdAt)
 | .[]
 | [.number, .checks, "\(.type)/\(.signal)", .createdAt[:10],
-   (if .security then "security" else empty end), .author, .title,
+   (if .security then "security" else empty end),
+   (if ($bases | length) > 1 then "base=\(.base)" else empty end), .author, .title,
    (if .labels == [] then empty else "[\(.labels | join(","))]" end)]
-| join(" ")'
+| join(" ")' <<<"$prs"
