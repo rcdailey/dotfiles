@@ -395,7 +395,8 @@ Findings:
 Verification: <commands you ran and their results>
 Unknowns: <none or unresolved evidence>
 Snapshot: <stable audited tree | audited and current trees requiring retry | unavailable>
-Resume action: <fix and resume | continue verification | resume unchanged | fresh audit required | none>
+Resume action: <fix and resume | continue verification | user gap decision | resume unchanged |
+  fresh audit required | none>
 ```
 
 An acceptance case passes only with a named durable test or verification command that you executed
@@ -404,6 +405,7 @@ are not evidence. Mark missing evidence `unknown`; never infer a pass. Use `fail
 findings and `incomplete` for unresolved verification without findings. Overall `pass` requires
 every case to pass or be an accepted gap, no actionable findings, no unknowns, and a stable
 snapshot. Under `incomplete`, name which unknowns no available evidence can resolve, so the caller
-can request user acceptance. Respond directly to the caller. A message without a tool call ends this
-task and becomes your report; send only the final Return, never a progress note or milestone
-summary.
+can request user acceptance. When those are the only unknowns, with no findings and a stable
+snapshot, set Resume action to `user gap decision`: the audit is otherwise complete. Respond
+directly to the caller. A message without a tool call ends this task and becomes your report; send
+only the final Return, never a progress note or milestone summary.
