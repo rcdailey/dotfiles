@@ -396,6 +396,20 @@ class CommitSaveTests(unittest.TestCase):
             ["change.txt"],
         )
 
+    def test_retry_recovers_when_git_fails_during_save(self):
+        self.commit_initial()
+        self.change.write_text("changed\n")
+        lock = self.repo / ".git/index.lock"
+        lock.touch()
+        result = self.save("project: changed", "change.txt")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertIn("commit retry", result.stderr)
+        lock.unlink()
+        result = self.run_retry()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assert_committed("project: changed")
+
     def test_retry_rejects_draft_after_head_moves(self):
         self.commit_initial()
         result = self.run_save("--amend", "-s", "feat: wrong type")

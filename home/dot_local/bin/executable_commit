@@ -66,15 +66,22 @@ def die(message: str) -> NoReturn:
     sys.exit(1)
 
 
+def _run_git(
+    args: tuple[str, ...], check: bool, capture: bool, text: bool
+) -> subprocess.CompletedProcess:
+    """Run git; a checked failure exits like `die` so a save failure stays retryable."""
+    result = subprocess.run(["git", *args], capture_output=capture, text=text)
+    if check and result.returncode != 0:
+        if capture:
+            stderr = result.stderr if text else os.fsdecode(result.stderr)
+            print(stderr, end="", file=sys.stderr)
+        die(f"git {args[0]} exited with status {result.returncode}")
+    return result
+
+
 def git(*args: str, check: bool = True, capture: bool = False) -> subprocess.CompletedProcess:
     """Run a git command."""
-    cmd = ["git", *args]
-    return subprocess.run(
-        cmd,
-        check=check,
-        capture_output=capture,
-        text=True,
-    )
+    return _run_git(args, check=check, capture=capture, text=True)
 
 
 def git_output(*args: str) -> str:
@@ -85,12 +92,7 @@ def git_output(*args: str) -> str:
 
 def git_bytes(*args: str) -> bytes:
     """Run a git command and return stdout without decoding paths or content."""
-    result = subprocess.run(
-        ["git", *args],
-        check=True,
-        capture_output=True,
-    )
-    return result.stdout
+    return _run_git(args, check=True, capture=True, text=False).stdout
 
 
 def print_section(header: str, content: str) -> None:
