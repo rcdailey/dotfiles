@@ -493,7 +493,7 @@ Source: `home/dot_config/opencode/`.
 | `AGENTS.md` global directives | `~/.pi/agent/AGENTS.md` copy | chunk 1 |
 | `coding-directives.md.tmpl` (+ shared partials) | sort into AGENTS.md / skills / agent files | done (chunk 3; agent/plan parts deferred to 6/7) |
 | `exact_skills/` + external mattpocock skills | copies in pi `skills/` | done (chunk 2) |
-| `exact_commands/` (`$ARGUMENTS` compatible) | pi `prompts/` copies; `review`, `renovate-upgrade` depend on subagents | later |
+| `exact_commands/` (`$ARGUMENTS` compatible) | pi `prompts/` copies; `review`, `upgrade-prs` depend on subagents | later |
 | `exact_agents/` plan/build (primary) | `/plan` prompt + skill + Plannotator; build = default session | later |
 | `exact_agents/` acceptance/researcher/reviewer/upgrade-analyst | subagent agent files | chunk 6 |
 | `opencode.jsonc` permissions | pi-permission-system config | chunk 5 |
