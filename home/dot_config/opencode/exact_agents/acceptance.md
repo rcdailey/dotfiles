@@ -11,6 +11,9 @@ permissions:
   - action: question
     resource: "*"
     effect: deny
+  - action: submit_plan
+    resource: "*"
+    effect: deny
   - action: webfetch
     resource: "*"
     effect: allow
