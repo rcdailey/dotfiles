@@ -128,6 +128,13 @@ map", not "`index.ts` imports the map and registers an agent transform".
   Below the rule: Retries use exponential backoff.
   ```
 
+- Above the rule, add a Mermaid diagram for each case that applies: ERD when persisted entities,
+  relationships, or cardinality change; sequence when an added or changed flow crosses two or more
+  systems; flowchart when three or more components change ownership or connections, or an external
+  dependency is added or removed; state diagram when an added or changed lifecycle has three or more
+  states. Label with domain terms drawn from discovery sources, aligned to the project glossary when
+  one exists; never code identifiers. No class or call-level diagrams. Text still states every
+  decision.
 - Below the rule, write the implementation part for implementation and the auditor: invariants,
   contract graph, and each workstream as a heading stating its outcome, followed by numbered slices.
   Label each slice that changes a listed boundary. It must not add a decision, boundary change, or
