@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+
+# chezmoi modify_ script: the CodexBar app and the OpenCode codexbar-token plugin also write
+# config.json (token accounts, Settings changes), so merge the managed provider keys into the live
+# file instead of replacing it. Managed keys win on every apply; CodexBar owns all other keys.
+
+import json
+import sys
+
+MANAGED_PROVIDERS = [
+    {
+        "id": "codex",
+        "enabled": False,
+        "hiddenUsageItemIDs": ["metric:codex-spark", "metric:codex-spark-weekly"],
+    },
+    {"id": "claude", "enabled": True, "source": "oauth"},
+    {"id": "opencodego", "enabled": False, "source": "api"},
+]
+
+
+raw = sys.stdin.read()
+config = json.loads(raw) if raw.strip() else {}
+if not isinstance(config, dict):
+    sys.exit("config.json must contain a JSON object")
+
+config.setdefault("version", 1)
+providers = config.setdefault("providers", [])
+by_id = {provider.get("id"): provider for provider in providers}
+for managed in MANAGED_PROVIDERS:
+    if managed["id"] in by_id:
+        by_id[managed["id"]].update(managed)
+    else:
+        providers.append(dict(managed))
+
+json.dump(config, sys.stdout, indent=2, ensure_ascii=False)
+sys.stdout.write("\n")
