@@ -3,7 +3,7 @@
 # Route `oc upgrade` through mise so its postinstall hook refreshes the service and plugins.
 
 if [[ "${1-}" == "upgrade" ]]; then
-  mise upgrade npm:@opencode/cli "${@:2}"
+  mise upgrade aqua:anomalyco/opencode "${@:2}"
   return $?
 fi
 

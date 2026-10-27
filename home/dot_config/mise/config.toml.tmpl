@@ -56,10 +56,8 @@ bin = "plannotator"
 linux-x64 = { asset_pattern = "plannotator-linux-x64" }
 macos-arm64 = { asset_pattern = "plannotator-darwin-arm64" }
 
-[tools."npm:@opencode/cli"]
+[tools."aqua:anomalyco/opencode"]
 version = "latest"
-allow_builds = ["@opencode/cli"]
-allow_low_downloads = true
 # No service restart here: during `mise upgrade` this can run before the upgrade finishes, so
 # topgrade's "OpenCode plugins" command restarts the service afterward
 postinstall = "opencode plugin update"
