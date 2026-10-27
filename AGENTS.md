@@ -111,18 +111,19 @@ lazygit, etc.). Browse the directory to discover what's managed.
   `scripts/<project>/tests/`).
 - Managed code without a project-level test directory uses root `tests/<component>/`, grouped by
   tool or purpose, not language. Create directories only when adding tests.
-- OpenCode plugins (`exact_plugins/`): MUST NOT add durable tests for single-file plugins; verify
-  them with side-effect-free checks (e.g., rendering templates). Directory plugins may keep
-  `*.test.ts` tests beside their modules. MUST NOT run OpenCode to verify any plugin.
-- OpenCode config (`opencode.jsonc.tmpl`, `.chezmoidata.yaml`, agents, commands, skills): MUST NOT
-  add durable tests; verify by rendering templates and running pre-commit.
-- pi extensions (`exact_extensions/`): MUST NOT add durable tests for single-file extensions; verify
-  them with side-effect-free checks (e.g., importing pure functions with `bun`).
+- Durable tests cover only code with its own logic: `scripts/<project>/`, directory plugins
+  (`*.test.ts` beside their modules), and the suites under Test execution. Verify everything else
+  (tool installs, config values, delegating wrappers, agents, skills, commands, single-file plugins
+  and extensions) by template rendering, `chezmoi apply --dry-run`, pre-commit, or a disposable
+  check. Global test-first rules apply only inside this scope. MUST NOT run OpenCode to verify any
+  plugin.
+- A test that pins a config value, package ID, or path is a defect, not precedent: delete it when a
+  change touches that value; never update it.
 
 **Test execution:**
 
 - Run affected behavioral suites separately; pre-commit is for static checks, not test execution.
-- OpenCode launcher and plugin integration: run `bun test tests/opencode` from the repo root.
+- OpenCode plugin integration: run `bun test tests/opencode` from the repo root.
 - OpenCode test dependencies: run `bun install --cwd tests/opencode --frozen-lockfile` first.
 - OpenCode directory plugins: run `bun test home/dot_config/opencode/exact_plugins`.
 - Commit workflow: run `python -m unittest discover -s tests/commit` (requires commitlint and yq).
