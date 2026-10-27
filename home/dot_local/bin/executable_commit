@@ -158,38 +158,54 @@ def wrap_bullet(text: str) -> str:
     )
 
 
-def validate_paragraphs(paragraphs: list[str]) -> list[str]:
+class MessageRejected(SystemExit):
+    """A message layer failed validation before anything was staged or committed.
+
+    Each problem pairs the rejected layer option (-s, -p, -b, -i) with its explanation, so the
+    retry hint can name exactly which layers a retry must replace.
+    """
+
+    def __init__(self, problems: list[tuple[str, str]]) -> None:
+        super().__init__(1)
+        self.problems = problems
+
+
+def validate_paragraphs(paragraphs: list[str]) -> list[tuple[str, str]]:
     """Reject -p values that should be -b entries or are bare headers."""
     errors = []
     for p in paragraphs:
         stripped = p.strip()
         if stripped.startswith(("- ", "* ")):
             label = f'"{stripped[:40]}..."' if len(stripped) > 40 else f'"{stripped}"'
-            errors.append(f"-p looks like a bullet item: {label}")
-            errors.append("  use -b for technical outline bullets instead")
+            errors.append((
+                "-p",
+                f"-p looks like a bullet item: {label}\n"
+                "  use -b for technical outline bullets instead",
+            ))
         elif _BARE_HEADER_RE.match(stripped):
-            errors.append(f'-p looks like a bare header: "{stripped}"')
-            errors.append(
-                "  headers are unnecessary; -b entries render"
-                " as bullets automatically"
-            )
+            errors.append((
+                "-p",
+                f'-p looks like a bare header: "{stripped}"\n'
+                "  headers are unnecessary; -b entries render as bullets automatically",
+            ))
     return errors
 
 
-def validate_literal_line_breaks(options: dict[str, list[str]]) -> list[str]:
+def validate_literal_line_breaks(options: dict[str, list[str]]) -> list[tuple[str, str]]:
     """Reject escaped line breaks that should be repeated CLI options."""
     errors = []
     for option, values in options.items():
         for value in values:
             if not re.search(r"\\[nr]", value):
                 continue
-            errors.append(
-                f'{option} contains a literal "\\n" or "\\r" escape'
+            advice = (
+                "use a single-line -s value instead"
+                if option == "-s"
+                else f"use repeated {option} options instead"
             )
-            if option == "-s":
-                errors.append("  use a single-line -s value instead")
-            else:
-                errors.append(f"  use repeated {option} options instead")
+            errors.append(
+                (option, f'{option} contains a literal "\\n" or "\\r" escape\n  {advice}')
+            )
     return errors
 
 
@@ -394,14 +410,13 @@ def _commit_state(repo_root: Path) -> tuple[bytes, bytes, bytes, bytes]:
 
 def _validated_subject(raw: str) -> str:
     if "\n" in raw or "\r" in raw:
-        die("subject must be a single line")
+        raise MessageRejected([("-s", "subject must be a single line")])
     subject = raw.strip()
     if not subject:
-        die("subject must not be empty")
+        raise MessageRejected([("-s", "subject must not be empty")])
     if len(subject) > SUBJECT_WIDTH:
-        die(
-            f"subject is {len(subject)} chars, exceeds"
-            f" {SUBJECT_WIDTH}-char limit"
+        raise MessageRejected(
+            [("-s", f"subject is {len(subject)} chars, exceeds {SUBJECT_WIDTH}-char limit")]
         )
     return subject
 
@@ -494,6 +509,9 @@ def _save_with_draft(args_parsed: argparse.Namespace) -> None:
     try:
         _save(args_parsed)
     except SystemExit as exit_:
+        rejected = exit_.problems if isinstance(exit_, MessageRejected) else []
+        for _, problem in rejected:
+            print(f"error: {problem}", file=sys.stderr)
         if draft is None:
             raise
         if not exit_.code:
@@ -505,15 +523,35 @@ def _save_with_draft(args_parsed: argparse.Namespace) -> None:
         if options["a"] and index_was_empty and not _index_empty():
             options["a"] = False
         draft.write_text(json.dumps({"head": head, "options": options}))
-        print(
-            "\n=== RETRY WITHOUT RETYPING ===\n"
-            "Do not rerun commit save. Fix the cause above, then pass only what changes:\n"
-            '  commit retry -s "<corrected subject>"\n'
-            "Each -s, -p, -b, or -i given replaces that whole layer; omitted layers,\n"
-            "files, and mode are reused from the failed save.",
-            file=sys.stderr,
-        )
+        print(f"\n=== RETRY WITHOUT RETYPING ===\n{_retry_hint(rejected)}", file=sys.stderr)
         raise
+
+
+_LAYER_PLACEHOLDERS = {
+    "-s": "corrected subject",
+    "-p": "every paragraph, corrected",
+    "-b": "every bullet, corrected",
+    "-i": "every issue reference, corrected",
+}
+
+
+def _retry_hint(rejected: list[tuple[str, str]]) -> str:
+    """Explain how to retry; a rejected layer is named so the retry replaces it."""
+    reuse = (
+        "Each -s, -p, -b, or -i given replaces that whole layer; omitted layers,\n"
+        "files, and mode are reused from the failed save."
+    )
+    if not rejected:
+        return (
+            "Do not rerun commit save. Fix the cause above, then run commit retry,\n"
+            "adding -s, -p, -b, or -i only to change that layer.\n" + reuse
+        )
+    layers = list(dict.fromkeys(layer for layer, _ in rejected))
+    command = " ".join(f'{layer} "<{_LAYER_PLACEHOLDERS[layer]}>"' for layer in layers)
+    return (
+        f"Do not rerun commit save. Rejected layers: {', '.join(layers)}. A retry must\n"
+        f"replace each one; other options cannot fix it:\n  commit retry {command}\n" + reuse
+    )
 
 
 def cmd_retry(args: list[str]) -> None:
@@ -577,9 +615,7 @@ def _save(args_parsed: argparse.Namespace) -> None:
         errors = validate_literal_line_breaks(message_options)
         errors.extend(validate_paragraphs(args_parsed.p))
         if errors:
-            for err in errors:
-                print(f"error: {err}", file=sys.stderr)
-            sys.exit(1)
+            raise MessageRejected(errors)
         message = format_message(subject, args_parsed.p, args_parsed.b, args_parsed.i)
 
     if amend:

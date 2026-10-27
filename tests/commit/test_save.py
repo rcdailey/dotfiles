@@ -396,6 +396,21 @@ class CommitSaveTests(unittest.TestCase):
             ["change.txt"],
         )
 
+    def test_retry_hint_names_rejected_layers(self):
+        self.write_change()
+        cases = (
+            (("-s", "x" * 80), "-s", "exceeds 72-char limit"),
+            (("-s", "Subject", "-p", "- a bullet"), "-p", "looks like a bullet item"),
+        )
+        for args, layer, problem in cases:
+            with self.subTest(layer=layer):
+                result = self.run_save("change.txt", *args)
+                self.assertNotEqual(result.returncode, 0)
+                hint = result.stderr.split("=== RETRY WITHOUT RETYPING ===")[1]
+                self.assertIn(f"Rejected layers: {layer}.", hint)
+                self.assertIn(f"commit retry {layer} ", hint)
+                self.assertIn(problem, result.stderr)
+
     def test_retry_recovers_when_git_fails_during_save(self):
         self.commit_initial()
         self.change.write_text("changed\n")
