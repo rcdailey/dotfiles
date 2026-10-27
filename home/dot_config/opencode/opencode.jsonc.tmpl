@@ -5,6 +5,8 @@
   "default_agent": "build",
   "compaction": { "auto": true },
   "experimental": {
+    // The codexbar-token plugin feeds CodexBar only while a location is loaded; if CodexBar shows
+    // expired Claude tokens after idle periods, revisit this (false never unloads)
     "location_idle_timeout": "2 hours",
     "policies": [
       // Hide these providers even when their credentials are detected
