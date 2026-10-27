@@ -53,7 +53,6 @@ AppData/**
 .chezmoiscripts/run_once_after_reload-systemd-opencode-v2.sh
 .chezmoiscripts/run_once_after_migrate-ai-usagebar.sh
 .chezmoiscripts/run_once_before_stop-opencode-v1-cleanup.sh
-.config/codexbar/**
 .config/kwinrc
 .config/systemd/**
 .config/topgrade.d/codexbar.toml
