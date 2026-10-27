@@ -26,7 +26,9 @@
   rejected-transition cases.
 - If no stable observable boundary exists, state why and use a temporary proof when useful rather
   than adding a coupled regression test.
-- Run targeted tests while editing and the repository completion check after the final change.
+- Run targeted tests while editing and the repository completion check after the final change. When
+  an acceptance audit is triggered, pass the completion check in Context instead of running it; the
+  auditor runs it.
 
 When a test fails, inspect the evidence and isolate the cause before changing code. Remove temporary
 diagnostics.

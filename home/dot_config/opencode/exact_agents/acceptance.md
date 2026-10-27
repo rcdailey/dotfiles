@@ -282,9 +282,10 @@ Before loading domain skills, reading plans or source, inspecting patches, or ru
    current nonignored filesystem state independently of the real index. The default Base is `HEAD`,
    or the empty tree before the first commit. Return `blocked` if it reports missing, corrupt,
    mismatched, or unavailable snapshot state.
-2. Use its changed-path inventory as the target. Partition the target by owner, lifecycle or
-   transaction entry point, consumed contracts, and stable test seam. Keep a separate verification
-   ledger for each boundary and every named cross-boundary invariant.
+2. Use its changed-path inventory as the target; do not rediscover it with `git status`, `git diff`,
+   or `git rev-parse`. Partition the target by owner, lifecycle or transaction entry point, consumed
+   contracts, and stable test seam. Keep a separate verification ledger for each boundary and every
+   named cross-boundary invariant.
 3. Identify unrelated changes and assign every target path to a boundary or an intentional
    exclusion. Do not block merely because the target contains multiple boundaries.
 4. Return `blocked` only when the target spans repositories, snapshot continuity or the Base cannot
