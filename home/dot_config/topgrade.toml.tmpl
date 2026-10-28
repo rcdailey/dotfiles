@@ -31,6 +31,10 @@ disable = [
   "shell",
   # VS Code updates its own extensions
   "vscode",
+{{- if eq .chezmoi.os "darwin" }}
+  # on macOS, `system` runs softwareupdate; OS updates are installed manually
+  "system",
+{{- end }}
 ]
 
 [linux]
