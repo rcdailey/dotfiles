@@ -29,6 +29,8 @@ disable = [
   "chezmoi",
   # zsh plugins are chezmoi externals, refreshed by `chezmoi apply`
   "shell",
+  # VS Code updates its own extensions
+  "vscode",
 ]
 
 [linux]
