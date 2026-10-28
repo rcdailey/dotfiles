@@ -9,6 +9,11 @@ export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$TMPDIR}"
 {{- end }}
 
+# Pinned so a command that overrides XDG_DATA_HOME (e.g. sandboxed tests) keeps mise's installs.
+# Without them a shim finds no tool, execs the next same-named binary on PATH (itself), and
+# fork-bombs.
+export MISE_DATA_DIR="$XDG_DATA_HOME/mise"
+
 # Homebrew prefix path (platform-specific)
 {{- if eq .chezmoi.os "darwin" }}
 export HOMEBREW_PREFIX="/opt/homebrew"
