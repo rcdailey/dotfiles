@@ -19,9 +19,10 @@
   internals, branches, or lines. Do not expose implementation details or add production code solely
   for tests.
 - Existing tests may reveal current behavior, but their design is not precedent. These principles
-  MUST take precedence over local test patterns. For tests added or changed, reuse a pattern only
-  when it complies; otherwise replace it. Make the smallest behavior-preserving refactor needed to
-  expose a stable boundary, and leave unrelated tests unchanged.
+  MUST take precedence over local test patterns. When a change requires editing an existing test,
+  name the contract it protects: rewrite it at the right boundary if one exists; otherwise delete
+  it. Make the smallest behavior-preserving refactor needed to expose a stable boundary, and leave
+  unrelated tests unchanged.
 - For conditional or stateful behavior, cover each distinct observable outcome. Use representative
   inputs for equivalent cases, plus relevant boundary, initial, empty, allowed-transition, and
   rejected-transition cases.
