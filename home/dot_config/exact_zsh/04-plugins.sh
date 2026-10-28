@@ -17,10 +17,19 @@ export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
 _zsource "$_zsh_plugins/powerlevel10k/powerlevel10k.zsh-theme"
 
 # Workaround for p10k#2887 (open): _p9k_on_expand reports "bad pattern: (utf|UTF)(-|)8" on every
-# tab completion. Silence its stderr; the function exists only once the theme has loaded.
+# tab completion. Silence its stderr; the function exists only once the theme has loaded. The first
+# expansion after instant prompt must run unredirected: it restores the terminal's stderr, and zsh
+# would revert that restore when the 2>/dev/null redirection ends.
 if (( $+functions[_p9k_on_expand] )); then
   functions[_p9k_on_expand_orig]=$functions[_p9k_on_expand]
-  _p9k_on_expand() { _p9k_on_expand_orig "$@" 2>/dev/null || true; }
+  _p9k_on_expand() {
+    if (( $+__p9k_instant_prompt_active )); then
+      _p9k_on_expand_orig "$@"
+    else
+      _p9k_on_expand_orig "$@" 2>/dev/null
+    fi
+    return 0
+  }
 fi
 
 # fzf-tab wraps the completion widget, so it loads after compinit and before widget wrappers
