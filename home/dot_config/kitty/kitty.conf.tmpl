@@ -5,7 +5,7 @@
 shell zsh -lc '[[ $(herdr integration status) == *"opencode: current"* ]]
 \ || herdr integration install opencode &>/dev/null; exec herdr'
 
-# Remote control for scripting (reload-all alias)
+# Remote control for scripting (herdr-lazygit)
 allow_remote_control yes
 listen_on unix:/tmp/kitty-{kitty_pid}
 

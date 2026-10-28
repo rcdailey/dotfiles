@@ -29,7 +29,6 @@ alias kz="kubectl kustomize"
 alias cls="clear && clear"
 # exec keeps open file descriptors, so reattach a stderr that no longer points at the terminal
 alias reload='[[ -t 2 ]] || exec 2>$TTY; exec zsh'
-alias reload-all='kitty @ send-text --match all "exec zsh\n"'
 alias keygen-ed25519="ssh-keygen -t ed25519 -a 100 -P ''"
 
 # Directory navigation (optional with zsh AUTO_CD feature)
