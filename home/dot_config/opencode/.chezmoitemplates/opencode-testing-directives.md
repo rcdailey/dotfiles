@@ -1,10 +1,11 @@
 ## Testing
 
-- Keep durable tests for stable observable behavior, including tooling contracts, permissions,
-  mutation safety, and recovery. Use temporary checks for one-off scaffolding and private details;
-  remove temporary artifacts before handoff.
-- For a feature or fix, write a behavioral test first and confirm it fails for the expected reason
-  when practical.
+- Keep durable tests for contracts: stable behavior a user, caller, or external system relies on,
+  including tooling contracts, permissions, mutation safety, and recovery. Use temporary checks for
+  one-off scaffolding and private details; remove temporary artifacts before handoff.
+- Before adding a durable test, name the contract the change adds or alters; with none, add no
+  durable test. Otherwise write it first and confirm it fails for the expected reason when
+  practical.
 - Test through the stable observable boundary that owns the behavior. Broaden scope when the outcome
   spans components. Do not narrow scope merely to reach internal code.
 - Assert observable output, state, or effects. Verify an interaction only when that interaction is
