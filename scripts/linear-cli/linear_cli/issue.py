@@ -6,11 +6,13 @@ import json
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import click
 
 from linear_cli._click import HelpfulGroup
+from linear_cli._edit_file import EditFile, read_edit_file, write_edit_file
 from linear_cli._errors import LinearError, die
 from linear_cli._graphql import execute, paginate
 from linear_cli._models import Comment, Issue, priority_label
@@ -318,8 +320,9 @@ def view(issue_id: str, include_comments: bool, as_json: bool) -> None:
 
     issue = Issue.from_graphql(node)
     pri = priority_label(issue.priority)
+    click.echo(f"# {issue.title}")
+    click.echo("")
     click.echo(f"identifier:  {issue.identifier}")
-    click.echo(f"title:       {issue.title}")
     click.echo(f"state:       {issue.state_name} ({issue.state_type})")
     click.echo(f"priority:    {pri}")
     click.echo(f"assignee:    {issue.assignee_name or 'unassigned'}")
@@ -348,11 +351,20 @@ def view(issue_id: str, include_comments: bool, as_json: bool) -> None:
         click.echo(issue.description)
     if include_comments:
         click.echo("")
-        if not comment_nodes:
+        if comment_nodes:
+            click.echo(f"comments ({len(comment_nodes)}):")
+            echo_comments([Comment.from_graphql(node) for node in comment_nodes])
+        else:
             click.echo("no comments")
-            return
-        click.echo(f"comments ({len(comment_nodes)}):")
-        echo_comments([Comment.from_graphql(node) for node in comment_nodes])
+    try:
+        path = write_edit_file(
+            issue.identifier, issue.updated_at, issue.title, issue.description or ""
+        )
+    except OSError as exc:
+        click.echo(f"warning: edit file not written: {exc}", err=True)
+        return
+    click.echo("")
+    click.echo(f"edit file: {path}")
 
 
 @cli.command("history")
@@ -486,6 +498,13 @@ def create(
 @click.argument("issue_ids", nargs=-1, required=True)
 @click.option("--title", default=None, help="New title.")
 @click.option("--description", default=None, help="New description (markdown).")
+@click.option(
+    "--from-file",
+    "edit_path",
+    default=None,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Edit file from `issue view`; sets title and description, then deletes the file.",
+)
 @click.option("--state", "state_name", default=None, help="New state display name.")
 @click.option("--priority", default=None, type=click.IntRange(0, 4), help="New priority (0-4).")
 @click.option("--assignee", default=None, help="Assignee user UUID, 'me', or 'none' to unassign.")
@@ -508,6 +527,7 @@ def update(
     issue_ids: tuple[str, ...],
     title: str | None,
     description: str | None,
+    edit_path: Path | None,
     state_name: str | None,
     priority: int | None,
     assignee: str | None,
@@ -519,11 +539,14 @@ def update(
     milestone_name: str | None,
 ) -> None:
     """Update an existing issue."""
+    if edit_path and (title is not None or description is not None):
+        raise click.UsageError("--from-file cannot be combined with --title or --description")
     if len(issue_ids) > 1:
         unsupported_batch_fields = any(
             (
                 title is not None,
                 description is not None,
+                edit_path is not None,
                 state_name is not None,
                 priority is not None,
                 assignee is not None,
@@ -541,11 +564,20 @@ def update(
         return
 
     issue_ref = issue_ids[0]
+    edit = None
+    if edit_path:
+        try:
+            edit = read_edit_file(edit_path)
+        except (OSError, UnicodeDecodeError, ValueError) as exc:
+            die(f"{edit_path}: {exc}")
+        title, description = edit.title, edit.description
     batch = Batch()
     # State and milestone names resolve through the issue's own team and project, nested in the
     # same lookup request, so the issue is never fetched on its own.
     issue_fields = ["id"]
     issue_vars: dict[str, tuple[str, Any]] = {"id": ("String!", issue_ref)}
+    if edit:
+        issue_fields.append("identifier updatedAt")
     if state_name:
         issue_fields.append("team { states(filter: $states) { nodes { id } } }")
         issue_vars["states"] = ("WorkflowStateFilter", {"name": {"eqIgnoreCase": state_name}})
@@ -593,6 +625,8 @@ def update(
 
     batch.run()
     issue_node = batch.data.get(issue_alias) or {} if issue_alias else {}
+    if edit:
+        _check_edit_file(edit, issue_ref, issue_node)
     if state_name:
         states = ((issue_node.get("team") or {}).get("states") or {}).get("nodes", [])
         if not states:
@@ -627,7 +661,26 @@ def update(
         issue = _update_issue(issue_ref, input_data)
     except LinearError as exc:
         die(str(exc))
+    if edit_path:
+        edit_path.unlink(missing_ok=True)
     click.echo(f"updated {issue.get('identifier')}  {issue.get('title')}")
+
+
+def _check_edit_file(edit: EditFile, issue_ref: str, issue_node: dict) -> None:
+    """Die unless the edit file belongs to this issue and no change landed since it was written.
+
+    The check and the mutation are separate requests, so a change landing between them still
+    gets overwritten; Linear's issueUpdate has no conditional-write input to close that gap.
+    """
+    if not issue_node:
+        die(f"issue '{issue_ref}' not found")
+    if edit.identifier != issue_node.get("identifier"):
+        die(f"edit file is for {edit.identifier}, not {issue_node.get('identifier')}")
+    if edit.updated_at != issue_node.get("updatedAt"):
+        die(
+            f"{edit.identifier} changed after the edit file was written; "
+            "run `issue view` again and reapply the edits"
+        )
 
 
 def _update_issue(issue_ref: str, input_data: dict) -> dict:
