@@ -141,6 +141,18 @@ in that thread (and its synced copy), and `linear comment edit` changes a commen
 
 Use `linear issue update` only for fields that change after creation.
 
+To change an existing title or description, edit the file named on the last line of
+`linear issue view` output (`edit file: <path>`), then run
+`linear issue update <ID> --from-file <path>`. Never resend the full description inline.
+
+- The `# ` line is the title; everything below it is the description. Leave the frontmatter alone.
+- `view` output already shows the file's title and description verbatim. MUST NOT read the file;
+  edit it directly. Read it only after an edit fails because its old text did not match.
+- Keep each paragraph and list item on one line; never hard-wrap the description.
+- Other `update` flags combine with `--from-file`; `--title` and `--description` do not.
+- If the update reports the issue changed since the view, view again and redo the edits on the new
+  file.
+
 Pass multiple issue IDs to assign one project or milestone in a batch. Multi-issue updates accept
 only `--project` and `--milestone`; a bad ID is reported while the valid issues still update.
 
@@ -164,8 +176,7 @@ and the 3 most recent project updates after the milestones section; `--full` app
 `--var key=value`. Read query from stdin with `-`. Use it only after the command's `-h` shows no
 flag for the data.
 
-For exact field values (e.g. the verbatim Markdown description before rewriting it), use
-`linear issue view <ID> --json`; it prints the raw GraphQL issue node.
+`linear issue view <ID> --json` prints the raw GraphQL issue node and writes no edit file.
 
 ## Searching vs listing
 
