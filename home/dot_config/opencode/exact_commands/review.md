@@ -114,6 +114,7 @@ the ticket's goal. This is the reader's only context; do not assume they know th
 - **P{n}, {blocking | optional | question}, {new | pending | by @login}:** {trigger and what the
   user sees}. Fix: {behavior change}.
 
+Sources: {kinds of evidence used, comma-separated}.
 Pending: {n} comments | none. Not staged: {one clause each} | none.
 Limit: {what stayed unverified and whether it changes the verdict; omit when nothing material}.
 ```
@@ -134,7 +135,11 @@ Limit: {what stayed unverified and whether it changes the verdict; omit when not
   earlier concern; list only what remains open.
 - Product vocabulary only. No file paths, line numbers, SHAs, symbol names, review or thread IDs,
   and no review-process terms (`blocking for confidence`, `posted as a question`, `prior P1`).
-  Coverage, sources, and confidence stay in the reviewer's briefing; the reader asks when needed.
+  Coverage detail and confidence stay in the reviewer's briefing; the reader asks when needed.
+- `Sources` is required in every section, including `Blocked`: name each kind of evidence from the
+  briefing's `Coverage` and `Refs` (e.g., code tracing, ticket, Context7 docs, official docs, DB
+  queries, tests run, CI, smoke or manual checks), marking author-reported results as such. Kinds
+  only, no IDs, URLs, or commands.
 - Write nothing above the first section or between sections; no summary of your own.
 - Resume the reviewer when its briefing lacks the material you need (unexplained verdict, missing
   finding resolution), not to correct its wording.
