@@ -19,3 +19,6 @@ CLAUDE.local.md
 
 # Per-repo opt-out sentinel for global Git hooks
 .no-global-hooks
+
+# Kernel core dumps (core_pattern "core" with core_uses_pid appends ".<pid>")
+core.[0-9]*
