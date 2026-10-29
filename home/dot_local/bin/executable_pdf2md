@@ -2,15 +2,16 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#     "markitdown[all]",
 #     "ocrmypdf",
+#     "pymupdf",
 # ]
 # ///
 """pdf2md - convert PDFs (local files or URLs) to markdown.
 
 Downloads (if URL), optionally OCRs, and converts a PDF to markdown
-using markitdown. OCR is lazy by default: only runs when the PDF has
-little or no extractable text.
+one physical page at a time, keeping the visual line layout. OCR is
+lazy by default: only pages with images and little or broken
+extractable text are OCR'd.
 
 Usage:
     pdf2md FILE_OR_URL [OPTIONS]
@@ -19,8 +20,11 @@ Options:
     --force-ocr        always run OCR regardless of text detection
     --ocr-inplace      write OCR result back to the source file
                        (local files only)
-    --page-size N      characters per page of output (default: 20000)
-    --page N           which page of output to return (default: 1)
+    --pages SPEC       physical pages to print: 3, 2-4, 1,3, 5-
+                       (alias: --page). Without it, output stops at
+                       the last whole page within 20000 characters.
+    --max-chars-per-page N
+                       cut each page to N characters
     --find PATTERN     search output by paragraph (regex or literal)
     -C, --context N    paragraphs of context around --find matches
                        (default: 1)
@@ -32,19 +36,26 @@ from __future__ import annotations
 import argparse
 import fcntl
 import hashlib
-import math
+import json
 import os
 import re
 import sys
 import tempfile
+import unicodedata
 import urllib.request
 from collections.abc import Iterator
 from contextlib import contextmanager
+from itertools import pairwise
 
-# Characters-per-PDF-page threshold. If average extractable text per
-# page falls below this, the PDF is considered scanned and needs OCR.
+# A page with images and fewer extractable characters than this is
+# considered scanned and gets OCR.
 OCR_THRESHOLD = 100
-CACHE_VERSION = 1
+JUNK_TEXT_RATIO = 0.03
+MIN_ALNUM_RATIO = 0.5
+CACHE_VERSION = 2
+# Output budget when --pages is omitted; keeps whole-document dumps
+# within a typical LLM tool-output window.
+DEFAULT_OUTPUT_CHARS = 20000
 
 
 def _is_url(source: str) -> bool:
@@ -80,7 +91,7 @@ def _cache_path(source: str, *, is_url: bool, force_ocr: bool) -> str:
     cache_key = hashlib.sha256(
         f"{CACHE_VERSION}\0{source_identity}\0{force_ocr}".encode()
     ).hexdigest()
-    return os.path.join(_cache_root(), f"{cache_key}.md")
+    return os.path.join(_cache_root(), f"{cache_key}.json")
 
 
 def _lock_path(source: str, *, is_url: bool) -> str:
@@ -114,22 +125,26 @@ def _cache_lock(source: str, *, is_url: bool) -> Iterator[None]:
             fcntl.flock(lock_file, fcntl.LOCK_UN)
 
 
-def _read_cache(path: str) -> str | None:
+def _read_cache(path: str) -> list[str] | None:
+    """Return cached per-page markdown (index i is physical page i+1)."""
     try:
         with open(path, encoding="utf-8") as cache_file:
-            return cache_file.read()
-    except OSError:
+            pages = json.load(cache_file)
+    except (OSError, ValueError):
         return None
+    if not isinstance(pages, list) or not all(isinstance(p, str) for p in pages):
+        return None
+    return pages
 
 
-def _write_cache(path: str, content: str) -> None:
+def _write_cache(path: str, pages: list[str]) -> None:
     cache_dir = os.path.dirname(path)
     try:
         os.makedirs(cache_dir, mode=0o700, exist_ok=True)
-        fd, temp_path = tempfile.mkstemp(prefix=".pdf2md-", suffix=".md", dir=cache_dir)
+        fd, temp_path = tempfile.mkstemp(prefix=".pdf2md-", suffix=".json", dir=cache_dir)
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as cache_file:
-                cache_file.write(content)
+                json.dump(pages, cache_file)
             os.replace(temp_path, path)
         except Exception:
             try:
@@ -141,34 +156,58 @@ def _write_cache(path: str, content: str) -> None:
         print(f"warning: could not cache markdown: {error}", file=sys.stderr)
 
 
-def _needs_ocr(pdf_path: str) -> bool:
-    """Check if a PDF needs OCR by measuring extractable text density."""
-    from pdfminer.high_level import extract_text
-    from pdfminer.pdfpage import PDFPage
+def _is_junk_text(text: str) -> bool:
+    """True when a text layer looks like broken font encoding.
 
-    try:
-        with open(pdf_path, "rb") as f:
-            page_count = sum(1 for _ in PDFPage.get_pages(f))
-        if page_count == 0:
+    Broken encodings extract either as unmappable glyphs (control,
+    private-use, U+FFFD; docling flags >= 3%) or as printable symbol
+    soup (marker flags pages where few characters are alphanumeric).
+    """
+    visible = [c for c in text if not c.isspace()]
+    if len(visible) < 20:
+        return False
+    junk = sum(1 for c in visible if c == "\ufffd" or unicodedata.category(c) in ("Cc", "Co", "Cs"))
+    alnum = sum(c.isalnum() for c in visible)
+    return junk / len(visible) >= JUNK_TEXT_RATIO or alnum / len(visible) < MIN_ALNUM_RATIO
+
+
+def _pages_needing_ocr(pdf_path: str) -> list[int]:
+    """Return 1-based pages with a broken text layer, or images and little text.
+
+    Decided per page so scanned pages inside mostly digital PDFs still
+    get OCR. Low-text pages without images are skipped (OCR cannot add
+    text there); broken-text pages are rasterized whatever they contain.
+    """
+    import pymupdf
+
+    def needs_ocr(page) -> bool:
+        # Words, as emitted, not raw text: some PDFs use control
+        # characters as word separators, which word splitting absorbs.
+        text = " ".join(w[4] for w in page.get_text("words"))
+        if _is_junk_text(text):
             return True
-        text = extract_text(pdf_path)
-        chars = len(text.strip())
-        avg_per_page = chars / page_count
-        return avg_per_page < OCR_THRESHOLD
-    except Exception:
-        # If we can't determine, assume OCR is needed
-        return True
+        return len(text) < OCR_THRESHOLD and bool(page.get_images())
+
+    with pymupdf.open(pdf_path) as doc:
+        return [page.number + 1 for page in doc if needs_ocr(page)]
 
 
-def _run_ocr(input_path: str, output_path: str, *, force: bool = False) -> str:
-    """Run ocrmypdf. Returns path to the OCR'd PDF."""
+def _run_ocr(input_path: str, output_path: str, pages: list[int] | None) -> str:
+    """Run ocrmypdf on the given pages, or redo OCR on all pages when None.
+
+    Returns the path to the OCR'd PDF.
+    """
     import ocrmypdf
 
     kwargs = {"progress_bar": False}
-    if force:
+    if pages is None:
         kwargs["redo_ocr"] = True
     else:
-        kwargs["skip_text"] = True
+        # Force rasterizes the selected pages, which replaces broken text
+        # layers. Unselected pages are not OCR'd, but the output
+        # conversion may still alter their text (see _extract_pages).
+        kwargs["force_ocr"] = True
+        kwargs["pages"] = ",".join(map(str, pages))
 
     try:
         ocrmypdf.ocr(input_path, output_path, **kwargs)
@@ -183,13 +222,199 @@ def _run_ocr(input_path: str, output_path: str, *, force: bool = False) -> str:
         return input_path
 
 
-def _convert_to_markdown(pdf_path: str) -> str:
-    """Convert a PDF to markdown using markitdown."""
-    from markitdown import MarkItDown
+# ---------------------------------------------------------------------------
+# Extraction
+#
+# Text is rebuilt from word positions so each output line matches one
+# visual line. Form PDFs (including flattened DocuSign copies) draw
+# values as separate text objects, often after all other content;
+# stream-order extractors therefore append them at the page end, run
+# together. Position order puts each value on the line where it is
+# drawn.
+# ---------------------------------------------------------------------------
 
-    converter = MarkItDown()
-    result = converter.convert(pdf_path)
-    return result.text_content
+CHECKBOX_MIN_SIDE = 5.0
+CHECKBOX_MAX_SIDE = 12.0
+CHECKBOX_TOLERANCE = 1.5
+CHECK_MARKS = frozenset("Xx✓✔✗✘")
+CHECKBOX_TOKENS = frozenset(("[X]", "[ ]"))
+MAX_OPTION_WORDS = 2
+# Widest gap, in line heights, between options of one checkbox group.
+OPTION_GAP = 4
+
+# A word is (x0, y0, x1, y1, text), in PDF points.
+Word = tuple[float, float, float, float, str]
+
+
+def _close(a: float, b: float) -> bool:
+    return abs(a - b) <= CHECKBOX_TOLERANCE
+
+
+def _is_box_side(length: float) -> bool:
+    return CHECKBOX_MIN_SIDE <= length <= CHECKBOX_MAX_SIDE
+
+
+def _checkbox_squares(page) -> list[tuple[float, float, float, float]]:
+    """Find small squares drawn as one rectangle or as four line segments."""
+    squares: list[tuple[float, float, float, float]] = []
+    horizontal: list[tuple[float, float, float]] = []
+    vertical: list[tuple[float, float, float]] = []
+
+    for drawing in page.get_drawings():
+        # Dark filled squares are markers (e.g. text-overflow "+"), not boxes.
+        fill = drawing.get("fill")
+        if fill is not None and min(fill) < 0.5:
+            continue
+        for item in drawing["items"]:
+            if item[0] == "re":
+                rect = item[1]
+                if _is_box_side(rect.width) and _close(rect.width, rect.height):
+                    squares.append((rect.x0, rect.y0, rect.x1, rect.y1))
+            elif item[0] == "l":
+                start, end = item[1], item[2]
+                if _close(start.y, end.y) and _is_box_side(abs(end.x - start.x)):
+                    horizontal.append((min(start.x, end.x), max(start.x, end.x), start.y))
+                elif _close(start.x, end.x) and _is_box_side(abs(end.y - start.y)):
+                    vertical.append((min(start.y, end.y), max(start.y, end.y), start.x))
+
+    for x0, x1, top in horizontal:
+        side = x1 - x0
+        has_bottom = any(
+            _close(bx0, x0) and _close(bx1, x1) and _close(by, top + side)
+            for bx0, bx1, by in horizontal
+        )
+        if not has_bottom:
+            continue
+        sides = [
+            vx
+            for vy0, vy1, vx in vertical
+            if _close(vy0, top) and _close(vy1, top + side) and (_close(vx, x0) or _close(vx, x1))
+        ]
+        if any(_close(vx, x0) for vx in sides) and any(_close(vx, x1) for vx in sides):
+            squares.append((x0, top, x1, top + side))
+
+    unique: list[tuple[float, float, float, float]] = []
+    for square in squares:
+        if not any(all(_close(a, b) for a, b in zip(square, kept)) for kept in unique):
+            unique.append(square)
+    return unique
+
+
+def _apply_checkboxes(words: list[Word], squares) -> list[Word]:
+    """Replace each square and any mark inside it with an [X] or [ ] word."""
+
+    def inside(word: Word, x0: float, y0: float, x1: float, y1: float) -> bool:
+        return x0 <= (word[0] + word[2]) / 2 <= x1 and y0 <= (word[1] + word[3]) / 2 <= y1
+
+    remaining = list(words)
+    for x0, y0, x1, y1 in squares:
+        marks = [w for w in remaining if w[4] in CHECK_MARKS and inside(w, x0, y0, x1, y1)]
+        for mark in marks:
+            remaining.remove(mark)
+        remaining.append((x0, y0, x1, y1, "[X]" if marks else "[ ]"))
+    return remaining
+
+
+def _layout_lines(words: list[Word]) -> str:
+    """Group words into visual lines; wide horizontal gaps become ' | '."""
+    lines: list[list[Word]] = []
+    for word in sorted(words, key=lambda w: ((w[1] + w[3]) / 2, w[0])):
+        center = (word[1] + word[3]) / 2
+        if lines:
+            last = lines[-1]
+            top = min(w[1] for w in last)
+            bottom = max(w[3] for w in last)
+            if top <= center <= bottom:
+                last.append(word)
+                continue
+        lines.append([word])
+
+    out: list[str] = []
+    previous_bottom: float | None = None
+    for line in lines:
+        line.sort(key=lambda w: w[0])
+        top = min(w[1] for w in line)
+        bottom = max(w[3] for w in line)
+        height = max(bottom - top, 1.0)
+        if previous_bottom is not None and top - previous_bottom > height:
+            out.append("")
+        parts = [line[0][4]]
+        # Words since the last checkbox. Labeled options of one group stay
+        # in one cell ("[ ] YES [X] NO"); unlabeled boxes are columns.
+        since_checkbox = 0 if line[0][4] in CHECKBOX_TOKENS else MAX_OPTION_WORDS + 1
+        for before, word in pairwise(line):
+            is_checkbox = word[4] in CHECKBOX_TOKENS
+            gap = word[0] - before[2]
+            wide_gap = gap > 2 * height
+            same_group = (
+                is_checkbox
+                and 1 <= since_checkbox <= MAX_OPTION_WORDS
+                and gap <= OPTION_GAP * height
+            )
+            parts.append(" | " if wide_gap and not same_group else " ")
+            parts.append(word[4])
+            since_checkbox = 0 if is_checkbox else since_checkbox + 1
+        out.append("".join(parts))
+        previous_bottom = bottom
+    return "\n".join(out)
+
+
+def _form_fields(page) -> str:
+    """List live AcroForm values as 'Label: value' lines."""
+    import pymupdf
+
+    toggles = (pymupdf.PDF_WIDGET_TYPE_CHECKBOX, pymupdf.PDF_WIDGET_TYPE_RADIOBUTTON)
+    lines: list[str] = []
+    for widget in page.widgets():
+        if widget.field_type == pymupdf.PDF_WIDGET_TYPE_SIGNATURE:
+            continue
+        label = (widget.field_label or widget.field_name or "").strip()
+        value = widget.field_value
+        if widget.field_type in toggles:
+            checked = value not in (None, False, "", "Off")
+            lines.append(f"- {label}: {'[X]' if checked else '[ ]'}")
+        elif value not in (None, ""):
+            lines.append(f"- {label}: {value}")
+    if not lines:
+        return ""
+    return "Fields:\n" + "\n".join(lines)
+
+
+def _read_form_fields(pdf_path: str) -> list[str]:
+    """Return each page's 'Fields:' block ('' when none).
+
+    Read before OCR runs, because OCR output flattens live form fields.
+    """
+    import pymupdf
+
+    with pymupdf.open(pdf_path) as doc:
+        return [_form_fields(page) for page in doc]
+
+
+def _extract_pages(
+    pdf_path: str,
+    fields: list[str],
+    ocr_path: str | None = None,
+    ocr_pages: list[int] | None = None,
+) -> list[str]:
+    """Return markdown per physical page (index i is page i+1).
+
+    Pages in ocr_pages (all pages when ocr_pages is None) are read from
+    ocr_path. Other pages are read from pdf_path, because ocrmypdf's
+    output conversion can alter text on pages it did not OCR.
+    """
+    import pymupdf
+
+    pages: list[str] = []
+    with pymupdf.open(pdf_path) as doc, pymupdf.open(ocr_path or pdf_path) as ocr_doc:
+        for page, ocr_page, page_fields in zip(doc, ocr_doc, fields, strict=True):
+            if ocr_pages is None or page.number + 1 in ocr_pages:
+                page = ocr_page
+            words = [w[:5] for w in page.get_text("words")]
+            words = _apply_checkboxes(words, _checkbox_squares(page))
+            body = _layout_lines(words)
+            pages.append(f"{body}\n\n{page_fields}".strip() if page_fields else body)
+    return pages
 
 
 # ---------------------------------------------------------------------------
@@ -198,8 +423,8 @@ def _convert_to_markdown(pdf_path: str) -> str:
 # DESIGN: PDF-to-markdown conversion produces artifacts that waste
 # tokens when consumed by LLMs: ToC dot leaders, orphan page numbers,
 # words broken across lines by column extraction, excessive blank
-# lines, etc.  These are inherent to PDF text extraction, not bugs in
-# markitdown, so we clean them post-conversion.
+# lines, etc.  These are inherent to PDF text
+# extraction, so we clean them post-conversion, one page at a time.
 #
 # ARCHITECTURE: Each sanitizer is a pure function (str) -> str.  They
 # are collected in the SANITIZERS list and applied in sequence by
@@ -301,19 +526,19 @@ def _sanitize(text: str) -> str:
     return text
 
 
-def _paragraph_find(text: str, pattern: str, context: int) -> str:
-    """Search text by paragraph, returning matches with context."""
-    paragraphs = re.split(r"\n{2,}", text)
-    matches: list[int] = []
+def _compile_find(pattern: str) -> re.Pattern[str]:
     try:
-        regex = re.compile(pattern, re.IGNORECASE)
+        return re.compile(pattern, re.IGNORECASE)
     except re.error:
-        regex = re.compile(re.escape(pattern), re.IGNORECASE)
-    for i, para in enumerate(paragraphs):
-        if regex.search(para):
-            matches.append(i)
+        return re.compile(re.escape(pattern), re.IGNORECASE)
+
+
+def _paragraph_find(text: str, regex: re.Pattern[str], context: int) -> str:
+    """Return matching paragraphs with context, or '' when none match."""
+    paragraphs = re.split(r"\n{2,}", text)
+    matches = [i for i, para in enumerate(paragraphs) if regex.search(para)]
     if not matches:
-        return f"No matches for: {pattern}"
+        return ""
     seen: set[int] = set()
     result_parts: list[str] = []
     for idx in matches:
@@ -327,22 +552,58 @@ def _paragraph_find(text: str, pattern: str, context: int) -> str:
     return "\n\n".join(result_parts).rstrip("\n-")
 
 
-def _paginate(text: str, page_size: int, page: int) -> str:
-    """Return a specific page of text with a pagination footer."""
-    total_chars = len(text)
-    total_pages = max(1, math.ceil(total_chars / page_size))
+def _parse_pages(spec: str, count: int) -> list[int]:
+    """Parse '3', '2-4', '1,3', or '5-' into sorted 1-based page numbers.
 
-    if page < 1 or page > total_pages:
-        return f"error: page {page} out of range (1-{total_pages} available)"
+    Raises ValueError with a user-facing message.
+    """
+    selected: set[int] = set()
+    for item in spec.split(","):
+        match = re.fullmatch(r"\s*(\d+)\s*(?:(-)\s*(\d*)\s*)?", item)
+        if not match:
+            raise ValueError(f"invalid page spec: {spec!r} (use 3, 2-4, 1,3, or 5-)")
+        first = int(match.group(1))
+        last = first
+        if match.group(2):
+            last = int(match.group(3)) if match.group(3) else count
+        for page in (first, last):
+            if page < 1 or page > count:
+                raise ValueError(f"page {page} out of range (1-{count} available)")
+        if last < first:
+            raise ValueError(f"invalid page range: {item.strip()}")
+        selected.update(range(first, last + 1))
+    return sorted(selected)
 
-    start = (page - 1) * page_size
-    end = start + page_size
-    chunk = text[start:end]
 
-    footer = f"\n\n[page {page}/{total_pages}, {page_size} chars/page]"
-    if page < total_pages:
-        footer += f"\n[use --page {page + 1} for next page]"
-    return chunk + footer
+def _truncate(text: str, limit: int | None) -> str:
+    if limit is None or len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "\n[truncated]"
+
+
+def _render(pages: list[tuple[int, str]]) -> str:
+    return "\n\n".join(f"## Page {number}\n\n{body}" for number, body in pages)
+
+
+def _render_within_budget(pages: list[tuple[int, str]], count: int) -> str:
+    """Render whole pages up to DEFAULT_OUTPUT_CHARS, then a continuation hint."""
+    shown: list[tuple[int, str]] = []
+    for number, body in pages:
+        candidate = _render([*shown, (number, body)])
+        if shown and len(candidate) > DEFAULT_OUTPUT_CHARS:
+            break
+        shown.append((number, body))
+    if len(shown) == 1 and len(_render(shown)) > DEFAULT_OUTPUT_CHARS:
+        number, body = shown[0]
+        shown[0] = (number, _truncate(body, DEFAULT_OUTPUT_CHARS))
+    output = _render(shown)
+    last = shown[-1][0]
+    if last < count:
+        output += (
+            f"\n\n[pages 1-{last} of {count} shown; use --pages {last + 1}- for more,"
+            " or --max-chars-per-page N for a preview of each page]"
+        )
+    return output
 
 
 def main() -> None:
@@ -362,16 +623,21 @@ def main() -> None:
         help="write OCR result back to the source file (local only)",
     )
     parser.add_argument(
-        "--page-size",
-        type=int,
-        default=20000,
-        help="characters per page of output (default: 20000)",
+        "--pages",
+        "--page",
+        default=None,
+        metavar="SPEC",
+        help=(
+            "physical PDF pages: 3, 2-4, 1,3, or 5- (default: whole pages"
+            f" up to {DEFAULT_OUTPUT_CHARS} chars)"
+        ),
     )
     parser.add_argument(
-        "--page",
+        "--max-chars-per-page",
         type=int,
-        default=1,
-        help="which page of output to return (default: 1)",
+        default=None,
+        metavar="N",
+        help="cut each page to N characters",
     )
     parser.add_argument(
         "--find",
@@ -429,22 +695,23 @@ def main() -> None:
                     else:
                         pdf_path = os.path.abspath(opts.source)
 
-                    do_ocr = opts.force_ocr or _needs_ocr(pdf_path)
+                    fields = _read_form_fields(pdf_path)
+                    ocr_pages = None if opts.force_ocr else _pages_needing_ocr(pdf_path)
+                    ocr_path = None
+                    pages_from_ocr = ocr_pages
 
-                    if do_ocr:
+                    if ocr_pages is None or ocr_pages:
                         if opts.ocr_inplace:
+                            # The original is overwritten; every page reads from OCR output.
                             ocr_out = pdf_path
+                            pages_from_ocr = None
                         else:
                             ocr_out = os.path.join(tmpdir, "ocr.pdf")
                             tmp_files.append(ocr_out)
 
-                        pdf_path = _run_ocr(
-                            pdf_path,
-                            ocr_out,
-                            force=opts.force_ocr,
-                        )
+                        ocr_path = _run_ocr(pdf_path, ocr_out, ocr_pages)
 
-                    output = _convert_to_markdown(pdf_path)
+                    output = _extract_pages(pdf_path, fields, ocr_path, pages_from_ocr)
                     if opts.ocr_inplace:
                         cache_path = _cache_path(
                             opts.source,
@@ -453,18 +720,32 @@ def main() -> None:
                         )
                     _write_cache(cache_path, output)
 
-        # Sanitize unless --raw
-        if not opts.raw:
-            output = _sanitize(output)
+        count = len(output)
+        if count == 0:
+            print("error: PDF has no pages", file=sys.stderr)
+            sys.exit(1)
+        try:
+            numbers = _parse_pages(opts.pages, count) if opts.pages else list(range(1, count + 1))
+        except ValueError as error:
+            print(f"error: {error}", file=sys.stderr)
+            sys.exit(1)
 
-        # Apply --find if requested
+        pages = [(n, output[n - 1] if opts.raw else _sanitize(output[n - 1])) for n in numbers]
+
         if opts.find:
-            output = _paragraph_find(output, opts.find, opts.context)
+            regex = _compile_find(opts.find)
+            pages = [(n, _paragraph_find(body, regex, opts.context)) for n, body in pages]
+            pages = [(n, body) for n, body in pages if body]
+            if not pages:
+                print(f"No matches for: {opts.find}")
+                return
 
-        # Paginate
-        output = _paginate(output, opts.page_size, opts.page)
+        pages = [(n, _truncate(body, opts.max_chars_per_page)) for n, body in pages]
 
-        print(output)
+        if opts.pages or opts.find:
+            print(_render(pages))
+        else:
+            print(_render_within_budget(pages, count))
 
     finally:
         for f in tmp_files:
