@@ -85,14 +85,18 @@ and head SHAs. Never collapse CI-blocked or unknown assessments into this summar
 Use the merge method `dependency-prs` reports for each PR's base branch (run it in single PR mode
 too). Never merge a PR whose method is `none`; report it as unmergeable. Never use merge commits.
 
-Approve, then merge with `--auto`: gh merges at once when the PR is mergeable, otherwise enables
-auto-merge. Process approved PRs sequentially in one shell loop, with a three-second delay after
-each attempt:
+Approve every PR first: one `gh pr review <N> --repo owner/repo --approve` shell call per PR, all
+issued in the same message. Merging right after approval leaves auto-merge stuck, so merge only
+after all approvals return.
+
+Then merge the approved PRs with `--auto`: gh merges at once when the PR is mergeable, otherwise
+enables auto-merge. Process them sequentially in one shell loop that waits two seconds first, with a
+three-second delay after each attempt:
 
 ```bash
+sleep 2
 for pr in 101:rebase 102:squash; do
-  gh pr review "${pr%%:*}" --repo owner/repo --approve &&
-    gh pr merge "${pr%%:*}" --repo owner/repo --auto "--${pr#*:}"
+  gh pr merge "${pr%%:*}" --repo owner/repo --auto "--${pr#*:}"
   sleep 3
 done
 ```
