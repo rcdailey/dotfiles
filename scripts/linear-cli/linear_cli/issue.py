@@ -49,7 +49,7 @@ class _IssueQuery:
     """CLI filter options shared by `issue list` and `issue search`."""
 
     team_key: str | None
-    state_type: str | None
+    state_types: tuple[str, ...]
     assignee: str | None
     creator: str | None
     label: str | None
@@ -84,8 +84,8 @@ def _issue_filter(opts: _IssueQuery, batch: Batch) -> tuple[dict, list[Callable[
             checks.append(
                 lambda: team().get("activeCycle") or die("no active cycle found for team")
             )
-    if opts.state_type:
-        issue_filter["state"] = {"type": {"eq": opts.state_type}}
+    if opts.state_types:
+        issue_filter["state"] = {"type": {"in": [s.lower() for s in opts.state_types]}}
     if opts.assignee:
         issue_filter["assignee"] = user_filter(opts.assignee)
     if opts.creator:
@@ -164,7 +164,7 @@ def _show_issues(opts: _IssueQuery, term: str | None) -> None:
         click.echo("no issues found")
         return
     for node in nodes:
-        echo_issue_summary(Issue.from_graphql(node))
+        echo_issue_summary(Issue.from_graphql(node), show_project=not opts.project_name)
 
 
 def _filter_options(func: Callable) -> Callable:
@@ -173,10 +173,10 @@ def _filter_options(func: Callable) -> Callable:
         click.option("--team", "team_key", default=None, help="Team key (e.g. ENG)."),
         click.option(
             "--state",
-            "state_type",
-            default=None,
+            "state_types",
+            multiple=True,
             type=click.Choice(_STATE_TYPES, case_sensitive=False),
-            help="Filter by state type.",
+            help="Filter by state type; repeat to match any of several.",
         ),
         click.option("--assignee", default=None, help="Assignee user UUID or 'me'."),
         click.option("--creator", default=None, help="Creator user UUID or 'me'."),

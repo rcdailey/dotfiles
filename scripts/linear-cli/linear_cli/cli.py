@@ -20,11 +20,11 @@ from linear_cli import (
     state,
     team,
 )
-from linear_cli._click import HelpfulGroup
+from linear_cli._click import RecursiveHelpGroup
 
 
 @click.group(
-    cls=HelpfulGroup,
+    cls=RecursiveHelpGroup,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.version_option(version=__import__("linear_cli").__version__, prog_name="linear-cli")

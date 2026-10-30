@@ -43,14 +43,16 @@ def percentage_text(value: float | None) -> str:
     return f"{value:.0f}%" if value is not None else "0%"
 
 
-def echo_issue_summary(issue: Issue, *, indent: str = "") -> None:
-    """Print one issue summary line."""
+def echo_issue_summary(issue: Issue, *, indent: str = "", show_project: bool = False) -> None:
+    """Print one issue summary line; ``show_project`` adds the project for unscoped lists."""
     parts = [
         (
             f"{indent}{issue.identifier}  {issue.state_name}  "
             f"[{priority_label(issue.priority)}]  {issue.title}"
         )
     ]
+    if show_project:
+        parts.append(f"project: {issue.project_name or 'none'}")
     if issue.assignee_name:
         parts.append(f"assignee: {issue.assignee_name}")
     if issue.labels:

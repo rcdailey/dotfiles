@@ -24,7 +24,7 @@ from linear_cli._render import (
     percentage_text,
     sort_issues,
 )
-from linear_cli._resolve import Batch, resolve_project_id, team_filter
+from linear_cli._resolve import Batch, resolve_project_id, team_filter, user_filter
 
 _PROJECT_PAGE = "pageInfo { hasNextPage endCursor } nodes { id name state startDate targetDate }"
 _ISSUE_PAGE = 250
@@ -89,12 +89,17 @@ def cli() -> None:
 
 @cli.command("list")
 @click.option("--team", "team_key", default=None, help="Filter by team key (e.g. ENG).")
-def list_projects(team_key: str | None) -> None:
+@click.option("--lead", default=None, help="Project lead user UUID or 'me'.")
+def list_projects(team_key: str | None, lead: str | None) -> None:
     """List projects."""
-    variables: dict = {"filter": None, "first": 50}
+    project_filter: dict = {}
+    if lead:
+        project_filter["lead"] = user_filter(lead)
+    if team_key:
+        project_filter["accessibleTeams"] = {"some": team_filter(team_key)}
+    variables: dict = {"filter": project_filter or None, "first": 50}
     first_page = None
     if team_key:
-        variables["filter"] = {"accessibleTeams": {"some": team_filter(team_key)}}
         batch = Batch()
         get_team = batch.team_id(team_key)
         alias = batch.add(

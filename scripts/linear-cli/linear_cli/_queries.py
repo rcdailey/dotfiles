@@ -80,6 +80,7 @@ ISSUE_SUMMARY_FIELDS = """
       state { name type }
       assignee { name }
       labels { nodes { name } }
+      project { name }
 """
 
 ISSUE_CONNECTION = f"pageInfo {{ hasNextPage endCursor }} nodes {{ {ISSUE_SUMMARY_FIELDS} }}"
