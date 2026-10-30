@@ -77,6 +77,29 @@ def gh_rest(
     return run_gh(*cmd)
 
 
+def gh_rest_json(method: str, endpoint: str, payload: dict[str, Any] | None = None) -> Any:
+    """Execute a REST call with an optional nested JSON body; return parsed JSON or None."""
+    cmd = ["gh", "api", "--method", method, endpoint]
+    if payload is not None:
+        cmd.extend(["--input", "-"])
+    result = subprocess.run(
+        cmd,
+        input=json.dumps(payload) if payload is not None else None,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise GhError(result.stderr.strip(), status=_parse_status(result.stderr))
+    return json.loads(result.stdout) if result.stdout.strip() else None
+
+
+def gh_rest_pages(endpoint: str) -> list[Any]:
+    """GET every page of a list endpoint and return the concatenated items."""
+    pages = json.loads(run_gh("api", "--method", "GET", endpoint, "--paginate", "--slurp"))
+    return [item for page in pages for item in page]
+
+
 def current_repo() -> str:
     """Return 'owner/name' for the repository in the current directory."""
     try:
