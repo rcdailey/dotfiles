@@ -57,6 +57,9 @@ permissions:
     resource: "gh run view *"
     effect: allow
   - action: shell
+    resource: "gh run list *"
+    effect: allow
+  - action: shell
     resource: "gh pr view *"
     effect: allow
   - action: shell
@@ -217,6 +220,10 @@ For each failed check, read its failed log output with
   affected files; the assessment is `requires changes`.
 - **Unrelated or undetermined**: infrastructure, flaky, or pre-existing failures, or any cause the
   logs do not establish. The assessment is `CI blocked`; name the cause or the gap.
+
+To tell whether a failure or warning is new with the upgrade, compare against a base-branch run of
+the same workflow, found with
+`gh run list --repo <owner/repo> --workflow <file> --branch <base> --json databaseId,headSha`.
 
 ### 5. Assess repo impact
 
