@@ -11,39 +11,22 @@ description: >-
 
 # Linear CLI
 
-Python CLI wrapping the Linear GraphQL API. Authenticates via stored OAuth token
-(`linear auth login`) or `LINEAR_API_KEY` env var. Run `linear <group> <cmd> -h` for the full flag
-set.
-
-Use `linear --help` to discover groups. This skill owns workflow and non-obvious semantics, not a
-duplicate command-signature catalog.
+Python CLI wrapping the Linear GraphQL API. Before the first `linear` call, run `linear --help`
+once: it prints every command with its arguments, options, defaults, and option notes. Do not run
+per-command `-h`. This skill covers only workflow and semantics that help omits.
 
 ## Auth
 
-`linear auth login` opens the browser for OAuth (when `LINEAR_CLIENT_ID` is set) or prompts for an
-API key. Tokens are stored at `~/.local/state/linear-cli/tokens.json`. `LINEAR_API_KEY` env var
-overrides stored credentials when set.
+`linear auth login` stores tokens in `~/.local/state/linear-cli/tokens.json`; OAuth requires
+`LINEAR_CLIENT_ID`. `LINEAR_API_KEY` overrides stored credentials when set.
 
 ## Identifier resolution
 
-The CLI resolves human-readable names to UUIDs internally. Never pass UUIDs for teams, states, or
-labels; use display names or keys instead.
+The CLI resolves names to UUIDs internally. Pass display names or keys for teams, states, labels,
+projects, and milestones; never look up UUIDs first.
 
-- `--team` takes a team key (e.g. `ENG`), not a UUID
-- `--state` on `issue list` takes a state type (`triage`, `backlog`, `unstarted`, `started`,
-  `completed`, `canceled`)
-- `--state` on `issue create` and `issue update` takes a display name (e.g. `"Ready For Dev"`,
-  `"In Progress"`)
-- `--assignee` accepts `me` (resolves via viewer query) or a user UUID; on `issue update`, `none`
-  clears the assignee
-- `--label` takes a label display name, case-insensitive
-- `--project` takes a project display name
-- `--milestone` takes a milestone display name, resolved within `--project` when given, otherwise
-  across the workspace when the name is unique; `issue list/search` also accept `none` for issues
-  outside any milestone
-- `--parent` takes an issue identifier (e.g. `ENG-123`); no UUID lookup needed
-- `--cycle` takes `active`, `previous`, or an integer cycle number; requires `--team`
-- `--estimate` takes `none` (unestimated) or a numeric value
+- `--label` matches case-insensitively on `create` and `update`, but exactly on `list` and `search`.
+- `--cycle` requires `--team`.
 
 ## Create in one shot
 
@@ -52,16 +35,9 @@ assignee, and description, then issue one `create` call. Do NOT create a bare is
 with `linear issue update` to set state or labels; that is the failure mode this skill exists to
 prevent.
 
-Checklist before calling `create`:
-
-- `--title` (including any template prefix such as `BE:`, `FE:`)
-- `--state` display name if the issue should not land in Triage
-- `--label` (repeat per label) if the template requires them
-- `--priority`, `--assignee`, `--estimate` when known
-- `--project` when applicable
-- `--milestone` when the project has milestones
-- `--relation TYPE ISSUE` (repeatable) for relation such as `blocked-by ENG-1`
-- `--description` for the issue body (markdown)
+- Include any template prefix (`BE:`, `FE:`) in `--title`.
+- Without `--state`, the issue lands in Triage.
+- Set `--milestone` when the project has milestones.
 
 Pass the description inline with a quoted heredoc:
 
@@ -87,9 +63,6 @@ EOF
 
 ## Relations
 
-Relation types for `linear relation add/remove` and `issue create --relation`: `blocks`,
-`blocked-by`, `related`, `duplicate`, `similar`.
-
 `issue create` creates the issue and its relation atomically: if any relation fails, nothing is
 created, so fix the reference and rerun the whole command.
 
@@ -99,47 +72,30 @@ directions.
 
 ## Sub-issues
 
-`linear issue view` shows parent and sub-issues inline. Parent appears as a field; children appear
-as a summary list with state, priority, assignee, labels, and estimate. Use `--parent` on `create`
-or `update` to set the hierarchy.
+`linear issue view` shows the parent and sub-issues inline; no separate lookup is needed.
 
 ## Milestones
-
-Milestones are scoped to a project. `--project` accepts a display name or UUID. `milestone view`
-shows milestone details and its issues in one call, open work first, capped by `--limit` (`--all`
-lifts it).
 
 Drill down top-down: `project view` groups issues under each milestone (plus a "no milestone" group)
 with an `open: N/M` count and the top open issues. When a group is cut, its `+N more:` line prints
 the exact command for the rest; run that instead of guessing. Milestone IDs (UUIDs) are required for
-`update` and `delete`; get them from `milestone list` output or `linear api`.
-
-`issue list` and `issue search` accept `--milestone` (with `--project`) to filter by milestone:
-
-```bash
-linear issue list --project "LTI Integration" --milestone "LTI Foundation"
-```
+`update` and `delete`; get them from `milestone list` output.
 
 ## Linking issues
 
 Three distinct mechanisms; pick by intent:
 
-- `linear relation add` for issue-to-issue semantics (`blocked-by`, `blocks`, `related`,
-  `duplicate`). Use for dependency graphs and duplicate merges.
+- `linear relation add` for issue-to-issue semantics. Use for dependency graphs and duplicate
+  merges.
 - `linear issue update <ID> --parent <PARENT-ID>` for parent/child hierarchy (sub-issues).
 - `linear link add` for issue-to-URL attachments (GitHub PRs, design docs, external refs).
 
 ## Comments and updates
 
-`linear issue view` shows a comment count. Use `linear comment list` to read them when relevant, or
-use `issue view --comments` to retrieve the issue and comments in one process. Output shows each
-comment's ID, nests replies under their thread root, and marks threads synced with an external
-service (e.g. `synced: slack`). `linear comment add` creates threads, `--parent <root ID>` replies
-in that thread (and its synced copy), and `linear comment edit` changes a comment.
-
-`linear issue history` lists change events (state, assignee, labels, and so on) with the actor.
-
-Use `linear issue update` only for fields that change after creation.
+`linear issue view` shows only a comment count; add `--comments` to read them in the same call.
+Comment output shows each ID, nests replies under their thread root, and marks threads synced with
+an external service (e.g. `synced: slack`). `comment add --parent <root ID>` replies in that thread
+and its synced copy.
 
 To change an existing title or description, edit the file named on the last line of
 `linear issue view` output (`edit file: <path>`), then run
@@ -159,43 +115,18 @@ only `--project` and `--milestone`; a bad ID is reported while the valid issues 
 Never chain mutations with `&&`; an earlier mutation remains applied if a later one fails. Run
 independent verification reads separately so one timeout does not skip the remaining checks.
 
-## Project updates
+## Project context
 
-`linear project-update list` shows health, author, date, and a body preview for each update; pass
-`--full` for complete bodies. Omit the project argument to list all recent updates across the
-workspace (output includes the project name per entry). `linear project-update add` creates a new
-update with `--body` and optional `--health` (defaults to `onTrack`; also `atRisk`, `offTrack`).
-Both accept a project name or UUID.
-
-`project view` shows the project UUID, URL, description, external links (PRDs, designs), content,
-and the 3 most recent project updates after the milestones section; `--full` applies there too.
+`project view` also shows external links (PRDs, designs), content, and the 3 most recent project
+updates.
 
 ## Raw API access
 
-`linear api` executes arbitrary GraphQL queries and mutations. Output is JSON. Pass variables with
-`--var key=value`. Read query from stdin with `-`. Use it only after the command's `-h` shows no
-flag for the data.
-
-`linear issue view <ID> --json` prints the raw GraphQL issue node and writes no edit file.
-
-## Searching vs listing
-
-`linear issue search` does full-text relevance-ranked search across titles, descriptions, and
-comments via Linear's `issueSearch` API. Use it to find issues by keyword. `linear issue list`
-filters by structured fields (team, state, assignee, label) without text matching. Both accept
-`--created-after`, `--updated-after`, `--started-after`, and `--completed-after` with an ISO date or
-ISO 8601 duration relative to now (`-P1D`, `-PT12H`). Issue lines show created, started, completed,
-and updated timestamps, omitting stages not reached. Combine search with filters:
-
-```bash
-linear issue search "multiple images" --team ENG --state started
-```
+Use `linear api` only when `linear --help` shows no command for the data. Pass `-` as the query to
+read it from stdin. `issue view --json` writes no edit file.
 
 ## Discovery before mutation
 
 When creating issues within a project, `linear project view <name>` returns teams and their workflow
-states in one call; no separate `team list` or `state list` needed.
-
-For issues outside a project context, run `linear team list` then `linear state list --team KEY`.
-For labels, run `linear label groups` (labels are workspace-scoped, no `--team` filter). Use
-`linear label list --group "Ticket Type"` to see choices within a specific label group.
+states in one call; no separate `team list` or `state list` needed. Labels are workspace-scoped: run
+`linear label groups`, then `label list --group <name>`.
