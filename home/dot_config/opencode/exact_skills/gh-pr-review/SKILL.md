@@ -7,8 +7,9 @@ description: >-
   comments. Triggers on phrases like "check for comments", "look at the comments on my PR",
   "what did CodeRabbit/Copilot say", "respond to the review feedback", "leave a comment on
   line X", "start a pending review", "reply to the comment", "edit the comment", "remove that
-  comment", "delete that comment", "fix my comment", "move comment to line X", or any task
-  involving PR comment mechanics, including reading or answering bot review comments. Do NOT use
+  comment", "delete that comment", "fix my comment", "move comment to line X", "any replies or
+  reactions to my comments", or any task involving PR comment mechanics, including reading or
+  answering bot review comments. Do NOT use
   for merging, approving via `gh pr review --approve`, or non-review PR operations. Authoring a
   full PR review is the `reviewer` subagent's job; it loads this skill itself. Primary agents
   delegate instead of reviewing inline.
@@ -67,6 +68,29 @@ Inline comments belonging to an unsubmitted review are tagged `[pending, unsubmi
 `PENDING REVIEWS` section prints the draft body and each inline comment. Nothing there is visible to
 anyone else yet.
 
+## Responses to Your Comments
+
+`gh-review responses show` lists human replies and reactions to the user's PR comments since the
+last acknowledged check. Work scope: `--org <work org>`; personal: `--exclude-org <work org>`.
+
+1. Run `show` with the scope the user asked for; ask when unclear.
+2. Summarize with this template, keeping the day headings, local times, and order `show` printed:
+
+   ```markdown
+   ### Yesterday, Thursday Oct 29
+
+   **#3380** (alice, one-line reminder of what the PR does)
+   Your comment: the user's comment paraphrased in 1-2 sentences.
+
+   - 6:24 PM alice:
+     > reply quoted verbatim
+   - 7:02 PM 👍 bob
+   ```
+
+3. After presenting the summary, run the exact `ack` command `show` printed. Never run `ack` when
+   `show` failed or the summary was not shown; it advances the checkpoint and marks notifications
+   read.
+
 ## Pending Review Workflow
 
 1. `gh-review view` the PR. If the output includes a `PENDING REVIEWS` section, reuse that `PRR_...`
@@ -78,8 +102,8 @@ anyone else yet.
 
 ## Replying to Comments
 
-- Reviewing someone else's PR: `gh-review reply` stages the reply in the same pending review as
-  your inline comments, invisible until the user submits. It finds the pending review itself; pass
+- Reviewing someone else's PR: `gh-review reply` stages the reply in the same pending review as your
+  inline comments, invisible until the user submits. It finds the pending review itself; pass
   `--review-id` only when more than one exists. With none it errors instead of posting; `start` one
   first.
 - Otherwise, post with `gh-review reply --publish`; never `start` a review for these replies:
