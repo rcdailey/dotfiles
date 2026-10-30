@@ -41,6 +41,11 @@ not present.
 For documentation, reference material, and factual summaries, prefer clear, plain language. Neutral
 writing does not need artificial personality. It still needs natural rhythm and concrete claims.
 
+- Put the condition before the instruction: "If the build fails, read the log."
+- Define a concept term in a few words at its first use; skip product and standard names.
+- Use one word for one meaning throughout; do not alternate synonyms such as config and settings.
+- Name the host, flag, or prior step an instruction depends on before the reader needs it.
+
 ## Core rules
 
 - Prefer specific facts and ordinary verbs (`is`, `has`, `does`) over inflated interpretation.

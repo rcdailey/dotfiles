@@ -74,7 +74,7 @@ Merge contract:
 
 Read the file yourself and verify:
 
-- Frontmatter and the complete local-addition block match their pre-sync versions exactly
+- Every local-owned section from step 3 matches its pre-sync version exactly
 - Every upstream numbered pattern exists as an individual local section in the same order
 - Every pattern has its problem and a compact example; applicable watch terms and exceptions remain
 - Upstream source-fidelity, false-positive, and human-writing safeguards remain
