@@ -24,7 +24,7 @@ from linear_cli._render import (
     percentage_text,
     sort_issues,
 )
-from linear_cli._resolve import Batch, resolve_project_id, team_filter, user_filter
+from linear_cli._resolve import Batch, is_uuid, team_filter, user_filter
 
 _PROJECT_PAGE = "pageInfo { hasNextPage endCursor } nodes { id name state startDate targetDate }"
 _ISSUE_PAGE = 250
@@ -219,10 +219,12 @@ def create_project(
 @click.argument("id_or_name")
 @click.option("--name", default=None, help="New project name.")
 @click.option("--description", default=None, help="New project description.")
+@click.option("--state", "state_name", default=None, help="New project status display name.")
 def update_project(
     id_or_name: str,
     name: str | None,
     description: str | None,
+    state_name: str | None,
 ) -> None:
     """Update a project by ID or name."""
     input_data: dict = {}
@@ -230,10 +232,16 @@ def update_project(
         input_data["name"] = name
     if description is not None:
         input_data["description"] = description
-    if not input_data:
+    if not input_data and not state_name:
         die("no updates specified")
 
-    project_id = resolve_project_id(id_or_name)
+    batch = Batch()
+    get_project = None if is_uuid(id_or_name) else batch.project_id(id_or_name)
+    get_status = batch.project_status_id(state_name) if state_name else None
+    batch.run()
+    project_id = get_project() if get_project else id_or_name
+    if get_status:
+        input_data["statusId"] = get_status()
     try:
         data = execute(
             PROJECT_UPDATE_MUTATION,

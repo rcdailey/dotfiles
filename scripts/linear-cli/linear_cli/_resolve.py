@@ -167,6 +167,22 @@ class Batch:
         )
         return self._first_id(alias, f"state '{name}' not found")
 
+    def project_status_id(self, name: str) -> Callable[[], str]:
+        """Register a project status lookup by display name, case-insensitively.
+
+        ``projectStatuses`` accepts no filter, so this fetches the workspace's statuses (a short
+        list) and matches the name locally.
+        """
+        alias = self.add("projectStatuses { nodes { id name } }")
+
+        def get() -> str:
+            for node in self.nodes(alias):
+                if (node.get("name") or "").lower() == name.lower():
+                    return node["id"]
+            die(f"project status '{name}' not found")
+
+        return get
+
     def label_id(self, name: str) -> Callable[[], str]:
         """Register a workspace label lookup by name, case-insensitively."""
         alias = self.add(
