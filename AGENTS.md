@@ -30,12 +30,15 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 **Scripts:**
 
 - `home/git-scripts/` - Git helper scripts and subcommands
-- `scripts/` - Repo-rooted Python projects executed in-place by thin wrappers in
-  `home/dot_local/bin/`. Lives outside `home/` so chezmoi does not manage Python build artifacts
-  (`.venv/`, `__pycache__/`, `uv.lock`); edits take effect without `chezmoi apply`. Wrappers resolve
-  the project path via `$(chezmoi source-path)/../scripts/<name>` so the source location is
-  authoritative (no hardcoded home path). Current projects: `research/` (entry:
-  `executable_research`).
+- `scripts/` - Source of the user's custom Python CLIs; fix or extend them here, not in
+  `~/code/forks/` or an installed copy. Each command's wrapper in `home/dot_local/bin/` runs its
+  project in-place via `uv_tool_exec` (`home/dot_local/lib/uv-tool.sh`), so edits take effect
+  without `chezmoi apply`. Outside `home/` so chezmoi ignores build artifacts. Projects (command:
+  path):
+  - `linear`: `scripts/linear-cli/`
+  - `gh-review`: `scripts/gh-review/`
+  - `research`: `scripts/research/`
+  - Top-level `scripts/*.sh` are repo maintenance scripts, not user commands.
 
 **Repo infrastructure (root):** Linter/formatter configs (`biome.json`, `ruff.toml`,
 `.markdownlint-cli2.yaml`, `.yamllint.yaml`, `.editorconfig`), pre-commit hooks
