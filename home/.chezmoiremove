@@ -1,3 +1,12 @@
 # .chezmoiremove - Files to remove from target system
 
 .omp
+
+# pi config is no longer managed; pi-owned state (auth, sessions, settings, packages) stays
+.pi/agent/AGENTS.md
+.pi/agent/PRIMARY.md
+.pi/agent/agents
+.pi/agent/extensions
+.pi/agent/keybindings.json
+.pi/agent/skills
+.pi-lens/config.json

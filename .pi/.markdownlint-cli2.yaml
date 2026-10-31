@@ -1,9 +1,0 @@
-config:
-  # TODO: Remove once rumdl merges nested .markdownlint-cli2.* configs with their parents
-  # (https://github.com/rvben/rumdl/issues/941); until then rumdl ignores the root settings.
-  line-length:
-    line_length: 100
-    code_blocks: false
-    tables: false
-  no-space-in-code: false
-  first-line-heading: false

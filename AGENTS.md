@@ -88,21 +88,6 @@ under `~/.config/opencode/` do not have these prefixes.
   (development, tools, git, architecture), `opencode-testing-directives.md` (behavioral testing and
   failure diagnosis).
 
-**pi (`home/private_dot_pi/private_agent/`):**
-
-Target `~/.pi/agent`. Fully separate from OpenCode: MUST NOT share templates, paths, or data with
-`home/dot_config/opencode/`. MUST NOT make the agent directory `exact_`; pi stores auth, sessions,
-and installed packages there. Running sessions pick up applied changes only after `/reload`.
-
-- `modify_settings.json` - Merges managed keys into `settings.json`, which pi also writes (changelog
-  version, installs, saved selections). Managed keys win on apply; pi owns the rest.
-- `AGENTS.md` - Global directives.
-- `exact_extensions/` - Extensions (target: `~/.pi/agent/extensions/`). Hooks that change model
-  input MUST keep earlier conversation content byte-identical: use static system-prompt content or
-  messages persisted through `before_agent_start`, never per-request rewrites of history.
-- `exact_agents/` - Subagent definitions for `@gotgenes/pi-subagents` (target:
-  `~/.pi/agent/agents/`). A file named after a default agent (`Explore`) replaces it.
-
 **Tool configs:** `home/dot_config/` contains per-tool configuration directories (git, kitty, mise,
 lazygit, etc.). Browse the directory to discover what's managed.
 
@@ -136,7 +121,7 @@ lazygit, etc.). Browse the directory to discover what's managed.
 subjects bypass it). Scopes name a broad area, never a single tool; omit the scope when a commit
 spans areas:
 
-- `agents` - OpenCode, pi, and their agents, skills, commands, and plugins
+- `agents` - OpenCode and its agents, skills, commands, and plugins
 - `scripts` - custom CLIs in `scripts/` and `home/dot_local/bin/`
 - `shell` - zsh startup, functions, and prompt
 - `terminal` - terminal emulator and multiplexer
@@ -191,13 +176,11 @@ Zsh loads: `.zshenv` -> `.zshrc` -> numbered configs in `dot_config/exact_zsh/`
 
 ### humanizer skill (upstream sync)
 
-`home/dot_config/opencode/exact_skills/humanizer/SKILL.md` and
-`home/private_dot_pi/private_agent/exact_skills/humanizer/SKILL.md` are semantic compressions of
-[blader/humanizer](https://github.com/blader/humanizer), not verbatim copies. Each has its own sync
-procedure: `.opencode/commands/sync-humanizer.md` (OpenCode) and `.pi/prompts/sync-humanizer.md`
-(pi; loads after project trust). MUST merge upstream detection behavior into the local structure;
-MUST NOT overwrite the skill. Preserve every local-owned section exactly, especially the marked
-`User Voice Profile` block.
+`home/dot_config/opencode/exact_skills/humanizer/SKILL.md` is a semantic compression of
+[blader/humanizer](https://github.com/blader/humanizer), not a verbatim copy. Sync it with
+`.opencode/commands/sync-humanizer.md`. MUST merge upstream detection behavior into the local
+structure; MUST NOT overwrite the skill. Preserve every local-owned section exactly, especially the
+marked `User Voice Profile` block.
 
 ## Constraints
 
