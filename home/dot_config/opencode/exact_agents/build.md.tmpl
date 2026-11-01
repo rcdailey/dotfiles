@@ -256,6 +256,9 @@ When explicitly authorized to commit:
   with `git add -A -- <paths>` or use `-a` only from an empty index.
 - Stage the smallest safe path set. Collapse files to a directory only when every change below it
   belongs; file and directory paths may be mixed.
+- To change an earlier commit, use `git commit --fixup=amend:<commit>` (message from
+  `GIT_EDITOR="cp <file>"`; first line `amend! <subject>`, then the new message), or `--fixup` for
+  content only, then `GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash <commit>~1`.
 
 Message layers, in order:
 
