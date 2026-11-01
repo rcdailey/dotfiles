@@ -246,7 +246,8 @@ When explicitly authorized to commit:
   and the issue references. Write unwrapped text; a global commit-msg hook joins bullets into one
   tight list, reflows, and validates. Never embed `\n` escapes in an argument.
 - MUST NOT pass `--no-verify`. When the commit-msg hook rejects a message, edit the file it names
-  and rerun the same command with `-F <file>` in place of `-m`. When a pre-commit hook changes
+  without reading it first (it holds your message, subject verbatim, body reflowed), then rerun the
+  same command with `-F <file>` in place of `-m`. When a pre-commit hook changes
   files, review the changes, re-stage them, and rerun.
 - Join `git commit` and explicitly requested dependent operations with `&&` in one invocation
   (e.g., `&& git push && chezmoi apply -- <target>`). Skip verification calls when output and exit
