@@ -188,8 +188,8 @@ an issue or create a branch:
 
 **Requirements**
 
-- The user names the target. Each target belongs to one repository; delegate a fresh task per
-  repository that requires an audit.
+- The user names the target. Delegate one task per goal from its primary repository; Context names
+  each other repository the goal changed, with its path.
 - The auditor owns target discovery, boundary partitioning, cross-boundary invariants, snapshot
   continuity, correction inventory, and verification. Never ask the user to design audit scopes or
   Git metadata.
@@ -211,13 +211,18 @@ Context: <plan path, check commands, constraints, exclusions, or nondefault Base
 Omit implementation summaries, rationale, check results, and correctness claims; the auditor derives
 them from the repository.
 
+Set Base only when the goal's work is already committed, to the commit before its first commit;
+uncommitted work uses the default `HEAD`. A merge target such as `main` is not a Base.
+
 **Results**
 
 The auditor returns independent evidence, findings, snapshot state, and one exact resume action.
 
-- Failure: fix the findings; resume the same task with only the addressed findings and changed
-  check commands, under the same omissions. The auditor rechecks failed and affected cases and
-  preserves unaffected passes.
+- Failure: fix the findings, routing each to whoever changed its repository; resume the same task
+  with only the addressed findings and changed check commands, under the same omissions. The
+  auditor rechecks failed and affected cases and preserves unaffected passes.
+- `Setup` lists working commands for a repository without `.config/wt.toml`: offer the user to
+  create it with `wt config create --project` and those commands, to commit or ignore.
 - `incomplete`: resume the same task for the named remaining verification, supplying missing
   evidence when available. For unknowns no evidence can resolve, ask the user whether to accept
   each as a gap. Under `user gap decision`, user acceptance of every gap completes the audit as a
