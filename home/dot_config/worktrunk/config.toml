@@ -3,6 +3,10 @@ skip-commit-generation-prompt = true
 [merge]
 squash = false
 
+# Copy local files a repository lists in its committed .worktreeinclude; no file, no copy
+[pre-start]
+copy = 'wt step copy-ignored --require-include'
+
 # Inside herdr, open the worktree as a child space running OpenCode (or focus it if open)
 [post-switch]
 herdr = 'herdr-worktree-open {{ repo_path }} {{ worktree_path }}'
