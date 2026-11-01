@@ -84,7 +84,8 @@ under `~/.config/opencode/` do not have these prefixes.
 - OpenCode plugin integration: run `bun test tests/opencode` from the repo root.
 - OpenCode test dependencies: run `bun install --cwd tests/opencode --frozen-lockfile` first.
 - OpenCode directory plugins: run `bun test home/dot_config/opencode/exact_plugins`.
-- Commit workflow: run `python -m unittest discover -s tests/commit` (requires commitlint and yq).
+- Commit-msg hook: run `python -m unittest discover -s tests/commit` (requires rumdl, commitlint,
+  and yq).
 - Document new root-suite commands here; project-owned commands belong in that project's guidance.
 
 **Commit messages:** Conventional Commits, enforced by commitlint (`commitlint.config.mjs`; `wip`

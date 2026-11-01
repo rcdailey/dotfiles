@@ -1,0 +1,390 @@
+#!/usr/bin/env -S uv run --script
+"""Format and validate every commit message (global commit-msg hook).
+
+Git runs this hook for each commit-msg event, including amends, rewords, and merges, so every
+tool that writes a message gets one format. The hook rewrites only what it changes, and a second
+run leaves a formatted message unchanged; tools that amend never fight over line breaks.
+
+Formatting tightens top-level lists and reflows body paragraphs, lists, and quotes to BODY_WIDTH
+with rumdl. These parts stay
+verbatim: the subject paragraph, comment lines, everything below the `git commit -v` scissors
+line, and a final footer block. A final block is a footer when Git parses trailers from it or
+every line is a commitlint footer token; reflowing it would join separate trailer lines.
+
+Validation rejects long subjects (except Git-generated and autosquash subjects), literal "\\n"
+escapes outside code, and messages that fail a tracked root commitlint configuration. A rejected
+message stays in the message file, so the commit can be rerun with -F instead of retyping it.
+A message identical to HEAD's (an unedited amend) is reflowed but never rejected.
+"""
+
+from __future__ import annotations
+
+import re
+import shutil
+import subprocess
+import sys
+import textwrap
+from pathlib import Path
+from typing import NoReturn
+
+SUBJECT_WIDTH = 72
+BODY_WIDTH = 72
+
+# conventional-commits-parser footer token, with config-conventional's "#" issue prefix.
+FOOTER_TOKEN_RE = re.compile(r"^(?:BREAKING CHANGE|[\w-]+)(?::\s+|\s+#).+", re.IGNORECASE)
+# Subjects Git or autosquash generate from another subject, which may already be full width.
+DERIVED_SUBJECT_RE = re.compile(r"^(?:Merge |Revert |Reapply |fixup! |squash! |amend! )")
+# Lines that open a list, quote, table, heading, fence, or indented block.
+NON_PROSE_RE = re.compile(r"^(?:\s|[-*+]\s|\d+[.)]\s|>|\||#|```|~~~)")
+FENCE_RE = re.compile(r"^(?:```|~~~)")
+LIST_ITEM_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s")
+TOP_LIST_ITEM_RE = re.compile(r"^(?:[-*+]|\d+[.)])\s")
+AUTO_COMMENT_CANDIDATES = "#;@!$%^&|:"
+
+COMMITLINT_CONFIG_NAMES = (
+    "package.json",
+    "package.yaml",
+    ".commitlintrc",
+    ".commitlintrc.json",
+    ".commitlintrc.yaml",
+    ".commitlintrc.yml",
+    ".commitlintrc.js",
+    ".commitlintrc.cjs",
+    ".commitlintrc.mjs",
+    "commitlint.config.js",
+    "commitlint.config.cjs",
+    "commitlint.config.mjs",
+    ".commitlintrc.ts",
+    ".commitlintrc.cts",
+    ".commitlintrc.mts",
+    "commitlint.config.ts",
+    "commitlint.config.cts",
+    "commitlint.config.mts",
+)
+
+RUMDL_REFLOW = (
+    "rumdl",
+    "fmt",
+    "--stdin",
+    "--silent",
+    "--no-config",
+    "--enable",
+    "MD013",
+    "--config",
+    f"MD013.line-length = {BODY_WIDTH}",
+    "--config",
+    "MD013.reflow = true",
+    "--config",
+    'MD013.reflow-mode = "normalize"',
+)
+
+
+def die(message: str) -> NoReturn:
+    print(f"commit-msg: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def git(*args: str, stdin: str | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", *args], input=stdin, capture_output=True, text=True, check=False
+    )
+
+
+def comment_prefix(lines: list[str]) -> str:
+    """Return the comment prefix Git strips, resolving core.commentChar=auto like Git does."""
+    configured = git("config", "--get-regexp", r"^core\.comment(char|string)$").stdout
+    values = [line.split(" ", 1)[1] for line in configured.splitlines() if " " in line]
+    value = values[-1] if values else "#"
+    if value != "auto":
+        return value
+    for candidate in AUTO_COMMENT_CANDIDATES:
+        if not any(line.startswith(candidate) for line in lines):
+            return candidate
+    return "#"
+
+
+# -- formatting --------------------------------------------------------------
+
+
+def reflow(lines: list[str]) -> list[str]:
+    """Reflow a Markdown fragment that starts and ends with a non-blank line."""
+    if shutil.which("rumdl") is None:
+        die("rumdl is required to format commit messages")
+    result = subprocess.run(
+        RUMDL_REFLOW, input="\n".join(lines) + "\n", capture_output=True, text=True, check=False
+    )
+    if result.returncode != 0:
+        die(result.stderr.strip() or "rumdl could not format the message")
+    return keep_paragraphs_out_of_footer(result.stdout.rstrip("\n").split("\n"))
+
+
+def wrap_paragraph(text: str) -> list[str]:
+    """Wrap prose so no continuation line starts with a footer token.
+
+    commitlint treats a line shaped like "word: text" or "word #ref" as the start of the footer.
+    When a wrapped line starts that way, the previous line's last word moves down and the
+    remainder rewraps.
+    """
+    def wrap(value: str) -> list[str]:
+        return textwrap.wrap(
+            value, width=BODY_WIDTH, break_long_words=False, break_on_hyphens=False
+        )
+
+    lines = wrap(text)
+    for i in range(1, len(lines)):
+        if not FOOTER_TOKEN_RE.match(lines[i]):
+            continue
+        head, _, last = lines[i - 1].rpartition(" ")
+        if not head:
+            continue
+        lines[i - 1] = head
+        lines[i:] = wrap(f"{last} {' '.join(lines[i:])}")
+    return lines
+
+
+def keep_paragraphs_out_of_footer(lines: list[str]) -> list[str]:
+    """Rewrap prose paragraphs whose reflowed continuation lines look like footer tokens."""
+    output: list[str] = []
+    in_fence = False
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+        if in_fence or not line.strip() or NON_PROSE_RE.match(line):
+            output.append(line)
+            index += 1
+            continue
+        end = index
+        while end < len(lines) and lines[end].strip() and not FENCE_RE.match(lines[end]):
+            end += 1
+        paragraph = lines[index:end]
+        if any(FOOTER_TOKEN_RE.match(continuation) for continuation in paragraph[1:]):
+            paragraph = wrap_paragraph(" ".join(paragraph))
+        output.extend(paragraph)
+        index = end
+    return output
+
+
+def is_footer(block: list[str], message: str) -> bool:
+    if all(FOOTER_TOKEN_RE.match(line) for line in block):
+        return True
+    return bool(git("interpret-trailers", "--parse", stdin=message).stdout.strip())
+
+
+def tighten_lists(lines: list[str]) -> list[str]:
+    """Drop blank lines between top-level list items.
+
+    Git separates -m values with a blank line, so a list passed as one -m per item arrives
+    loose. Commit messages use tight lists, so the blank lines are removed.
+    """
+    output: list[str] = []
+    blanks: list[str] = []
+    in_fence = False
+    in_list = False
+    for line in lines:
+        if not line.strip() and not in_fence:
+            blanks.append(line)
+            continue
+        if not (in_list and TOP_LIST_ITEM_RE.match(line)):
+            output.extend(blanks)
+        blanks.clear()
+        output.append(line)
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+            in_list = False
+        elif not in_fence:
+            in_list = bool(TOP_LIST_ITEM_RE.match(line)) or (in_list and line[0] in " \t")
+    return output + blanks
+
+
+def format_message(message: str) -> str:
+    lines = message.split("\n")
+    prefix = comment_prefix(lines)
+    scissors = f"{prefix} ------------------------ >8 ------------------------"
+    cut = lines.index(scissors) if scissors in lines else len(lines)
+    head, tail = lines[:cut], lines[cut:]
+
+    def is_text(line: str) -> bool:
+        return bool(line.strip()) and not line.startswith(prefix)
+
+    text_indexes = [i for i, line in enumerate(head) if is_text(line)]
+    if not text_indexes:
+        return message
+
+    subject_end = text_indexes[0]
+    while subject_end < len(head) and is_text(head[subject_end]):
+        subject_end += 1
+
+    body_end = text_indexes[-1] + 1
+    footer_start = body_end
+    while footer_start > subject_end and is_text(head[footer_start - 1]):
+        footer_start -= 1
+    if footer_start > subject_end and not is_footer(
+        head[footer_start:body_end], "\n".join(head)
+    ):
+        footer_start = body_end
+
+    body: list[str] = []
+    segment: list[str] = []
+
+    def flush() -> None:
+        texts = [i for i, line in enumerate(segment) if line.strip()]
+        if texts:
+            first, last = texts[0], texts[-1] + 1
+            fragment = reflow(tighten_lists(segment[first:last]))
+            body.extend(segment[:first] + fragment + segment[last:])
+        else:
+            body.extend(segment)
+        segment.clear()
+
+    for line in head[subject_end:footer_start]:
+        if line.startswith(prefix):
+            flush()
+            body.append(line)
+        else:
+            segment.append(line)
+    flush()
+
+    return "\n".join(head[:subject_end] + body + head[footer_start:] + tail)
+
+
+# -- validation --------------------------------------------------------------
+
+
+def cleaned(message: str) -> str:
+    """Return the message as Git will store it after stripping comments and scissors."""
+    lines = message.split("\n")
+    prefix = comment_prefix(lines)
+    scissors = f"{prefix} ------------------------ >8 ------------------------"
+    if scissors in lines:
+        lines = lines[: lines.index(scissors)]
+    return git("stripspace", "--strip-comments", stdin="\n".join(lines)).stdout
+
+
+def without_indented_code(lines: list[str]) -> list[str]:
+    """Drop indented code blocks: indented runs that start after a blank line outside a list.
+
+    Indented text inside a list (wrapped lines, nested items, later paragraphs) stays, because
+    it belongs to the list item. Code indented inside a list item is checked as prose; use a
+    fence there.
+    """
+    kept: list[str] = []
+    in_code = False
+    in_list = False
+    previous_blank = True
+    for line in lines:
+        if not line.strip():
+            previous_blank = True
+            kept.append(line)
+            continue
+        indented = line.startswith((" ", "\t"))
+        if LIST_ITEM_RE.match(line):
+            in_list = True
+        elif not indented:
+            in_list = False
+        in_code = (
+            not in_list and line.startswith(("    ", "\t")) and (in_code or previous_blank)
+        )
+        previous_blank = False
+        if not in_code:
+            kept.append(line)
+    return kept
+
+
+def message_problems(message: str) -> list[str]:
+    problems = []
+    subject = message.split("\n", 1)[0]
+    if len(subject) > SUBJECT_WIDTH and not DERIVED_SUBJECT_RE.match(subject):
+        problems.append(f"subject is {len(subject)} chars, exceeds {SUBJECT_WIDTH}-char limit")
+
+    prose = re.sub(r"^(```|~~~).*?^\1", "", message, flags=re.MULTILINE | re.DOTALL)
+    prose = "\n".join(without_indented_code(prose.split("\n")))
+    prose = re.sub(r"`[^`\n]*`", "", prose)
+    if re.search(r"\\[nr]", prose):
+        problems.append(
+            'message contains a literal "\\n" or "\\r" escape outside code;'
+            " pass one -m per paragraph instead"
+        )
+    return problems
+
+
+def tracked_commitlint_config(repo_root: Path) -> Path | None:
+    """Return the first indexed root config in commitlint's search order."""
+    for name in COMMITLINT_CONFIG_NAMES:
+        if git("-C", str(repo_root), "ls-files", "--error-unmatch", "--", name).returncode:
+            continue
+        path = repo_root / name
+        if not path.is_file():
+            die(f"repository commitlint configuration is missing from the working tree: {name}")
+        if name not in ("package.json", "package.yaml"):
+            return path
+        if shutil.which("yq") is None:
+            die("yq is required to inspect repository commitlint configuration")
+        package = subprocess.run(
+            ["yq", "-r", 'has("commitlint")', str(path)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if package.returncode != 0:
+            die(package.stderr.strip() or f"could not inspect {name}")
+        if package.stdout.strip() == "true":
+            return path
+    return None
+
+
+def commitlint_passes(message_path: Path) -> bool:
+    toplevel = git("rev-parse", "--show-toplevel")
+    if toplevel.returncode != 0:
+        return True
+    repo_root = Path(toplevel.stdout.strip())
+    config = tracked_commitlint_config(repo_root)
+    if config is None:
+        return True
+    if shutil.which("commitlint") is None:
+        die("commitlint is required by repository configuration")
+    result = subprocess.run(
+        [
+            "commitlint",
+            "--cwd",
+            str(repo_root),
+            "--config",
+            str(config),
+            "--edit",
+            str(message_path),
+        ],
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        die("usage: commit-msg <message-file>")
+    path = Path(sys.argv[1])
+    original = path.read_text()
+    formatted = format_message(original)
+    if formatted != original:
+        path.write_text(formatted)
+
+    # An unedited amend reuses HEAD's message, which may predate these rules; reflow it, but do
+    # not block the amend on it.
+    head_message = git("log", "-1", "--format=%B", "HEAD")
+    if head_message.returncode == 0 and cleaned(original) == cleaned(head_message.stdout):
+        return
+
+    problems = message_problems(cleaned(formatted))
+    for problem in problems:
+        print(f"commit-msg: {problem}", file=sys.stderr)
+    if problems or not commitlint_passes(path):
+        print(
+            f"commit-msg: the message is kept in {path.resolve()}; fix it there and rerun the"
+            " same commit with -F <that path> in place of -m",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

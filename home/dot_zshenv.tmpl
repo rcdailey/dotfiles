@@ -107,9 +107,11 @@ export DOCKER_DATA_PATH="/mnt/docker-data"
 export NODE_SKIP_PLATFORM_CHECK=1
 {{- end }}
 
-# Disable husky pre-commit hooks (slows down git)
-export HUSKY_SKIP_HOOKS=1 # For legacy purposes
-export HUSKY=0            # This replaces HUSKY_SKIP_HOOKS
+# Disable npm-installed repository Git hooks (they slow down git)
+export HUSKY_SKIP_HOOKS=1      # For legacy purposes
+export HUSKY=0                 # This replaces HUSKY_SKIP_HOOKS
+export LEFTHOOK=0
+export SKIP_SIMPLE_GIT_HOOKS=1
 
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 

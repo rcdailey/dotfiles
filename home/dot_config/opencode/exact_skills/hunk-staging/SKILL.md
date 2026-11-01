@@ -26,8 +26,8 @@ worktree to shape a commit; select lines instead. Run `git-surgeon <command> --h
    context lines, not only changed lines. `--lines` takes one range.
 6. Stage complete files with `git add -- <paths>` and deletions with `git add -u -- <paths>`.
 7. Verify the complete staged result with `git diff --cached`, and the remainder with `git diff`.
-8. Commit without paths (for example `commit save` with no paths); paths reset the index and discard
-   the partial selection.
+8. Run `git commit` without paths or `-a`; both commit whole-file worktree content and discard the
+   partial selection.
 
 IDs are content hashes of path and hunk text; identical hunks get `-2`, `-3` suffixes, and an
 unknown ID means the listing is stale. Untouched hunks keep their IDs while others are staged or

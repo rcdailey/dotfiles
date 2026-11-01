@@ -12,7 +12,14 @@
     editor = code --wait
     whitespace = tabwidth=4,tab-in-indent
     pager = delta
-    hooksPath = ~/.config/git/hooks
+# Global hooks run in addition to each repository's hook directory. Repository hook installers
+# (husky, lefthook, simple-git-hooks) are disabled by environment variables in .zshenv.
+[hook "global-pre-commit"]
+    event = pre-commit
+    command = {{ .chezmoi.homeDir }}/.config/git/hooks/pre-commit
+[hook "commit-message"]
+    event = commit-msg
+    command = {{ .chezmoi.homeDir }}/.config/git/hooks/commit-msg
 [push]
     default = current
     followTags = false
@@ -108,6 +115,20 @@
     smudge = git-lfs smudge -- %f
     process = git-lfs filter-process
     required = true
+# Without these, LFS objects are not uploaded on push in repositories that never ran
+# `git lfs install`
+[hook "lfs-pre-push"]
+    event = pre-push
+    command = git lfs pre-push
+[hook "lfs-post-checkout"]
+    event = post-checkout
+    command = git lfs post-checkout
+[hook "lfs-post-commit"]
+    event = post-commit
+    command = git lfs post-commit
+[hook "lfs-post-merge"]
+    event = post-merge
+    command = git lfs post-merge
 [hooks]
     enforcecompatiblefilenames = true
 [blame]

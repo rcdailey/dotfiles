@@ -235,21 +235,21 @@ The auditor returns independent evidence, findings, snapshot state, and one exac
 When explicitly authorized to commit:
 
 - Run `git status --short`, `git diff -- <paths>`, and `git diff --cached` in one shell invocation;
-  read intended untracked files directly. Do not run `commit save --help`, inspect history, or
-  repeat evidence unless repository convention, state changes, or failure creates uncertainty.
-- Use `commit save <paths> -s "<subject>"` with repeated `-p` paragraphs and `-b` bullets as needed.
-  Never embed `\n` escapes in an argument.
-- Use `commit save`, not `git commit`, to amend the tip or create fixup or squash commits. When
-  amending, `-s` replaces the whole message; re-supply every `-p` and `-b` that should survive.
-- After a failed `commit save`, fix it with `commit retry` passing only the corrected options; each
-  given option replaces that whole layer, the rest is reused.
-- Join `commit save` and explicitly requested dependent operations with `&&` in one invocation
+  read intended untracked files directly. Do not inspect history or repeat evidence unless
+  repository convention, state changes, or failure creates uncertainty.
+- Use `git commit` with one `-m` each for the subject, every paragraph, every bullet (`- ` line),
+  and the issue references. Write unwrapped text; a global commit-msg hook joins bullets into one
+  tight list, reflows, and validates. Never embed `\n` escapes in an argument.
+- MUST NOT pass `--no-verify`. When the commit-msg hook rejects a message, edit the file it names
+  and rerun the same command with `-F <file>` in place of `-m`. When a pre-commit hook changes
+  files, review the changes, re-stage them, and rerun.
+- Join `git commit` and explicitly requested dependent operations with `&&` in one invocation
   (e.g., `&& git push && chezmoi apply -- <target>`). Skip verification calls when output and exit
   status establish the result.
 - Index rules (also for amend, fixup, and squash content): if the index already holds the exact
-  intended commit, omit paths and `-a`; if a nonempty index does not match, stop. Path and `-a`
-  modes are only for an empty index.
-- Pass the smallest safe path set. Collapse files to a directory only when every change below it
+  intended commit, commit without paths or `-a`; if a nonempty index does not match, stop. Stage
+  with `git add -A -- <paths>` or use `-a` only from an empty index.
+- Stage the smallest safe path set. Collapse files to a directory only when every change below it
   belongs; file and directory paths may be mixed.
 
 Message layers, in order:
@@ -262,7 +262,7 @@ Message layers, in order:
    not a rationale). Omit only when subject and bullets leave nothing useful unexplained.
 3. Bullets (optional): technical outline of distinct outcomes, boundaries, or notable details; may
    follow the subject directly when no context is needed.
-4. Issue references (`-i`): only for a tracker issue the task, branch, or plan names; never guess.
+4. Issue references (final `-m`): only for a tracker issue the task, branch, or plan names; never guess.
    `Fixes <ref>` when resolved, otherwise `Refs <ref>`.
 
 - Each layer MUST add different information: bullets must not repeat subject or paragraphs, and
