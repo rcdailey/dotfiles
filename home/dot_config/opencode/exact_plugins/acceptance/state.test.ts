@@ -2,8 +2,8 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { devNull, tmpdir } from "node:os";
+import { mkdir, mkdtemp, readFile, rm, utimes, writeFile } from "node:fs/promises";
+import { devNull, homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { begin, diff, finish, workspace } from "./state.ts";
 
@@ -213,6 +213,9 @@ test.skipIf(!hasWt)("workspace keeps user worktrunk hooks out (requires wt)", as
   );
   await mkdir(join(repository, ".config"));
   await writeFile(join(repository, ".config", "wt.toml"), 'pre-start = "touch hook-ran"\n');
+  const originalMiseConfig = process.env.MISE_CONFIG_DIR;
+  // Keeps mise's global tool config (which provides wt) while worktrunk reads the fake one.
+  process.env.MISE_CONFIG_DIR ??= join(originalConfigHome ?? join(homedir(), ".config"), "mise");
   process.env.XDG_CONFIG_HOME = configHome;
   try {
     await begin(session());
@@ -225,6 +228,8 @@ test.skipIf(!hasWt)("workspace keeps user worktrunk hooks out (requires wt)", as
     expect(existsSync(join(path, "user-hook-ran"))).toBe(true);
   } finally {
     process.env.XDG_CONFIG_HOME = originalConfigHome;
+    if (originalMiseConfig === undefined) delete process.env.MISE_CONFIG_DIR;
+    else process.env.MISE_CONFIG_DIR = originalMiseConfig;
   }
 });
 
@@ -307,6 +312,54 @@ test("workspace prepares a sandbox for every repository", async () => {
   expect(await readFile(join(sandboxOf(output, "wiki"), "page.md"), "utf8")).toBe("page\n");
   expect(existsSync(join(sandboxOf(output), "staged.txt"))).toBe(true);
 });
+
+test("workspace removes other sessions' abandoned sandboxes and keeps recent ones", async () => {
+  const abandoned = join(root, "repository.acceptance-abandone");
+  const recent = join(root, "repository.acceptance-recent00");
+  await mkdir(abandoned);
+  await mkdir(recent);
+  const dayAgo = new Date(Date.now() - 25 * 60 * 60 * 1000);
+  await utimes(abandoned, dayAgo, dayAgo);
+  await begin(session());
+
+  await workspace(session());
+
+  expect(existsSync(abandoned)).toBe(false);
+  expect(existsSync(recent)).toBe(true);
+});
+
+const hasMise = (() => {
+  try {
+    execFileSync("mise", ["--version"]);
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+test.skipIf(!hasWt || !hasMise)(
+  "setup hooks get the sandbox's mise env (requires wt, mise)",
+  async () => {
+    const originalTrusted = process.env.MISE_TRUSTED_CONFIG_PATHS;
+    await writeFile(join(repository, "mise.toml"), '[env]\nSANDBOX_PROBE = "from-mise"\n');
+    await mkdir(join(repository, ".config"));
+    await writeFile(
+      join(repository, ".config", "wt.toml"),
+      'pre-start = "printf %s \\"$SANDBOX_PROBE\\" > probe.txt"\n',
+    );
+    process.env.MISE_TRUSTED_CONFIG_PATHS = root;
+    try {
+      await begin(session());
+      const output = await workspace(session());
+
+      expect(output).toContain("Setup hook: ran");
+      expect(await readFile(join(sandboxOf(output), "probe.txt"), "utf8")).toBe("from-mise");
+    } finally {
+      if (originalTrusted === undefined) delete process.env.MISE_TRUSTED_CONFIG_PATHS;
+      else process.env.MISE_TRUSTED_CONFIG_PATHS = originalTrusted;
+    }
+  },
+);
 
 test("a named repository cannot reuse a repository name", async () => {
   const twin = join(root, "nested", "repository");

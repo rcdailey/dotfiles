@@ -71,12 +71,20 @@ export async function runSetupHook(sandbox: string, stateDirectory: string) {
     "--foreground",
     "--yes",
   ];
+  const options = {
+    encoding: "utf8",
+    timeout: HOOK_TIMEOUT_MS,
+    maxBuffer: 64 * 1024 * 1024,
+  } as const;
   try {
-    await execFileAsync("wt", args, {
-      encoding: "utf8",
-      timeout: HOOK_TIMEOUT_MS,
-      maxBuffer: 64 * 1024 * 1024,
-    });
+    // The plugin process carries the mise tools of OpenCode's own directory, not the sandbox's;
+    // without mise exec, hook commands miss repository tools such as dotnet.
+    await execFileAsync("mise", ["exec", "-C", sandbox, "--", "wt", ...args], options).catch(
+      (error: { code?: unknown }) => {
+        if (error.code !== "ENOENT") throw error;
+        return execFileAsync("wt", args, options);
+      },
+    );
     return "ran";
   } catch (error) {
     const failure = error as { code?: unknown; stdout?: string; stderr?: string };

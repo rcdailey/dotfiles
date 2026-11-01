@@ -317,10 +317,10 @@ current contents; do not request a full patch merely to confirm path state.
 
 Run every command (tests, builds, lint, typecheck, formatters, hooks) in the sandboxes from
 `acceptance_workspace`, never in the real repositories. Each sandbox already holds the repository's
-`.worktreeinclude` files and ran its setup hook. When it reports `Setup hook: absent` or `failed`,
-prepare that sandbox yourself from the repository's lockfiles, instructions, and stack conventions,
-and record each command and its outcome for `Setup`. When setup still fails, mark dependent cases
-`unknown`.
+`.worktreeinclude` files and ran its setup hook. When it reports any `Setup hook` outcome other than
+`ran`, prepare that sandbox yourself from the repository's lockfiles, instructions, and stack
+conventions, and record each command and its outcome for `Setup`. When setup still fails, mark
+dependent cases `unknown`.
 
 After recording a `pass`, `fail`, or `incomplete` ledger, call `acceptance_finish` with that verdict
 and one ledger entry per case, listing the paths its evidence depends on. Return that verdict when

@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { chmod, lstat, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { chmod, lstat, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import {
@@ -328,17 +328,33 @@ export async function diff(scope: Scope, paths: string[]) {
 }
 
 // Sandboxes sit beside their repository so parent-directory tool configuration (mise files and
-// trust) applies to them as it does to the repository. Ceiling: an interrupted audit leaves its
-// sandbox until the session's next acceptance_workspace or acceptance_finish removes it.
+// trust) applies to them as it does to the repository.
+const sandboxPrefix = (repository: RepositoryState) => `${basename(repository.path)}.acceptance-`;
+
 const sandboxPath = (directory: string, repository: RepositoryState) =>
-  join(
-    dirname(repository.path),
-    `${basename(repository.path)}.acceptance-${basename(directory).slice(0, 8)}`,
-  );
+  join(dirname(repository.path), `${sandboxPrefix(repository)}${basename(directory).slice(0, 8)}`);
 
 async function removeSandboxes(directory: string, state: SnapshotState) {
   for (const repository of Object.values(state.repositories)) {
     await rm(sandboxPath(directory, repository), { recursive: true, force: true });
+  }
+}
+
+// An interrupted audit never reaches acceptance_finish, so its sandbox stays. Other sessions'
+// sandboxes untouched this long are treated as abandoned; a live audit rebuilds its sandbox on
+// every acceptance_workspace call. Raise the limit if single audits ever run this long.
+const ABANDONED_SANDBOX_MS = 24 * 60 * 60 * 1000;
+
+async function removeAbandonedSandboxes(directory: string, state: SnapshotState) {
+  for (const repository of Object.values(state.repositories)) {
+    const parent = dirname(repository.path);
+    const own = basename(sandboxPath(directory, repository));
+    for (const entry of await readdir(parent)) {
+      if (!entry.startsWith(sandboxPrefix(repository)) || entry === own) continue;
+      const path = join(parent, entry);
+      if (Date.now() - (await lstat(path)).mtimeMs < ABANDONED_SANDBOX_MS) continue;
+      await rm(path, { recursive: true, force: true });
+    }
   }
 }
 
@@ -350,6 +366,7 @@ export async function workspace(scope: Scope) {
   const { primaryPath, directory } = await prepare(scope);
   return locked(directory, async () => {
     const state = await validatedState(directory, primaryPath);
+    await removeAbandonedSandboxes(directory, state);
     const sections: string[] = [];
     for (const [name, repository] of Object.entries(state.repositories)) {
       const pending = pendingTree(name, repository);
