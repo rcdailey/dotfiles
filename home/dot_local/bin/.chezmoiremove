@@ -5,5 +5,7 @@ renovate-prs
 mdwrap
 wt-new
 herdr-agent-split
+herdr-worktree-open
+herdr-worktree-close
 codexbar-opencode-auth
 commit

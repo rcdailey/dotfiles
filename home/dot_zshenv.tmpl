@@ -132,10 +132,6 @@ export HOMEBREW_NO_UPDATE_REPORT_CASKS=1
 # upgrades them on demand
 export HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1
 
-# Inside herdr, worktrunk's post-switch hook opens the worktree in its own child space, so the
-# calling shell stays put (wt switch --cd overrides)
-[[ -n "$HERDR_ENV" ]] && export WORKTRUNK_SWITCH__CD=false
-
 # Function autoloading (needed by both interactive and non-interactive shells)
 if [[ -d "$XDG_CONFIG_HOME/zsh/functions" ]]; then
   fpath=("$XDG_CONFIG_HOME/zsh/functions" $fpath)

@@ -130,13 +130,14 @@ shown in chat for approval. Load it when its full `<skill_content>` is not in yo
 
 ## Worktree branches
 
-The user creates worktrees (worktrunk, often from herdr); never create one. When asked to work on
-an issue or create a branch:
+When starting a feature or fix that changes a repository:
 
-- Linked worktree (`git rev-parse --git-dir` differs from `--git-common-dir`): confirm the current
-  branch belongs to that work, then `git branch -m` it to repository convention, including any
-  issue key. Worktree names stay short and need not match the branch.
-- Main checkout: ask whether to continue there or wait for the user to create a worktree.
+- Main checkout (`git rev-parse --git-dir` equals `--git-common-dir`): create a short-named
+  worktree with `worktree_create`, then move this session into it with `session_move` in a later
+  call, and continue the work there.
+- Linked worktree: confirm the current branch belongs to that work.
+- Either way, `git branch -m` the branch to repository convention, including any issue key.
+  Worktree names stay short and need not match the branch.
 - A new linked worktree may lack untracked local state (installed dependencies, env files, generated
   artifacts); prepare it from knowledge of the stack. Applicable repository instructions supplement
   or override this, even if they never mention worktrees.

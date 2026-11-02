@@ -1,0 +1,5 @@
+# Plugins other tools install and update; ignoring keeps exact_plugins from deleting them
+# `herdr integration install opencode` (kitty shell line)
+herdr-agent-state.js
+# `wt config plugins opencode install` (mise worktrunk postinstall)
+worktrunk.ts

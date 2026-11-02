@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Install or update herdr plugins (reinstall replaces the checkout with the latest default branch).
-# Runs when this script or any managed herdr config file changes, and at most once per week.
-# week {{ div (now | unixEpoch) 604800 }}
+# Link local herdr plugins. Runs when this script or any managed herdr config file changes.
 # Rerun once herdr appears on PATH; a run before mise installs it exits early and records success.
 # herdr {{ lookPath "herdr" }}
 {{ range glob (joinPath .chezmoi.sourceDir "dot_config/herdr/**") -}}
@@ -11,8 +9,4 @@
 {{ end -}}
 
 command -v herdr >/dev/null || exit 0
-if ! out=$(herdr plugin install devashish2203/herdr-worktrunk --yes 2>&1); then
-  printf '%s\n' "$out" >&2
-  exit 1
-fi
 herdr plugin link {{ joinPath .chezmoi.homeDir ".config/herdr/lazygit-follow" | quote }} >/dev/null

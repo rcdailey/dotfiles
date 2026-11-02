@@ -31,7 +31,8 @@ ripgrep = "latest"
 rumdl = "latest"
 task = "latest"
 uv = "latest"
-worktrunk = "latest"
+# The OpenCode plugin routes OpenCode's worktree tools through wt, running its hooks
+worktrunk = { version = "latest", postinstall = "wt config plugins opencode install --yes" }
 yamllint = "latest"
 yq = "latest"
 zizmor = "latest"

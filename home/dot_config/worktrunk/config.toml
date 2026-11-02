@@ -7,12 +7,4 @@ squash = false
 [pre-start]
 copy = 'wt step copy-ignored --require-include'
 
-# Inside herdr, open the worktree as a child space running OpenCode (or focus it if open)
-[post-switch]
-herdr = 'herdr-worktree-open {{ repo_path }} {{ worktree_path }}'
-
-# Inside herdr, close the removed worktree's child space (wt remove or wt merge)
-[post-remove]
-herdr = 'herdr-worktree-close {{ worktree_path }}'
-
 [projects]
