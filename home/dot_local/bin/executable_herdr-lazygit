@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Lazygit in its own kitty OS window that follows the focused herdr pane's git repository.
+# Lazygit in its own kitty OS window that follows the focused herdr pane's git repository, or the
+# directory of the OpenCode session running in that pane.
 #   herdr-lazygit open    focus the window, or open it if closed (kitty ctrl+shift+g)
 #   herdr-lazygit run     window process: run lazygit, restarting it when the followed repo changes;
 #                         opened outside a git repo, it waits for follow to supply one
-#   herdr-lazygit follow  herdr focus hook: retarget an open window at the focused pane's repo
+#   herdr-lazygit follow  herdr focus hook and OpenCode session-move hook: retarget an open window
+#                         at the focused pane's repo
 # A repo switch stops lazygit with SIGTERM, so anything unsaved inside lazygit is lost.
 set -euo pipefail
 
@@ -11,12 +13,23 @@ state="${XDG_STATE_HOME:-$HOME/.local/state}/herdr-lazygit"
 # Identifies the window to kitty; a title would not work because lazygit rewrites it
 window_match="var:herdr_lazygit"
 
-# Toplevel of the focused herdr pane's repo (a linked worktree resolves to its own root)
+# Written by the herdr-lazygit-follow OpenCode plugin: one file per session ID, holding its directory
+session_dirs="${XDG_STATE_HOME:-$HOME/.local/state}/opencode/session-directories"
+
+# Toplevel of the focused herdr pane's repo (a linked worktree resolves to its own root). An
+# OpenCode pane uses its session's directory, which session_move changes without changing the
+# pane's cwd; other panes, or a session without a published directory, use the pane's cwd.
 focused_repo() {
-  local cwd
+  local pane session dir
   # Without HERDR_PANE_ID, `pane current` reports the focused pane instead of the calling one
-  cwd=$(env -u HERDR_PANE_ID herdr pane current | jq -r '.result.pane.cwd // empty')
-  [[ -n "$cwd" ]] && git -C "$cwd" rev-parse --show-toplevel 2>/dev/null
+  pane=$(env -u HERDR_PANE_ID herdr pane current | jq -c '.result.pane // empty')
+  session=$(jq -r 'select(.agent == "opencode") | .agent_session.value // empty' <<<"$pane")
+  # The ID becomes a path component, so reject anything that could leave session_dirs
+  if [[ "$session" =~ ^ses_[A-Za-z0-9]+$ ]]; then
+    dir=$(cat "$session_dirs/$session" 2>/dev/null) || true
+  fi
+  [[ -n "${dir-}" && -d "$dir" ]] || dir=$(jq -r '.cwd // empty' <<<"$pane")
+  [[ -n "$dir" ]] && git -C "$dir" rev-parse --show-toplevel 2>/dev/null
 }
 
 lazygit_running() {
