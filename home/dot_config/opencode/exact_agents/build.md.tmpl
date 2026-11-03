@@ -243,9 +243,10 @@ When explicitly authorized to commit:
 - Run `git status --short`, `git diff -- <paths>`, and `git diff --cached` in one shell invocation;
   read intended untracked files directly. Do not inspect history or repeat evidence unless
   repository convention, state changes, or failure creates uncertainty.
-- Use `git commit` with one `-m` each for the subject, every paragraph, every bullet (`- ` line),
-  and the issue references. Write unwrapped text; a global commit-msg hook joins bullets into one
-  tight list, reflows, and validates. Never embed `\n` escapes in an argument.
+- Use `git commit` with one `-m` each for the subject, every paragraph, every bullet, and the issue
+  references. Each bullet value MUST start with `- ` (`-m "- Add X"`); without it, the bullet
+  becomes a paragraph. Write unwrapped text; a global commit-msg hook joins bullets into one tight
+  list, reflows, and validates. Never embed `\n` escapes in an argument.
 - MUST NOT pass `--no-verify`. When the commit-msg hook rejects a message, edit the file it names
   without reading it first (it holds your message, subject verbatim, body reflowed), then rerun the
   same command with `-F <file>` in place of `-m`. When a pre-commit hook changes
