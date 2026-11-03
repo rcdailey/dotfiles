@@ -147,3 +147,6 @@ marked `User Voice Profile` block.
 
 MUST NOT run any git mutation (add, commit, reset, push, rebase, merge) unless the user's request
 authorizes it; ask otherwise.
+
+Work in the main checkout directly on `master`; create a worktree or feature branch only when the
+user requests one.

@@ -130,17 +130,24 @@ shown in chat for approval. Load it when its full `<skill_content>` is not in yo
 
 ## Worktree branches
 
-When starting a feature or fix that changes a repository:
+When starting a feature or fix that changes a repository, settle two independent choices before
+editing. An explicit user request overrides both; otherwise repository instructions decide each,
+and without them ask the user (both in one question):
 
-- Main checkout (`git rev-parse --git-dir` equals `--git-common-dir`): create a short-named
-  worktree with `worktree_create`, then move this session into it with `session_move` in a later
-  call, and continue the work there.
-- Linked worktree: confirm the current branch belongs to that work.
-- Either way, `git branch -m` the branch to repository convention, including any issue key.
-  Worktree names stay short and need not match the branch.
+- Location: a new worktree, or the current checkout. Repository instructions that exclude
+  worktrees mean the current checkout.
+- Branch: a feature branch, or the mainline branch.
+
+Then:
+
+- Worktree from the main checkout (`git rev-parse --git-dir` equals `--git-common-dir`): create a
+  short-named worktree with `worktree_create`, then move this session into it with `session_move`
+  in a later call, and continue the work there. Already in a linked worktree: confirm its branch
+  belongs to that work.
+- Feature branch: name it by repository convention, including any issue key (`git branch -m` a
+  worktree's generated branch). Worktree names stay short and need not match the branch.
 - A new linked worktree may lack untracked local state (installed dependencies, env files, generated
-  artifacts); prepare it from knowledge of the stack. Applicable repository instructions supplement
-  or override this, even if they never mention worktrees.
+  artifacts); prepare it from knowledge of the stack.
 
 ## Change boundaries
 
