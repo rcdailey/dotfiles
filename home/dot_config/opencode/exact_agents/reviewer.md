@@ -23,9 +23,6 @@ permissions:
     resource: "*"
     effect: deny
   - action: skill
-    resource: gh-api
-    effect: deny
-  - action: skill
     resource: hunk-staging
     effect: deny
   - action: skill

@@ -223,9 +223,6 @@ permissions:
     resource: "*"
     effect: allow
   - action: skill
-    resource: gh-api
-    effect: deny
-  - action: skill
     resource: gh-pr-review
     effect: deny
   - action: skill
