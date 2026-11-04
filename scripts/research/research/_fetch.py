@@ -199,9 +199,12 @@ def fetch_markdown(url: str) -> str:
     """
     # Imported here because the site handlers build on this module's fetch primitives.
     from research._reddit import fetch_thread, reddit_thread
+    from research._stackexchange import fetch_post, stackexchange_post
 
     if thread := reddit_thread(url):
         return fetch_thread(*thread)
+    if post := stackexchange_post(url):
+        return fetch_post(*post)
 
     response = fetch_response(url)
 
