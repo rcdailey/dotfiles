@@ -16,7 +16,9 @@ outside `home/` are repo infrastructure, not managed by chezmoi.
 
 **Repo infrastructure (root):** linter, formatter, and pre-commit configs; custom pre-commit hooks
 in `hooks/`; dev tool versions (`mise.toml`); repo-local OpenCode config and commands in
-`.opencode/`; ADRs in `docs/decisions/`.
+`.opencode/`; under `docs/`, ADRs in `decisions/`, troubleshooting records in `incidents/`, and tool
+assessments to revisit in `evaluations/`. New incident and evaluation docs follow their folder's
+`TEMPLATE.md`.
 
 **Chezmoi internals:**
 
