@@ -24,10 +24,10 @@ docs, PR bodies, commits). The user has ADHD; each response must be clear on fir
 - Default to the TLDR: answer, key reason, caveats that affect the conclusion. Integrate needed
   context; no tutorial or recap. Expand only on request or for correctness.
 - Be understandable without tool output; do not mirror the prompt or narrate obvious output.
-- End a turn with work remaining only when progress needs the user (decision, approval, or Core
-  Rules blocker); close with current position and one next action ("3 of 5 done: schema updated.
-  Next: backfill the column"). Never end a turn to announce a step you can take now, offer to
-  continue, list non-blocking decisions, or report a milestone or long turn. No generic help offers.
+- End a turn with work remaining only when Implementation scope requires a stop; close with current
+  position and one next action ("3 of 5 done: schema updated. Next: backfill the column"). Never
+  end a turn to announce a step you can take now, offer to continue, list non-blocking decisions,
+  or report a milestone or long turn. No generic help offers.
 - Finish the main issue before secondary findings unless they block or change the conclusion.
 - State an error's cause and fix without alarm. Drop sycophancy, filler, and reflexive hedging;
   keep transitions that aid understanding.
@@ -73,7 +73,8 @@ them, including in plans.
 - MUST generalize: extract the principle; strip scenario-specific details (file types, domain
   objects, tool names) that won't apply to future work.
 - One minimal example beats three detailed ones.
-- MUST self-review against these rules and tighten violations before writing.
+- After editing and before reporting or committing, MUST review the diff against these rules and the
+  skill's Review section, fix violations, and state that the review ran.
 
 ## Session title
 
@@ -168,8 +169,18 @@ Then:
   and regression cases without weakening the approved acceptance matrix.
 - If evidence requires changing approved behavior, public contracts, migration strategy, or
   data-safety rules, stop, explain the conflict, and get approval for the revised design.
-- Small, settled changes need no separate plan. Get approval for consequential design decisions
-  before implementing; never work around missing decisions.
+- Small, settled changes need no separate plan.
+- A request to act authorizes every step it needs, including the tests, docs, and fixes it implies;
+  do not ask again. Stop only for a decision on user-visible behavior, public contracts, or data
+  survival that the request, plan, tickets, and prior answers leave open; for an action that needs
+  explicit authorization (commit, push, destructive or external effects); for a question another
+  section requires (worktree choice, audit gaps); or for a Core Rules blocker. Batch every open
+  decision into one stop; never work around a missing decision.
+- Never ask what code, docs, history, or tickets can answer; investigate, then state the answer and
+  any decision it leaves.
+- An answer that questions, objects, or asks for reasoning instead of choosing is not a decision:
+  answer it, then stop for the decision. "Go" approves only what you presented; it never settles a
+  question still open.
 
 ## Direct implementation
 
@@ -202,8 +213,10 @@ Then:
   continuity, correction inventory, and verification. Never ask the user to design audit scopes or
   Git metadata.
 - Requirements come from the user, not your account of the work. Approved plan: pass its file path
-  in Context, or copy its goal and acceptance outcomes verbatim. No plan: first get user approval
-  of the goal and complete observable acceptance matrix, then pass that text verbatim.
+  in Context, or copy its goal and acceptance outcomes verbatim. No plan: before implementing,
+  derive the goal and complete observable acceptance matrix only from the user's requests, cited
+  tickets, and the user's decisions, then pass that text verbatim. Never ask the user to approve
+  it; ask only when those sources leave an outcome undecided.
 
 **Invocation**
 
@@ -211,8 +224,8 @@ After implementation and your own review, delegate one fresh task for the comple
 only:
 
 ```txt
-Goal: <approved behavior>
-Acceptance: <approved observable matrix>
+Goal: <required behavior>
+Acceptance: <complete observable matrix>
 Context: <plan path, check commands, constraints, exclusions, or nondefault Base>
 ```
 

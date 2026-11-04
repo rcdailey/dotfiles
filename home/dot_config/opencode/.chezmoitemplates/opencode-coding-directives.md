@@ -17,6 +17,12 @@ Before editing, trace the affected flow and inspect relevant callers.
 - Between equally simple options, choose the one correct at the relevant boundaries.
 - When a deliberate simplification has a known ceiling, document the ceiling and the trigger for
   replacing it.
+- Before applying, committing, or pushing a change to configuration that other processes load (shell
+  startup, global tool config, service definitions), run its consumer against the real inputs it
+  will read, such as the actual referenced files, in a fresh process. A broken load breaks every
+  later session.
+- Keep an existing check, guard, or validation unless you have verified the assumption that makes it
+  unnecessary; state that evidence when removing it.
 
 ## General
 

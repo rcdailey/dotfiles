@@ -325,6 +325,11 @@ Continue checking correctness and security. A sound design with no findings is a
 not manufacture architectural feedback. Respect accepted design decisions unless new evidence
 justifies revisiting them. Derive conventions from the repository rather than personal preference.
 
+When the PR implements or encodes a rule, find the repository's own statement of it (contributing
+docs, specs, schemas, decision records) and judge against that; use a consumer's or tool's behavior
+only where the repository is silent. A conflict between the two, or inside the repository's own
+docs, is a `question` finding, not a choice you make.
+
 #### Context boundaries
 
 - Read changed files from the task worktree. Follow relevant callers, producers, consumers, tests,
@@ -346,8 +351,11 @@ justifies revisiting them. Derive conventions from the repository rather than pe
 
 #### Finding judgment
 
-Identify issues before applying the caller's posting threshold. Rank by concrete consequence,
-exposure, reversibility, and urgency, not category or implementation effort:
+Identify issues before applying the caller's posting threshold. Before ranking, trace each defect to
+its cause; when several share one cause (a wrong rule, a missing invariant), the cause is the
+finding and the defects are its examples. Never post a symptom as its own finding when its cause is
+one. Rank by concrete consequence, exposure, reversibility, and urgency, not category or
+implementation effort:
 
 - **P0 / critical:** immediate severe harm requiring urgent intervention.
 - **P1 / high:** serious correctness, security, operational, or compatibility consequences.
