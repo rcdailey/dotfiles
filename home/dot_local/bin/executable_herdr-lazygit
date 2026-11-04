@@ -66,12 +66,21 @@ wait_for_repo() {
 
 open() {
   kitten @ focus-window --match "$window_match" 2>/dev/null && return
-  local id
+  # Written by herdr_lazygit_watcher.py when the window closes
+  local x y width height id
+  # Ignores a file missing any field, which would otherwise pass "null" to kitty
+  read -r x y width height < <(jq -r '[.x, .y, .width, .height]
+    | select(all(type == "number")) | map(tostring) | join(" ")' \
+    "$state/geometry.json" 2>/dev/null) || true
+  local position=()
+  [[ -z "$x" ]] || position=(--os-window-position "${x}x${y}")
+  # Landscape, unlike kitty's portrait initial_window_* default sized for the herdr window
+  width=${width:-1500} height=${height:-800}
   # Login shell for the user environment (.zshenv). Not interactive: .zshrc starts prompt helpers
   # that outlive the shell and hold the window open for seconds after lazygit quits.
-  id=$(kitten @ launch --type=os-window --var herdr_lazygit=1 zsh -lc 'herdr-lazygit run')
-  # Landscape, unlike kitty's portrait initial_window_* default sized for the herdr window
-  kitten @ resize-os-window --match "id:$id" --unit pixels --width 1500 --height 800
+  id=$(kitten @ launch --type=os-window --var herdr_lazygit=1 --watcher herdr_lazygit_watcher.py \
+    "${position[@]}" zsh -lc 'herdr-lazygit run')
+  kitten @ resize-os-window --match "id:$id" --unit pixels --width "$width" --height "$height"
 }
 
 run() {
