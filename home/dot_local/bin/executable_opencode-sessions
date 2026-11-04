@@ -162,6 +162,33 @@ def where(clauses: list[str]) -> str:
     return f"WHERE {' AND '.join(clauses)}" if clauses else ""
 
 
+def sql_limit(limit: int) -> int:
+    """Map the CLI's 0 (no cap) to SQLite's negative LIMIT, which returns every row."""
+    return limit or -1
+
+
+def parse_range(value: str) -> tuple[int | None, int | None]:
+    first, separator, last = value.partition(":")
+    try:
+        if not separator:
+            raise ValueError
+        return (int(first) if first else None, int(last) if last else None)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(
+            "use A:B with integer seq values, e.g. 10:40 or 10:"
+        ) from error
+
+
+def add_limit(parser: argparse.ArgumentParser, default: int, noun: str) -> None:
+    parser.add_argument(
+        "-n",
+        "--limit",
+        type=int,
+        default=default,
+        help=f"maximum {noun}; 0 disables (default: {default})",
+    )
+
+
 def model_name(value: str | None) -> str:
     if not value:
         return "-"
@@ -275,7 +302,7 @@ def command_list(connection: sqlite3.Connection, args: argparse.Namespace) -> No
         FROM session_v2 s {where(clauses + time_clauses)}
         ORDER BY s.time_updated DESC LIMIT ?
         """,
-        [*params, *time_params, args.limit],
+        [*params, *time_params, sql_limit(args.limit)],
     ).fetchall()
     for row in rows:
         children = f"  [{row['children']} children]" if row["children"] else ""
@@ -312,7 +339,7 @@ def command_search(connection: sqlite3.Connection, args: argparse.Namespace) -> 
         if not test(pattern.search(combined) for pattern in patterns):
             continue
         session_id = row["session_id"]
-        if session_id not in hits and len(hits) >= args.limit:
+        if session_id not in hits and args.limit and len(hits) >= args.limit:
             unlisted.add(session_id)
             continue
         totals[session_id] = totals.get(session_id, 0) + 1
@@ -374,14 +401,13 @@ def command_show(connection: sqlite3.Connection, args: argparse.Namespace) -> No
         scopes += ("tool",)
     clauses = ["session_id = ?"]
     params: list = [session["id"]]
-    if args.range:
-        first, _, last = args.range.partition(":")
-        if first:
-            clauses.append("seq >= ?")
-            params.append(int(first))
-        if last:
-            clauses.append("seq <= ?")
-            params.append(int(last))
+    first, last = args.range or (None, None)
+    if first is not None:
+        clauses.append("seq >= ?")
+        params.append(first)
+    if last is not None:
+        clauses.append("seq <= ?")
+        params.append(last)
     time_clauses, time_params = time_filters(args, "time_created")
     rows = connection.execute(
         f"""
@@ -432,6 +458,7 @@ def command_tools(connection: sqlite3.Connection, args: argparse.Namespace) -> N
     clauses, params = session_filters(args)
     time_clauses, time_params = time_filters(args, "m.time_created")
     clauses += time_clauses + ["m.type = 'assistant'", "json_extract(c.value, '$.type') = 'tool'"]
+    params += time_params
     if args.name:
         clauses.append("json_extract(c.value, '$.name') LIKE ? ESCAPE '\\'")
         params.append(like_pattern(args.name))
@@ -448,7 +475,7 @@ def command_tools(connection: sqlite3.Connection, args: argparse.Namespace) -> N
              json_each(m.data, '$.content') c
         {where(clauses)} ORDER BY m.time_created DESC LIMIT ?
         """,
-        [*params, *time_params, args.limit],
+        [*params, sql_limit(args.limit)],
     ).fetchall()
     for row in rows:
         block = json.loads(row["block"])
@@ -579,7 +606,7 @@ def parse_args() -> argparse.Namespace:
     list_parser.add_argument(
         "--all", dest="roots", action="store_false", help="include child (subagent) sessions"
     )
-    list_parser.add_argument("-n", "--limit", type=int, default=30)
+    add_limit(list_parser, 30, "sessions")
     list_parser.set_defaults(handler=command_list)
 
     search = commands.add_parser(
@@ -603,10 +630,10 @@ def parse_args() -> argparse.Namespace:
     )
     add_session_filters(search)
     search.add_argument("--roots", action="store_true", help="exclude child sessions")
-    search.add_argument("-n", "--limit", type=int, default=15, help="maximum sessions")
+    add_limit(search, 15, "sessions")
     search.add_argument("--per-session", type=int, default=3, help="snippets per session")
     search.add_argument("--width", type=int, default=160, help="snippet context characters")
-    search.set_defaults(handler=command_search, parent=None)
+    search.set_defaults(handler=command_search)
 
     show = commands.add_parser(
         "show",
@@ -614,7 +641,9 @@ def parse_args() -> argparse.Namespace:
         description="Prints user, assistant, and compaction-summary text; tools on request.",
     )
     show.add_argument("session", help="session ID or slug")
-    show.add_argument("--range", metavar="A:B", help="seq range; either end may be omitted")
+    show.add_argument(
+        "--range", metavar="A:B", type=parse_range, help="seq range; either end may be omitted"
+    )
     show.add_argument(
         "--grep", nargs="+", metavar="TERM", help="only messages with every term (as in search)"
     )
@@ -655,7 +684,7 @@ def parse_args() -> argparse.Namespace:
     )
     add_session_filters(tools)
     tools.add_argument("--roots", action="store_true", help="exclude child sessions")
-    tools.add_argument("-n", "--limit", type=int, default=40)
+    add_limit(tools, 40, "tool calls")
     tools.add_argument("--width", type=int, default=160, help="half the output line limit")
     tools.set_defaults(handler=command_tools, session_id=None)
 
@@ -684,7 +713,9 @@ def main() -> int:
         print(f"Error: {error}", file=sys.stderr)
         return 1
     except BrokenPipeError:
-        sys.stderr.close()
+        # The reader closed the pipe (e.g. `| head`); point stdout at devnull so the
+        # interpreter's exit-time flush does not fail with another BrokenPipeError.
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
     return 0
 
 
