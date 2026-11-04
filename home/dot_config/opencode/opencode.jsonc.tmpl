@@ -125,6 +125,8 @@
     { "action": "shell", "resource": "*gh pr edit*", "effect": "ask" },
     { "action": "shell", "resource": "*gh pr review*", "effect": "ask" },
     { "action": "shell", "resource": "*gh pr ready*", "effect": "ask" },
+    // PRs open through gh pr create; submit --auto writes generated titles and empty bodies
+    { "action": "shell", "resource": "*gh stack submit*", "effect": "deny" },
     { "action": "shell", "resource": "*gh issue create*", "effect": "ask" },
     { "action": "shell", "resource": "*gh issue close*", "effect": "ask" },
     { "action": "shell", "resource": "*gh issue reopen*", "effect": "ask" },

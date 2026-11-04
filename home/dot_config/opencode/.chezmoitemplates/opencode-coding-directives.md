@@ -46,7 +46,10 @@ Before editing, trace the affected flow and inspect relevant callers.
 - For current library or framework APIs, MUST use `ctx7` first. Run `ctx7 library <name> <query>` to
   resolve a library ID, then `ctx7 docs <library-id> <query>` for the relevant API. Use official
   sources when Context7 lacks coverage.
-- Keep PR descriptions high-level, focused on the change. Skip test plans and template boilerplate.
+- Keep PR descriptions high-level, focused on the change. Fill the repository's PR template when one
+  exists, dropping its guidance comments and empty optional sections. Describe every commit against
+  the PR's base branch (`git diff <base>...HEAD`), not only this session's work; state only what the
+  diff, ticket, requester, or session evidence supports, and ask when the why is missing.
 - Prefer structured output (JSON + jq/yq) for CLIs that support it (aws, gh, kubectl, docker), but
   print only projected fields: filter at the source, project with jq/yq (`@tsv` for rows), cap
   output near 50 lines and 200 columns, and search unstructured text with `rg`. Widen only when the
@@ -74,6 +77,8 @@ Before editing, trace the affected flow and inspect relevant callers.
   deletion. Run `git diff REBASE_HEAD...HEAD -- <file>` to see the upstream modifications being
   discarded, then port any meaningful changes to the replacement files before resolving with
 `git rm`.
+- Before rebasing or pushing a branch, run `gh stack view`; if the branch is in a stack, load the
+  `gh-stack` skill.
 
 ## Repository Locations
 
