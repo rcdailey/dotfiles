@@ -114,6 +114,19 @@ def default_branch(owner: str, repo: str) -> str:
         raise APIError(f"unexpected response resolving default branch: {e}") from e
 
 
+def renamed_branch(owner: str, repo: str, branch: str) -> str | None:
+    """Return the branch's current name when GitHub redirects a renamed branch, else None.
+
+    GitHub keeps redirecting a renamed branch's old name (e.g. master -> main) in its web and
+    API URLs, but git itself only knows the new name.
+    """
+    try:
+        name = api(f"repos/{owner}/{repo}/branches/{branch}").get("name")
+    except APIError:
+        return None
+    return name if name and name != branch else None
+
+
 def resolve_ref(owner: str, repo: str, ref: str | None) -> str:
     """Return `ref` if provided, else the repo's default branch."""
     return ref if ref else default_branch(owner, repo)

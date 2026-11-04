@@ -237,16 +237,15 @@ def ensure_ref(owner: str, repo: str, ref: str) -> str:
 
     # FETCH_HEAD is shared by concurrent callers, so resolve it before releasing the lock.
     with _repo_lock(owner, repo):
-        result = subprocess.run(
-            ["git", "fetch", "--depth=1", "origin", fetch_ref],
-            cwd=repo_dir,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            click.echo(f"error: ref not found: {ref}", err=True)
-            sys.exit(1)
+        if not _fetch_ref(repo_dir, fetch_ref):
+            from research._ghapi import renamed_branch
+
+            current = renamed_branch(owner, repo, ref)
+            if not current or not _fetch_ref(repo_dir, current):
+                click.echo(f"error: ref not found: {ref}", err=True)
+                sys.exit(1)
+            click.echo(f"[branch {ref} was renamed to {current}; using {current}]", err=True)
+            fetch_ref = current
         sha = (
             _try_resolve(repo_dir, fetch_ref)
             or _try_resolve(repo_dir, ref)
@@ -256,6 +255,17 @@ def ensure_ref(owner: str, repo: str, ref: str) -> str:
         return sha
     click.echo(f"error: could not resolve ref: {ref}", err=True)
     sys.exit(1)
+
+
+def _fetch_ref(repo_dir: Path, ref: str) -> bool:
+    result = subprocess.run(
+        ["git", "fetch", "--depth=1", "origin", ref],
+        cwd=repo_dir,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0
 
 
 def _try_resolve(repo_dir: Path, ref: str) -> str | None:
