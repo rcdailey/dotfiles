@@ -41,9 +41,6 @@ enabled = false
 # herdr cannot unbind the prefix entirely.
 [keys]
 prefix = "ctrl+space"
-# Splits (herdr horizontal = top/bottom, vertical = left/right)
-split_horizontal = ["prefix+minus", "ctrl+shift+e"]
-split_vertical = ["prefix+v", "ctrl+shift+o"]
 
 # Pane focus
 focus_pane_left = ["prefix+h", "ctrl+shift+left"]
@@ -76,12 +73,16 @@ type = "shell"
 description = "new agent tab"
 command = 'herdr pane run "$(herdr tab create --focus | jq -r .result.root_pane.pane_id)" opencode'
 
-# Scratch shell for quick commands; exiting it (Esc, see zsh 05-configuration.sh) closes the popup
-# and ends anything it started, so long-running processes belong in a plain shell tab (prefix+c)
+# Splits start in herdr-pane-dir: an OpenCode pane's session directory (for
+# example its worktree), otherwise the pane's cwd. The built-in splits use only the pane's cwd.
 [[keys.command]]
-key = "ctrl+shift+s"
-type = "popup"
-command = 'cd "$HERDR_ACTIVE_PANE_CWD" && HERDR_SCRATCH_SHELL=1 exec zsh'
-description = "shell"
-width = "90%"
-height = "90%"
+key = ["prefix+minus", "ctrl+shift+e"]
+type = "shell"
+description = "split down"
+command = 'herdr pane split --direction down --cwd "$(herdr-pane-dir)" --focus'
+
+[[keys.command]]
+key = ["prefix+v", "ctrl+shift+o"]
+type = "shell"
+description = "split right"
+command = 'herdr pane split --direction right --cwd "$(herdr-pane-dir)" --focus'

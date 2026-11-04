@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Prints the working directory of the focused herdr pane. An OpenCode pane reports its session's
+# directory, which session_move (for example into a new worktree) changes without changing the
+# pane's cwd; other panes, or a session without a published directory, report the pane's cwd.
+# Fails when herdr knows neither.
+set -euo pipefail
+
+# Written by the herdr-lazygit-follow OpenCode plugin: one file per session ID, holding its directory
+session_dirs="${XDG_STATE_HOME:-$HOME/.local/state}/opencode/session-directories"
+
+# Without HERDR_PANE_ID, `pane current` reports the focused pane instead of the calling one
+pane=$(env -u HERDR_PANE_ID herdr pane current | jq -c '.result.pane // empty')
+session=$(jq -r 'select(.agent == "opencode") | .agent_session.value // empty' <<<"$pane")
+# The ID becomes a path component, so reject anything that could leave session_dirs
+if [[ "$session" =~ ^ses_[A-Za-z0-9]+$ ]]; then
+  dir=$(cat "$session_dirs/$session" 2>/dev/null) || true
+fi
+[[ -n "${dir-}" && -d "$dir" ]] || dir=$(jq -r '.cwd // empty' <<<"$pane")
+[[ -n "$dir" ]] && echo "$dir"

@@ -13,23 +13,10 @@ state="${XDG_STATE_HOME:-$HOME/.local/state}/herdr-lazygit"
 # Identifies the window to kitty; a title would not work because lazygit rewrites it
 window_match="var:herdr_lazygit"
 
-# Written by the herdr-lazygit-follow OpenCode plugin: one file per session ID, holding its directory
-session_dirs="${XDG_STATE_HOME:-$HOME/.local/state}/opencode/session-directories"
-
-# Toplevel of the focused herdr pane's repo (a linked worktree resolves to its own root). An
-# OpenCode pane uses its session's directory, which session_move changes without changing the
-# pane's cwd; other panes, or a session without a published directory, use the pane's cwd.
+# Toplevel of the focused herdr pane's repo (a linked worktree resolves to its own root)
 focused_repo() {
-  local pane session dir
-  # Without HERDR_PANE_ID, `pane current` reports the focused pane instead of the calling one
-  pane=$(env -u HERDR_PANE_ID herdr pane current | jq -c '.result.pane // empty')
-  session=$(jq -r 'select(.agent == "opencode") | .agent_session.value // empty' <<<"$pane")
-  # The ID becomes a path component, so reject anything that could leave session_dirs
-  if [[ "$session" =~ ^ses_[A-Za-z0-9]+$ ]]; then
-    dir=$(cat "$session_dirs/$session" 2>/dev/null) || true
-  fi
-  [[ -n "${dir-}" && -d "$dir" ]] || dir=$(jq -r '.cwd // empty' <<<"$pane")
-  [[ -n "$dir" ]] && git -C "$dir" rev-parse --show-toplevel 2>/dev/null
+  local dir
+  dir=$(herdr-pane-dir) && git -C "$dir" rev-parse --show-toplevel 2>/dev/null
 }
 
 lazygit_running() {

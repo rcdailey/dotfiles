@@ -15,8 +15,8 @@ const STALE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
  * Publishes each session's working directory to SESSION_DIRS, so tools outside OpenCode can map a
- * session ID to the directory it works in. herdr-lazygit reads it to follow the focused pane's
- * session. A file is written when a session is created, moved (session_move, for example into a
+ * session ID to the directory it works in. herdr-pane-dir reads it, so herdr splits open in the
+ * session's directory and herdr-lazygit follows it. A file is written when a session is created, moved (session_move, for example into a
  * new worktree), or prompted; a session left idle since this plugin loaded has none.
  *
  * A new or changed directory also runs `herdr-lazygit follow`: herdr reports only focus changes,
