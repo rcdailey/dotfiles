@@ -7,16 +7,23 @@ name = "dracula"
 resume_agents_on_restore = true
 
 [ui]
-sidebar_width = 24
 confirm_close = true
 prompt_new_tab_name = false
 show_agent_labels_on_pane_borders = true
+# Window title tokens cannot read pane metadata, so OpenCode panes keep their "OC | " prefix
+window_title = "{workspace}: {terminal_title}"
 
-# OpenCode titles its terminal "OC | <session title>"; show that instead of the agent name
+# $issue and $title come from the OpenCode herdr-session-title plugin. The tab shows only once
+# renamed; the rule hides herdr's numeric default names.
 [ui.sidebar.agents.rows_by_agent]
 opencode = [
-  ["state_icon", "workspace", "tab"],
-  ["terminal_title_stripped"],
+  [
+    "state_icon",
+    "workspace",
+    { token = "$issue", bold = true },
+    { token = "tab", rules = [{ gt = -1, hide = true }] },
+  ],
+  ["$title"],
 ]
 
 [ui.toast]

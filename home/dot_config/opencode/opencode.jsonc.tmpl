@@ -20,6 +20,12 @@
     // prompt caching
     "plan": { "disabled": true },
     "general": { "disabled": true },
+    "title": {
+      "system": {{
+        includeTemplate "dot_config/opencode/.chezmoitemplates/opencode-title-agent.md" .
+        | trim | toJson
+      }},
+    },
     "explore": {
       "permissions": [
         { "action": "edit", "resource": "*", "effect": "deny" },
