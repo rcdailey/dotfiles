@@ -1,0 +1,6 @@
+# The curated STATUS column is a fixed 26 cells, wasted in a small terminal.
+# Overlay it at a narrower width; longer statuses are truncated.
+[[views."v1/pods".columns]]
+name = "STATUS"
+builtin = "STATUS"
+width = 12
