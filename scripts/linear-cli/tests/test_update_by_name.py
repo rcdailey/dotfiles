@@ -22,8 +22,12 @@ USERS = [
 MILESTONE = {
     "id": "ms-hardening",
     "name": "Hardening",
-    "issues": {"pageInfo": {"hasNextPage": False}, "nodes": [{"identifier": "ENG-1"}]},
+    "issues": {
+        "pageInfo": {"hasNextPage": False},
+        "nodes": [{"identifier": "ENG-1", "state": {"name": "Done"}}],
+    },
 }
+EMPTY_MILESTONE = {"id": "ms-empty", "name": "Empty", "issues": {"nodes": []}}
 _ALIAS_RE = re.compile(r"(q\d+): (\w+)")
 
 
@@ -47,7 +51,7 @@ class FakeLinear:
             return {"nodes": [{"id": PROJECT_ID}]}
         if field == "projectMilestones":
             name = filt["name"]["eqIgnoreCase"].lower()
-            return {"nodes": [MILESTONE] if name == MILESTONE["name"].lower() else []}
+            return {"nodes": [m for m in (MILESTONE, EMPTY_MILESTONE) if m["name"].lower() == name]}
         if field == "users":
             ref = filt["or"][0]["name"]["eqIgnoreCase"].lower()
             matches = [u for u in USERS if ref in (u["name"].lower(), u["email"].lower())]
@@ -157,8 +161,15 @@ class UpdateByNameTest(unittest.TestCase):
             ],
         )
 
-    def test_milestone_delete_by_name_lists_affected_issues(self) -> None:
-        output = self.run_ok(milestone.cli, ["delete", "Hardening", "--project", "LTI"])
+    def test_milestone_delete_without_issues(self) -> None:
+        self.run_ok(milestone.cli, ["delete", "empty", "--project", "LTI"])
+        self.assertEqual(self.linear.mutations, [("milestoneDelete", {"id": "ms-empty"})])
+
+    def test_milestone_delete_refuses_attached_issues_including_closed(self) -> None:
+        self.run_fails(milestone.cli, ["delete", "Hardening", "--project", "LTI"], "ENG-1 [Done]")
+
+    def test_milestone_delete_force_lists_affected_issues(self) -> None:
+        output = self.run_ok(milestone.cli, ["delete", "Hardening", "--project", "LTI", "--force"])
         self.assertEqual(self.linear.mutations, [("milestoneDelete", {"id": "ms-hardening"})])
         self.assertIn("ENG-1", output)
 

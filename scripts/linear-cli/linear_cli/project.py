@@ -29,29 +29,37 @@ from linear_cli._resolve import Batch, is_none, is_uuid, team_filter, user_filte
 
 _PROJECT_PAGE = "pageInfo { hasNextPage endCursor } nodes { id name state startDate targetDate }"
 _ISSUE_PAGE = 250
-# Open issues shown per milestone; the rest sit behind a printed drill-down command so the
-# overview stays small without hiding that anything was cut.
+# Open issues shown per milestone; the rest, including closed issues, sit behind a printed
+# drill-down command so the overview stays small without hiding that anything was cut.
 _GROUP_LIMIT = 20
 
 
-def _echo_issue_group(header: str, issues: list[Issue], drill_down: str, *, gap: bool) -> None:
-    """Print one milestone heading with its open/total count and top open issues."""
-    open_issues = sort_issues([issue for issue in issues if is_open(issue)])
+def _echo_issue_group(
+    header: str, issues: list[Issue], drill_down: str, *, gap: bool, show_all: bool
+) -> None:
+    """Print one milestone heading with its open/total count and its issues.
+
+    Without ``show_all``, only the top open issues print and a ``+N more`` line counts the rest.
+    """
+    issues = sort_issues(issues)
+    open_count = sum(1 for issue in issues if is_open(issue))
+    shown = issues if show_all else [issue for issue in issues if is_open(issue)][:_GROUP_LIMIT]
     if gap:
         click.echo("")
-    click.echo(f"  {header}  open: {len(open_issues)}/{len(issues)}")
-    for issue in open_issues[:_GROUP_LIMIT]:
+    click.echo(f"  {header}  open: {open_count}/{len(issues)}")
+    for issue in shown:
         click.echo(
             f"    {issue.identifier}  [{issue.state_name}]  {issue.title}  "
             f"assignee: {issue.assignee_name or 'unassigned'}  "
             f"estimate: {estimate_text(issue.estimate)}  {issue_times_text(issue)}"
         )
-    hidden = len(open_issues) - _GROUP_LIMIT
+    hidden = len(issues) - len(shown)
     if hidden > 0:
-        click.echo(f"    +{hidden} more: {drill_down}")
+        closed = len(issues) - open_count
+        click.echo(f"    +{hidden} more ({closed} closed): {drill_down}")
 
 
-def _echo_milestone_groups(proj: Project, issue_nodes: list[dict]) -> None:
+def _echo_milestone_groups(proj: Project, issue_nodes: list[dict], show_all: bool) -> None:
     """Print each milestone with its issues, then issues outside any milestone."""
     by_milestone: dict[str | None, list[Issue]] = {}
     for node in issue_nodes:
@@ -73,6 +81,7 @@ def _echo_milestone_groups(proj: Project, issue_nodes: list[dict]) -> None:
             by_milestone.pop(ms.get("id"), []),
             f"linear milestone view {shlex.quote(name)} --project {project_arg} --all",
             gap=index > 0,
+            show_all=show_all,
         )
     unassigned = [issue for issues in by_milestone.values() for issue in issues]
     if unassigned:
@@ -81,6 +90,7 @@ def _echo_milestone_groups(proj: Project, issue_nodes: list[dict]) -> None:
             unassigned,
             f"linear issue list --project {project_arg} --milestone none --limit {len(unassigned)}",
             gap=bool(proj.milestones),
+            show_all=show_all,
         )
 
 
@@ -131,7 +141,10 @@ def list_projects(team_key: str | None, lead: str | None) -> None:
 @cli.command("view")
 @click.argument("id_or_name")
 @click.option("--full", is_flag=True, help="Show full project update bodies instead of previews.")
-def view_project(id_or_name: str, full: bool) -> None:
+@click.option(
+    "--all", "show_all", is_flag=True, help="List every issue per milestone, including closed."
+)
+def view_project(id_or_name: str, full: bool, show_all: bool) -> None:
     """View project detail by ID or name."""
     batch = Batch()
     get_project = batch.project_node(id_or_name, PROJECT_FIELDS)
@@ -170,7 +183,7 @@ def view_project(id_or_name: str, full: bool) -> None:
         )
     except LinearError as exc:
         die(str(exc))
-    _echo_milestone_groups(proj, issue_nodes)
+    _echo_milestone_groups(proj, issue_nodes, show_all)
     if proj.project_updates:
         click.echo("")
         click.echo(f"recent updates ({len(proj.project_updates)}):")

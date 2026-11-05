@@ -180,13 +180,28 @@ def update_milestone(
 @cli.command("delete")
 @click.argument("milestone_name")
 @click.option("--project", required=True, help="Project name or UUID.")
-def delete_milestone(milestone_name: str, project: str) -> None:
-    """Delete a milestone by name and list the issues that lose it."""
+@click.option(
+    "--force", is_flag=True, help="Delete even when issues (open or closed) are attached."
+)
+def delete_milestone(milestone_name: str, project: str, force: bool) -> None:
+    """Delete a milestone by name; refuses when issues are attached unless --force."""
     node = _lookup_milestone(
         milestone_name,
         project,
-        f"id issues(first: {_ISSUE_PAGE}) {{ pageInfo {{ hasNextPage }} nodes {{ identifier }} }}",
+        f"id issues(first: {_ISSUE_PAGE}) {{ pageInfo {{ hasNextPage }} "
+        "nodes { identifier state { name } } }",
     )
+    issues = node.get("issues") or {}
+    attached = issues.get("nodes", [])
+    more = "+" if (issues.get("pageInfo") or {}).get("hasNextPage") else ""
+    listing = " ".join(
+        f"{n.get('identifier')} [{(n.get('state') or {}).get('name')}]" for n in attached
+    )
+    if attached and not force:
+        die(
+            f"milestone '{milestone_name}' has {len(attached)}{more} issues: {listing}; "
+            "move them first or pass --force"
+        )
     try:
         data = execute(MILESTONE_DELETE_MUTATION, {"id": node["id"]})
     except LinearError as exc:
@@ -197,8 +212,5 @@ def delete_milestone(milestone_name: str, project: str) -> None:
         die("milestone deletion failed")
 
     click.echo(f"milestone deleted: {milestone_name}")
-    issues = node.get("issues") or {}
-    identifiers = [n.get("identifier") for n in issues.get("nodes", [])]
-    if identifiers:
-        more = "+" if (issues.get("pageInfo") or {}).get("hasNextPage") else ""
-        click.echo(f"issues that lost it ({len(identifiers)}{more}): {' '.join(identifiers)}")
+    if attached:
+        click.echo(f"issues that lost it ({len(attached)}{more}): {listing}")

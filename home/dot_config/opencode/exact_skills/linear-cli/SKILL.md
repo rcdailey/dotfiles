@@ -79,8 +79,9 @@ directions.
 
 Drill down top-down: `project view` groups issues under each milestone (plus a "no milestone" group)
 with an `open: N/M` count and the top open issues. When a group is cut, its `+N more:` line prints
-the exact command for the rest; run that instead of guessing. `milestone delete` prints the issues
-that lost the milestone; move issues first when they need a new one.
+the exact command for the rest; run that instead of guessing. Closed issues count toward that line;
+pass `project view --all` to list every issue. `milestone delete` refuses while any issue, open or
+closed, is attached; move issues first, and pass `--force` only when they should lose the milestone.
 
 ## Linking issues
 
