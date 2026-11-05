@@ -43,8 +43,22 @@ def percentage_text(value: float | None) -> str:
     return f"{value:.0f}%" if value is not None else "0%"
 
 
-def echo_issue_summary(issue: Issue, *, indent: str = "", show_project: bool = False) -> None:
-    """Print one issue summary line; ``show_project`` adds the project for unscoped lists."""
+ALL_TIMES = ("created", "started", "completed", "updated")
+
+
+def echo_issue_summary(
+    issue: Issue,
+    *,
+    indent: str = "",
+    show_project: bool = False,
+    show_milestone: bool = False,
+    times: tuple[str, ...] = ALL_TIMES,
+) -> None:
+    """Print one issue summary line.
+
+    Callers drop the project or milestone when their scope already names it, and limit ``times``
+    to the timestamps the reader needs.
+    """
     parts = [
         (
             f"{indent}{issue.identifier}  {issue.state_name}  "
@@ -53,24 +67,27 @@ def echo_issue_summary(issue: Issue, *, indent: str = "", show_project: bool = F
     ]
     if show_project:
         parts.append(f"project: {issue.project_name or 'none'}")
+    if show_milestone and issue.milestone_name:
+        parts.append(f"milestone: {issue.milestone_name}")
     if issue.assignee_name:
         parts.append(f"assignee: {issue.assignee_name}")
     if issue.labels:
         parts.append(f"labels: {', '.join(issue.labels)}")
     parts.append(f"estimate: {estimate_text(issue.estimate)}")
-    parts.append(issue_times_text(issue))
+    if time_text := issue_times_text(issue, times):
+        parts.append(time_text)
     click.echo("  ".join(parts))
 
 
-def issue_times_text(issue: Issue) -> str:
-    """Format issue lifecycle timestamps, omitting stages the issue has not reached."""
-    times = [
-        ("created", issue.created_at),
-        ("started", issue.started_at),
-        ("completed", issue.completed_at),
-        ("updated", issue.updated_at),
-    ]
-    return "  ".join(f"{label}: {value}" for label, value in times if value)
+def issue_times_text(issue: Issue, times: tuple[str, ...] = ALL_TIMES) -> str:
+    """Format the named lifecycle timestamps, omitting stages the issue has not reached."""
+    values = {
+        "created": issue.created_at,
+        "started": issue.started_at,
+        "completed": issue.completed_at,
+        "updated": issue.updated_at,
+    }
+    return "  ".join(f"{label}: {values[label]}" for label in times if values[label])
 
 
 def echo_project_update(update: ProjectUpdate, *, full: bool, indent: str = "") -> None:

@@ -97,7 +97,9 @@ Comment output shows each ID, nests replies under their thread root, and marks t
 an external service (e.g. `synced: slack`). `comment add --parent <root ID>` replies in that thread
 and its synced copy.
 
-To change an existing title or description, edit the file named on the last line of
+`issue view` accepts several IDs; view them in one call instead of looping.
+
+To change an existing title or description, edit the file named on the last line of that issue's
 `linear issue view` output (`edit file: <path>`), then run
 `linear issue update <ID> --from-file <path>`. Never resend the full description inline.
 
@@ -117,13 +119,16 @@ independent verification reads separately so one timeout does not skip the remai
 
 ## Project context
 
-`project view` also shows external links (PRDs, designs), content, and the 3 most recent project
-updates.
+For project status, schedule risk, or milestone dates, start with `project view`: it shows the
+project and milestone target dates and progress, each open issue's assignee and estimate, external
+links (PRDs, designs), content, and the 3 most recent project updates.
+
+To find issues by keyword, use `issue search`; do not pipe `issue list` into a text search.
 
 ## Raw API access
 
-Use `linear api` only when `linear --help` shows no command for the data. Pass `-` as the query to
-read it from stdin. `issue view --json` writes no edit file.
+Use `linear api` (JSON output) only when `linear --help` shows no command for the data. Pass `-` as
+the query to read it from stdin.
 
 ## Discovery before mutation
 

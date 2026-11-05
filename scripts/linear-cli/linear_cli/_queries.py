@@ -81,6 +81,7 @@ ISSUE_SUMMARY_FIELDS = """
       assignee { name }
       labels { nodes { name } }
       project { name }
+      projectMilestone { name }
 """
 
 ISSUE_CONNECTION = f"pageInfo {{ hasNextPage endCursor }} nodes {{ {ISSUE_SUMMARY_FIELDS} }}"
@@ -111,8 +112,8 @@ COMMENT_FIELDS = """
         syncedWith { service }
 """
 
-# $withComments embeds the first page of full comments under the "commentThread" alias; the plain
-# "comments" field then carries only IDs for the count, matching the --json shape without it.
+# $withComments embeds the first page of full comments under the "commentThread" alias; without
+# it, the plain "comments" field carries only IDs for the count.
 ISSUE_QUERY = """
 query Issue($id: String!, $withComments: Boolean!) {
   issue(id: $id) {
@@ -413,8 +414,9 @@ PROJECT_UPDATE_FIELDS = "id body health createdAt user { name }"
 PROJECT_ISSUE_CONNECTION = """
     pageInfo { hasNextPage endCursor }
     nodes {
-      identifier title createdAt startedAt completedAt updatedAt
+      identifier title estimate createdAt startedAt completedAt updatedAt
       state { name type }
+      assignee { name }
       projectMilestone { id }
     }
 """

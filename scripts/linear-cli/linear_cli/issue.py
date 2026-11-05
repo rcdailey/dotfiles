@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -25,7 +24,12 @@ from linear_cli._queries import (
     ISSUE_UPDATE_MUTATION,
     ISSUES_QUERY,
 )
-from linear_cli._render import echo_comments, echo_issue_summary, estimate_text
+from linear_cli._render import (
+    echo_comments,
+    echo_issue_summary,
+    estimate_text,
+    issue_times_text,
+)
 from linear_cli._resolve import Batch, project_filter, team_filter, user_filter
 from linear_cli.relation import RELATION_TYPES, relation_input
 
@@ -163,8 +167,24 @@ def _show_issues(opts: _IssueQuery, term: str | None) -> None:
     if not nodes:
         click.echo("no issues found")
         return
+    # Show only the timestamps the caller filtered on; the rest rarely answer a list query.
+    times = tuple(
+        label
+        for label, value in (
+            ("created", opts.created_after),
+            ("started", opts.started_after),
+            ("completed", opts.completed_after),
+            ("updated", opts.updated_after),
+        )
+        if value
+    )
     for node in nodes:
-        echo_issue_summary(Issue.from_graphql(node), show_project=not opts.project_name)
+        echo_issue_summary(
+            Issue.from_graphql(node),
+            show_project=not opts.project_name,
+            show_milestone=not opts.milestone_name,
+            times=times,
+        )
 
 
 def _filter_options(func: Callable) -> Callable:
@@ -281,66 +301,61 @@ def search(query: str, **options: Any) -> None:
 
 
 @cli.command("view")
-@click.argument("issue_id")
+@click.argument("issue_ids", nargs=-1, required=True)
 @click.option("--comments", "include_comments", is_flag=True, help="Include issue comments.")
-@click.option(
-    "--json",
-    "as_json",
-    is_flag=True,
-    help="Print the Linear GraphQL issue node as JSON; --comments fills comments.nodes.",
-)
-def view(issue_id: str, include_comments: bool, as_json: bool) -> None:
-    """View a single issue by ID or identifier (e.g. ENG-123)."""
-    try:
-        data = execute(ISSUE_QUERY, {"id": issue_id, "withComments": include_comments})
-        node = data.get("issue")
-        if not node:
-            die(f"issue '{issue_id}' not found")
-        comment_nodes: list[dict] = []
-        if include_comments:
-            comment_nodes = paginate(
-                COMMENTS_QUERY,
-                {"issueId": issue_id, "first": 100},
-                ["issue", "comments"],
-                first_page=node.get("commentThread") or {},
-            )
-            # Rename in place so --json keeps the key order of the comment-less shape.
-            node = {
-                ("comments" if key == "commentThread" else key): (
-                    {"nodes": comment_nodes} if key == "commentThread" else value
-                )
-                for key, value in node.items()
-            }
-    except LinearError as exc:
-        die(str(exc))
+def view(issue_ids: tuple[str, ...], include_comments: bool) -> None:
+    """View issues by ID or identifier (e.g. ENG-123 ENG-124)."""
+    failed = False
+    for index, issue_id in enumerate(issue_ids):
+        if index:
+            click.echo("")
+        try:
+            _view_one(issue_id, include_comments)
+        except LinearError as exc:
+            click.echo(f"error: {issue_id}: {exc}", err=True)
+            failed = True
+    if failed:
+        raise SystemExit(1)
 
-    if as_json:
-        click.echo(json.dumps(node, indent=2))
-        return
+
+def _view_one(issue_id: str, include_comments: bool) -> None:
+    """Print one issue, then write its edit file and print the path."""
+    data = execute(ISSUE_QUERY, {"id": issue_id, "withComments": include_comments})
+    node = data.get("issue")
+    if not node:
+        raise LinearError("issue not found")
+    comment_nodes: list[dict] = []
+    if include_comments:
+        comment_nodes = paginate(
+            COMMENTS_QUERY,
+            {"issueId": issue_id, "first": 100},
+            ["issue", "comments"],
+            first_page=node.get("commentThread") or {},
+        )
 
     issue = Issue.from_graphql(node)
-    pri = priority_label(issue.priority)
     click.echo(f"# {issue.title}")
-    click.echo("")
-    click.echo(f"identifier:  {issue.identifier}")
-    click.echo(f"state:       {issue.state_name} ({issue.state_type})")
-    click.echo(f"priority:    {pri}")
-    click.echo(f"assignee:    {issue.assignee_name or 'unassigned'}")
-    click.echo(f"labels:      {', '.join(issue.labels) if issue.labels else 'none'}")
-    click.echo(f"estimate:    {estimate_text(issue.estimate)}")
-    click.echo(f"comments:    {issue.comment_count}")
+    comment_count = len(comment_nodes) if include_comments else issue.comment_count
+    click.echo(
+        f"{issue.identifier}  {issue.state_name} ({issue.state_type})  "
+        f"[{priority_label(issue.priority)}]  "
+        f"assignee: {issue.assignee_name or 'unassigned'}  "
+        f"estimate: {estimate_text(issue.estimate)}  comments: {comment_count}"
+    )
+    if issue.labels:
+        click.echo(f"labels: {', '.join(issue.labels)}")
+    placement = []
     if issue.project_name:
         project_state = f" ({issue.project_state})" if issue.project_state else ""
-        click.echo(f"project:     {issue.project_name}{project_state}")
+        placement.append(f"project: {issue.project_name}{project_state}")
     if issue.milestone_name:
-        click.echo(f"milestone:   {issue.milestone_name}")
+        placement.append(f"milestone: {issue.milestone_name}")
     if issue.parent_identifier:
-        click.echo(f"parent:      {issue.parent_identifier}  {issue.parent_title}")
-    click.echo(f"url:         {issue.url}")
-    click.echo(f"created:     {issue.created_at}")
-    click.echo(f"started:     {issue.started_at or 'not started'}")
-    click.echo(f"completed:   {issue.completed_at or 'not completed'}")
-    click.echo(f"updated:     {issue.updated_at}")
+        placement.append(f"parent: {issue.parent_identifier} {issue.parent_title}")
+    if placement:
+        click.echo("  ".join(placement))
+    click.echo(f"url: {issue.url}")
+    click.echo(issue_times_text(issue))
     if issue.children:
         click.echo("")
         click.echo(f"sub-issues ({len(issue.children)}):")

@@ -19,6 +19,7 @@ from linear_cli._queries import (
 )
 from linear_cli._render import (
     echo_project_update,
+    estimate_text,
     is_open,
     issue_times_text,
     percentage_text,
@@ -42,7 +43,8 @@ def _echo_issue_group(header: str, issues: list[Issue], drill_down: str, *, gap:
     for issue in open_issues[:_GROUP_LIMIT]:
         click.echo(
             f"    {issue.identifier}  [{issue.state_name}]  {issue.title}  "
-            f"{issue_times_text(issue)}"
+            f"assignee: {issue.assignee_name or 'unassigned'}  "
+            f"estimate: {estimate_text(issue.estimate)}  {issue_times_text(issue)}"
         )
     hidden = len(open_issues) - _GROUP_LIMIT
     if hidden > 0:
