@@ -30,12 +30,13 @@ from linear_cli._render import (
     estimate_text,
     issue_times_text,
 )
-from linear_cli._resolve import Batch, project_filter, team_filter, user_filter
+from linear_cli._resolve import Batch, is_none, project_filter, team_filter, user_filter
 from linear_cli.relation import RELATION_TYPES, relation_input
 
 _STATE_TYPES = ["triage", "backlog", "unstarted", "started", "completed", "canceled"]
 _TIME_HELP = "ISO date/datetime or duration (e.g. 2026-09-20, -P1D = 1 day ago)."
 _MAX_PAGE = 250
+_USER_HELP = "user name, email, UUID, or 'me'"
 
 
 def _print_scope(project_name: str | None, milestone_name: str | None) -> None:
@@ -90,7 +91,9 @@ def _issue_filter(opts: _IssueQuery, batch: Batch) -> tuple[dict, list[Callable[
             )
     if opts.state_types:
         issue_filter["state"] = {"type": {"in": [s.lower() for s in opts.state_types]}}
-    if opts.assignee:
+    if is_none(opts.assignee):
+        issue_filter["assignee"] = {"null": True}
+    elif opts.assignee:
         issue_filter["assignee"] = user_filter(opts.assignee)
     if opts.creator:
         issue_filter["creator"] = user_filter(opts.creator)
@@ -198,8 +201,10 @@ def _filter_options(func: Callable) -> Callable:
             type=click.Choice(_STATE_TYPES, case_sensitive=False),
             help="Filter by state type; repeat to match any of several.",
         ),
-        click.option("--assignee", default=None, help="Assignee user UUID or 'me'."),
-        click.option("--creator", default=None, help="Creator user UUID or 'me'."),
+        click.option(
+            "--assignee", default=None, help=f"Assignee: {_USER_HELP}; or 'none' for unassigned."
+        ),
+        click.option("--creator", default=None, help=f"Creator: {_USER_HELP}."),
         click.option("--label", default=None, help="Label name to filter by."),
         click.option(
             "--cycle", default=None, type=str, help="Cycle: 'active', 'previous', or number."
@@ -405,7 +410,7 @@ def history(issue_id: str) -> None:
 @click.option("--description", default=None, help="Issue description (markdown).")
 @click.option("--state", "state_name", default=None, help="State display name.")
 @click.option("--priority", default=0, type=click.IntRange(0, 4), help="Priority (0-4).")
-@click.option("--assignee", default=None, help="Assignee user UUID or 'me'.")
+@click.option("--assignee", default=None, help=f"Assignee: {_USER_HELP}.")
 @click.option("--label", "label_names", multiple=True, help="Label name (repeatable).")
 @click.option(
     "--parent", "parent_id", default=None, help="Parent issue identifier (e.g. ENG-123) or UUID."
@@ -522,21 +527,29 @@ def create(
 )
 @click.option("--state", "state_name", default=None, help="New state display name.")
 @click.option("--priority", default=None, type=click.IntRange(0, 4), help="New priority (0-4).")
-@click.option("--assignee", default=None, help="Assignee user UUID, 'me', or 'none' to unassign.")
+@click.option("--assignee", default=None, help=f"Assignee: {_USER_HELP}; or 'none' to unassign.")
 @click.option("--add-label", "add_labels", multiple=True, help="Label name to add (repeatable).")
 @click.option(
     "--remove-label", "remove_labels", multiple=True, help="Label name to remove (repeatable)."
 )
-@click.option("--estimate", default=None, type=float, help="Story point estimate.")
+@click.option("--estimate", default=None, help="Story point estimate, or 'none' to clear.")
 @click.option(
-    "--parent", "parent_id", default=None, help="Parent issue identifier (e.g. ENG-123) or UUID."
+    "--parent",
+    "parent_id",
+    default=None,
+    help="Parent issue identifier (e.g. ENG-123) or UUID, or 'none' to detach.",
 )
-@click.option("--project", "project_name", default=None, help="Project name to assign.")
+@click.option(
+    "--project", "project_name", default=None, help="Project name to assign, or 'none' to remove."
+)
 @click.option(
     "--milestone",
     "milestone_name",
     default=None,
-    help="Milestone name; resolved within the issue's project, --project, or the workspace.",
+    help=(
+        "Milestone name, resolved within --project, the issue's project, or the workspace; "
+        "or 'none' to remove."
+    ),
 )
 def update(
     issue_ids: tuple[str, ...],
@@ -548,14 +561,16 @@ def update(
     assignee: str | None,
     add_labels: tuple[str, ...],
     remove_labels: tuple[str, ...],
-    estimate: float | None,
+    estimate: str | None,
     parent_id: str | None,
     project_name: str | None,
     milestone_name: str | None,
 ) -> None:
-    """Update an existing issue."""
+    """Update issues; several IDs accept only --project and --milestone."""
     if edit_path and (title is not None or description is not None):
         raise click.UsageError("--from-file cannot be combined with --title or --description")
+    if is_none(project_name) and milestone_name and not is_none(milestone_name):
+        raise click.UsageError("--milestone needs a project; it cannot combine with --project none")
     if len(issue_ids) > 1:
         unsupported_batch_fields = any(
             (
@@ -571,10 +586,8 @@ def update(
                 parent_id is not None,
             )
         )
-        if unsupported_batch_fields or not project_name:
-            raise click.UsageError(
-                "multiple issues require --project and support only --project/--milestone"
-            )
+        if unsupported_batch_fields or not (project_name or milestone_name):
+            raise click.UsageError("multiple issues support only --project and --milestone")
         _update_many(issue_ids, project_name, milestone_name)
         return
 
@@ -596,7 +609,8 @@ def update(
     if state_name:
         issue_fields.append("team { states(filter: $states) { nodes { id } } }")
         issue_vars["states"] = ("WorkflowStateFilter", {"name": {"eqIgnoreCase": state_name}})
-    if milestone_name and not project_name:
+    milestone_by_name = milestone_name is not None and not is_none(milestone_name)
+    if milestone_by_name and not project_name:
         issue_fields.append(
             "project { id projectMilestones(filter: $milestones) { nodes { id } } }"
         )
@@ -609,19 +623,20 @@ def update(
         if len(issue_fields) > 1
         else None
     )
-    assign_me = assignee is not None and assignee.lower() == "me"
-    get_viewer = batch.user_id(assignee) if assign_me else None
+    get_assignee = batch.user_id(assignee) if assignee and not is_none(assignee) else None
     add_getters = [batch.label_id(name) for name in add_labels]
     remove_getters = [batch.label_id(name) for name in remove_labels]
-    get_parent = batch.issue(parent_id) if parent_id else None
-    get_project = batch.project_id(project_name) if project_name else None
+    get_parent = batch.issue(parent_id) if parent_id and not is_none(parent_id) else None
+    get_project = (
+        batch.project_id(project_name) if project_name and not is_none(project_name) else None
+    )
     get_milestone = (
         batch.milestone(milestone_name, project_filter(project_name))
-        if project_name and milestone_name
+        if get_project and milestone_by_name
         else None
     )
     get_scope = (
-        batch.milestone_scope(milestone_name) if milestone_name and not project_name else None
+        batch.milestone_scope(milestone_name) if milestone_by_name and not project_name else None
     )
 
     input_data: dict = {}
@@ -631,10 +646,16 @@ def update(
         input_data["description"] = description
     if priority is not None:
         input_data["priority"] = priority
-    if assignee is not None and not assign_me:
-        input_data["assigneeId"] = None if assignee.lower() == "none" else assignee
+    if is_none(assignee):
+        input_data["assigneeId"] = None
     if estimate is not None:
-        input_data["estimate"] = estimate
+        input_data["estimate"] = _estimate_value(estimate)
+    if is_none(parent_id):
+        input_data["parentId"] = None
+    if is_none(project_name):
+        input_data["projectId"] = None
+    if is_none(milestone_name):
+        input_data["projectMilestoneId"] = None
     if not input_data and not batch:
         die("no updates specified")
 
@@ -647,8 +668,8 @@ def update(
         if not states:
             die(f"state '{state_name}' not found")
         input_data["stateId"] = states[0]["id"]
-    if get_viewer:
-        input_data["assigneeId"] = get_viewer()
+    if get_assignee:
+        input_data["assigneeId"] = get_assignee()
     # Delta fields leave labels this command does not name untouched.
     removed = [get() for get in remove_getters]
     added = [label_id for label_id in (get() for get in add_getters) if label_id not in removed]
@@ -681,6 +702,16 @@ def update(
     click.echo(f"updated {issue.get('identifier')}  {issue.get('title')}")
 
 
+def _estimate_value(raw: str) -> float | None:
+    """Parse an --estimate value; 'none' clears the estimate."""
+    if is_none(raw):
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        raise click.BadParameter(f"'{raw}' is not a number or 'none'", param_hint="--estimate")
+
+
 def _check_edit_file(edit: EditFile, issue_ref: str, issue_node: dict) -> None:
     """Die unless the edit file belongs to this issue and no change landed since it was written.
 
@@ -708,23 +739,40 @@ def _update_issue(issue_ref: str, input_data: dict) -> dict:
 
 
 def _update_many(
-    issue_refs: tuple[str, ...], project_name: str, milestone_name: str | None
+    issue_refs: tuple[str, ...], project_name: str | None, milestone_name: str | None
 ) -> None:
-    """Move several issues to a project and milestone with one lookup and one mutation request.
+    """Move several issues with one lookup and one mutation request.
 
-    Linear applies a mutation document atomically, so one bad reference rejects every aliased
-    update. Only then does each issue get its own request, so valid issues still move and each
-    failure is reported separately.
+    A milestone name without --project must be unique in the workspace and also sets its
+    project. Linear applies a mutation document atomically, so one bad reference rejects every
+    aliased update. Only then does each issue get its own request, so valid issues still move and
+    each failure is reported separately.
     """
     batch = Batch()
-    get_project = batch.project_id(project_name)
+    milestone_by_name = milestone_name is not None and not is_none(milestone_name)
+    get_project = (
+        batch.project_id(project_name) if project_name and not is_none(project_name) else None
+    )
     get_milestone = (
-        batch.milestone(milestone_name, project_filter(project_name)) if milestone_name else None
+        batch.milestone(milestone_name, project_filter(project_name))
+        if get_project and milestone_by_name
+        else None
+    )
+    get_scope = (
+        batch.milestone_scope(milestone_name) if milestone_by_name and not project_name else None
     )
     batch.run()
-    update_input: dict = {"projectId": get_project()}
+    update_input: dict = {}
+    if is_none(project_name):
+        update_input["projectId"] = None
+    if is_none(milestone_name):
+        update_input["projectMilestoneId"] = None
+    if get_project:
+        update_input["projectId"] = get_project()
     if get_milestone:
         update_input["projectMilestoneId"] = get_milestone()["id"]
+    if get_scope:
+        update_input["projectId"], update_input["projectMilestoneId"] = get_scope()
 
     decls = ["$input: IssueUpdateInput!"]
     fields = []

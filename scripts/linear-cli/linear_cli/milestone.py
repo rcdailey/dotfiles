@@ -19,7 +19,7 @@ from linear_cli._queries import (
     MILESTONE_UPDATE_MUTATION,
 )
 from linear_cli._render import echo_issue_summary, is_open, percentage_text, sort_issues
-from linear_cli._resolve import Batch, project_filter, resolve_project_id
+from linear_cli._resolve import Batch, is_none, project_filter, resolve_project_id
 
 _ISSUE_PAGE = 250
 
@@ -57,16 +57,11 @@ def list_milestones(project: str) -> None:
 @click.option("--all", "show_all", is_flag=True, help="Show every issue, ignoring --limit.")
 def view_milestone(milestone_name: str, project: str, limit: int, show_all: bool) -> None:
     """View a milestone and its issues: open work first, newest update first."""
-    batch = Batch()
-    get_project = batch.project_id(project)
-    get_milestone = batch.milestone(
+    ms_node = _lookup_milestone(
         milestone_name,
-        project_filter(project),
+        project,
         f"{MILESTONE_FIELDS} issues(first: {_ISSUE_PAGE}) {{ {ISSUE_CONNECTION} }}",
     )
-    batch.run()
-    get_project()
-    ms_node = get_milestone()
     m = Milestone.from_graphql(ms_node)
     pct = percentage_text(m.progress)
     click.echo(f"name:     {m.name}")
@@ -134,29 +129,41 @@ def create_milestone(
     click.echo(f"milestone created: {ms.get('name', name)}")
 
 
+def _lookup_milestone(name: str, project: str, selection: str = "id") -> dict:
+    """Resolve a milestone by name within a project in one request; dies when either is missing."""
+    batch = Batch()
+    get_project = batch.project_id(project)
+    get_milestone = batch.milestone(name, project_filter(project), selection)
+    batch.run()
+    get_project()
+    return get_milestone()
+
+
 @cli.command("update")
-@click.argument("milestone_id")
+@click.argument("milestone_name")
+@click.option("--project", required=True, help="Project name or UUID.")
 @click.option("--name", default=None, help="New name.")
-@click.option("--description", default=None, help="New description.")
-@click.option("--target-date", default=None, help="New target date (YYYY-MM-DD).")
+@click.option("--description", default=None, help="New description, or 'none' to clear.")
+@click.option("--target-date", default=None, help="New target date (YYYY-MM-DD), or 'none'.")
 def update_milestone(
-    milestone_id: str,
+    milestone_name: str,
+    project: str,
     name: str | None,
     description: str | None,
     target_date: str | None,
 ) -> None:
-    """Update a milestone by ID."""
+    """Update a milestone by name."""
     inp: dict = {}
     if name:
         inp["name"] = name
-    if description:
-        inp["description"] = description
-    if target_date:
-        inp["targetDate"] = target_date
-
+    if description is not None:
+        inp["description"] = None if is_none(description) else description
+    if target_date is not None:
+        inp["targetDate"] = None if is_none(target_date) else target_date
     if not inp:
         die("no update fields provided")
 
+    milestone_id = _lookup_milestone(milestone_name, project)["id"]
     try:
         data = execute(MILESTONE_UPDATE_MUTATION, {"id": milestone_id, "input": inp})
     except LinearError as exc:
@@ -167,15 +174,21 @@ def update_milestone(
         die("milestone update failed")
 
     ms = result.get("projectMilestone") or {}
-    click.echo(f"milestone updated: {ms.get('name', milestone_id)}")
+    click.echo(f"milestone updated: {ms.get('name', milestone_name)}")
 
 
 @cli.command("delete")
-@click.argument("milestone_id")
-def delete_milestone(milestone_id: str) -> None:
-    """Delete a milestone by ID."""
+@click.argument("milestone_name")
+@click.option("--project", required=True, help="Project name or UUID.")
+def delete_milestone(milestone_name: str, project: str) -> None:
+    """Delete a milestone by name and list the issues that lose it."""
+    node = _lookup_milestone(
+        milestone_name,
+        project,
+        f"id issues(first: {_ISSUE_PAGE}) {{ pageInfo {{ hasNextPage }} nodes {{ identifier }} }}",
+    )
     try:
-        data = execute(MILESTONE_DELETE_MUTATION, {"id": milestone_id})
+        data = execute(MILESTONE_DELETE_MUTATION, {"id": node["id"]})
     except LinearError as exc:
         die(str(exc))
 
@@ -183,4 +196,9 @@ def delete_milestone(milestone_id: str) -> None:
     if not result.get("success"):
         die("milestone deletion failed")
 
-    click.echo(f"milestone deleted: {milestone_id}")
+    click.echo(f"milestone deleted: {milestone_name}")
+    issues = node.get("issues") or {}
+    identifiers = [n.get("identifier") for n in issues.get("nodes", [])]
+    if identifiers:
+        more = "+" if (issues.get("pageInfo") or {}).get("hasNextPage") else ""
+        click.echo(f"issues that lost it ({len(identifiers)}{more}): {' '.join(identifiers)}")

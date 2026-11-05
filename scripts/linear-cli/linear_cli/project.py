@@ -25,7 +25,7 @@ from linear_cli._render import (
     percentage_text,
     sort_issues,
 )
-from linear_cli._resolve import Batch, is_uuid, team_filter, user_filter
+from linear_cli._resolve import Batch, is_none, is_uuid, team_filter, user_filter
 
 _PROJECT_PAGE = "pageInfo { hasNextPage endCursor } nodes { id name state startDate targetDate }"
 _ISSUE_PAGE = 250
@@ -91,7 +91,7 @@ def cli() -> None:
 
 @cli.command("list")
 @click.option("--team", "team_key", default=None, help="Filter by team key (e.g. ENG).")
-@click.option("--lead", default=None, help="Project lead user UUID or 'me'.")
+@click.option("--lead", default=None, help="Project lead: user name, email, UUID, or 'me'.")
 def list_projects(team_key: str | None, lead: str | None) -> None:
     """List projects."""
     project_filter: dict = {}
@@ -222,11 +222,19 @@ def create_project(
 @click.option("--name", default=None, help="New project name.")
 @click.option("--description", default=None, help="New project description.")
 @click.option("--state", "state_name", default=None, help="New project status display name.")
+@click.option("--start-date", default=None, help="Start date (YYYY-MM-DD), or 'none' to clear.")
+@click.option("--target-date", default=None, help="Target date (YYYY-MM-DD), or 'none' to clear.")
+@click.option(
+    "--lead", default=None, help="Lead: user name, email, UUID, or 'me'; or 'none' to clear."
+)
 def update_project(
     id_or_name: str,
     name: str | None,
     description: str | None,
     state_name: str | None,
+    start_date: str | None,
+    target_date: str | None,
+    lead: str | None,
 ) -> None:
     """Update a project by ID or name."""
     input_data: dict = {}
@@ -234,16 +242,25 @@ def update_project(
         input_data["name"] = name
     if description is not None:
         input_data["description"] = description
-    if not input_data and not state_name:
+    for key, value in (("startDate", start_date), ("targetDate", target_date)):
+        if value is not None:
+            input_data[key] = None if is_none(value) else value
+    if is_none(lead):
+        input_data["leadId"] = None
+    lead_by_name = lead is not None and not is_none(lead)
+    if not input_data and not state_name and not lead_by_name:
         die("no updates specified")
 
     batch = Batch()
     get_project = None if is_uuid(id_or_name) else batch.project_id(id_or_name)
     get_status = batch.project_status_id(state_name) if state_name else None
+    get_lead = batch.user_id(lead) if lead_by_name else None
     batch.run()
     project_id = get_project() if get_project else id_or_name
     if get_status:
         input_data["statusId"] = get_status()
+    if get_lead:
+        input_data["leadId"] = get_lead()
     try:
         data = execute(
             PROJECT_UPDATE_MUTATION,

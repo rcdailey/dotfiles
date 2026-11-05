@@ -37,11 +37,24 @@ def team_filter(key: str) -> dict:
     return {"key": {"eqIgnoreCase": key}}
 
 
+def is_none(ref: str | None) -> bool:
+    """Return whether an option value is the literal 'none' that clears or matches an empty field."""
+    return ref is not None and ref.lower() == "none"
+
+
 def user_filter(ref: str) -> dict:
-    """Return a user filter for 'me' or a user UUID."""
+    """Return a UserFilter for 'me', a user UUID, or a name, display name, or email."""
     if ref.lower() == "me":
         return {"isMe": {"eq": True}}
-    return {"id": {"eq": ref}}
+    if is_uuid(ref):
+        return {"id": {"eq": ref}}
+    return {
+        "or": [
+            {"name": {"eqIgnoreCase": ref}},
+            {"displayName": {"eqIgnoreCase": ref}},
+            {"email": {"eqIgnoreCase": ref}},
+        ]
+    }
 
 
 def resolve_project_id(ref: str) -> str:
@@ -252,15 +265,34 @@ class Batch:
         return get
 
     def user_id(self, ref: str) -> Callable[[], str]:
-        """Register 'me' resolution; other references are user UUIDs and pass through."""
-        if ref.lower() != "me":
+        """Register a user lookup by 'me', UUID, name, display name, or email.
+
+        UUIDs pass through unchecked. The getter dies when a name matches several users.
+        """
+        if is_uuid(ref):
             return lambda: ref
-        alias = self.add("viewer { id }")
+        if ref.lower() == "me":
+            alias = self.add("viewer { id }")
+
+            def get_viewer() -> str:
+                uid = (self.data.get(alias) or {}).get("id")
+                if not uid:
+                    die("could not resolve viewer id")
+                return uid
+
+            return get_viewer
+        alias = self.add(
+            "users(filter: $filter) { nodes { id name email } }",
+            {"filter": ("UserFilter", user_filter(ref))},
+        )
 
         def get() -> str:
-            uid = (self.data.get(alias) or {}).get("id")
-            if not uid:
-                die("could not resolve viewer id")
-            return uid
+            nodes = self.nodes(alias)
+            if not nodes:
+                die(f"user '{ref}' not found")
+            if len(nodes) > 1:
+                matches = ", ".join(f"{n.get('name')} <{n.get('email')}>" for n in nodes)
+                die(f"user '{ref}' matches several users: {matches}; pass an email")
+            return nodes[0]["id"]
 
         return get

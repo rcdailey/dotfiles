@@ -23,7 +23,8 @@ per-command `-h`. This skill covers only workflow and semantics that help omits.
 ## Identifier resolution
 
 The CLI resolves names to UUIDs internally. Pass display names or keys for teams, states, labels,
-projects, and milestones; never look up UUIDs first.
+projects, milestones, and users (name or email); never look up UUIDs first. `none` clears only the
+options whose help says so; elsewhere it is literal text.
 
 - `--label` matches case-insensitively on `create` and `update`, but exactly on `list` and `search`.
 - `--cycle` requires `--team`.
@@ -78,8 +79,8 @@ directions.
 
 Drill down top-down: `project view` groups issues under each milestone (plus a "no milestone" group)
 with an `open: N/M` count and the top open issues. When a group is cut, its `+N more:` line prints
-the exact command for the rest; run that instead of guessing. Milestone IDs (UUIDs) are required for
-`update` and `delete`; get them from `milestone list` output.
+the exact command for the rest; run that instead of guessing. `milestone delete` prints the issues
+that lost the milestone; move issues first when they need a new one.
 
 ## Linking issues
 
@@ -111,8 +112,8 @@ To change an existing title or description, edit the file named on the last line
 - If the update reports the issue changed since the view, view again and redo the edits on the new
   file.
 
-Pass multiple issue IDs to assign one project or milestone in a batch. Multi-issue updates accept
-only `--project` and `--milestone`; a bad ID is reported while the valid issues still update.
+Pass multiple issue IDs to set or clear one project or milestone in a batch; a bad ID is reported
+while the valid issues still update.
 
 Never chain mutations with `&&`; an earlier mutation remains applied if a later one fails. Run
 independent verification reads separately so one timeout does not skip the remaining checks.
