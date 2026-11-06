@@ -1,6 +1,20 @@
 # Dotfiles
 
-Modern dotfiles managed by chezmoi with automated setup, age encryption, and cross-platform support.
+Personal dotfiles managed by chezmoi, with automated setup and cross-platform support.
+
+## Highlights
+
+- A customized OpenCode coding agent setup: specialist subagents, skills, slash commands, and tested
+  plugins
+- LLM-optimized CLIs in `scripts/` that the agents use
+- Zsh setup with plugins pulled in by chezmoi, without a plugin manager
+- One-command machine setup with `setup-system`
+
+## Layout
+
+- `home/`: the chezmoi source state (everything chezmoi manages)
+- `scripts/`: source for the custom Python CLIs
+- `docs/`: decision records, incident write-ups, and tool evaluations
 
 ## Setup
 
@@ -39,3 +53,11 @@ This installs and configures:
 - Runtime manager (mise) and its tools, including OpenCode
 
 It is safe to rerun. Log out and back in (or reboot) to start using zsh, then launch kitty.
+
+## Updating
+
+Pull and apply the latest changes:
+
+```bash
+chezmoi update
+```
