@@ -31,6 +31,10 @@ disable = [
   "shell",
   # VS Code updates its own extensions
   "vscode",
+  # the system package manager updates it; `tailscale update` also prompts despite
+  # assume_yes (topgrade-rs/topgrade#2488) and invalidates the staged DNF offline
+  # transaction by installing the RPM directly
+  "tailscale",
 {{- if eq .chezmoi.os "darwin" }}
   # on macOS, `system` runs softwareupdate; OS updates are installed manually
   "system",
