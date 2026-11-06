@@ -116,6 +116,7 @@ the ticket's goal. This is the reader's only context; do not assume they know th
 
 Sources: {kinds of evidence used, comma-separated}.
 Pending: {n} comments | none. Not staged: {one clause each} | none.
+Add to review body: {reviewer's `Review body` text verbatim, as a quote block; omit when none}
 Limit: {what stayed unverified and whether it changes the verdict; omit when nothing material}.
 ```
 
@@ -128,7 +129,7 @@ Limit: {what stayed unverified and whether it changes the verdict; omit when not
   dispositions, or imply a review was submitted.
 - A limit on paths the PR or its rollout activates is material; always show it.
 - Optional findings are findings; an approve with optional comments still lists them. Never move a
-  posted finding into `Not staged`.
+  posted finding or `Review body` finding into `Not staged`.
 - Clean PR: no finding bullets; end the context paragraph with why it is safe and the assumption the
   verdict rests on.
 - Follow-up pass: the verdict sentence states what the author changed and whether it settles the

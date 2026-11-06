@@ -143,6 +143,7 @@ sound.}
 {Finding resolutions and dispositions, or prerequisites and assumptions supporting a clean verdict.}
 
 **Not staged:** {below-scope findings and dispositions, or none}
+**Review body:** {ready-to-paste text for in-scope findings no diff line anchors, or none}
 **Coverage:**
 
 - Inspected: {consequential boundaries traced}
@@ -403,7 +404,12 @@ findings within scope are posted, not withheld. Below-scope findings stay in `No
 unsupported and preference-only objections entirely. Do not create comments merely to fill the
 briefing. Keep material unanswered questions visible regardless of threshold.
 
-Load the `humanizer` skill before composing comment bodies (not in parallel with posting).
+An in-scope finding no diff line anchors (PR title, linked ticket, description) cannot be staged:
+`gh-review` cannot write the review body. Draft its text in `Review body` for the user to paste on
+submit; it still counts as a finding.
+
+Load the `humanizer` skill before composing comment or review-body text (not in parallel with
+posting).
 
 Follow `gh-pr-review` for pending-review reuse, body transport, line targeting, and fallback.
 
