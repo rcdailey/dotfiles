@@ -6,8 +6,8 @@ import { injectReminders, wrap } from "../lib/system-reminder.ts";
 
 const CALIBRATION = [
   "Follow Chat Style. Default to the TLDR: answer, key reason, necessary caveats. Use STE",
-  "principles for technical explanations. Assume engineering knowledge; clarify project concepts",
-  "briefly inline.",
+  "principles for technical explanations. Assume engineering knowledge, not knowledge of code you",
+  "read: describe behavior in plain words; code names are optional pointers, never the explanation.",
   "Use gathered context, not extra background research; investigate gaps that affect correctness.",
   "Do not invent intent. No extra tutorial or recap; stop when complete.",
 ].join(" ");
