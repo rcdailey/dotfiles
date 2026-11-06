@@ -34,6 +34,9 @@ zstyle ':completion:*:descriptions' format '[%d]'
 
 # fzf-tab replaces the completion menu
 zstyle ':completion:*' menu no
+# fzf's smart case turns case-sensitive once the query has an uppercase letter, and the query starts
+# with the typed word, so a capitalized prefix would otherwise make the whole filter case-sensitive
+zstyle ':fzf-tab:*' fzf-flags -i
 
 # Completion system behavior configuration
 zstyle ':completion:*' completer _complete _files
