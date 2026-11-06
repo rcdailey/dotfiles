@@ -4,6 +4,7 @@
   "dependencies": {
     "@opencode/ai": "latest",
     "@opencode/plugin": "latest",
+    "@opentui/core": "latest",
     "@types/bun": "latest"
   },
   "devDependencies": {
