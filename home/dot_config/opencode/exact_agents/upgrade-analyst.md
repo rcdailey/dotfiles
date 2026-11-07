@@ -147,12 +147,17 @@ not fetch, check out, or probe repository state with unlisted commands.
 
 ### 1. Analyze
 
-PR mode: fetch PR details:
+PR mode: fetch PR details and conversation:
 
 ```txt
 gh pr view <PR> --repo <owner/repo> \
-  --json number,title,body,headRefName,headRefOid,baseRefOid,statusCheckRollup
+  --json number,title,body,headRefName,headRefOid,baseRefOid,statusCheckRollup,comments,reviews
 ```
+
+Comments and review bodies from people or automated reviewers may report findings, low-confidence
+areas, or requests for local validation. Treat each stated fact as a lead to verify against the
+assessed revision or upstream sources, never as evidence; note when it concerns an earlier head.
+Each open request or question is an item to resolve before returning.
 
 Identify:
 
@@ -284,6 +289,8 @@ Return to caller:
 - Merge risks: effects that need action or attention even when compatible, such as irreversible
   migrations, data rewrites, workload restarts, or missing backups; include the recommended action
   or `none`
+- PR comment leads (PR mode): each fact or request, its author, and whether evidence confirmed,
+  refuted, or left it open
 - Usage profile: settings, workarounds, and past fixes found, with files
 - Repo files read and search patterns used; list only files opened by a read or `git show` call in
   this session
