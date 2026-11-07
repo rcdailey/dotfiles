@@ -91,6 +91,3 @@ credential_command = "gh auth token"
 NODE_PATH = "{{ "{{" }} exec(command='for d in ~/.local/share/mise/installs/npm-*/*/node_modules; do [ -d \"$d\" ] && [ ! -L \"${d%/node_modules}\" ] && p=\"${p:+$p:}$d\"; done; printf %s \"$p\"') {{ "}}" }}"
 OPENCODE_LOG_LEVEL = "DEBUG"
 OPENCODE_DISABLE_FREE_MODELS = "1"
-# Claude Desktop syncs its skills (docx, pptx, browsers) into ~/.claude/skills; they cost ~2k tokens
-# of skill listings per OpenCode session and never apply to coding work
-OPENCODE_DISABLE_CLAUDE_CODE_SKILLS = "1"
