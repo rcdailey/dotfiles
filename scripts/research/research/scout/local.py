@@ -162,7 +162,7 @@ def rg_cmd(
         for g in globs:
             args.extend(["--glob", g])
         args.extend(shared_flags)
-        args.append(pattern)
+        args.extend(["--regexp", pattern, "--"])
         args.extend(valid_paths or (".",))
         result = subprocess.run(args, capture_output=True, text=True, cwd=repo_dir, check=False)
 

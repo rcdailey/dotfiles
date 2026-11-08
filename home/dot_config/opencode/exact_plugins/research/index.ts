@@ -20,6 +20,12 @@ function flags(input: Input, names: Record<string, string>) {
   });
 }
 
+// Positional values follow `--` so a value such as the pattern `--pages|-p` is not parsed as a
+// flag; flags must therefore precede this.
+function positionals(values: unknown[]) {
+  return ["--", ...values.filter((item) => item !== undefined).map(String)];
+}
+
 // Field schemas stay minimal because every byte ships in each researcher prompt; the CLI
 // validates value ranges and reports violations as usage errors.
 const described = (schema: Schema, description?: string) =>
@@ -270,12 +276,13 @@ export const Research = {
         description:
           "Search the web for candidate URLs. Budgeted. Results are discovery only and never " +
           "citable; fetch a URL before citing it. To find a page on a known site, restrict " +
-          "`domains` instead of guessing its URL.",
+          "`domains` instead of guessing its URL. OR is rejected: send one short query per " +
+          "alternative or site.",
         input: {
           type: "object",
           properties: {
             query: text(),
-            max_results: integer("Default 5, max 20"),
+            max_results: integer("Default 10, max 20"),
             domains: texts("Only return results from these sites, e.g. learn.microsoft.com"),
             exclude_domains: texts(),
             time_range: choice(
@@ -294,7 +301,6 @@ export const Research = {
           const args = [
             "web",
             "search",
-            String(value.query),
             ...flags(value, {
               domains: "--domain",
               exclude_domains: "--exclude-domain",
@@ -303,6 +309,7 @@ export const Research = {
               exact: "--exact",
               critical: "--critical",
             }),
+            ...positionals([value.query]),
           ];
           return { content: await runResearch(context.sessionID, args, context.signal) };
         },
@@ -341,7 +348,6 @@ export const Research = {
           const args = [
             "web",
             "fetch",
-            String(value.url),
             ...flags(value, {
               find: "--find",
               context: "--context",
@@ -349,6 +355,7 @@ export const Research = {
               offset: "--offset",
               critical: "--critical",
             }),
+            ...positionals([value.url]),
           ];
           return { content: await runResearch(context.sessionID, args, context.signal) };
         },
@@ -374,8 +381,8 @@ export const Research = {
             const argv = [
               "scout",
               command,
-              ...positional.filter((item) => item !== undefined).map(String),
               ...flags(value, Object.fromEntries(options)),
+              ...positionals(positional),
             ];
             return { content: await runResearch(context.sessionID, argv, context.signal) };
           },

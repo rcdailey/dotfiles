@@ -1,6 +1,6 @@
 # ADR-0001: Web Search Tool Selection for OpenCode
 
-- Status: Accepted
+- Status: Superseded by ADR-0002
 - Date: 2026-01-17
 
 ## Context

@@ -33,7 +33,9 @@ from research._render import (
 from research._source_ledger import record_source, record_visible_sources
 from research._tavily import TavilyError, format_search_results
 
-DEFAULT_MAX_RESULTS = 5
+DEFAULT_MAX_RESULTS = 10
+# Tavily treats OR as a plain word, so OR-joined alternatives return unrelated results.
+_OR_OPERATOR = re.compile(r"\bOR\b")
 
 
 def _emit_retrieved_output(
@@ -93,8 +95,13 @@ def search_cmd(
     """Search the web via Tavily; results are discovery only."""
     if exact and not re.search(r'"[^"]+"', query):
         raise click.UsageError('--exact requires a "quoted phrase" in the query')
+    if _OR_OPERATOR.search(query):
+        raise click.UsageError(
+            "OR is not supported; send one short query per alternative "
+            "(filter by domain for site alternatives)"
+        )
     cache_key = (
-        f"tavily:v3:{max_results}:{sorted(domains)}:{sorted(exclude_domains)}:"
+        f"tavily:v4:{max_results}:{sorted(domains)}:{sorted(exclude_domains)}:"
         f"{time_range}:{exact}:{query}"
     )
     cached = read_cached_search(cache_key)
