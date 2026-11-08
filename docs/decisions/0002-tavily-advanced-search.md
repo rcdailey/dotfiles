@@ -17,5 +17,12 @@ Results below a relevance score of 0.3 are hidden. In the same replay this kept 
 results and dropped 39 of 51 off-topic ones. Queries containing `OR` are rejected before spending
 credits: Tavily treats it as a plain word and returns unrelated results.
 
+Searches restricted to only learn.microsoft.com, without date or exact-phrase filters, go to
+Microsoft's Learn index through the official `mslearn` CLI instead of Tavily. On the same queries it
+returned API reference pages Tavily missed, no per-locale duplicate pages, and costs no credits. The
+agent opts in by choosing that domain filter; the tool description tells it to for Microsoft
+products, so no separate tool is needed. Learn results carry no relevance score and are not
+filtered.
+
 Tavily does not index Hacker News, Mastodon, or X posts usefully; covering those needs
 platform-specific search, not a Tavily setting.

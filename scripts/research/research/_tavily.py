@@ -160,15 +160,18 @@ def _unique_results(results: list[dict]) -> list[dict]:
 
 
 def format_search_results(results: list[dict]) -> str:
-    """Format relevant search results as markdown prose, noting how many were hidden."""
+    """Format relevant search results as markdown prose, noting how many were hidden.
+
+    Results without a score (backends that do not rank by relevance) are always shown.
+    """
     unique = _unique_results(results)
-    relevant = [r for r in unique if r.get("score", 0) >= MIN_SCORE]
+    relevant = [r for r in unique if r.get("score", MIN_SCORE) >= MIN_SCORE]
     lines: list[str] = []
     for i, r in enumerate(relevant, 1):
         title = r.get("title") or "Untitled"
         snippet = (r.get("content") or "").strip().replace("\n", " ")
-        score = r.get("score", 0)
-        lines.append(f"{i}. {title} (score {score:.2f})\n   Discovered: {r['url']}\n   {snippet}")
+        score = f" (score {r['score']:.2f})" if "score" in r else ""
+        lines.append(f"{i}. {title}{score}\n   Discovered: {r['url']}\n   {snippet}")
     output = "\n\n".join(lines) if lines else "[no results]"
     hidden = len(unique) - len(relevant)
     if hidden:

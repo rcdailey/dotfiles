@@ -277,7 +277,10 @@ export const Research = {
           "Search the web for candidate URLs. Budgeted. Results are discovery only and never " +
           "citable; fetch a URL before citing it. To find a page on a known site, restrict " +
           "`domains` instead of guessing its URL. OR is rejected: send one short query per " +
-          "alternative or site.",
+          "alternative or site. For Microsoft products (.NET, Azure, Windows, SQL Server, " +
+          "Microsoft 365), set `domains` to only learn.microsoft.com, without `time_range` or " +
+          "`exact`: that searches Microsoft's own docs index, which finds API reference pages " +
+          "and costs no web search credits.",
         input: {
           type: "object",
           properties: {

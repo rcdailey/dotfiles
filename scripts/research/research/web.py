@@ -11,6 +11,7 @@ from collections.abc import Iterable
 
 import click
 
+from research import _mslearn as mslearn
 from research._budget import budget_cache_hit, budget_refund, budget_reserve
 from research._cache import (
     cache_url,
@@ -21,6 +22,7 @@ from research._cache import (
     write_cached_search,
 )
 from research._fetch import FetchError, fetch_markdown
+from research._mslearn import MsLearnError
 from research._render import (
     DEFAULT_MAX_CHARS,
     apply_find,
@@ -36,6 +38,14 @@ from research._tavily import TavilyError, format_search_results
 DEFAULT_MAX_RESULTS = 10
 # Tavily treats OR as a plain word, so OR-joined alternatives return unrelated results.
 _OR_OPERATOR = re.compile(r"\bOR\b")
+
+
+def _is_mslearn_search(domains: tuple[str, ...], time_range: str | None, exact: bool) -> bool:
+    """Route searches restricted to Microsoft Learn to its own index, which is free, ranks API
+    reference pages Tavily misses, and returns no per-locale duplicates. It supports neither date
+    nor exact-phrase filtering, so those searches stay on Tavily."""
+    only_mslearn = [d.lower().removeprefix("www.") for d in domains] == [mslearn.DOMAIN]
+    return only_mslearn and time_range is None and not exact
 
 
 def _emit_retrieved_output(
@@ -92,7 +102,7 @@ def search_cmd(
     exact: bool,
     critical: bool,
 ) -> None:
-    """Search the web via Tavily; results are discovery only."""
+    """Search the web via Tavily, or Microsoft Learn's own index; results are discovery only."""
     if exact and not re.search(r'"[^"]+"', query):
         raise click.UsageError('--exact requires a "quoted phrase" in the query')
     if _OR_OPERATOR.search(query):
@@ -101,7 +111,7 @@ def search_cmd(
             "(filter by domain for site alternatives)"
         )
     cache_key = (
-        f"tavily:v4:{max_results}:{sorted(domains)}:{sorted(exclude_domains)}:"
+        f"search:v5:{max_results}:{sorted(domains)}:{sorted(exclude_domains)}:"
         f"{time_range}:{exact}:{query}"
     )
     cached = read_cached_search(cache_key)
@@ -114,13 +124,17 @@ def search_cmd(
     budget_reserve(cache, None, critical=critical)
 
     try:
-        from research._tavily import search
+        if _is_mslearn_search(domains, time_range, exact):
+            results = mslearn.search(query, max_results)
+        else:
+            from research._tavily import search
 
-        response = search(query, max_results, domains, exclude_domains, time_range, exact)
-        rendered = format_search_results(response["results"])
+            response = search(query, max_results, domains, exclude_domains, time_range, exact)
+            results = response["results"]
+        rendered = format_search_results(results)
         write_cached_search(cache_key, rendered)
         click.echo(rendered)
-    except TavilyError as e:
+    except (TavilyError, MsLearnError) as e:
         budget_refund(cache)
         click.echo(f"error: {e}", err=True)
         sys.exit(1)
