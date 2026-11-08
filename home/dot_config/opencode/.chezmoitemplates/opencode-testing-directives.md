@@ -3,6 +3,8 @@
 - Keep durable tests for contracts: stable behavior a user, caller, or external system relies on,
   including tooling contracts, permissions, mutation safety, and recovery. Use temporary checks for
   one-off scaffolding and private details; remove temporary artifacts before handoff.
+- Low-level tests that verify initial implementation are temporary; before commit, keep only those
+  that protect a named contract.
 - Before adding a durable test, name the contract the change adds or alters; with none, add no
   durable test. Otherwise write it first and confirm it fails for the expected reason when
   practical.
@@ -28,9 +30,6 @@
   rejected-transition cases.
 - If no stable observable boundary exists, state why and use a temporary proof when useful rather
   than adding a coupled regression test.
-- Run targeted tests while editing and the repository completion check after the final change. When
-  an acceptance audit is triggered, pass the completion check in Context instead of running it; the
-  auditor runs it.
-
-When a test fails, inspect the evidence and isolate the cause before changing code. Remove temporary
-diagnostics.
+- Write the full output of slow test or build runs to a file under the temp directory, then search
+  that file. Rerun only when code, inputs, or environment changed, or to probe one named test for
+  flakiness; never rerun to recover output a filter discarded.

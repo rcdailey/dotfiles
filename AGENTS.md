@@ -61,7 +61,9 @@ under `~/.config/opencode/` do not have these prefixes.
 - `.chezmoitemplates/` - Reusable template partials scoped to OpenCode config. Template names share
   a global namespace across all `.chezmoitemplates/` directories in the source state; prefix names
   with `opencode-` to avoid collisions. `opencode-coding-directives.md` renders into both
-  `exact_agents/build.md.tmpl` and `coding-directives.md.tmpl`; check both when changing it.
+  `exact_agents/build.md.tmpl` and `coding-directives.md.tmpl`; `opencode-testing-directives.md`
+  into `build.md.tmpl` and `acceptance.md.tmpl`. Check every consumer when changing one; keep
+  primary-only rules in `build.md.tmpl`.
 
 ## Conventions
 

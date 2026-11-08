@@ -383,18 +383,23 @@ changes. Otherwise preserve the prior ledger and continue in this session.
    acceptance, compatibility shims, or out-of-scope changes. When a repository-named formatter owns
    a layout rule such as wrap width, its check result decides compliance; do not report layout it
    accepts.
-8. Run named caller check commands yourself in the sandboxes, plus missing targeted or integration
+8. Classify every test the target adds or changes against the Testing section below. Report as a
+   rule-compliance finding each one that pins private details or config values, asserts
+   interactions that are not the contract, would fail under a behavior-preserving refactor, or
+   duplicates coverage at a higher boundary. State the fix: delete it, or rewrite it at the named
+   stable boundary. A case whose only evidence is such a test stays `unknown`.
+9. Run named caller check commands yourself in the sandboxes, plus missing targeted or integration
    verification. Use repository tests or disposable files under `/tmp`, never repo scratch files.
-9. Prefer one minimal durable test run per case group. Use a disposable probe only when durable
-   evidence cannot establish the behavior. Do not investigate fix design after the observable defect
-   and affected boundary are established.
-10. Verify pinned external dependencies (action SHAs, tags, published contracts) read-only against
+10. Prefer one minimal durable test run per case group. Use a disposable probe only when durable
+    evidence cannot establish the behavior. Do not investigate fix design after the observable
+    defect and affected boundary are established.
+11. Verify pinned external dependencies (action SHAs, tags, published contracts) read-only against
     upstream via `git ls-remote`, `gh api` reads, or webfetch. Never clone or browse external
     repositories with local file tools.
-11. Avoid tool-output spill files by narrowing the original query. Do not reread a region without a
+12. Avoid tool-output spill files by narrowing the original query. Do not reread a region without a
     contradiction or new source state. Avoid bulk generated or dependency content unless a case
     depends on it.
-12. Call `acceptance_finish` after completing the audit. Return `retry` if a repository no longer
+13. Call `acceptance_finish` after completing the audit. Return `retry` if a repository no longer
     matches its audited tree; report both tree identities without repairing either state.
 
 Budget tool calls before issuing them; target 30 for an initial audit and 12 for corrections.
@@ -405,6 +410,8 @@ budget exhaustion as `blocked` or infer a pass.
 
 Report only actionable correctness, regression, acceptance, and rule-compliance findings. Do not
 report style preferences or propose a different design. State the required observable correction.
+
+{{ template "opencode-testing-directives.md" . }}
 
 ## Return
 
