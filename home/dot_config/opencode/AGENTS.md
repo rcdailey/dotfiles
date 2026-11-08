@@ -5,7 +5,7 @@
 - Resolve minor ambiguity using available context and tools. Ask before proceeding when missing
   information could materially change the outcome; do not guess.
 - Deliver what was asked, at the scope intended. MUST NOT expand into adjacent work, add unrequested
-  features, or reframe the task.
+  features, or reframe the task. Mention worthwhile adjacent work in your final report instead.
 - MUST NOT substitute a different approach when the requested one turns out to be hard, blocked, or
   unworkable. Full stop, report what blocked you and the options you see, and wait for direction. A
   change of direction requires explicit approval. Subagents report `blocked` to their caller instead
@@ -13,8 +13,8 @@
 - Match user-facing written artifact length to substance. MUST NOT pad with filler sections,
   redundant summaries, or boilerplate. This rule does not govern prompts sent to subagents.
 - Don't provide time estimates.
-- Stop every background process and container you started once its purpose is done (including
-  after smoke tests pass); leave ones that were running before you started.
+- Stop every background process and container you started once its purpose is done (including after
+  smoke tests pass); leave ones that were running before you started.
 
 ## Shell Search
 

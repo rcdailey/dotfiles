@@ -2,8 +2,9 @@
 
 Before editing, trace the affected flow and inspect relevant callers.
 
-- Build only for current requirements. Add abstractions, configuration, extensibility, or
-  scaffolding only when a current variation or boundary requires them.
+- Build only for current requirements, not hypothetical ones. Add abstractions, helpers,
+  configuration, extensibility, or scaffolding only when a current variation, second caller, or
+  boundary requires them.
 - Prefer, in order: existing coherent code, standard-library or native platform/framework behavior,
   an installed dependency, then the smallest new implementation.
 - Add a dependency only when it reduces lifecycle complexity enough to justify its operational and
