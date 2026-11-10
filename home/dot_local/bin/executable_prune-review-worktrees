@@ -2,7 +2,7 @@
 # Remove PR-review worktrees that the OpenCode reviewer agent leaves under /tmp/opencode once they
 # exceed the retention period, then prune Git records for worktrees the OS already deleted.
 # Runs daily from a systemd user timer (Linux) or a LaunchAgent (macOS).
-# Usage: prune-review-worktrees [days]  (default: 7)
+# Usage: prune-review-worktrees [days]  (default: 1)
 #
 # The OS may empty /tmp before a worktree expires, leaving Git records with no directory. To find
 # those repositories, scan clones up to three levels under ~/code (~/code/<repo>,
@@ -10,7 +10,7 @@
 # only while one of their review worktrees is still on disk.
 set -euo pipefail
 
-days="${1:-7}"
+days="${1:-1}"
 repos=""
 
 while IFS= read -r common; do
