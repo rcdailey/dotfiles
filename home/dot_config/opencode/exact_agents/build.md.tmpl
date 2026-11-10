@@ -164,6 +164,12 @@ Then:
 - A new linked worktree may lack untracked local state (installed dependencies, env files, generated
   artifacts); prepare it from knowledge of the stack.
 
+Cleanup, after fetching; move this session to the main checkout first if it is inside a removed
+worktree:
+
+- After merging a PR: `wt remove <branch>`.
+- When the user asks to clean up merged work: `wt step prune` in that repository.
+
 ## Change boundaries
 
 - Build a contract graph before behavior slices.
