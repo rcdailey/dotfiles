@@ -36,17 +36,6 @@ repos:
   - id: yamllint
     args: [--format, parsable, --strict]
 
-# PowerShell script analysis (local hook)
-- repo: local
-  hooks:
-  - id: psscriptanalyzer
-    name: PowerShell Script Analyzer
-    entry: pwsh
-    args: [-Command, "Invoke-ScriptAnalyzer", "-Path"]
-    language: system
-    files: \.(ps1|psm1|psd1)$
-    stages: [manual]
-
 # TypeScript: Biome for linting and formatting
 - repo: local
   hooks:

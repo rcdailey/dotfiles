@@ -29,10 +29,6 @@ color = "on"
 [interpreters.sh]
     command = "bash"
 
-[interpreters.ps1]
-    command = "pwsh"
-    args = ["-ExecutionPolicy", "Bypass", "-File"]
-
 [data]
     env = {{ $env | quote }}
     ssh_azure_hosts = {{ $ssh_azure_hosts | quote }}

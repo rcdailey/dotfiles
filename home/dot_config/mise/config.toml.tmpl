@@ -7,10 +7,7 @@
 
 [tools]
 age = "latest"
-cosign = "latest"
-d2 = "latest"
 delta = "latest"
-fx = "latest"
 fzf = "latest"
 git-filter-repo = "latest"
 git-lfs = "latest"
@@ -21,7 +18,6 @@ just = "latest"
 lazygit = "latest"
 lsd = "latest"
 markdownlint-cli2 = "latest"
-powershell = "latest"
 pre-commit = "latest"
 # pre-commit's zipapp runs `env python3`; without a global python the shim
 # falls back to macOS /usr/bin/python3 (3.9), which pre-commit cannot run on
@@ -29,14 +25,12 @@ python = "latest"
 rclone = "latest"
 ripgrep = "latest"
 rumdl = "latest"
-task = "latest"
 uv = "latest"
 # The OpenCode plugin routes OpenCode's worktree tools through wt, running its hooks
 worktrunk = { version = "latest", postinstall = "wt config plugins opencode install --yes" }
 yamllint = "latest"
 yq = "latest"
 zizmor = "latest"
-"github:byteowlz/sx" = "latest"
 "github:raine/git-surgeon" = "latest"
 "github:Tyrrrz/DiscordChatExporter" = { version = "latest", matching = "Cli" }
 node = "latest"
@@ -47,7 +41,6 @@ bun = "latest"
 "npm:@microsoft/learn-cli" = "latest"
 "pipx:ttok" = "latest"
 topgrade = "latest"
-claude-code = "latest"
 
 # Release assets are bare binaries; plannotator-paste-* assets make autodetection
 # ambiguous, so pin the asset per platform

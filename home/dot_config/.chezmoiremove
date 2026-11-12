@@ -4,3 +4,6 @@ bash/env.bash
 # fish replaced by zsh
 fish
 starship.toml
+
+# PowerShell profile no longer managed
+powershell/Microsoft.PowerShell_profile.ps1

@@ -2,6 +2,9 @@
 
 .omp
 
+# PowerShell profile no longer managed
+Documents/PowerShell/Microsoft.PowerShell_profile.ps1
+
 # pi config is no longer managed; pi-owned state (auth, sessions, settings, packages) stays
 .pi/agent/AGENTS.md
 .pi/agent/PRIMARY.md

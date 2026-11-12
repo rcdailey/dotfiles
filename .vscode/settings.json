@@ -6,7 +6,6 @@
     "*.toml.tmpl": "toml",
     "*.yaml.tmpl": "yaml",
     "*.yml.tmpl": "yaml",
-    "*.ps1.tmpl": "powershell",
     "*.md.tmpl": "markdown",
     "*_config": "ssh_config",
     "Brewfile.tmpl": "ruby",

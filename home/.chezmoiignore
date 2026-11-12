@@ -13,8 +13,6 @@
 # Run the appropriate scripts based on OS
 {{ if eq .chezmoi.os "windows" }}
 .chezmoiscripts/*.sh
-{{ else }}
-.chezmoiscripts/*.ps1
 {{ end }}
 
 # Exclude these files if we're not on MacOS
@@ -29,12 +27,8 @@ Library/**
 .config/rbw/**
 {{ end }}
 
-# Use the appropriate powershell profile based on OS
-# See: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_profiles?view=powershell-7.5#profile-types-and-locations
 {{ if ne .chezmoi.os "windows" }}
 Documents/**
-{{ else }}
-.config/powershell/**
 {{ end }}
 
 # Exclude AppData directory on non-Windows platforms
