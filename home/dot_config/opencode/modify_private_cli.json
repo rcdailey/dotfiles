@@ -12,7 +12,7 @@ MANAGED = {
     "plugins": ["./herdr-opencode"],
     "attention": {"notifications": False, "sound": True, "volume": 0.4},
     "diffs": {"view": "unified"},
-    "session": {"grouping": "none", "sidebar": "hide", "thinking": "hide"},
+    "session": {"grouping": "none", "sidebar": "hide", "thinking": "hide", "verbosity": "medium"},
     "tabs": {"enabled": False},
     "keybinds": {
         "session.parent": "alt+up",
