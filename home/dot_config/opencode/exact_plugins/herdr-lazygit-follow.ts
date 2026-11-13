@@ -59,13 +59,17 @@ export const HerdrLazygitFollow = {
     });
     const controller = new AbortController();
     void (async () => {
-      for await (const event of ctx.event.subscribe({ signal: controller.signal })) {
-        if (event.type === "session.created" || event.type === "session.moved") {
-          const { sessionID, location } = event.data;
-          enqueue(() => publish(sessionID, location.directory));
-        } else if (event.type === "session.deleted") {
+      const events = ctx.event.subscribe({
+        types: ["session.created", "session.moved", "session.deleted"],
+        signal: controller.signal,
+      });
+      for await (const event of events) {
+        if (event.type === "session.deleted") {
           const { sessionID } = event.data;
           enqueue(() => rm(path.join(SESSION_DIRS, sessionID), { force: true }));
+        } else {
+          const { sessionID, location } = event.data;
+          enqueue(() => publish(sessionID, location.directory));
         }
       }
     })();

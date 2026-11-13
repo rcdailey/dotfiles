@@ -68,8 +68,11 @@ export const HerdrSessionTitle = {
     });
     const controller = new AbortController();
     void (async () => {
-      for await (const event of ctx.event.subscribe({ signal: controller.signal })) {
-        if (event.type !== "session.renamed") continue;
+      const events = ctx.event.subscribe({
+        types: ["session.renamed"],
+        signal: controller.signal,
+      });
+      for await (const event of events) {
         const { sessionID, title } = event.data;
         enqueue(() => publish(sessionID, title));
       }

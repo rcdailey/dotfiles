@@ -77,11 +77,15 @@ export const SessionPermissions = {
     });
     const controller = new AbortController();
     void (async () => {
-      for await (const event of ctx.event.subscribe({ signal: controller.signal })) {
+      const events = ctx.event.subscribe({
+        types: ["session.created", "session.forked"],
+        signal: controller.signal,
+      });
+      for await (const event of events) {
         if (event.type === "session.created") {
           const { sessionID, permissions } = event.data;
           enqueue(() => apply(sessionID, permissions));
-        } else if (event.type === "session.forked") {
+        } else {
           // Forks copy the parent's rules, but the event does not carry them.
           const { sessionID } = event.data;
           enqueue(() => applyCurrent(sessionID));
