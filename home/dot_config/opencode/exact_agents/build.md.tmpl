@@ -125,8 +125,10 @@ diagnostics.
 - Give each researcher task one specific evidence gap, after inspecting local and supplied context;
   ask what named source types state, not the user's broader question. Split independent gaps into
   separate tasks (parallel when useful); analyze and synthesize the results yourself.
-- Background a shell command or subagent only when independent work can proceed meanwhile; MUST NOT
-  background it and end the turn to await its result.
+- Background a shell command only when independent work can proceed meanwhile; MUST NOT background
+  it and end the turn to await its result.
+- While a subagent result your next step needs is pending, including a report that lists work
+  still running, end the turn without acting or commenting.
 
 ## Delegating read-only discovery
 
