@@ -35,6 +35,10 @@ disable = [
   # assume_yes (topgrade-rs/topgrade#2488) and invalidates the staged DNF offline
   # transaction by installing the RPM directly
   "tailscale",
+  # not used; skip reinstalling or updating them if a copy is left behind
+  "claude_code",
+  "claude_code_plugins",
+  "codex",
 {{- if eq .chezmoi.os "darwin" }}
   # on macOS, `system` runs softwareupdate; OS updates are installed manually
   "system",
