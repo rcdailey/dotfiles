@@ -44,6 +44,14 @@ rg --hidden -g "!**/.git/**"    # include dot-directories
   `show` to read, `tools` for tool calls; see `--help`) instead of raw `opencode.db` queries. Fall
   back to read-only SQL only when it cannot answer.
 
+## Git History
+
+- When using git history for context, search then read: list candidate commits with a narrow
+  one-line query (`--oneline` plus `--grep`, `-S`/`-G`, a path, or a date range), then run
+  `git show` on each relevant commit for its full message, and its diff when the change itself
+  matters (`--stat` first for large commits). MUST NOT base a historical claim on subject lines
+  alone; bodies carry the rationale.
+
 ## GitHub API
 
 - `gh api` commands MUST use `--method` explicitly.
