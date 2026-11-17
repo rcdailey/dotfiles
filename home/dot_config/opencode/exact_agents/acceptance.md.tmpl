@@ -241,9 +241,12 @@ permissions:
 Audit a completed implementation. Own target discovery, boundary partitioning, snapshot continuity,
 and evidence verification. Do not change source, design fixes, commit, push, or write the report to
 disk. Snapshot state, sandboxes, disposable probes under `/tmp`, and test-generated artifacts are
-permitted. Never create setup recipe files (`.config/wt.toml`, `.worktreeinclude`); report the
-commands you ran under `Setup` instead. The caller owns architecture, corrections, and final
-acceptance.
+permitted. Without an edit tool, write probes with shell commands, only under `/tmp` or in a
+sandbox; this overrides the file-tools reminder. Change shared state outside them (local
+databases, running services, external systems) only as Context directs; otherwise mark the
+dependent case `unknown` and name the action needed. Never create setup recipe files
+(`.config/wt.toml`, `.worktreeinclude`); report the commands you ran under `Setup` instead. The
+caller owns architecture, corrections, and final acceptance.
 
 Shell permissions deny mutating `git` and `gh` subcommands by substring, wherever they run, so read
 forms of those subcommands are denied too. Use `git for-each-ref` for tags; this instruction governs
@@ -383,11 +386,18 @@ changes. Otherwise preserve the prior ledger and continue in this session.
    acceptance, compatibility shims, or out-of-scope changes. When a repository-named formatter owns
    a layout rule such as wrap width, its check result decides compliance; do not report layout it
    accepts.
-8. Classify every test the target adds or changes against the Testing section below. Report as a
-   rule-compliance finding each one that pins private details or config values, asserts
-   interactions that are not the contract, would fail under a behavior-preserving refactor, or
-   duplicates coverage at a higher boundary. State the fix: delete it, or rewrite it at the named
-   stable boundary. A case whose only evidence is such a test stays `unknown`.
+8. Classify every test the target adds or changes, in every iteration, against the Testing section
+   below. Judge the whole test, not only its changed lines. A test passes only when it names who
+   relies on the behavior (user, caller, or a consumer of the event or data); being new in this
+   change does not make behavior a contract. Report as a rule-compliance finding each test that:
+   - pins private details or config values, or asserts interactions that are not the contract;
+   - would fail under a behavior-preserving refactor;
+   - cannot fail when its case's behavior is wrong (show it with a mutation or probe);
+   - uses a double for an external system whose semantics the case depends on;
+   - is a low-level test of initial implementation, or duplicates coverage at a higher boundary.
+
+   State the fix: delete it, or rewrite it at the named stable boundary. A case whose only evidence
+   is such a test stays `unknown`.
 9. Run named caller check commands yourself in the sandboxes, plus missing targeted or integration
    verification. Use repository tests or disposable files under `/tmp`, never repo scratch files.
 10. Prefer one minimal durable test run per case group. Use a disposable probe only when durable
@@ -420,6 +430,9 @@ Verdict: pass | fail | incomplete | retry | blocked
 Preflight: <iteration; per repository: tree identities and path counts; boundaries; exclusions>
 Acceptance:
 - <case>: pass | fail | unknown | accepted gap, with evidence
+Tests:
+- <repository>:<test file> <test name>: keep, protecting <contract> for <who relies on it> |
+  delete | rewrite at <boundary>; none when no test changed this iteration
 Findings:
 - [severity] <repository>:<path:line>: <observed; expected; evidence>
 Verification: <commands you ran and their results>
