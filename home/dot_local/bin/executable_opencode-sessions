@@ -18,6 +18,7 @@ import re
 import sqlite3
 import sys
 from datetime import datetime, timedelta
+from functools import cache
 from pathlib import Path
 
 HOME = str(Path.home())
@@ -555,9 +556,275 @@ def command_info(connection: sqlite3.Connection, args: argparse.Namespace) -> No
     print(f"\nsession permissions ({len(rules)}):")
     for rule in rules:
         print(f"  {rule_line(rule)}")
+    project = connection.execute(
+        "SELECT * FROM project WHERE id = ?", [session["project_id"]]
+    ).fetchone()
+    rules = config_rules(project["worktree"]) if project else BASE_RULES
     print(f"\nsaved approvals for project ({len(approvals)}):")
     for row in approvals:
-        print(f"  allow  {row['action']}  {row['resource']}  ({format_time(row['time_created'])})")
+        effect = approval_effect(row["action"], row["resource"], rules)
+        print(
+            f"  allow  {row['action']}  {row['resource']}  ({format_time(row['time_created'])})"
+            f"  -> {effect}"
+        )
+
+
+# Saved approvals ("Allow always" replies) live in the permission table, one row per project.
+# OpenCode evaluates them as allow rules after every configured rule, but a configured deny wins
+# first (packages/core/src/permission.ts). An approval therefore matters only where configured
+# rules resolve to ask. Configured rules are OpenCode's base policy, then the global config, then
+# project configs discovered from the worktree upward (packages/core/src/config/discovery.ts).
+BASE_RULES = (
+    {"action": "*", "resource": "*", "effect": "allow", "source": "default"},
+    {"action": "read", "resource": "*.env", "effect": "ask", "source": "default"},
+    {"action": "read", "resource": "*.env.*", "effect": "ask", "source": "default"},
+    {"action": "read", "resource": "*.env.example", "effect": "allow", "source": "default"},
+)
+CONFIG_NAMES = ("opencode.json", "opencode.jsonc")
+PATH_ACTIONS = ("read", "edit", "external_directory")
+
+
+def strip_jsonc(text: str) -> str:
+    """Remove comments and trailing commas outside JSON strings."""
+    out, index, in_string = [], 0, False
+    while index < len(text):
+        char = text[index]
+        if in_string:
+            out.append(char)
+            if char == "\\":
+                out.append(text[index + 1 : index + 2])
+                index += 1
+            elif char == '"':
+                in_string = False
+        elif char == '"':
+            in_string = True
+            out.append(char)
+        elif text.startswith("//", index):
+            index = text.find("\n", index)
+            index = len(text) if index < 0 else index
+            continue
+        elif text.startswith("/*", index):
+            end = text.find("*/", index + 2)
+            index = len(text) if end < 0 else end + 2
+            continue
+        else:
+            out.append(char)
+        index += 1
+    return re.sub(r",(\s*[}\]])", r"\1", "".join(out))
+
+
+def config_home() -> Path:
+    return Path(os.environ.get("XDG_CONFIG_HOME") or f"{HOME}/.config") / "opencode"
+
+
+def config_files(worktree: str) -> list[Path]:
+    """Return config files in OpenCode's merge order: global, direct files, then .opencode files.
+
+    Project files are discovered from the filesystem root down to the worktree.
+    """
+    files = [config_home() / name for name in CONFIG_NAMES]
+    root = Path(worktree)
+    if root.is_dir():
+        chain = [*reversed(root.parents), root]
+        files += [directory / name for directory in chain for name in CONFIG_NAMES]
+        files += [directory / ".opencode" / name for directory in chain for name in CONFIG_NAMES]
+    seen, result = set(), []
+    for file in files:
+        resolved = file.resolve()
+        if file.is_file() and resolved not in seen:
+            seen.add(resolved)
+            result.append(file)
+    return result
+
+
+def expand_home(resource: str) -> str:
+    for prefix in ("~", "$HOME"):
+        if resource == prefix or resource.startswith(prefix + "/"):
+            return HOME + resource[len(prefix) :]
+    return resource
+
+
+_config_cache: dict[str, tuple[dict, ...]] = {}
+
+
+def config_rules(worktree: str) -> tuple[dict, ...]:
+    """Top-level permission rules for a project, each tagged with its source file.
+
+    Agent-specific and session-scoped rules are not included.
+    """
+    if worktree in _config_cache:
+        return _config_cache[worktree]
+    rules = list(BASE_RULES)
+    global_dir = config_home()
+    for file in config_files(worktree):
+        try:
+            data = json.loads(strip_jsonc(file.read_text()))
+        except (OSError, json.JSONDecodeError) as error:
+            print(f"warning: skipped unreadable config {file}: {error}", file=sys.stderr)
+            continue
+        source = "global" if file.parent == global_dir else short_path(str(file))
+        for rule in data.get("permissions") or []:
+            if not isinstance(rule, dict):
+                continue
+            resource = rule.get("resource", "")
+            if rule.get("action") in PATH_ACTIONS:
+                resource = expand_home(resource)
+            rules.append({**rule, "resource": resource, "source": source})
+    _config_cache[worktree] = tuple(rules)
+    return _config_cache[worktree]
+
+
+def wildcard_variants(pattern: str) -> tuple[str, ...]:
+    # OpenCode lets a pattern ending in " *" also match the bare command.
+    return (pattern, pattern[:-2]) if pattern.endswith(" *") else (pattern,)
+
+
+def _globs_overlap(first: str, second: str) -> bool:
+    """True when some string matches both wildcard patterns (* any run, ? one character)."""
+
+    @cache
+    def step(i: int, j: int) -> bool:
+        if i == len(first) and j == len(second):
+            return True
+        if i < len(first) and first[i] == "*" and step(i + 1, j):
+            return True
+        if j < len(second) and second[j] == "*" and step(i, j + 1):
+            return True
+        if i == len(first) or j == len(second):
+            return False
+        a, b = first[i], second[j]
+        if a == "*":
+            return step(i, j + 1)
+        if b == "*":
+            return step(i + 1, j)
+        return (a == b or "?" in (a, b)) and step(i + 1, j + 1)
+
+    return step(0, 0)
+
+
+def patterns_overlap(first: str, second: str) -> bool:
+    return any(
+        _globs_overlap(a, b) for a in wildcard_variants(first) for b in wildcard_variants(second)
+    )
+
+
+def overlapping_rules(action: str, resource: str, rules, effect: str) -> list[dict]:
+    """Configured rules with this effect that can match something the approval covers.
+
+    The shell scanner checks each subcommand separately, so a leading * in a shell rule mostly
+    absorbs prefixes such as env assignments. Matching it against arbitrary text would make
+    `*git push*` overlap `echo *` through `echo git push`; it is anchored at the command start.
+    """
+    matches = []
+    for rule in rules:
+        rule_resource = rule.get("resource", "")
+        if action == "shell" and rule_resource != "*":
+            rule_resource = rule_resource.lstrip("*")
+        if (
+            rule.get("effect") == effect
+            and patterns_overlap(action, rule.get("action", ""))
+            and patterns_overlap(resource, rule_resource)
+        ):
+            matches.append(rule)
+    return matches
+
+
+def rule_label(rule: dict) -> str:
+    return f"{rule['resource']} [{rule['source']}]"
+
+
+def approval_effect(action: str, resource: str, rules) -> str:
+    """Describe what a saved approval changes, given the project's configured rules.
+
+    The check compares wildcard patterns, so "overrides ask" means some commands the approval
+    covers may hit a configured ask rule; a later configured allow can shadow part of that rule.
+    """
+    asks = overlapping_rules(action, resource, rules, "ask")
+    if not asks:
+        return "no effect (config already allows or denies)"
+    return "overrides ask: " + "; ".join(dict.fromkeys(map(rule_label, asks)))
+
+
+def project_label(project: sqlite3.Row, duplicates: set[str]) -> str:
+    label = short_path(project["worktree"])
+    if project["worktree"] in duplicates:
+        label += f"#{project['id'][:7]}"
+    if not Path(project["worktree"]).is_dir():
+        label += " (missing)"
+    return label
+
+
+def resolve_project(connection: sqlite3.Connection, directory: str) -> sqlite3.Row:
+    """Pick the project whose worktree or registered directory most closely contains directory."""
+    target = os.path.abspath(os.path.expanduser(directory))
+    rows = connection.execute(
+        "SELECT id, worktree AS directory FROM project "
+        "UNION SELECT project_id, directory FROM project_directory"
+    ).fetchall()
+    matches = [
+        row
+        for row in rows
+        if target == row["directory"] or target.startswith(row["directory"].rstrip("/") + "/")
+    ]
+    if not matches:
+        raise UsageError(f"no OpenCode project contains {target}")
+    best = max(matches, key=lambda row: len(row["directory"]))
+    return connection.execute("SELECT * FROM project WHERE id = ?", [best["id"]]).fetchone()
+
+
+def command_approvals(connection: sqlite3.Connection, args: argparse.Namespace) -> None:
+    projects = connection.execute("SELECT * FROM project").fetchall()
+    if args.dir:
+        projects = [resolve_project(connection, args.dir)]
+    worktrees = [row["worktree"] for row in connection.execute("SELECT worktree FROM project")]
+    duplicates = {path for path in worktrees if worktrees.count(path) > 1}
+    by_id = {project["id"]: project for project in projects}
+    marks = ",".join("?" * len(by_id))
+    rows = connection.execute(
+        f"SELECT project_id, action, resource FROM permission WHERE project_id IN ({marks})",
+        list(by_id),
+    ).fetchall()
+
+    # (action, resource) -> effect -> project labels
+    groups: dict[tuple[str, str], dict[str, list[str]]] = {}
+    counts = {"overrides": 0, "redundant": 0}
+    for row in rows:
+        project = by_id[row["project_id"]]
+        effect = approval_effect(row["action"], row["resource"], config_rules(project["worktree"]))
+        kind = "overrides" if effect.startswith("overrides") else "redundant"
+        counts[kind] += 1
+        if args.effect not in ("all", kind):
+            continue
+        key = (row["action"], row["resource"])
+        groups.setdefault(key, {}).setdefault(effect, []).append(project_label(project, duplicates))
+
+    def order(item: tuple[tuple[str, str], dict[str, list[str]]]) -> tuple:
+        (action, resource), effects = item
+        overrides = any(effect.startswith("overrides") for effect in effects)
+        return (not overrides, -sum(map(len, effects.values())), action, resource)
+
+    if args.dir:
+        print(f"project: {project_label(projects[0], duplicates)}  id: {projects[0]['id']}")
+        print("config: " + ", ".join(map(short_path, map(str, config_files(projects[0]["worktree"])))))
+    repeated = []
+    for (action, resource), effects in sorted(groups.items(), key=order):
+        total = sum(map(len, effects.values()))
+        print(f"\n{action}  {resource}  ({total} project{'s' if total > 1 else ''})")
+        for effect, labels in effects.items():
+            if effect.startswith("overrides") and len(labels) > 1:
+                repeated.append(f"{action} {resource} ({len(labels)})")
+            print(f"  {effect}" + ("" if args.dir else f": {', '.join(sorted(labels))}"))
+    if not groups:
+        print("\nNo saved approvals matched.")
+    project_count = len({row["project_id"] for row in rows})
+    print(
+        f"\n{len(rows)} saved approvals in {project_count} projects: {counts['overrides']} "
+        f"override a configured ask, {counts['redundant']} have no effect."
+    )
+    if repeated:
+        print(
+            "Overrides saved in 2+ projects (candidates for a config rule): " + ", ".join(repeated)
+        )
 
 
 def add_time_window(parser) -> None:
@@ -596,7 +863,8 @@ def parse_args() -> argparse.Namespace:
         epilog=(
             "Typical flow: 'list' or 'search' to identify a session, then 'show ID --grep TERM' "
             "or 'show ID --range A:B' to read it; 'tools ID' for its tool calls and 'info ID' "
-            "for its permission state. Message numbers in [brackets] are seq values."
+            "for its permission state; 'approvals' audits saved 'Allow always' rules across "
+            "projects. Message numbers in [brackets] are seq values."
         ),
     )
     commands = parser.add_subparsers(dest="command", required=True)
@@ -700,6 +968,30 @@ def parse_args() -> argparse.Namespace:
     info.add_argument("session", help="session ID or slug")
     info.add_argument("--json", action="store_true", help="print the decoded record as JSON")
     info.set_defaults(handler=command_info)
+
+    approvals = commands.add_parser(
+        "approvals",
+        help="audit saved 'Allow always' approvals against configured permission rules",
+        description=(
+            "Lists saved approvals for every project, or one project with --dir, grouped by "
+            "pattern. Each approval is compared with the project's configured rules (OpenCode "
+            "defaults, global config, then project opencode.json(c) and .opencode/ files from "
+            "the worktree upward): 'overrides ask' names the ask rules it bypasses; 'no effect' "
+            "means config already allows or denies everything it covers (a deny always wins). "
+            "Patterns are compared by wildcard overlap, so an override may cover only some "
+            "commands. Agent-specific and session-scoped rules are not considered."
+        ),
+    )
+    approvals.add_argument(
+        "--dir", help="only the project containing this directory (default: all projects)"
+    )
+    approvals.add_argument(
+        "--effect",
+        choices=("all", "overrides", "redundant"),
+        default="all",
+        help="only approvals that override an ask rule, or only those with no effect",
+    )
+    approvals.set_defaults(handler=command_approvals)
 
     return parser.parse_args()
 
