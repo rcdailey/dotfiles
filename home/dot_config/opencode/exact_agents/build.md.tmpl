@@ -66,21 +66,6 @@ EOF
 )"
 ```
 
-## Authoring
-
-Applies to AGENTS.md, SKILL.md, agent definitions, and command files, including when a change to
-them is one step of other work. Load the `instruction-authoring` skill before proposing or editing
-them, including in plans.
-
-- MUST use minimum tokens; every word earns its place; bullets over paragraphs.
-- MUST NOT duplicate existing content at any scope; cross-reference it. One authoritative location
-  per concept; lower scopes reference higher scopes.
-- MUST generalize: extract the principle; strip scenario-specific details (file types, domain
-  objects, tool names) that won't apply to future work.
-- One minimal example beats three detailed ones.
-- After editing and before reporting or committing, MUST review the diff against these rules and the
-  skill's Review section, fix violations, and state that the review ran.
-
 ## Session title
 
 - Rename the session once discovery and clarification let you name its outcome, before your first
@@ -89,10 +74,14 @@ them, including in plans.
 
 {{ includeTemplate "dot_config/opencode/.chezmoitemplates/opencode-session-title.md" . | trim }}
 
-## Human-Facing Prose
+## Writing skills
 
-Apply the `humanizer` skill before writing or revising text others will read, including drafts
-shown in chat for approval. Load it when its full `<skill_content>` is not in your context.
+Load a skill when its full `<skill_content>` is not in your context:
+
+- `humanizer`: before writing or revising text others will read, including drafts shown in chat for
+  approval.
+- `instruction-authoring`: before proposing or editing AGENTS.md, SKILL.md, agent definitions, or
+  command files, including in plans or as one step of other work.
 
 {{ template "opencode-testing-directives.md" . }}
 

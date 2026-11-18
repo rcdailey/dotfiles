@@ -10,7 +10,7 @@ description: >-
 
 # Instruction Authoring
 
-Apply the active Authoring policy and the shared rules below, then the section for the artifact.
+Apply the shared rules below, then the section for the artifact.
 
 ## Shared rules
 
@@ -30,18 +30,26 @@ misses; put primary-only registration in the primary prompt.
 
 ### Writing
 
+- Use minimum tokens; every word earns its place; bullets over paragraphs.
+- Generalize unprompted: write the rule for the class of failure, not the incident that prompted it.
+  Strip that incident's details (values, file types, domain objects, tool names), including as
+  examples, unless the rule is about them.
 - State the required behavior and the condition that triggers it.
 - Use `MUST` or `MUST NOT` only for hard requirements.
 - Replace vague qualities with an observable result or a real example path.
 - Give the valid alternative when prohibiting an action.
 - Omit prose that only restates structural enforcement.
-- Reference a skill, agent, or higher-scope rule instead of copying it.
+- Never duplicate content at any scope; reference the skill, agent, or higher-scope rule that owns
+  it. One authoritative location per concept; lower scopes reference higher scopes.
 - For CLI tools, teach sequencing and non-obvious semantics; include fixed syntax only when required
   to act and unavailable from `--help`.
-- Include an example only when it communicates a contract better than rules; it MUST obey the rules
-  it teaches, as must disposable checks.
+- Include an example only when it communicates a contract better than rules; one minimal example
+  beats three detailed ones. It MUST obey the rules it teaches, as must disposable checks.
 
 ### Review
+
+After editing and before reporting or committing, review the diff against this skill, fix
+violations, and state that the review ran.
 
 - Verify every path, command, frontmatter field, and placeholder against the repository and current
   OpenCode documentation.
@@ -50,6 +58,8 @@ misses; put primary-only registration in the primary prompt.
 - Remove duplicated, stale, generic, speculative, and inferable guidance, including rules inherited
   from AGENTS.md, skills, or agents.
 - Confirm each remaining rule has one authoritative home and prevents a concrete, current failure.
+- Test each new or changed rule against a different incident of the same class. Rewrite it if it
+  would not apply, or if it still names details of the incident that prompted it.
 - Before removing a contract, confirm consumers can read it elsewhere within their permissions;
   otherwise keep its minimal canonical form.
 - In generated configuration, edit the source template and validate the rendered target; do not
