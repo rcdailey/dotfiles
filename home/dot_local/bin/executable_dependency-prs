@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # List open Renovate and Dependabot PRs ranked for review: security, major/unknown, minor, patch,
-# oldest first.
+# oldest first. Authors: the Mend Renovate app, the self-hosted Renovate app (renova-chan), and
+# Dependabot.
 # Checks summarize the status rollup: fail (any check failed), pending (any check unfinished),
 # none (no checks), or pass.
 # Update type is best effort (bot config varies per repo); the first signal found wins:
@@ -63,7 +64,8 @@ def merge_method($allowed): [.rules.nodes[] | select(.type == "PULL_REQUEST")
    ("squash" | select($repo.squashMergeAllowed))] as $allowed
 | [$repo.vulnerabilityAlerts.nodes[]?
     | {package: .securityVulnerability.package.name, ghsa: .securityAdvisory.ghsaId}] as $alerts
-| [$repo.pullRequests.nodes[] | select(.author.login | IN("renovate", "dependabot"))] as $prs
+| [$repo.pullRequests.nodes[]
+    | select(.author.login | IN("renovate", "renova-chan", "dependabot"))] as $prs
 | ($prs | map(.baseRef) | unique_by(.name)) as $bases
 | select($prs != [])
 | ($bases[] | "merge \(.name) \(merge_method($allowed))"),
