@@ -90,7 +90,8 @@
 
     // shell defaults and destructive Git operations
     { "action": "shell", "resource": "*", "effect": "allow" },
-    { "action": "shell", "resource": "*git push*", "effect": "ask" },
+    { "action": "shell", "resource": "*git push*--force*", "effect": "ask" },
+    { "action": "shell", "resource": "*git push* -f*", "effect": "ask" },
     { "action": "shell", "resource": "*git reset --hard*", "effect": "ask" },
     { "action": "shell", "resource": "*git clean*", "effect": "ask" },
     { "action": "shell", "resource": "*git branch -D*", "effect": "ask" },
@@ -101,8 +102,6 @@
     { "action": "shell", "resource": "rm -r*", "effect": "ask" },
     { "action": "shell", "resource": "rm -r* /tmp/*", "effect": "allow" },
     { "action": "shell", "resource": "sudo*", "effect": "ask" },
-    { "action": "shell", "resource": "kill*", "effect": "ask" },
-    { "action": "shell", "resource": "pkill*", "effect": "ask" },
     { "action": "shell", "resource": "shutdown*", "effect": "ask" },
     { "action": "shell", "resource": "reboot*", "effect": "ask" },
 
@@ -124,8 +123,6 @@
     { "action": "shell", "resource": "*gh pr reopen*", "effect": "ask" },
     { "action": "shell", "resource": "*gh pr comment*", "effect": "ask" },
     { "action": "shell", "resource": "*gh pr edit*", "effect": "ask" },
-    { "action": "shell", "resource": "*gh pr review*", "effect": "ask" },
-    { "action": "shell", "resource": "*gh pr ready*", "effect": "ask" },
     // PRs open through gh pr create; submit --auto writes generated titles and empty bodies
     { "action": "shell", "resource": "*gh stack submit*", "effect": "deny" },
     { "action": "shell", "resource": "*gh issue create*", "effect": "ask" },
@@ -141,14 +138,10 @@
     { "action": "shell", "resource": "*gh release upload*", "effect": "ask" },
     { "action": "shell", "resource": "*gh repo create*", "effect": "ask" },
     { "action": "shell", "resource": "*gh repo delete*", "effect": "ask" },
-    { "action": "shell", "resource": "*gh repo fork*", "effect": "ask" },
     { "action": "shell", "resource": "*gh repo archive*", "effect": "ask" },
     { "action": "shell", "resource": "*gh repo rename*", "effect": "ask" },
     { "action": "shell", "resource": "*gh repo edit*", "effect": "ask" },
     { "action": "shell", "resource": "*gh workflow run*", "effect": "ask" },
-    { "action": "shell", "resource": "*gh run cancel*", "effect": "ask" },
-    { "action": "shell", "resource": "*gh run rerun*", "effect": "ask" },
-    { "action": "shell", "resource": "*gh label create*", "effect": "ask" },
     { "action": "shell", "resource": "*gh label delete*", "effect": "ask" },
     { "action": "shell", "resource": "*gh secret set*", "effect": "ask" },
     { "action": "shell", "resource": "*gh secret delete*", "effect": "ask" },
@@ -158,6 +151,9 @@
     // The gh-api-guard plugin rejects commands without an explicit method
     { "action": "shell", "resource": "gh api*", "effect": "ask" },
     { "action": "shell", "resource": "gh api* --method GET*", "effect": "allow" },
+    // GraphQL queries are reads; matching the mutation keyword is text-based, not a guarantee
+    { "action": "shell", "resource": "gh api graphql*", "effect": "allow" },
+    { "action": "shell", "resource": "gh api graphql*mutation*", "effect": "ask" },
     { "action": "shell", "resource": "*gh-review reply*", "effect": "ask" },
     { "action": "shell", "resource": "*gh-review delete*", "effect": "ask" },
 
