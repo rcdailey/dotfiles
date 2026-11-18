@@ -6,7 +6,4 @@
       "extensions": [".ts", ".tsx", ".js", ".jsx"]
     }
   },
-  "permissions": [
-    { "action": "shell", "resource": "*git push*", "effect": "allow" },
-  ],
 }
