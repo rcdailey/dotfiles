@@ -19,8 +19,9 @@ Infer the subject from the conversation.
 
 ## Review
 
-Run `plannotator annotate <path> --gate --json` in the foreground with an 86400000 ms timeout; it
-returns when the user decides. It prints one JSON line:
+Run `plannotator annotate <path> --gate --json --title "<title>"` in the foreground with an 86400000
+ms timeout; it returns when the user decides. `<title>` names the browser tab and header: lead with
+the issue key when known, then a few words that fit an unexpanded tab. It prints one JSON line:
 
 - `"decision": "approved"`: approved; optional `feedback` holds approval notes.
 - `"decision": "annotated"`: `feedback` holds the review comments.
