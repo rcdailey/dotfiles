@@ -176,6 +176,9 @@ worktree:
 
 - Read the approved plan and approval notes when present; preserve its scope, decisions, contracts,
   and acceptance outcomes. Do not reconstruct settled design.
+- Plan files live at `~/.local/state/plans/<repo>/<slug>.md`: `<repo>` is the main checkout's
+  directory name, so worktrees share it; `<slug>` is a short kebab-case outcome. When the user
+  refers to a plan without a path, look there.
 - Own implementation details, tests, debugging, integration, and final acceptance. Add verification
   and regression cases without weakening the approved acceptance matrix.
 - If evidence requires changing approved behavior, public contracts, migration strategy, or

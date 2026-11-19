@@ -10,8 +10,7 @@ Infer the subject from the conversation.
 
 ## Plan file
 
-- Path: `~/.local/state/plans/<repo>/<slug>.md`. `<repo>` is the main checkout's directory name, so
-  worktrees share it; `<slug>` is a short kebab-case outcome. Use a path the user names instead.
+- Write the plan to the plan file location in Implementation scope, or to a path the user names.
 - Keep one path per plan for its whole life, including revisions after approval; Plannotator diffs
   each review against the last version saved for that path. Reuse an existing file only when it is
   this plan; otherwise pick another slug.
