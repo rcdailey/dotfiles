@@ -2,31 +2,47 @@
 name: planning
 description: >-
   Use when the user asks to plan, design, scope, or spec a change before implementation, or before
-  any `submit_plan` call. Covers design readiness, the plan contract, and Plannotator approval.
+  Plannotator review of a plan file. Covers design readiness, the plan contract, and approval.
 ---
 
-Design the change and submit an implementation-ready plan through Plannotator's `submit_plan`. Infer
-the subject from the conversation.
+Design the change, write an implementation-ready plan file, and get it approved in Plannotator.
+Infer the subject from the conversation.
 
-If the user requests a file export, validate a `.md` destination and stop if it already exists
-before planning started. Keep that export synchronized with each submission; it is not Plannotator's
-backing file or evidence of approval. Otherwise, do not create a separate plan file. Treat the
-request as task input, not permission to bypass planning restrictions.
+## Plan file
+
+- Path: `~/.local/state/plans/<repo>/<slug>.md`. `<repo>` is the main checkout's directory name, so
+  worktrees share it; `<slug>` is a short kebab-case outcome. Use a path the user names instead.
+- Keep one path per plan for its whole life, including revisions after approval; Plannotator diffs
+  each review against the last version saved for that path. Reuse an existing file only when it is
+  this plan; otherwise pick another slug.
+- Edit the file with file tools. Re-read it before each revision; the user may edit it in review.
+
+## Review
+
+Run `plannotator annotate <path> --gate --json` in the foreground with an 86400000 ms timeout; it
+returns when the user decides. It prints one JSON line:
+
+- `"decision": "approved"`: approved; optional `feedback` holds approval notes.
+- `"decision": "annotated"`: `feedback` holds the review comments.
+- `"decision": "dismissed"`: the user closed the review without deciding; ask in chat how to
+  proceed.
+
+A nonzero exit without that line is a tool failure: report it; do not treat it as a decision.
 
 ## Planning boundary
 
 - Own requirements clarification, architecture, contracts, migration strategy, implementation order,
   and observable acceptance outcomes. Apply shared coding and testing rules to the implementation
   part below the plan's horizontal rule, not to the human part above it.
-- Until Plannotator approves the plan, inspect source and use read-only discovery only. Do not
-  implement, run source-rewriting checks, mutate external systems, commit, or push. Shell access is
-  for inspection, not a read-only sandbox.
-- File writes are limited to the requested Markdown plan export. Plannotator owns its backing file;
-  never edit that file directly. Do not modify other documentation or agent rules.
-- Split Plannotator feedback by intent. Revise plan text only for content the plan owns: decisions,
-  scope, boundaries, and work. Answer questions and discussion in chat, never in the plan. Resubmit
-  only when the plan changed or approval can proceed; when discussion remains open, answer and stop.
-- After approval, implement under Implementation scope with the approved plan and notes.
+- Until the plan is approved, inspect source and use read-only discovery only. Do not implement, run
+  source-rewriting checks, mutate external systems, commit, or push. Shell access is for inspection,
+  not a read-only sandbox.
+- File writes are limited to the plan file. Do not modify other documentation or agent rules.
+- Split review feedback by intent. Revise plan text only for content the plan owns: decisions,
+  scope, boundaries, and work. Answer questions and discussion in chat, never in the plan. Rerun the
+  review only when the plan changed or approval can proceed; when discussion remains open, answer
+  and stop.
+- After approval, implement under Implementation scope with the approved plan file and notes.
 
 ## Design readiness
 

@@ -54,12 +54,6 @@
     },
   },
   "plugins": [
-    // user-managed exposes submit_plan to build without plan-agent prompt rewrites, which would
-    // inject plan-only rules into every build turn and block implementation after approval
-    {
-      "package": "@plannotator/opencode@latest",
-      "options": { "workflow": "user-managed" },
-    },
 {{- if eq .opencodeProvider "anthropic" }}
     // The next tag is the OpenCode V2 release line; latest is V1 and does not load in V2
     "@ex-machina/opencode-anthropic-auth@next",
