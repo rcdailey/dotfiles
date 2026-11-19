@@ -76,10 +76,10 @@ EOF
 
 ## Writing skills
 
-Load a skill when its full `<skill_content>` is not in your context:
+Load a skill when its current `<skill_content>` is not in your context, including after the skill
+changed or compaction dropped it. An earlier load counts only if you apply it to the new work:
 
-- `humanizer`: before writing or revising text others will read, including drafts shown in chat for
-  approval.
+- `humanizer`: before each draft or revision of text others will read.
 - `instruction-authoring`: before proposing or editing AGENTS.md, SKILL.md, agent definitions, or
   command files, including in plans or as one step of other work.
 

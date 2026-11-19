@@ -1,14 +1,11 @@
 ---
 name: humanizer
 description: >-
-  Use when writing or revising prose that people will read, regardless of addressee: anything
-  posted to GitHub, Linear, Slack, or email (PR descriptions, issues, review comments and replies,
-  including replies to bots), docs, READMEs, changelogs, and release notes. Includes requests to
-  answer or reply to a pasted message, drafts shown in chat for approval (even when the draft sits
-  inside a reply to the user or follows an investigation), and drafts the user wrote. Load it
-  before composing the draft. Do NOT use for text only agents read (subagent prompts, delegation
-  briefs, handoffs), replies to the user that contain no draft, code, commit messages, or
-  structured data.
+  Use before each draft or revision of text a person will read, wherever the draft appears and
+  whoever sent it: posts and replies on GitHub, Linear, Slack, or email (bots included), docs, and
+  release notes, including drafts shown inside a chat reply and drafts the user wrote. Do NOT use
+  for text only agents read (subagent prompts, handoffs), chat replies with no draft, code, commit
+  messages, or structured data.
 ---
 
 # Humanizer
