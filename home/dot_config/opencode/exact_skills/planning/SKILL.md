@@ -120,6 +120,8 @@ map", not "`index.ts` imports the map and registers an agent transform".
   and architecture (which component owns what, how components and systems connect), not the files,
   symbols, or steps that implement them. Name a file, setting, or command only when the reader uses
   it directly:
+  - Why: 1-3 sentences on current behavior and what it costs or blocks; state only what the request,
+    tickets, or discovery support.
   - What changes: the outcome the reader experiences when the work is done. Report removed or
     replaced files the reader edits under Boundaries that change, not here.
   - Decisions: every product and architecture decision and assumption, covering behavior, scope,
