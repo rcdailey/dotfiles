@@ -146,19 +146,16 @@ and without them ask the user (both in one question):
 
 Then:
 
-- Worktree from the main checkout (`git rev-parse --git-dir` equals `--git-common-dir`): create a
-  short-named worktree with `worktree_create`, then move this session into it with `session_move`
-  in a later call, and continue the work there. Already in a linked worktree: confirm its branch
+- Worktree from the main checkout (`git rev-parse --git-dir` equals `--git-common-dir`): create it
+  with `wt_switch` and continue the work there. Already in a linked worktree: confirm its branch
   belongs to that work.
-- Feature branch: name it by repository convention, including any issue key (`git branch -m` a
-  worktree's generated branch). Worktree names stay short and need not match the branch.
+- Feature branch: name it by repository convention, including any issue key.
 - A new linked worktree may lack untracked local state (installed dependencies, env files, generated
   artifacts); prepare it from knowledge of the stack.
 
-Cleanup, after fetching; move this session to the main checkout first if it is inside a removed
-worktree:
+Cleanup, after fetching:
 
-- After merging a PR: `wt remove <branch>`.
+- After merging a PR: `wt_remove` that worktree.
 - When the user asks to clean up merged work: `wt step prune` in that repository.
 
 ## Change boundaries

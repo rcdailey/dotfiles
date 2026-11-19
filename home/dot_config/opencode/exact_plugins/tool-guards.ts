@@ -112,6 +112,12 @@ const REDIRECTIONS: RedirectionRule[] = [
     option: "--set",
     message: "Use 'sops set' instead of 'sops --set'; consult 'sops set --help' for syntax",
   },
+  // The tools also move the session; shell runs leave it in, or stranded outside, the worktree
+  ...["switch", "remove", "merge"].map((subcommand) => ({
+    command: "wt",
+    option: subcommand,
+    message: `Use the wt_${subcommand} tool instead of 'wt ${subcommand}'; it also moves the session`,
+  })),
 ];
 
 export const ToolGuards = {
