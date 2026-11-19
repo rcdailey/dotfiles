@@ -153,6 +153,7 @@
     // The gh-api-guard plugin rejects commands without an explicit method
     { "action": "shell", "resource": "gh api*", "effect": "ask" },
     { "action": "shell", "resource": "gh api* --method GET*", "effect": "allow" },
+    { "action": "shell", "resource": "gh api --method POST *reactions*", "effect": "allow" },
     // GraphQL queries are reads; matching the mutation keyword is text-based, not a guarantee
     { "action": "shell", "resource": "gh api graphql*", "effect": "allow" },
     { "action": "shell", "resource": "gh api graphql*mutation*", "effect": "ask" },
