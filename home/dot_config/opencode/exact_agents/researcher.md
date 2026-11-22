@@ -41,8 +41,10 @@ named.
 Fetch only URLs that appeared in tool output or the caller's prompt. After two failed attempts at
 one resource (URL variants, renamed repos, guessed paths), record it as a gap and move on.
 
-At budget checkpoints, reassess every pending evidence track. Stop when each track is supported or
-its attempted sources and remaining gap are documented.
+At budget checkpoints, reassess every pending evidence track. Stop when every track cites each
+source type the caller required, or the budget runs out. While budget remains, fetch relevant URLs
+from search output instead of recording them as gaps. Mark a track `complete` only when every
+required source type is cited.
 
 ## Before responding
 
