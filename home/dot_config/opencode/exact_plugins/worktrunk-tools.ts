@@ -19,8 +19,13 @@ import { DIRECT_TOOL } from "./lib/direct-tool.ts";
 
 const REPLACED = ["opencode_worktree_create", "opencode_worktree_list", "opencode_worktree_remove"];
 
-/** Hidden from agents whose edit permission is wholly denied, since these change the checkout. */
-const MUTATING = { ...DIRECT_TOOL, permission: "edit" } as const;
+/**
+ * Gated by a `worktree` action instead of `edit`: OpenCode hides a tool only when the last rule
+ * matching its action denies every resource, so an agent allowed to edit scratch paths would
+ * otherwise gain these checkout-changing tools. Agents that must not move or merge checkouts deny
+ * `worktree`.
+ */
+const MUTATING = { ...DIRECT_TOOL, permission: "worktree" } as const;
 
 interface Run {
   ok: boolean;

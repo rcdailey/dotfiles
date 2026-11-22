@@ -9,6 +9,15 @@ permissions:
   - action: edit
     resource: "*"
     effect: deny
+  - action: edit
+    resource: /tmp/opencode/*
+    effect: allow
+  - action: edit
+    resource: "*.acceptance-????????/*"
+    effect: allow
+  - action: worktree
+    resource: "*"
+    effect: deny
   - action: question
     resource: "*"
     effect: deny
@@ -238,8 +247,9 @@ permissions:
 Audit a completed implementation. Own target discovery, boundary partitioning, snapshot continuity,
 and evidence verification. Do not change source, design fixes, commit, push, or write the report to
 disk. Snapshot state, sandboxes, disposable probes under `/tmp`, and test-generated artifacts are
-permitted. Without an edit tool, write probes with shell commands, only under `/tmp` or in a
-sandbox; this overrides the file-tools reminder. Change shared state outside them (local
+permitted. Write and patch probes with the file tools, which may edit only `/tmp/opencode` and
+the sandboxes. Never author or patch files with shell commands (heredocs, `sed -i`, scripts);
+redirecting command output to logs under `/tmp/opencode` is fine. Change shared state outside them (local
 databases, running services, external systems) only as Context directs; otherwise mark the
 dependent case `unknown` and name the action needed. Never create setup recipe files
 (`.config/wt.toml`, `.worktreeinclude`); report the commands you ran under `Setup` instead. The
