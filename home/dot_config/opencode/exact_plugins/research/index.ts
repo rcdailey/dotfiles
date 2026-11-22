@@ -9,6 +9,18 @@ type Input = Record<string, unknown>;
 type Schema = Record<string, unknown>;
 const record = (input: unknown) => (input && typeof input === "object" ? input : {}) as Input;
 
+// Agents whose prompt records goals first and closes with a goal report. Other agents with
+// research_* access (e.g. upgrade-analyst) use the tools without that protocol.
+const GOAL_AGENTS = new Set(["researcher"]);
+
+interface CallContext {
+  readonly sessionID: string;
+  readonly agent: string;
+  readonly signal: AbortSignal;
+}
+const run = (context: CallContext, argv: string[]) =>
+  runResearch(context.sessionID, argv, context.signal, GOAL_AGENTS.has(context.agent));
+
 // Maps optional tool fields to CLI flags: true becomes a bare flag, arrays repeat the flag.
 function flags(input: Input, names: Record<string, string>) {
   return Object.entries(names).flatMap(([field, flag]) => {
@@ -314,7 +326,7 @@ export const Research = {
             }),
             ...positionals([value.query]),
           ];
-          return { content: await runResearch(context.sessionID, args, context.signal) };
+          return { content: await run(context, args) };
         },
       });
 
@@ -360,7 +372,7 @@ export const Research = {
             }),
             ...positionals([value.url]),
           ];
-          return { content: await runResearch(context.sessionID, args, context.signal) };
+          return { content: await run(context, args) };
         },
       });
 
@@ -387,23 +399,68 @@ export const Research = {
               ...flags(value, Object.fromEntries(options)),
               ...positionals(positional),
             ];
-            return { content: await runResearch(context.sessionID, argv, context.signal) };
+            return { content: await run(context, argv) };
           },
         });
       }
 
       tools.add({
+        name: "research_plan",
+        description:
+          "Record research goals, one per fact or track the caller asked for. Call before any " +
+          "other research tool, which refuses to run until goals exist. Calling again adds " +
+          "goals; goals cannot be removed.",
+        input: {
+          type: "object",
+          properties: { goals: texts() },
+          required: ["goals"],
+          additionalProperties: false,
+        },
+        options: DIRECT_TOOL,
+        async execute(input, context) {
+          const goals = record(input).goals;
+          const argv = ["plan", ...positionals(Array.isArray(goals) ? goals : [])];
+          return { content: await run(context, argv) };
+        },
+      });
+
+      tools.add({
         name: "research_ledger",
         description:
-          "List every citable source URL retrieved and every research tool failure in this " +
-          "session. Call once before the final response; cite only listed sources and report " +
-          "every listed failure.",
-        input: { type: "object", properties: {}, additionalProperties: false },
+          "List citable sources and tool failures before the final response. Agents that " +
+          "recorded goals with research_plan must pass `report`: every goal as supported, " +
+          "citing URLs this session read " +
+          "(search results do not count), or as a gap: `not_found` after searching, or " +
+          "`out_of_budget`, allowed only once ordinary budget calls are spent. A rejection " +
+          "names what to fix and lists unread search results. On success returns the goal " +
+          "table, citable sources, and tool failures to report.",
+        input: {
+          type: "object",
+          properties: {
+            report: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  goal: integer("Goal number from research_plan"),
+                  status: choice(["supported", "gap"]),
+                  sources: texts("Read URLs, for supported"),
+                  kind: choice(["not_found", "out_of_budget"], "For gap"),
+                  reason: text("For gap: what was searched and not found"),
+                },
+                required: ["goal", "status"],
+                additionalProperties: false,
+              },
+            },
+          },
+          additionalProperties: false,
+        },
         options: DIRECT_TOOL,
-        async execute(_input, context) {
-          const sources = await runResearch(context.sessionID, ["sources"], context.signal);
-          const errors = await runResearch(context.sessionID, ["errors"], context.signal);
-          return { content: `## Sources\n\n${sources}\n\n## Errors\n\n${errors}` };
+        async execute(input, context) {
+          const report = record(input).report;
+          const argv =
+            report === undefined ? ["ledger"] : ["ledger", "--report", JSON.stringify(report)];
+          return { content: await run(context, argv) };
         },
       });
     });

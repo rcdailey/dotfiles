@@ -21,6 +21,7 @@ from research._cache import (
     write_cached_search,
 )
 from research._fetch import FetchError, fetch_markdown
+from research._goals import record_seen
 from research._mslearn import MsLearnError
 from research._parallel import CHARS_PER_RESULT, ParallelError
 from research._render import (
@@ -120,6 +121,7 @@ def search_cmd(
     cached = read_cached_search(cache_key)
     if cached is not None:
         budget_cache_hit(get_cache())
+        record_seen(cached)
         click.echo(cached)
         return
 
@@ -135,6 +137,7 @@ def search_cmd(
             results = search(query, max_results, domains, exclude_domains, time_range)
         rendered = format_search_results(results, CHARS_PER_RESULT * max_results)
         write_cached_search(cache_key, rendered)
+        record_seen(rendered)
         click.echo(rendered)
     except (ParallelError, MsLearnError) as e:
         budget_refund(cache)

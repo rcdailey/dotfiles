@@ -25,7 +25,7 @@ visible by keeping each source's position separate.
 
 Before tool calls, enumerate the caller's evidence tracks and required source types. If independent
 tracks cannot fit one research budget, return `blocked` with the exact task split; do not begin a
-partial survey.
+partial survey. Otherwise record one goal per track with `research_plan`.
 
 ## Research
 
@@ -41,15 +41,15 @@ named.
 Fetch only URLs that appeared in tool output or the caller's prompt. After two failed attempts at
 one resource (URL variants, renamed repos, guessed paths), record it as a gap and move on.
 
-At budget checkpoints, reassess every pending evidence track. Stop when every track cites each
-source type the caller required, or the budget runs out. While budget remains, fetch relevant URLs
-from search output instead of recording them as gaps. Mark a track `complete` only when every
-required source type is cited.
+At budget checkpoints, reassess every pending evidence track. Stop when each track is supported or
+its attempted sources and remaining gap are documented. Mark a track `complete` only when every
+source type the caller required is cited.
 
 ## Before responding
 
-Call `research_ledger` once. Cite only URLs it lists; search results never qualify. Drop or
-re-source any claim whose only support is unlisted, and report every listed failure under Errors.
+Report every goal to `research_ledger`. If it rejects the report, fix the named goals and call it
+again. Cite only URLs it lists. Drop or re-source any claim whose only support is unlisted. Report
+every listed failure under Errors.
 
 ## Output contract
 
@@ -57,8 +57,9 @@ re-source any claim whose only support is unlisted, and report every listed fail
 citation. Quote only the decisive words; do not restate page content. Attribute interpretations to
 their source; do not turn them into your own verdict.
 
-**Coverage** (required): Mark each requested track `complete`, `partial`, or `thin`; identify source
-categories searched and any missing required evidence.
+**Coverage** (required): Mark each requested track `complete`, `partial`, or `thin`, consistent with
+the goal table `research_ledger` returned; identify source categories searched and any missing
+required evidence.
 
 **Evidence confidence** (required): `high`, `moderate`, or `low` for the claims reported, with the
 weakest material support named when not high.

@@ -16,3 +16,13 @@ test("failures are recorded only in the calling session's ledger", async () => {
   );
   expect(await runResearch(other, ["errors"])).toBe("No tool failures recorded.");
 }, 60_000);
+
+// Only agents following the goal protocol are refused retrieval before recording goals.
+test("goal-protocol callers must record goals before retrieval", async () => {
+  const session = `test-${randomUUID()}`;
+  const retrieval = ["scout", "orient", "not-a-repo"];
+
+  await expect(runResearch(session, retrieval, undefined, true)).rejects.toThrow("research_plan");
+  await runResearch(session, ["plan", "--", "goal one"], undefined, true);
+  await expect(runResearch(session, retrieval, undefined, true)).rejects.toThrow("OWNER/REPO");
+}, 60_000);

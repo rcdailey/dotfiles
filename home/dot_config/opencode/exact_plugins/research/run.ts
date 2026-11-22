@@ -6,11 +6,20 @@ export class ResearchError extends Error {}
 /**
  * Runs the `research` CLI with the budget and ledgers scoped to one OpenCode session. The CLI
  * reads the session from OPENCODE_SESSION_ID; without it, budgets and ledgers are disabled.
+ * `requireGoals` makes retrieval refuse until the session records goals and makes the closing
+ * ledger check a goal report; only agents whose prompt follows that protocol may set it.
  */
-export function runResearch(sessionID: string, args: string[], signal?: AbortSignal) {
+export function runResearch(
+  sessionID: string,
+  args: string[],
+  signal?: AbortSignal,
+  requireGoals = false,
+) {
   return new Promise<string>((resolve, reject) => {
+    const env: NodeJS.ProcessEnv = { ...process.env, OPENCODE_SESSION_ID: sessionID };
+    if (requireGoals) env.RESEARCH_REQUIRE_GOALS = "1";
     const child = spawn("research", args, {
-      env: { ...process.env, OPENCODE_SESSION_ID: sessionID },
+      env,
       stdio: ["ignore", "pipe", "pipe"],
       signal,
     });

@@ -53,5 +53,14 @@ class _AutoGroup(RecursiveHelpGroup):
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.version_option(version=__import__("research").__version__, prog_name="research")
-def cli() -> None:
+@click.pass_context
+def cli(ctx: click.Context) -> None:
     """LLM-optimized research CLI for web, GitHub repos, and PDFs."""
+    if ctx.invoked_subcommand in _RETRIEVAL_COMMANDS and not ctx.resilient_parsing:
+        from research._goals import require_goals
+
+        require_goals()
+
+
+# Commands that search or read sources; a research session must record goals before using them.
+_RETRIEVAL_COMMANDS = {"web", "pdf", "scout"}
