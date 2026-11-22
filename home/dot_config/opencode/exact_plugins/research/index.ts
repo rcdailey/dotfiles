@@ -276,23 +276,24 @@ export const Research = {
         description:
           "Search the web for candidate URLs. Budgeted. Results are discovery only and never " +
           "citable; fetch a URL before citing it. To find a page on a known site, restrict " +
-          "`domains` instead of guessing its URL. OR is rejected: send one short query per " +
-          "alternative or site. For Microsoft products (.NET, Azure, Windows, SQL Server, " +
-          "Microsoft 365), set `domains` to only learn.microsoft.com, without `time_range` or " +
-          "`exact`: that searches Microsoft's own docs index, which finds API reference pages " +
-          "and costs no web search credits.",
+          "`domains` instead of guessing its URL. Results show a publish date when known. " +
+          "For Microsoft products (.NET, Azure, Windows, SQL Server, Microsoft 365), set " +
+          "`domains` to only learn.microsoft.com, without `time_range`: that searches " +
+          "Microsoft's own docs index, which finds API reference pages web search misses.",
         input: {
           type: "object",
           properties: {
             query: text(),
-            max_results: integer("Default 10, max 20"),
-            domains: texts("Only return results from these sites, e.g. learn.microsoft.com"),
-            exclude_domains: texts(),
+            max_results: integer("Default 10, max 20; output size scales with it"),
+            domains: texts(
+              "Only results from these domains, domain/path prefixes (github.com/org), or " +
+                "suffixes (.gov)",
+            ),
+            exclude_domains: texts("Never these; also carves subdomains out of `domains`"),
             time_range: choice(
               ["day", "week", "month", "year"],
               "Only results published within this period",
             ),
-            exact: flag("Quoted phrases in `query` must appear verbatim, e.g. an error string"),
             critical,
           },
           required: ["query"],
@@ -309,7 +310,6 @@ export const Research = {
               exclude_domains: "--exclude-domain",
               max_results: "--max-results",
               time_range: "--time-range",
-              exact: "--exact",
               critical: "--critical",
             }),
             ...positionals([value.query]),

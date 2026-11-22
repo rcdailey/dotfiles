@@ -1,8 +1,7 @@
 """Microsoft Learn search through the official `mslearn` CLI (npm:@microsoft/learn-cli).
 
 The CLI wraps Microsoft's Learn MCP server; shelling out keeps that protocol client maintained
-upstream. Searches cost no Tavily credits and return one canonical (locale-free) URL per page.
-Results carry no relevance score, so they are not score-filtered.
+upstream. Searches cost no API credit and return one canonical (locale-free) URL per page.
 """
 
 from __future__ import annotations
@@ -19,7 +18,7 @@ class MsLearnError(Exception):
 
 
 def search(query: str, max_results: int) -> list[dict]:
-    """Return results shaped like Tavily's (`title`, `url`, `content`)."""
+    """Return results shaped as `title`, `url`, `content`, like web search."""
     try:
         result = subprocess.run(
             ["mslearn", "search", "--json", query],

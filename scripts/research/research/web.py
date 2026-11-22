@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import io
-import re
 import subprocess
 import sys
 from collections.abc import Iterable
@@ -23,6 +22,7 @@ from research._cache import (
 )
 from research._fetch import FetchError, fetch_markdown
 from research._mslearn import MsLearnError
+from research._parallel import CHARS_PER_RESULT, ParallelError
 from research._render import (
     DEFAULT_MAX_CHARS,
     apply_find,
@@ -32,20 +32,23 @@ from research._render import (
     strip_github_host,
     truncate_output,
 )
+from research._search_results import format_search_results
 from research._source_ledger import record_source, record_visible_sources
-from research._tavily import TavilyError, format_search_results
 
 DEFAULT_MAX_RESULTS = 10
-# Tavily treats OR as a plain word, so OR-joined alternatives return unrelated results.
-_OR_OPERATOR = re.compile(r"\bOR\b")
+_PAGE_MISSING_ADVICE = (
+    "the URL does not exist. Do not guess another URL; discover it with a search restricted to "
+    "the site's domain."
+)
 
 
-def _is_mslearn_search(domains: tuple[str, ...], time_range: str | None, exact: bool) -> bool:
-    """Route searches restricted to Microsoft Learn to its own index, which is free, ranks API
-    reference pages Tavily misses, and returns no per-locale duplicates. It supports neither date
-    nor exact-phrase filtering, so those searches stay on Tavily."""
+def _is_mslearn_search(domains: tuple[str, ...], time_range: str | None) -> bool:
+    """Route searches restricted to Microsoft Learn to its own index, which costs no API credit
+    (it still uses a research budget call), ranks API reference pages web search misses, and
+    returns no per-locale duplicates. It has no date filter, so dated searches stay on web
+    search."""
     only_mslearn = [d.lower().removeprefix("www.") for d in domains] == [mslearn.DOMAIN]
-    return only_mslearn and time_range is None and not exact
+    return only_mslearn and time_range is None
 
 
 def _emit_retrieved_output(
@@ -78,20 +81,29 @@ def _emit_retrieved_output(
 
 @click.group(invoke_without_command=False)
 def cli() -> None:
-    """Web search via Tavily with local-first page fetching."""
+    """Web search via Parallel with local-first page fetching."""
 
 
 @cli.command(name="search")
 @click.argument("query")
 @click.option("--max-results", type=click.IntRange(min=1, max=20), default=DEFAULT_MAX_RESULTS)
-@click.option("--domain", "domains", multiple=True, help="only return results from this site")
-@click.option("--exclude-domain", "exclude_domains", multiple=True, help="drop this site")
+@click.option(
+    "--domain",
+    "domains",
+    multiple=True,
+    help="only return results from this domain, domain/path prefix, or suffix such as .gov",
+)
+@click.option(
+    "--exclude-domain",
+    "exclude_domains",
+    multiple=True,
+    help="drop results from this domain, prefix, or suffix; applies within --domain too",
+)
 @click.option(
     "--time-range",
     type=click.Choice(["day", "week", "month", "year"]),
     help="only results published within this period",
 )
-@click.option("--exact", is_flag=True, help="quoted phrases must appear verbatim")
 @click.option("--critical", is_flag=True, help="use a reserved post-warning call")
 def search_cmd(
     query: str,
@@ -99,20 +111,11 @@ def search_cmd(
     domains: tuple[str, ...],
     exclude_domains: tuple[str, ...],
     time_range: str | None,
-    exact: bool,
     critical: bool,
 ) -> None:
-    """Search the web via Tavily, or Microsoft Learn's own index; results are discovery only."""
-    if exact and not re.search(r'"[^"]+"', query):
-        raise click.UsageError('--exact requires a "quoted phrase" in the query')
-    if _OR_OPERATOR.search(query):
-        raise click.UsageError(
-            "OR is not supported; send one short query per alternative "
-            "(filter by domain for site alternatives)"
-        )
+    """Search the web via Parallel, or Microsoft Learn's own index; results are discovery only."""
     cache_key = (
-        f"search:v5:{max_results}:{sorted(domains)}:{sorted(exclude_domains)}:"
-        f"{time_range}:{exact}:{query}"
+        f"search:v10:{max_results}:{sorted(domains)}:{sorted(exclude_domains)}:{time_range}:{query}"
     )
     cached = read_cached_search(cache_key)
     if cached is not None:
@@ -124,17 +127,16 @@ def search_cmd(
     budget_reserve(cache, None, critical=critical)
 
     try:
-        if _is_mslearn_search(domains, time_range, exact):
+        if _is_mslearn_search(domains, time_range):
             results = mslearn.search(query, max_results)
         else:
-            from research._tavily import search
+            from research._parallel import search
 
-            response = search(query, max_results, domains, exclude_domains, time_range, exact)
-            results = response["results"]
-        rendered = format_search_results(results)
+            results = search(query, max_results, domains, exclude_domains, time_range)
+        rendered = format_search_results(results, CHARS_PER_RESULT * max_results)
         write_cached_search(cache_key, rendered)
         click.echo(rendered)
-    except (TavilyError, MsLearnError) as e:
+    except (ParallelError, MsLearnError) as e:
         budget_refund(cache)
         click.echo(f"error: {e}", err=True)
         sys.exit(1)
@@ -431,21 +433,23 @@ def fetch_cmd(
                 return
             if e.page_missing:
                 budget_refund(cache, base_url)
-                click.echo(
-                    f"error: fetch failed: {msg}; the URL does not exist. Do not guess another "
-                    "URL; discover it with a search restricted to the site's domain.",
-                    err=True,
-                )
+                click.echo(f"error: fetch failed: {msg}; {_PAGE_MISSING_ADVICE}", err=True)
                 sys.exit(1)
-            click.echo(f"[local fetch failed: {msg}; trying Tavily]", err=True)
+            click.echo(f"[local fetch failed: {msg}; trying Parallel Extract]", err=True)
             try:
-                from research._tavily import fetch_markdown as fetch_with_tavily
+                from research._parallel import extract
 
-                markdown = fetch_with_tavily(url)
-            except TavilyError as tavily_error:
+                markdown = extract(url)
+            except ParallelError as remote:
                 budget_refund(cache, base_url)
+                advice = (
+                    _PAGE_MISSING_ADVICE
+                    if remote.page_missing
+                    else remote.advice or "record the page as unreachable"
+                )
                 click.echo(
-                    f"error: fetch failed locally ({msg}) and via Tavily ({tavily_error})",
+                    f"error: fetch failed locally ({msg}) and via Parallel Extract "
+                    f"({remote.reason}); {advice}",
                     err=True,
                 )
                 sys.exit(1)

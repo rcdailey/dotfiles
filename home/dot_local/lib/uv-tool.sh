@@ -4,7 +4,7 @@
 # These tools are global: they run from any caller directory, and that
 # directory's mise config is not theirs to obey. Three separate hazards follow.
 #
-# 1. The caller's [env] carries API keys the tools need (TAVILY_API_KEY,
+# 1. The caller's [env] carries API keys the tools need (PARALLEL_API_KEY,
 #    LINEAR_API_KEY), and no shell hook applies it in a non-interactive shell,
 #    where mise only installs shims. So load it explicitly, but best-effort:
 #    an untrusted or malformed caller config must not break an unrelated tool,

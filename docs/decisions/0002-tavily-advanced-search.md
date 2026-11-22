@@ -1,6 +1,6 @@
 # ADR-0002: Tavily Advanced Search for the Researcher
 
-- Status: Accepted
+- Status: Superseded by ADR-0003
 - Date: 2026-11-08
 - Supersedes: ADR-0001
 

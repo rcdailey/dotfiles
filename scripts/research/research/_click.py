@@ -29,9 +29,9 @@ class RecursiveHelpGroup(HelpfulGroup):
         ctx: click.Context,
         formatter: click.HelpFormatter,
     ) -> None:
-        """Render every leaf command from Click's command metadata."""
+        """Render every leaf command, plus the signature of each subgroup with its own options."""
         prefix = _context_prefix(ctx)
-        lines = _command_lines(self, ctx, prefix)
+        lines = [*_group_line(self, ctx, prefix), *_command_lines(self, ctx, prefix)]
         formatter.write("\n".join(lines))
         formatter.write("\n")
 
@@ -45,6 +45,17 @@ def _context_prefix(ctx: click.Context) -> tuple[str, ...]:
             names.append(current.info_name)
         current = current.parent
     return tuple(reversed(names))
+
+
+def _group_line(group: click.Group, ctx: click.Context, path: tuple[str, ...]) -> list[str]:
+    """Return a group's own signature when it has options, which precede every subcommand."""
+    if not path or not any(
+        isinstance(p, click.Option) and not p.is_eager for p in group.get_params(ctx)
+    ):
+        return []
+    summary = _summary(group)
+    signature = f"{_signature(group, ctx, path)} COMMAND"
+    return [f"{signature}  {summary}" if summary else signature]
 
 
 def _command_lines(
@@ -61,6 +72,7 @@ def _command_lines(
         child_ctx = click.Context(command, info_name=name, parent=ctx)
         path = (*prefix, name)
         if isinstance(command, click.Group):
+            lines.extend(_group_line(command, child_ctx, path))
             lines.extend(_command_lines(command, child_ctx, path))
             continue
         signature = _signature(command, child_ctx, path)

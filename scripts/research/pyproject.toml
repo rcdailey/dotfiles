@@ -5,7 +5,6 @@ description = "LLM-optimized research CLI for web, GitHub repos, and PDFs"
 requires-python = ">=3.13"
 dependencies = [
     "click>=8.5.0",
-    "tavily-python>=0.8.5",
     "diskcache>=5.6.3",
     "trafilatura>=2.3.1",
     "curl-cffi>=0.16.3",
