@@ -25,7 +25,8 @@ visible by keeping each source's position separate.
 
 Before tool calls, enumerate the caller's evidence tracks and required source types. If independent
 tracks cannot fit one research budget, return `blocked` with the exact task split; do not begin a
-partial survey. Otherwise record one goal per track with `research_plan`.
+partial survey. Otherwise record goals with `research_plan`: one per distinct fact the caller
+requests. Split compound requests: "latency and accuracy" is two goals.
 
 ## Research
 
@@ -41,15 +42,24 @@ named.
 Fetch only URLs that appeared in tool output or the caller's prompt. After two failed attempts at
 one resource (URL variants, renamed repos, guessed paths), record it as a gap and move on.
 
-At budget checkpoints, reassess every pending evidence track. Stop when each track is supported or
-its attempted sources and remaining gap are documented. Mark a track `complete` only when every
-source type the caller required is cited.
+At budget checkpoints, reassess every pending evidence track. Mark a track `complete` only when
+every source type the caller required is cited.
+
+Stop as soon as the caller's requested facts are answered; unused budget is fine. Efficiency means
+skipping irrelevant pages, never skipping a page likely to answer an unanswered goal. Until the
+budget warning, MUST NOT stop while a goal is unanswered and a promising unread URL or untried query
+for it remains: fetch the URL or run the query.
 
 ## Before responding
 
-Report every goal to `research_ledger`. If it rejects the report, fix the named goals and call it
-again. Cite only URLs it lists. Drop or re-source any claim whose only support is unlisted. Report
-every listed failure under Errors.
+For each goal, write its answer in one line with the read URL that states it. A goal with no such
+line is unanswered: return to Research while the stop rule allows it.
+
+Report every goal to `research_ledger`: `supported` only when its track is `complete`, otherwise a
+gap; `not_found` only when searches show the evidence does not exist, never for evidence found but
+unread. If it rejects the report, fix the named goals and call it again. Cite only URLs it lists.
+Drop or re-source any claim whose only support is unlisted. Report every listed failure under
+Errors.
 
 ## Output contract
 
@@ -67,7 +77,8 @@ weakest material support named when not high.
 **Freshness** (if applicable): Versions, dates, refs, or deprecation warnings encountered.
 
 **Gaps** (if any): Unresolved evidence and what would resolve it. Distinguish unavailable external
-evidence from sources not reached within the session.
+evidence from sources not reached within the session; a source counts as not reached only after the
+budget warning.
 
 **Errors** (if any): Report every tool failure with its kind, tool, input, and error. Shorten
 Evidence rather than omitting this section when context is tight.
