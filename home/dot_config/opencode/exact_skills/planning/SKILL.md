@@ -63,8 +63,10 @@ A nonzero exit without that line is a tool failure: report it; do not treat it a
 
 Inspect enough current code and documentation to trace affected flows, constraints, exact symbols,
 migrations, generated artifacts, and durable tests. Derive architecture from repository evidence and
-settled product decisions, not from plan templates. If evidence contradicts a settled decision,
-report the conflict and resolve it before submission; do not silently narrow the outcome.
+settled product decisions, not from plan templates. For each new mechanism (interface member, result
+type, collection, or flow path), name the existing code that handles the same kind of behavior and
+extend it, or record with the slice why it cannot hold the case. If evidence contradicts a settled
+decision, report the conflict and resolve it before submission; do not silently narrow the outcome.
 
 ## Plan contract
 
@@ -153,15 +155,19 @@ map", not "`index.ts` imports the map and registers an agent transform".
   states. Label with domain terms drawn from discovery sources, aligned to the project glossary when
   one exists; never code identifiers. No class or call-level diagrams. Text still states every
   decision.
+
 - Below the rule, write the implementation part for implementation and the auditor: invariants,
   contract graph, and each workstream as a heading stating its outcome, followed by numbered slices.
   Label each slice that changes a listed boundary. It must not add a decision, boundary change, or
   deferral missing above. Invariants are only rules the implementation must keep; put code-level
   reasons and rejected alternatives with the contract or slice they shaped.
+
 - Use one concise execution map, not a handoff transcript or wide table. Reference shared rules
   instead of repeating them. Length follows scope, not a numeric target.
+
 - Check the draft against the fidelity inventory. Confirm concrete touchpoints, complete lifecycles,
   independent boundaries, dependency order, and observable acceptance for every settled outcome.
+
 - Resolve technical gaps directly; ask only for product decisions. Submit only when no product
   decision or contract-affecting technical choice remains. Preserve approved outcomes when revising
   a plan after implementation feedback; identify changes that need renewed approval.

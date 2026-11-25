@@ -6,7 +6,9 @@ Before editing, trace the affected flow and inspect relevant callers.
   configuration, extensibility, or scaffolding only when a current variation, second caller, or
   boundary requires them.
 - Prefer, in order: existing coherent code, standard-library or native platform/framework behavior,
-  an installed dependency, then the smallest new implementation.
+  an installed dependency, then the smallest new implementation. Existing code includes the
+  mechanism that already handles the same kind of behavior (same effect, trigger, or inputs); extend
+  it instead of adding a parallel one, unless you can state why it cannot hold the new case.
 - Add a dependency only when it reduces lifecycle complexity enough to justify its operational and
   security cost.
 - Optimize for lifecycle simplicity, not line or file count. Do not trade away required

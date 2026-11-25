@@ -387,6 +387,10 @@ changes. Otherwise preserve the prior ledger and continue in this session.
    - Work the goal implies but no repository contains: user-facing surfaces, migration or upgrade
      notes, error paths, and parallel features that follow the same pattern.
    - Read-only environment state (installed tools, services, deployments) the change affects.
+   - Parallel mechanisms: for each interface member, result type, collection, or flow path the
+     target adds, find existing code that handles the same kind of behavior (same effect, trigger,
+     or inputs). Report each duplicate as a rule-compliance finding unless the plan or Context
+     states why the existing mechanism cannot hold the case.
 
    Report only demonstrated inconsistencies or gaps.
 7. Check compliance with repository rules. A green check does not excuse weakened checks, skipped
