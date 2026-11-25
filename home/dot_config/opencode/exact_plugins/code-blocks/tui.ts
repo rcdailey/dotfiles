@@ -102,15 +102,22 @@ function preview(code: string) {
 
 function createRenderer(context: Context, copy: (text: string) => Promise<void>) {
   const render: MarkdownCodeBlockRenderer = (token, defaults) => {
-    const body = defaults.defaultRender();
-    if (!body || !isClosed(token.raw)) return body ?? undefined;
+    if (!isClosed(token.raw)) return defaults.defaultRender() ?? undefined;
     const theme = context.theme;
     const shade = theme.background.raised.base;
-    if (body instanceof CodeRenderable) body.bg = shade;
-    // Markdown gives the default block its inter-block margins; move them onto the panel.
-    const { marginTop, marginBottom } = body;
-    body.marginTop = 0;
-    body.marginBottom = 0;
+    // The panel owns its code view: Markdown re-applies its page background to the default view
+    // whenever its options change (such as when streaming ends), without asking this renderer.
+    const body = new CodeRenderable(context.renderer, {
+      content: token.text,
+      filetype: infoStringToFiletype(token.lang ?? ""),
+      syntaxStyle: defaults.syntaxStyle,
+      treeSitterClient: defaults.treeSitterClient,
+      conceal: defaults.concealCode,
+      fg: theme.markdown.text,
+      bg: shade,
+      width: "100%",
+      flexShrink: 0,
+    });
     // Padding mirrors the edit tool's panel so both read as the same kind of surface.
     const panel = new BoxRenderable(context.renderer, {
       width: "100%",
@@ -120,8 +127,6 @@ function createRenderer(context: Context, copy: (text: string) => Promise<void>)
       border: ["left"],
       customBorderChars: LEFT_BAR,
       borderColor: theme.border.base,
-      marginTop: marginTop ?? undefined,
-      marginBottom: marginBottom ?? undefined,
       paddingTop: 1,
       paddingBottom: 1,
       paddingLeft: 2,
