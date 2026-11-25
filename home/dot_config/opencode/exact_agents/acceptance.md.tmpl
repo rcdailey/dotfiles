@@ -391,6 +391,9 @@ changes. Otherwise preserve the prior ledger and continue in this session.
      target adds, find existing code that handles the same kind of behavior (same effect, trigger,
      or inputs). Report each duplicate as a rule-compliance finding unless the plan or Context
      states why the existing mechanism cannot hold the case.
+   - Variant checks: report each check the target adds in shared code on which variant (service,
+     platform, provider, version) is running as a rule-compliance finding; that behavior belongs
+     in a per-variant implementation selected at a composition root or factory.
 
    Report only demonstrated inconsistencies or gaps.
 7. Check compliance with repository rules. A green check does not excuse weakened checks, skipped

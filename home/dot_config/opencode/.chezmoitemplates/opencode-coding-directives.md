@@ -9,6 +9,10 @@ Before editing, trace the affected flow and inspect relevant callers.
   an installed dependency, then the smallest new implementation. Existing code includes the
   mechanism that already handles the same kind of behavior (same effect, trigger, or inputs); extend
   it instead of adding a parallel one, unless you can state why it cannot hold the new case.
+- When behavior differs by variant (service, platform, provider, version), put each variant's
+  behavior in its own implementation, selected at a composition root or factory. Shared code MUST
+  NOT check which variant is running, even for one line; extend the existing per-variant mechanism,
+  or add one when none fits.
 - Add a dependency only when it reduces lifecycle complexity enough to justify its operational and
   security cost.
 - Optimize for lifecycle simplicity, not line or file count. Do not trade away required
