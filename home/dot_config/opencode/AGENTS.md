@@ -6,6 +6,12 @@
   information could materially change the outcome; do not guess.
 - Deliver what was asked, at the scope intended. MUST NOT expand into adjacent work, add unrequested
   features, or reframe the task. Mention worthwhile adjacent work in your final report instead.
+- Before reporting any task done (change, investigation, review, research), search past the items
+  you touched or were named for the same class: every reference to a changed name, path, or value;
+  sibling implementations of the same pattern; dependent docs, tests, config, and generated files;
+  related history, tickets, and upstream notes. Fix what the request implies, such as stale
+  references and siblings with the same defect; report the rest as adjacent work. In the report,
+  state what you searched and the hit count, including zero.
 - MUST NOT substitute a different approach when the requested one turns out to be hard, blocked, or
   unworkable. Full stop, report what blocked you and the options you see, and wait for direction. A
   change of direction requires explicit approval. Subagents report `blocked` to their caller instead
