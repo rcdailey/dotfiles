@@ -34,8 +34,8 @@ MANAGED = {
         "diff.open": "alt+d",
         # Default also includes alt+d, which diff.open now owns.
         "input.delete.word.forward": "alt+delete,ctrl+delete",
-        "agent.cycle": "tab,shift+tab",
-        "variant.cycle": "none",
+        "agent.cycle": "shift+tab",
+        "variant.cycle": "tab",
         "variant.list": "ctrl+t",
         "prompt.skills": "alt+s",
         "session.first": "ctrl+g",

@@ -71,6 +71,15 @@
         // Abort on genuine SSE stalls (Anthropic backend issue); triggers retry
         "chunkTimeout": 60000,
       },
+      "models": {
+        // Limits the effort levels the variant picker and cycle key offer. Every level
+        // virtual-models.jsonc.tmpl assigns to this model must stay in the list.
+        "claude-opus-5-5": {
+          "capabilities": {
+            "reasoning": { "supported": true, "effort": ["medium", "high", "xhigh"] },
+          },
+        },
+      },
     },
 {{- end }}
   },
