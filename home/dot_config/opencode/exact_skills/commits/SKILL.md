@@ -12,17 +12,22 @@ description: >-
 - Run `git status --short`, `git diff -- <paths>`, and `git diff --cached` in one shell invocation;
   read intended untracked files directly. Do not inspect history or repeat evidence unless
   repository convention, state changes, or failure creates uncertainty.
+- Before the first commit to a repository in a session, read its tracked commitlint config and any
+  commit rules in its AGENTS.md; their types, scopes, and subject rules override this skill.
 - Use `git commit` with one `-m` each for the subject, every paragraph, every bullet, and the issue
   references. Each bullet value MUST start with `- ` (`-m "- Add X"`); without it, the bullet
   becomes a paragraph. Write unwrapped text; a global commit-msg hook joins bullets into one tight
-  list, reflows, and validates. Never embed `\n` escapes in an argument.
+  list, reflows, and validates. Never embed `\n` escapes in an argument; wrap an escape sequence the
+  text names in backticks.
 - MUST NOT pass `--no-verify`. When the commit-msg hook rejects a message, edit the file it names
   without reading it first (it holds your message, subject verbatim, body reflowed), then rerun the
   same command with `-F <file>` in place of `-m`. When a pre-commit hook changes files, review the
   changes, re-stage them, and rerun.
 - Join `git commit` and explicitly requested dependent operations with `&&` in one invocation (e.g.,
   `&& git push && chezmoi apply -- <target>`). Skip verification calls when output and exit status
-  establish the result.
+  establish the result. MUST NOT pipe `git commit` output through filters: the pipe replaces its
+  exit status, so chained steps run after a rejection, and filtering can drop the hook's reasons.
+  Redirect long output to a file and search it.
 - Index rules (also for amend, fixup, and squash content): if the index already holds the exact
   intended commit, commit without paths or `-a`; if a nonempty index does not match, stop. Stage
   with `git add -A -- <paths>` or use `-a` only from an empty index.
@@ -36,7 +41,8 @@ description: >-
 
 In order:
 
-1. Subject (required): the durable outcome.
+1. Subject (required): the durable outcome, at most 72 characters; under Conventional Commits, the
+   description after the colon starts lowercase.
 2. Context paragraphs: what prompted the change and why this approach, from relevant conversation
    context, not just the diff. Keep the concrete problem and its consequences, plus constraints or
    rejected alternatives behind surprising decisions. State reasons directly without recounting the
