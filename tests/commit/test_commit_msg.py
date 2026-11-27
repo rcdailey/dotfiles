@@ -196,6 +196,18 @@ class CommitMsgHookTests(unittest.TestCase):
         self.assert_ok(self.git("commit", "--quiet", "-F", str(message_file), check=False))
         self.assertTrue(self.message().startswith("Fixed subject\n\nThis paragraph"))
 
+    def test_rejection_output_ends_with_its_reasons(self):
+        cases = (("x" * 80, "exceeds 72-char limit"), ("feat: wrong type", "[type-enum]"))
+        self.config()
+        for subject, reason in cases:
+            with self.subTest(subject=subject):
+                rejected = self.commit_messages(subject)
+                self.assertNotEqual(rejected.returncode, 0)
+                output = (rejected.stdout + rejected.stderr).rstrip("\n")
+                _, notice, reasons = output.rpartition("the message is kept in ")
+                self.assertTrue(notice, output)
+                self.assertIn(reason, reasons.partition("\n")[2], output)
+
     def test_tracked_commitlint_config_is_enforced(self):
         self.config()
         rejected = self.commit_messages("feat: wrong type")

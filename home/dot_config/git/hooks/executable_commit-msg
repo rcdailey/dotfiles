@@ -14,6 +14,7 @@ every line is a commitlint footer token; reflowing it would join separate traile
 Validation rejects long subjects (except Git-generated and autosquash subjects), literal "\\n"
 escapes outside code, and messages that fail a tracked root commitlint configuration. A rejected
 message stays in the message file, so the commit can be rerun with -F instead of retyping it.
+The reasons come last in the output, so a caller that keeps only its tail still sees them.
 A message identical to HEAD's (an unedited amend) is reflowed but never rejected.
 """
 
@@ -40,6 +41,8 @@ FENCE_RE = re.compile(r"^(?:```|~~~)")
 LIST_ITEM_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s")
 TOP_LIST_ITEM_RE = re.compile(r"^(?:[-*+]|\d+[.)])\s")
 AUTO_COMMENT_CANDIDATES = "#;@!$%^&|:"
+# An error line in commitlint's default report, such as "✖   subject may not be empty [rule]".
+COMMITLINT_ERROR_RE = re.compile(r"^✖\s+(.+\[[\w-]+\])$")
 
 COMMITLINT_CONFIG_NAMES = (
     "package.json",
@@ -334,14 +337,15 @@ def tracked_commitlint_config(repo_root: Path) -> Path | None:
     return None
 
 
-def commitlint_passes(message_path: Path) -> bool:
+def commitlint_problems(message_path: Path) -> list[str]:
+    """Run a tracked commitlint config, print its full report, and return its error lines."""
     toplevel = git("rev-parse", "--show-toplevel")
     if toplevel.returncode != 0:
-        return True
+        return []
     repo_root = Path(toplevel.stdout.strip())
     config = tracked_commitlint_config(repo_root)
     if config is None:
-        return True
+        return []
     if shutil.which("commitlint") is None:
         die("commitlint is required by repository configuration")
     result = subprocess.run(
@@ -354,9 +358,16 @@ def commitlint_passes(message_path: Path) -> bool:
             "--edit",
             str(message_path),
         ],
+        capture_output=True,
+        text=True,
         check=False,
     )
-    return result.returncode == 0
+    if result.returncode == 0:
+        return []
+    report = result.stdout + result.stderr
+    print(report, file=sys.stderr, end="")
+    errors = [m.group(1) for m in map(COMMITLINT_ERROR_RE.match, report.splitlines()) if m]
+    return errors or ["commitlint rejected the message; see its report above"]
 
 
 def main() -> None:
@@ -374,16 +385,17 @@ def main() -> None:
     if head_message.returncode == 0 and cleaned(original) == cleaned(head_message.stdout):
         return
 
-    problems = message_problems(cleaned(formatted))
+    problems = message_problems(cleaned(formatted)) or commitlint_problems(path)
+    if not problems:
+        return
+    print(
+        f"commit-msg: the message is kept in {path.resolve()}; fix it there and rerun the"
+        " same commit with -F <that path> in place of -m",
+        file=sys.stderr,
+    )
     for problem in problems:
         print(f"commit-msg: {problem}", file=sys.stderr)
-    if problems or not commitlint_passes(path):
-        print(
-            f"commit-msg: the message is kept in {path.resolve()}; fix it there and rerun the"
-            " same commit with -F <that path> in place of -m",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    sys.exit(1)
 
 
 if __name__ == "__main__":
