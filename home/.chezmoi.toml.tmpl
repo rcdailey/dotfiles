@@ -1,12 +1,6 @@
 {{- $env := promptChoiceOnce . "env" "Choose Environment"
     (list "work" "personal" "other") "other" -}}
 
-{{- $ssh_azure_hosts := "" -}}
-{{- if eq $env "work" -}}
-{{- $ssh_azure_hosts := promptStringOnce . "ssh_azure_hosts"
-    "Additional self-hosted AzDO hostnames for SSH" "" -}}
-{{- end -}}
-
 {{- $opencode_provider := promptChoiceOnce . "opencodeProvider" "OpenCode model provider"
     (list "anthropic" "openai") "anthropic" -}}
 
@@ -31,7 +25,6 @@ color = "on"
 
 [data]
     env = {{ $env | quote }}
-    ssh_azure_hosts = {{ $ssh_azure_hosts | quote }}
     opencodeProvider = {{ $opencode_provider | quote }}
 
 [data.terminal]
