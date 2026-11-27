@@ -30,6 +30,10 @@ Before editing, trace the affected flow and inspect relevant callers.
   later session.
 - Keep an existing check, guard, or validation unless you have verified the assumption that makes it
   unnecessary; state that evidence when removing it.
+- Satisfy analyzer and linter rules by changing the code. MUST NOT suppress or downgrade a rule
+  because the current code happens to comply: the rule guards future edits and removes the need to
+  trace what the code does. Suppress only when no compliant form exists, at the narrowest scope,
+  with the reason.
 
 ## General
 
