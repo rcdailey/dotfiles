@@ -7,14 +7,17 @@
 # self-update) regenerates it. mtime alone misses upgrades, since mise keeps the archive's mtime.
 _source_cached() {
   local cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/$1.zsh" bin=${commands[$1]:A} stamp=
+  local tmp="$cache.$$"
   [[ -r $cache ]] && read -r stamp < "$cache"
   if [[ $stamp != "# $bin" || $bin -nt $cache ]]; then
     mkdir -p "${cache:h}"
     # A failed run leaves no cache, so the next shell retries
-    if ! { print -r -- "# $bin" && "$@" } >| "$cache"; then
-      rm -f "$cache" "$cache.zwc"
+    if ! { print -r -- "# $bin" && "$@" } >| "$tmp"; then
+      rm -f "$tmp" "$cache" "$cache.zwc"
       return 1
     fi
+    # Shells starting together regenerate at once; writing in place interleaves their output
+    mv -f -- "$tmp" "$cache"
     zcompile -R -- "$cache.zwc" "$cache"
   fi
   source "$cache"
