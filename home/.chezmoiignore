@@ -27,6 +27,11 @@ Library/**
 .config/rbw/**
 {{ end }}
 
+# Home-network hosts; a 192.168.1.* rule would also catch work hosts on that subnet
+{{ if eq .env "work" }}
+.ssh/config.d/personal.ssh
+{{ end }}
+
 {{ if ne .chezmoi.os "windows" }}
 Documents/**
 {{ end }}

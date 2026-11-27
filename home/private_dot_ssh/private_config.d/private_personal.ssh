@@ -1,6 +1,11 @@
+# IdentityFile names a public key; ssh signs with the matching private key from the rbw agent.
+# IdentitiesOnly stops ssh from offering every other agent key first.
+
 Host router 192.168.1.1 unifi
     HostName 192.168.1.1
     User root
+    IdentityFile ~/.ssh/keys/unifi.pub
+    IdentitiesOnly yes
     # Needed because :pera:
     # https://community.ui.com/questions/Fix-for-ssh-authentication-failure-no-matching-host-key-type-found-Their-offer-ssh-rsa/81151760-ce61-428b-9de5-9cbf434be5db#answer/4f41e316-f228-469e-a9dd-553f62f527b2
     # HostKeyAlgorithms +ssh-rsa
@@ -8,6 +13,27 @@ Host router 192.168.1.1 unifi
 
 Host mare 192.168.1.52
     User robert
+    IdentityFile ~/.ssh/keys/mare.pub
+    IdentitiesOnly yes
 
 Host nezuko 192.168.1.58
     User root
+    IdentityFile ~/.ssh/keys/nezuko.pub
+    IdentitiesOnly yes
+
+Host robert-pc
+    IdentityFile ~/.ssh/keys/robert-pc.pub
+    IdentitiesOnly yes
+
+Host git.dailey.app
+    User git
+    IdentityFile ~/.ssh/keys/forgejo.pub
+    IdentitiesOnly yes
+
+# Any other UniFi device, reached by IP. Keep last: ssh takes the first value it finds for each
+# option, so the hosts above keep their own User. IdentityFile lines add up instead, so those
+# hosts also offer this key after their own.
+Host 192.168.1.*
+    User admin
+    IdentityFile ~/.ssh/keys/unifi.pub
+    IdentitiesOnly yes
