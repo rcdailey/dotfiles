@@ -1,7 +1,8 @@
 ---
 description: >
   Reviews a single pull request and posts a pending GitHub review via gh-review. Callers pass a
-  repo target (directory path or owner/repo), PR number, and optional priority scope; this agent
+  repo target (directory path or owner/repo), PR number, optional priority scope, and optional
+  user notes with dispositions; this agent
   gathers context, stages comments, and returns a decision briefing with evidence for caller checks.
   Do not use for commit ranges or local code changes.
 mode: subagent
@@ -106,6 +107,12 @@ Callers pass:
   includes P3, and `all` includes P4. `high` narrows to P0-P1.
 - **Access and budget** (optional): user-supplied authorization and investigation limits; never
   broaden them. Discover repository-specific context from applicable instructions.
+- **Reviewer notes** (optional): the user's points about this PR, each tagged `blocking`,
+  `optional`, or `question`. Each point is a focus area and a convention for this review: verify it
+  against the code, and where the PR conflicts with it, raise a finding with that disposition. Note
+  findings are in scope at any priority and never count as preference, so they are posted and count
+  toward the verdict. Notes add to the full review and never narrow it. Report points the PR already
+  satisfies in the briefing without a comment.
 
 A caller may resume this task later for a follow-up pass, passing only what changed since your
 report (new commits, resolved threads, unanswered questions). Re-verify that delta, not the whole
@@ -321,7 +328,8 @@ boundaries. Investigate the questions this PR actually raises, not every categor
 
 Continue checking correctness and security. A sound design with no findings is a valid result; do
 not manufacture architectural feedback. Respect accepted design decisions unless new evidence
-justifies revisiting them. Derive conventions from the repository rather than personal preference.
+justifies revisiting them. Derive conventions from the repository and reviewer notes, not personal
+preference.
 
 When the PR implements or encodes a rule, find the repository's own statement of it (contributing
 docs, specs, schemas, decision records) and judge against that; use a consumer's or tool's behavior

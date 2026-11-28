@@ -16,12 +16,27 @@ it with `"high"`. Pass the priority scope through to every spawned subagent unch
 `$ARGUMENTS` is usually empty. Then the current working directory is the repo: select its open PRs
 needing review and fan out over as many as qualify (see PR Selection below).
 
-- **No target** (empty arguments or priority keywords only): current repo, multi-PR selection
+- **No target** (none of the target forms below; priority keywords and notes may be present):
+  current repo, multi-PR selection
 - **PR number** (e.g., `16` or `#16`): review that PR in the current repo
+- **PR URL** (`https://github.com/{owner}/{repo}/pull/{number}`): review that PR; the repo target is
+  the current directory when it resolves to the same `owner/repo`, otherwise `owner/repo`
 - **Repo path or name** (e.g., `/path/to/repo`, `owner/repo`, or a bare repo name): select open PRs
-  needing review in that repo
+  needing review in that repo; a single word is a repo name only when `gh repo view` resolves it
 - **Commit range** (e.g., `main..feature`): STOP; this command reviews PRs only
 - **Priority keywords** (`high`, `minor`, `low`, `all`): pass through to every spawned subagent
+- **Any other text**: the user's notes on the PR; see Reviewer Notes
+
+## Reviewer Notes
+
+The reviewer cannot ask the user, so settle notes before spawning any reviewer:
+
+1. Split the notes into separate points. Give each a disposition from its wording: a firm ask ("I
+   want", "must") is `blocking`, a leaning or preference is `optional`, and an open doubt is
+   `question`. In fan-out, also assign each point to the PRs it applies to.
+2. Show the user the classified points, flag any whose wording or PR fits no clear choice, and wait
+   for confirmation or corrections.
+3. Pass the confirmed points with their wording unchanged.
 
 ## PR Selection
 
@@ -61,7 +76,7 @@ Rename the session before spawning subagents:
 
 - One PR: `PR #N: TICKET-ID short description`, where TICKET-ID is a Linear or GitHub issue key
   found in the PR title or branch name (omit if none). Description under 10 words, capturing the
-  PR's purpose. Derive both from the PR title already fetched; for PR-number mode run
+  PR's purpose. Derive both from the PR title already fetched; for PR-number and PR URL modes run
   `gh pr view {number} --repo {owner}/{repo} --json title,headRefName,author` first. If
   `author.is_bot` is true, STOP: bot-authored PRs are not reviewed.
 - Fan-out: `Review: {repo} ({n} PRs)`
@@ -72,6 +87,7 @@ Spawn one `reviewer` subagent per selected PR. Pass:
   case), otherwise `owner/repo`, so the subagent runs `gh`/`git` against the right repo
 - The PR number
 - The priority scope from `$ARGUMENTS` (if any)
+- The confirmed reviewer notes for that PR (if any), each with its disposition
 - Any user-supplied access authorization or work budget, without broadening it. The reviewer
   discovers repository-specific context and tools from applicable local instructions.
 
